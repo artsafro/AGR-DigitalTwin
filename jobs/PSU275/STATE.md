@@ -1,21 +1,18 @@
 # PSU275 — main building No 1
 
-Sources and findings: `docs/sources/psu275.md`. Profile: NPM + VPM.
+Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + VPM.
 
 ## Done (2026-10-07)
 
-- S1 PDF album, S2 Revit (via the modified 1644 copy), S3 FBX inspected read-only.
-- Decisions: geometry = Revit; PDF for appearance only; missing parts from FBX;
-  first target = first floor (level 0.000) of main building No 1.
+- S1 PDF, S2 Revit (detached 2025 copy `…_modified_1644`), S3 FBX, S4 PPTX inspected read-only.
+- 0.000 = 169.65; first floor = 0.000 … +13.060; finishes from the S4 schedule.
 
 ## Open
 
-- Questions 1–3 in the source report (zero mark / MSK-77, object name, clean Revit copy).
-- Fit FBX → Revit transform (offset, rotation) on two or more grid intersections.
-- First-floor bounds: 0.000 to next level along the facade (+3.000 in the bays, the hall is
-  a single volume) — confirm with the user.
+- Chimney +99 (S4) vs 120 m (S3).
+- Fit S3 → Revit transform on grid intersections (S3 is offset ≈ +140, +109 m).
 
 ## Next
 
-Export level 0.000 walls/curtain walls/doors from Revit (3D view cropped to the first
-floor) to a versioned FBX, build BODY in Blender (`src/dt_ai/geometry/exterior.py`).
+Clip the S3 main building to 0.000 … +13.060 in Blender 4.4 (5.1.2 crashes on S3), check
+against Revit axes 108 × 93 m and S4 marks, then build BODY (`src/dt_ai/geometry/exterior.py`).
