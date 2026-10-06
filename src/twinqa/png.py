@@ -173,7 +173,7 @@ def npm_texture_findings(images: dict[str, bytes], profile: dict):
                           f"square {tex['allowed_square_sizes_px']}", [9], name, [5] if status == "review" else []))
         status, observed = size_status(facts.size_bytes, tex["max_file_bytes"])
         if status != "pass":
-            out.append(_f(status, "atlas file size", f"{name}: {observed}", "<= 3 MB", [9], name, [12]))
+            out.append(_f(status, "atlas file size", f"{name}: {observed}", "<= 3 MiB", [9], name))
         if facts.has_alpha:
             # Forbidden by reg p.9 §5.5, but accepted local atlases were RGBA: conflict #21 -> review
             out.append(_f("review", "no alpha", f"{name}: alpha channel present", "no alpha (separate opacity map)",

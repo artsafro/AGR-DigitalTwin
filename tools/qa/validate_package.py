@@ -191,7 +191,7 @@ def validate(target: Path, kind: str | None, profiles, scene: bool = False) -> V
         limit = archive.get("max_bytes") or (archive["ground_max_bytes"] if target.stem.endswith("_Ground") else archive["oks_max_bytes"])
         status, observed = size_status(len(data), limit)
         st["V001"].findings.append(finding(status, "archive size", observed, f"<= {limit} B",
-                                           st["V001"].source_pdf_pages, conflicts=[12] if status == "review" else []))
+                                           st["V001"].source_pdf_pages, conflicts=[]))
         (validate_vpm_zip if kind == "vpm" else validate_npm_zip)(target.stem, files, profile, st)
         if scene:
             add_scene(st, kind, profile, {n: d for n, d in files.items() if n.lower().endswith(".fbx")}, notes)

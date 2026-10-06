@@ -31,7 +31,7 @@ def test_repository_standards_load():
     p = load_profiles()
     assert p.vpm["uv"]["diffuse_density_px_per_m"] == {"min": 512, "max": 1706, "formula": "texture_side_px / polygon_length_m"}
     assert p.conflict("vpm", "geojson.Glasses")["ids"] == [13]
-    assert p.conflict("npm", "archive.max_bytes")["status"] == "review"
+    assert p.conflict("npm", "archive.max_bytes")["status"] == "noted"  # conflict #12 decided
     assert [s["id"] for s in p.validator["stages"]] == [f"V{i:03d}" for i in range(1, 18)]
 
 
@@ -46,7 +46,7 @@ def test_pdf_is_optional_but_verified_when_present(standards_copy, tmp_path, mon
 
 def test_unlocked_profile_change_rejected(standards_copy):
     path = standards_copy / "NPM_STANDARD.yaml"
-    path.write_text(path.read_text(encoding="utf-8").replace("max_file_bytes: 3000000", "max_file_bytes: 4000000"), encoding="utf-8")
+    path.write_text(path.read_text(encoding="utf-8").replace("max_file_bytes: 3145728", "max_file_bytes: 4000000"), encoding="utf-8")
     with pytest.raises(ValueError, match="Unreviewed profile change"):
         load_profiles(standards_copy)
 
@@ -69,3 +69,11 @@ def test_duplicate_keys_and_nonfinite_values_rejected(tmp_path):
         path.write_text(text, encoding="utf-8")
         with pytest.raises(ValueError, match=match):
             read_yaml(path)
+
+
+def test_size_limits_are_binary_units_conflict_12():
+    from twinqa.bundle import size_status
+    p = load_profiles()
+    assert p.npm["archive"]["max_bytes"] == 1024 ** 3 and p.vpm["archive"]["oks_max_bytes"] == 500 * 1024 ** 2
+    assert size_status(500 * 1024 ** 2, p.vpm["archive"]["oks_max_bytes"])[0] == "pass"
+    assert size_status(500 * 1024 ** 2 + 1, p.vpm["archive"]["oks_max_bytes"])[0] == "fail"

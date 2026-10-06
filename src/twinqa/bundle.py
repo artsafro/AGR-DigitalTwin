@@ -1,7 +1,7 @@
 # Ported from AGR src/dt_ai/publish/bundle.py (sha256 0d190a116dd4) on 2026-10-06;
 # changes: read_bundle only (package() dropped), BundleError, caller-supplied uncompressed
 # limit, CRC check, directory entries skipped; size_finding() moved here from the previous
-# tools/qa/validate_package.py (conflict #12 handling unchanged).
+# tools/qa/validate_package.py; conflict #12 decided 2026-10-07 (binary units).
 """Safe ZIP reading (no extraction of archive-controlled paths) and archive size rules."""
 import zipfile
 from pathlib import PurePosixPath
@@ -35,21 +35,9 @@ def read_bundle(path, max_uncompressed: int) -> dict[str, bytes]:
             raise BundleError(f"Broken ZIP member: {exc}") from exc
 
 
-def unit_limits(limit_bytes: int) -> tuple[str, int, int]:
-    """YAML stores decimal bytes (conflict #12). Return (label, decimal, binary) readings."""
-    for unit, power in (("GB", 3), ("MB", 2)):
-        if limit_bytes % 1000 ** power == 0:
-            n = limit_bytes // 1000 ** power
-            return f"{n} {unit}", limit_bytes, n * 1024 ** power
-    return f"{limit_bytes} B", limit_bytes, limit_bytes
-
-
 def size_status(size_bytes: int, limit_bytes: int) -> tuple[str, str]:
-    """fail only if over the limit under both decimal and binary readings; review if over
-    only one (the regulation does not define MB/GB, docs/domain/conflicts.md #12)."""
-    label, decimal, binary = unit_limits(limit_bytes)
-    if size_bytes > max(decimal, binary):
-        return "fail", f"{size_bytes} B exceeds {label} under both decimal and binary units"
-    if size_bytes > min(decimal, binary):
-        return "review", f"{size_bytes} B exceeds {label} only if the unit is decimal"
+    """Limits are binary bytes (MiB/GiB), as SINTEZ AGR Checker (conflict #12, decided 2026-10-07)."""
+    label = f"{limit_bytes / 1024 ** 2:g} MiB"
+    if size_bytes > limit_bytes:
+        return "fail", f"{size_bytes} B exceeds {label}"
     return "pass", f"{size_bytes} B <= {label}"

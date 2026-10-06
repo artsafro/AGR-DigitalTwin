@@ -7,7 +7,7 @@ import pytest
 
 import validate_package as vp
 from test_validator import PROFILES, STEM, good_files
-from twinqa.scene import find_blender, scene_findings
+from twinqa.scene import find_blender, scene_findings, ucx_triangle_limit
 
 
 def mesh(name="SM_Test_K_1_Main", tris=12, degrees=None, rot=(0, 0, 0), scale=(1, 1, 1), uv=1, mirrored=0,
@@ -33,12 +33,24 @@ def test_clean_vpm_mesh_passes_scene_stages():
     assert set(statuses(found, "V008").values()) == {"pass"}
 
 
-def test_vpm_triangle_limit_between_figure_and_table_is_review_conflict_1():
-    found = scene_findings(rb(mesh(tris=900_000)), "vpm", "oks", PROFILES.vpm)
-    tri = next(f for f in found["V003"] if f.name == "triangle count")
-    assert tri.status == "review" and tri.conflicts == [1]
-    found = scene_findings(rb(mesh(tris=1_000_001)), "vpm", "oks", PROFILES.vpm)
-    assert next(f for f in found["V003"] if f.name == "triangle count").status == "fail"
+@pytest.mark.parametrize("tris, status", [(150_000, "pass"), (150_001, "review"), (1_000_000, "review"),
+                                          (1_000_001, "fail")])
+def test_vpm_oks_triangles_project_target_and_hard_limit_conflict_1(tris, status):
+    found = scene_findings(rb(mesh(tris=tris)), "vpm", "oks", PROFILES.vpm)
+    assert next(f for f in found["V003"] if f.name == "triangle count").status == status
+
+
+@pytest.mark.parametrize("model, budget", [(49_999, 15_000), (50_000, 2_500), (1_243_374, 62_169),
+                                           (3_000_000, 100_000)])
+def test_ucx_budget_is_checker_formula_conflict_3(model, budget):
+    assert ucx_triangle_limit(model) == budget
+
+
+def test_ucx_excluded_from_model_triangles_and_budget_checked():
+    found = scene_findings(rb(mesh(tris=100_000), mesh(name="UCX_SM_Test_K_1_Main_001", tris=5_001)), "vpm", "oks",
+                           PROFILES.vpm)
+    assert next(f for f in found["V003"] if f.name == "triangle count").observed.endswith(": 100000")
+    assert statuses(found, "V010") == {"UCX triangle budget": "fail", "UCX shape and coverage": "not_run"}
 
 
 def test_npm_oks_over_150k_fails():

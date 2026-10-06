@@ -1,8 +1,9 @@
 """VPM GeoJSON checks (V011; reg p.26-27, App.3 p.51-55; VPM_STANDARD.yaml `geojson`).
 
 Typed checks of the exact source schema. Where the regulation contradicts itself the
-result is `review`, never a silent pass/fail: empty FNO_code/act_AGR (conflict #2) and a
-non-empty Glasses array (conflict #13).
+result is `review`, never a silent pass/fail: a non-empty Glasses array (conflict #13).
+Empty OKS fields follow SINTEZ AGR Checker v1.6.1 (conflict #2, decided 2026-10-07):
+FNO_code is mandatory (3/6/9 digits), act_AGR may be empty.
 """
 import base64
 import binascii
@@ -16,7 +17,7 @@ from twinqa.report import Finding
 
 PAGES = [26, 27, 51, 52, 53, 54, 55]
 GLASS_RANGES = {"transparency": (0, 1), "refraction": (1, 3), "roughness": (0, 1), "metallicity": (0, 1)}
-CONFLICT_EMPTY = {"FNO_code", "act_AGR"}  # conflict #2
+OKS_MAY_BE_EMPTY = {"other", "act_AGR"}  # conflict #2, decided 2026-10-07 (as the checker)
 
 
 def _f(status, name, observed, expected, pages=PAGES, conflicts=()):
@@ -110,16 +111,17 @@ def geojson_findings(data: bytes, profile: dict, ground: bool, glass_names: set[
     missing, extra = [k for k in keys if k not in props], [k for k in props if k not in keys]
     if missing or extra:
         out.append(_f("fail", "property keys", f"missing {missing}, extra {extra}", "exact App.3 key set", [26, 27, 53]))
-    nullable = set(spec["ground_nullable_as_empty_string"]) if ground else {"other"}
+    nullable = set(spec["ground_nullable_as_empty_string"]) if ground else OKS_MAY_BE_EMPTY
     for key in keys:
         if key in ("imageBase64",) or key not in props:
             continue
         value = props[key]
         if value in ("", None) and key not in nullable:
-            if not ground and key in CONFLICT_EMPTY:
-                out.append(_f("review", f"{key} empty", "empty", "value, or empty if no information (p.53-54)", [27, 53, 54], [2]))
-            else:
-                out.append(_f("fail", f"{key} empty", "empty", "mandatory value", [27]))
+            out.append(_f("fail", f"{key} empty", "empty", "mandatory value (never invent it; ask the customer)", [27]))
+        elif key == "FNO_code" and not ground and isinstance(value, str):
+            digits = value.replace(" ", "")
+            if not (digits.isdigit() and len(digits) in (3, 6, 9)):
+                out.append(_f("fail", "FNO_code format", repr(value), "XXX, XXX XXX or XXX XXX XXX (FNO classifier)", [53]))
     if "imageBase64" in props:
         out.append(_image(props["imageBase64"]))
 

@@ -21,7 +21,7 @@ Appendix map: App.1 NPM = pp.1-19, App.2 VPM = pp.20-50, App.3 GeoJSON = pp.51-5
 - VPM only: free-standing buildings get unique index `_001`, `_002`... after address (`ProezdNansena_Uch_8_001`). reg p.26 §3.7. Not in YAML (local: docs/agr/decisions/ADR-0002-source-discrepancies.md#11).
 
 ## NPM (Appendix 1)
-- One ZIP <= 1 GB, no broken/unreadable files. reg p.6 §1.1.
+- One ZIP <= 1 GB, no broken/unreadable files. reg p.6 §1.1. 1 GB = 1024 MiB (conflict #12, decided as the checker).
 - ZIP holds 2-21 FBX: 1 Ground FBX (mandatory) + up to 20 OKS FBX; textures embedded. reg p.6 §1.2, p.7 §1.6, p.14 fig.2.
 - OKS FBX total <= 40 geometry objects: OKS geometry incl. usable roof (<= 20 objects, <= 40 texture sets) + translucent parts (<= 20 objects, no texture sets). reg p.6 §1.4.
 - Ground FBX (<= 22 texture sets): Ground (<= 20 sets, also limited by density), GroundGlass (no sets), GroundEl (1 set), GroundElGlass (no sets), Flora (1 set, all vegetation). Usable-roof objects not in Ground. reg p.6-7 §1.5.
@@ -32,10 +32,11 @@ Appendix map: App.1 NPM = pp.1-19, App.2 VPM = pp.20-50, App.3 GeoJSON = pp.51-5
 - Coordinates: geometry placed in Moscow coordinate system and heights per project; arbitrary/conditional coords or missing heights forbidden; object rotations after reset = OKS rotation in plan. reg p.10 §8.
 
 ## VPM (Appendix 2)
-- Separate ZIP per free-standing OKS (incl. stylobate, korpus, usable roof) <= 500 MB; separate Ground ZIP <= 1 GB. reg p.26 §1.1, §1.3.
+- Separate ZIP per free-standing OKS (incl. stylobate, korpus, usable roof) <= 500 MB; separate Ground ZIP <= 1 GB. reg p.26 §1.1, §1.3. Units are binary: 500 MiB / 1024 MiB (conflict #12, decided as the checker).
 - ZIP content: FBX model; optional lighting FBX; GeoJSON; 3-2100 PNG. Textures NOT embedded. reg p.26 §1.2, p.30 §5.1.1.
 - Project meta: 2-21 ZIPs (1 Ground ZIP + 1-20 OKS ZIPs); 1-700 texture sets (Diffuse, ERM, Normal). reg p.40 fig.2.1 (image-verified).
 - Triangle limits (table): OKS + usable roof <= 1 000 000 per FBX excluding collision; Ground by (site area - building footprint): <=0.05 ha 300k; 0.05-0.1 705k; 0.1-0.25 1 125k; 0.25-0.5 1 650k; 0.5-0.75 1 950k; 0.75-1 2 625k; 1-1.5 3 150k; >1.5 ha 4 500k. reg p.28-29 §3.9-3.10. CONFLICT with fig. p.40 (800k/3M) - see conflicts.md.
+- Project target (user decision 2026-10-07, conflict #1): <= 150 000 triangles per OKS FBX in VPM too, so the same model is reused for NPM. If that is impossible, replace windows with atlas textures on planes before adding geometry. The table above stays the hard limit; the validator reports 150 001-1 000 000 as review, above 1 000 000 as fail.
 - Ground FBX is mandatory part of AGR. reg p.26 §1.4.
 - Pivot/origin: per FBX own origin at world 0,0,0; OKS/Ground pivot at geometric center of model in X,Y and Z = project zero elevation; all meshes in one FBX share the same pivot (glass pivot = OKS pivot); collision pivots free; all rotations = 0 after reset; placement described by paired GeoJSON. reg p.32-33 §9 (image-verified p.32).
 - Example structure: `SM_Etalonskaya_25_K_3.zip` -> `SM_..._K_3.fbx`, `SM_..._K_3_Light.fbx`, `SM_..._K_3.geojson`, `T_..._K_3_{Diffuse|ERM|Normal}_1.{1001..1008}.png`. reg p.41 fig.2.2.
@@ -57,7 +58,7 @@ Appendix map: App.1 NPM = pp.1-19, App.2 VPM = pp.20-50, App.3 GeoJSON = pp.51-5
 - Multiple values allowed only in okrug, rajon, developer, designer, cadNum: comma-separated inside one string. reg p.27 §2.4.
 - Org names quoted with typewriter apostrophe inside string: `"OOO 'Buro ...'"`. reg p.27 §2.3.
 - Address string adds korpus/section info per cut building; none for stylobates. reg p.27 §2.2.
-- OKS: all values except `other` mandatory and truthful; Ground: FNO_name, FNO_code, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, other may be empty `""`. reg p.27 §2.6, p.52 example. (Conflict with p.53-54, see conflicts.md.)
+- OKS: all values except `other` mandatory and truthful; Ground: FNO_name, FNO_code, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, other may be empty `""`. reg p.27 §2.6, p.52 example. (Conflict with p.53-54, see conflicts.md.) **Decided 2026-10-07 (conflict #2, as the checker):** OKS `FNO_code` mandatory (3/6/9 digits, FNO classifier), `act_AGR` may be empty; an unknown `FNO_code` blocks delivery - ask the customer, never invent it.
 - imageBase64: source JPG 256x256 converted to base64. reg p.54.
 - coordinates: insertion point in MSK-77, 3 decimals, must match plan position per SPOZU; max offset 0.5 m. reg p.55 §21.
 - Glasses: when no glass -> `[]`; otherwise object keyed by glass material name (`M_Address_MainGlass_1`..`_7`, `M_Address_GroundGlass_N`) with `color_RGB {Red,Green,Blue}` 0-255, `transparency` 0..1 (0 = fully transparent, 1 = opaque), `refraction` 1..3, `roughness` 0..1, `metallicity` 0..1. reg p.51-53, p.55 §22.
