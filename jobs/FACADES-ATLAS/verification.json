@@ -1,0 +1,73 @@
+{
+  "source_sha256": "193d2f25d582a6d11d4036e506bed8670e2c0721da32c34d91e70969a53dec11",
+  "scope": "UV atlas readback only; delivery not assessed",
+  "manual_acceptance": "pending",
+  "qa": {
+    "Object009": {
+      "faces": 18125,
+      "geometry_ids_transforms_unchanged": true,
+      "original_uv_preserved": true,
+      "all_uv_inside_id_band": true,
+      "max_uv_readback_error_m": 7.629394538355427e-07,
+      "max_edge_projection_error_m": 1.3841176112833198e-05,
+      "shared_coplanar_vertex_phase_max_m": 1.5258789065608624e-06,
+      "phase_samples_over_5mm": 0,
+      "materials": [
+        "M_Facades_02_ID101_d",
+        "M_Facades_02_ID102_d",
+        "M_Facades_02_ID103_d",
+        "M_Facades_02_ID104_d",
+        "M_Facades_02_ID105_d"
+      ],
+      "packed_atlas": true
+    },
+    "Object010": {
+      "faces": 11714,
+      "geometry_ids_transforms_unchanged": true,
+      "original_uv_preserved": true,
+      "all_uv_inside_id_band": true,
+      "max_uv_readback_error_m": 7.629394573882564e-07,
+      "max_edge_projection_error_m": 6.048741411857073e-06,
+      "shared_coplanar_vertex_phase_max_m": 1.5258789065608624e-06,
+      "phase_samples_over_5mm": 0,
+      "materials": [
+        "M_Facades_03_ID101_d",
+        "M_Facades_03_ID102_d",
+        "M_Facades_03_ID103_d",
+        "M_Facades_03_ID104_d",
+        "M_Facades_03_ID105_d"
+      ],
+      "packed_atlas": true
+    },
+    "Object012": {
+      "faces": 30073,
+      "geometry_ids_transforms_unchanged": true,
+      "original_uv_preserved": true,
+      "all_uv_inside_id_band": true,
+      "max_uv_readback_error_m": 7.629394573882564e-07,
+      "max_edge_projection_error_m": 0.0001453129307283918,
+      "shared_coplanar_vertex_phase_max_m": 1.5258789065608624e-06,
+      "phase_samples_over_5mm": 0,
+      "materials": [
+        "M_Facades_01_ID101_d",
+        "M_Facades_01_ID102_d",
+        "M_Facades_01_ID103_d",
+        "M_Facades_01_ID104_d",
+        "M_Facades_01_ID105_d"
+      ],
+      "packed_atlas": true
+    }
+  },
+  "outputs": {
+    "facades_metric_v003.blend": "2432a31ad0e123bc8fb11defd3caf7cf630b77a7ff24527f3d80e2b226376243",
+    "Object009_brick_detail.png": "bac2a86090ff24f07e3314ae6a73d79eb1ed3aec19a0e9259a23b37026ac36bf",
+    "Object009_overview.png": "dd76a287222f742e1ca4cbbe8c6be40557a2d88b744301dddb9fdfe260526725",
+    "Object010_brick_detail.png": "13016ab7d40619d592c38eac654e51d99061905b7489c58d4dd536c786d54f6e",
+    "Object010_overview.png": "d868c18bf4799db8e41e6dcb830a3e3542fd60bf6fe9c6bf1fe23756614d48fa",
+    "Object012_brick_detail.png": "1b6cbf254edd86e053ef2de3feb8a5d7c2bd6a1b9e6af8a202cc79a0058d9849",
+    "Object012_overview.png": "c15aa429a715b010b303b1e7867adf024a4f7f14eef419f7e7541e0705c24c8e",
+    "T_Facades_01_Atlas_d.png": "bb3b37e3f499290cb4a1e7368966a5a80f7f5185e6f2f98ef215a3a2947233a0",
+    "T_Facades_02_Atlas_d.png": "ec08b60be3993c1220f708c5351e97be4bbe92fe0951b8542cbf3f1a2e8bd487",
+    "T_Facades_03_Atlas_d.png": "631d7091f2986e30b28359c53e72910750bbd30e5438cc90ef0f3f98cf3c6533"
+  }
+}

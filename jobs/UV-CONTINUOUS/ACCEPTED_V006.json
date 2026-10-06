@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-01",
+  "user_quote": "спасибо, молодец, успех",
+  "accepted_scope": "UV and texture wall result v006 plus prepared FBX delivery package; native Max import and full OKS certification unverified",
+  "base_commit": "d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc",
+  "files": {
+    "walls_UV550-1500_FlipH_v006.blend": {
+      "bytes": 33775512,
+      "sha256": "406c66057b5912701abecf01868b46a8f6a839f1bb722403ed164163cc8072ca"
+    },
+    "T_Template_Address_001_Diffuse_FlipH_v005.1001.png": {
+      "bytes": 271916,
+      "sha256": "e3a6708fbd89d79e2b44de900eb8bac9a41842f44099a9b972e157a5d74d4f99"
+    },
+    "FBX_For_Max_v006/Walls_FlipH_v006.fbx": {
+      "bytes": 1506076,
+      "sha256": "df85decb958bf8a6323a28bb17e8eb44c4f5349b940a8d325beb694f57bbe17e"
+    },
+    "Walls_FlipH_v006_FBX_For_Max.zip": {
+      "bytes": 1486625,
+      "sha256": "67f9300596849cd0496eca096573ccd9a512f875dd2263be3c50dbe2c2ea2a40"
+    }
+  },
+  "reports": [
+    "outputs/readback_v006.json",
+    "outputs/agr_scoped_v006.json",
+    "outputs/FBX_For_Max_v006/FBX_READBACK.json",
+    "outputs/FBX_For_Max_v006/PACKAGE_QA.json"
+  ],
+  "native_max_import_verified": false,
+  "full_oks_delivery_passed": false
+}

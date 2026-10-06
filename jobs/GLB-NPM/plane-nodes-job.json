@@ -1,0 +1,22 @@
+{
+  "source_window_definition": 77179,
+  "source_ac_definition": 146223,
+  "window": {
+    "corner_xy_m": [-0.65375, 0.37375],
+    "opening_front_end_x_m": 0.95625,
+    "opening_side_end_y_m": -0.67625,
+    "opening_bottom_z_m": -1.14,
+    "opening_top_z_m": 1.14,
+    "embed_m": 0.01,
+    "evidence": "Measured adjacent reveal/sill coordinates in first window local frame; original axes retained. Corner remains joined, 10 mm extension on opening outer edges."
+  },
+  "ac": {
+    "min_m": [-0.735, -0.275, -0.5],
+    "max_m": [0.735, 0.275, 0.5],
+    "panels": ["front", "left", "right", "bottom"],
+    "top": false,
+    "back": false,
+    "thickness": 0,
+    "opacity_source": "Orthographic raster of source outer surfaces; not synthetic perforation."
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "audit_v001_acceptance": "organization and audit only",
+  "model_v002_visual_acceptance": "pending",
+  "files": {
+    "outputs/audit-v001/source-snapshot.blend": {
+      "bytes": 56719047,
+      "sha256": "451d8f666f2969bcc82ae4d4a2864a8c791cb286eb841d520291116542336423"
+    },
+    "outputs/audit-v001/organized-v001.blend": {
+      "bytes": 56720679,
+      "sha256": "a22773e9fbfc86c4200e77fffdcef49a4624f2888ce0077f33c3fe22c8739093"
+    },
+    "outputs/model-v002/input.blend": {
+      "bytes": 56720727,
+      "sha256": "022f870adf0d22009bb925d52799fa708ad2a2c347e0fd0da623a0a83f90524e"
+    },
+    "outputs/model-v002/LP_working-v002.blend": {
+      "bytes": 57017711,
+      "sha256": "50d96a4455b047022578cb80f03a46d14546b4324c03866ab127966addb337f4"
+    },
+    "outputs/master-v001/MASHI-comparison-trial-v002.blend": {
+      "bytes": 61961806,
+      "sha256": "e9cf81ec0c9085b58ba296ebd21696e180de21151e248333f9846b03ed55e8dc"
+    },
+    "outputs/master-v001/LP-and-MASTER.png": {
+      "bytes": 1266638,
+      "sha256": "fadf1cb3f03f042dd55a2715cf031c53d24c7c37df3f03af85c38889601e3dc0"
+    },
+    "outputs/master-v001/readback.json": {
+      "bytes": 4786,
+      "sha256": "93082ba5a18ee309b5d0956b6c98b3d4a59ce65cc3e70f7338c997bc9d26fa8f"
+    },
+    "outputs/master-v001/intersections.json": {
+      "bytes": 4327081,
+      "sha256": "b6c49cfe98148e89b2c84f2cdedb6a4a249fb6ccceb9dcce3385fe9c63e07830"
+    },
+    "outputs/master-v001/density-readback.json": {
+      "bytes": 3290,
+      "sha256": "0691c621b3989cd09f0de241aa77c081e7af0b2478221ea8312e2fb6eb6d5d26"
+    }
+  },
+  "master_trial_status": "QA NOT PASSED; visual acceptance pending"
+}

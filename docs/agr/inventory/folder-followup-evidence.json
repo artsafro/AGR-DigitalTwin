@@ -1,0 +1,5858 @@
+{
+  "date": "2026-09-26",
+  "base_commit": "37930230ec9bbb8345f58821594380c19903dc0c",
+  "mode": "static only; no discovered code or installer executed",
+  "coverage": [
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\zavod",
+      "status": "enumerated",
+      "files": 479
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax",
+      "status": "enumerated",
+      "files": 919
+    }
+  ],
+  "errors": [],
+  "extension_counts": {
+    ".md": 148,
+    ".txt": 69,
+    ".json": 50,
+    ".bat": 5,
+    ".mse": 24,
+    ".ms": 101,
+    ".max": 546,
+    ".dll": 13,
+    ".ini": 22,
+    ".py": 148,
+    ".zip": 6,
+    ".lsp": 3,
+    ".ps1": 4,
+    ".cs": 17,
+    ".csproj": 2,
+    ".xml": 4,
+    ".toml": 1,
+    ".cuix": 3,
+    ".mnux": 3,
+    ".mcr": 24,
+    ".mzp": 48,
+    ".dlt": 35,
+    ".dlo": 13,
+    ".dlm": 50,
+    ".gup": 34,
+    ".dlu": 25
+  },
+  "scanner_limits": "Metadata/text only. No execution, no inferred usage. Pruned env/cache/map folders; cloud offline data excluded; scene files metadata only. Extension-filtered, no EXE/CSV/RAR/7z scan in this pass.",
+  "selected_sources": [
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Maf Tools.mcr",
+      "bytes": 152261,
+      "sha256": "df1a3a3ef97f4c195c284231291ec6b6285ac412983646e9a0481e378e19fa05",
+      "tool_id": "MAX-31",
+      "entrypoints": [
+        {
+          "line": 1,
+          "name": "MafTools"
+        },
+        {
+          "line": 58,
+          "name": "IDC_CAParams"
+        },
+        {
+          "line": 64,
+          "name": "globalGetCA"
+        },
+        {
+          "line": 82,
+          "name": "globalEnsureCA"
+        },
+        {
+          "line": 99,
+          "name": "globalSaveNote"
+        },
+        {
+          "line": 129,
+          "name": "globalLoadNote"
+        },
+        {
+          "line": 145,
+          "name": "callRecalc"
+        },
+        {
+          "line": 150,
+          "name": "udimByMatID_idsToString"
+        },
+        {
+          "line": 162,
+          "name": "udimByMatID_getSelectionKey"
+        },
+        {
+          "line": 170,
+          "name": "udimByMatID_getMatIDsNonDestructive"
+        },
+        {
+          "line": 186,
+          "name": "udimByMatID_ensureEditablePoly"
+        },
+        {
+          "line": 198,
+          "name": "udimByMatID_getMatIDsPoly"
+        },
+        {
+          "line": 208,
+          "name": "udimByMatID_getFacesByMatID"
+        },
+        {
+          "line": 217,
+          "name": "udimByMatID_getOrCreateUnwrap"
+        },
+        {
+          "line": 225,
+          "name": "udimByMatID_moveSelectedVertsToTile"
+        },
+        {
+          "line": 243,
+          "name": "unwrapByMatIDToUDIM_Advanced"
+        },
+        {
+          "line": 278,
+          "name": "rlta_ensureEPoly"
+        },
+        {
+          "line": 294,
+          "name": "rlta_allFaces"
+        },
+        {
+          "line": 302,
+          "name": "rlta_processObj"
+        },
+        {
+          "line": 438,
+          "name": "tdt_GetMeters"
+        },
+        {
+          "line": 453,
+          "name": "tdt_GetUW"
+        },
+        {
+          "line": 461,
+          "name": "tdt_GetFaceTD"
+        },
+        {
+          "line": 474,
+          "name": "tdt_AnalyzeFaces"
+        },
+        {
+          "line": 495,
+          "name": "tdt_OptimizedSetTD"
+        },
+        {
+          "line": 613,
+          "name": "ua_appendUnique"
+        },
+        {
+          "line": 622,
+          "name": "ua_getUnwrapMod"
+        },
+        {
+          "line": 631,
+          "name": "ua_getUnwrapIface"
+        },
+        {
+          "line": 642,
+          "name": "ua_getAccessData"
+        },
+        {
+          "line": 651,
+          "name": "ua_getNumMapVerts"
+        },
+        {
+          "line": 667,
+          "name": "ua_getMapVert"
+        },
+        {
+          "line": 688,
+          "name": "ua_setMapVert"
+        },
+        {
+          "line": 704,
+          "name": "ua_refreshObject"
+        },
+        {
+          "line": 715,
+          "name": "ua_findTileIndex"
+        },
+        {
+          "line": 722,
+          "name": "ua_collectTiles"
+        },
+        {
+          "line": 798,
+          "name": "ua_tileScore"
+        },
+        {
+          "line": 805,
+          "name": "ua_sortTilesBySize"
+        },
+        {
+          "line": 819,
+          "name": "ua_packTiles"
+        },
+        {
+          "line": 890,
+          "name": "ua_applyTiles"
+        },
+        {
+          "line": 922,
+          "name": "ua_run"
+        },
+        {
+          "line": 936,
+          "name": "udimTools_findUnwrap"
+        },
+        {
+          "line": 945,
+          "name": "udimTools_openEditor"
+        },
+        {
+          "line": 958,
+          "name": "udimTools_collapseUnwrap"
+        },
+        {
+          "line": 1000,
+          "name": "sad_getFirstBit"
+        },
+        {
+          "line": 1006,
+          "name": "sad_getElemBBox"
+        },
+        {
+          "line": 1024,
+          "name": "sad_collectElementsData"
+        },
+        {
+          "line": 1042,
+          "name": "sad_aabbDistance"
+        },
+        {
+          "line": 1056,
+          "name": "sad_buildClusters"
+        },
+        {
+          "line": 1088,
+          "name": "sad_makeNodeFromCluster"
+        },
+        {
+          "line": 1104,
+          "name": "sad_splitAttachedObjectByDistance"
+        },
+        {
+          "line": 1128,
+          "name": "SBIC_mm"
+        },
+        {
+          "line": 1135,
+          "name": "SBIC_defaultH"
+        },
+        {
+          "line": 1136,
+          "name": "SBIC_minH"
+        },
+        {
+          "line": 1138,
+          "name": "SBIC_isVizNode"
+        },
+        {
+          "line": 1148,
+          "name": "SBIC_isGeomNode"
+        },
+        {
+          "line": 1153,
+          "name": "SBIC_pickFilter"
+        },
+        {
+          "line": 1155,
+          "name": "SBIC_uniqueNodes"
+        },
+        {
+          "line": 1171,
+          "name": "SBIC_storeOriginalTargetColors"
+        },
+        {
+          "line": 1185,
+          "name": "SBIC_restoreOriginalTargetColors"
+        },
+        {
+          "line": 1200,
+          "name": "SBIC_clearViz"
+        },
+        {
+          "line": 1207,
+          "name": "SBIC_stateColor"
+        },
+        {
+          "line": 1218,
+          "name": "SBIC_getStateMaterial"
+        },
+        {
+          "line": 1265,
+          "name": "SBIC_getVizLayer"
+        },
+        {
+          "line": 1272,
+          "name": "SBIC_createMarker"
+        },
+        {
+          "line": 1311,
+          "name": "SBIC_generateGridPoints"
+        },
+        {
+          "line": 1337,
+          "name": "SBIC_pointIsUnderMaster"
+        },
+        {
+          "line": 1354,
+          "name": "SBIC_checkMarkerVsMaster"
+        },
+        {
+          "line": 1442,
+          "name": "SBIC_applyResults"
+        },
+        {
+          "line": 1456,
+          "name": "SBIC_selectByState"
+        },
+        {
+          "line": 1469,
+          "name": "EG_normSafe"
+        },
+        {
+          "line": 1474,
+          "name": "EG_getAxis"
+        },
+        {
+          "line": 1490,
+          "name": "EG_getEyePos"
+        },
+        {
+          "line": 1502,
+          "name": "EG_isEyeMode"
+        },
+        {
+          "line": 1504,
+          "name": "EG_isPerspOrCam"
+        },
+        {
+          "line": 1510,
+          "name": "EG_castRay"
+        },
+        {
+          "line": 1531,
+          "name": "EG_getEffectiveAxis"
+        },
+        {
+          "line": 1543,
+          "name": "EG_getBottomOffset"
+        },
+        {
+          "line": 1554,
+          "name": "EG_buildAlignedTM"
+        },
+        {
+          "line": 1589,
+          "name": "SRXF_CovMul"
+        },
+        {
+          "line": 1597,
+          "name": "SRXF_PerpSeed"
+        },
+        {
+          "line": 1618,
+          "name": "SRXF_PowerIter"
+        },
+        {
+          "line": 1644,
+          "name": "SRXF_RotationAngleDeg"
+        },
+        {
+          "line": 1658,
+          "name": "SRXF_RotateVec"
+        },
+        {
+          "line": 1671,
+          "name": "SRXF_CalcBBVolume"
+        },
+        {
+          "line": 1701,
+          "name": "SRXF_RefineOrientation"
+        },
+        {
+          "line": 1748,
+          "name": "SRXF_GetWorldPoints"
+        },
+        {
+          "line": 1772,
+          "name": "SRXF_PCA_FindBasis"
+        },
+        {
+          "line": 1809,
+          "name": "SRXF_FindBestOrientation"
+        },
+        {
+          "line": 1870,
+          "name": "SRXF_AnalyzeObject"
+        },
+        {
+          "line": 1905,
+          "name": "SRXF_RepairObject"
+        },
+        {
+          "line": 1975,
+          "name": "SRXF_SimpleResetXForm"
+        },
+        {
+          "line": 1997,
+          "name": "rl_UDIMTools"
+        },
+        {
+          "line": 2074,
+          "name": "refreshObjInfo"
+        },
+        {
+          "line": 2101,
+          "name": "getMS3"
+        },
+        {
+          "line": 2228,
+          "name": "rl_MafCheck"
+        },
+        {
+          "line": 2266,
+          "name": "refreshTargetList"
+        },
+        {
+          "line": 2273,
+          "name": "refreshResults"
+        },
+        {
+          "line": 2366,
+          "name": "3"
+        },
+        {
+          "line": 2369,
+          "name": "rl_Glue"
+        },
+        {
+          "line": 2549,
+          "name": "4"
+        },
+        {
+          "line": 2552,
+          "name": "rl_RepairBrackets"
+        },
+        {
+          "line": 2582,
+          "name": "initListView"
+        },
+        {
+          "line": 2599,
+          "name": "getTargets"
+        },
+        {
+          "line": 2607,
+          "name": "getRowColor"
+        },
+        {
+          "line": 2619,
+          "name": "scanScene"
+        },
+        {
+          "line": 2777,
+          "name": "5"
+        },
+        {
+          "line": 2780,
+          "name": "rl_RTT"
+        },
+        {
+          "line": 2836,
+          "name": "getResolution"
+        },
+        {
+          "line": 2847,
+          "name": "getFileExtension"
+        },
+        {
+          "line": 2861,
+          "name": "generateFileName"
+        },
+        {
+          "line": 2870,
+          "name": "updateObjectList"
+        },
+        {
+          "line": 2872,
+          "name": "bakeTextures"
+        },
+        {
+          "line": 2981,
+          "name": "6"
+        },
+        {
+          "line": 2984,
+          "name": "rl_IDColors"
+        },
+        {
+          "line": 3039,
+          "name": "getSubMtl"
+        },
+        {
+          "line": 3046,
+          "name": "generateColor"
+        },
+        {
+          "line": 3072,
+          "name": "openTextureCoordinatesEditor"
+        },
+        {
+          "line": 3086,
+          "name": "_texCoordsDlg"
+        },
+        {
+          "line": 3133,
+          "name": "refreshViewport"
+        },
+        {
+          "line": 3140,
+          "name": "loadValues"
+        },
+        {
+          "line": 3157,
+          "name": "applyAndRefresh"
+        },
+        {
+          "line": 3249,
+          "name": "drawIDPanel"
+        },
+        {
+          "line": 3362,
+          "name": "refreshObjectInfo"
+        },
+        {
+          "line": 3400,
+          "name": "selectID"
+        },
+        {
+          "line": 3425,
+          "name": "createMultiMaterial"
+        },
+        {
+          "line": 3452,
+          "name": "saveToCA"
+        },
+        {
+          "line": 3484,
+          "name": "loadFromCA"
+        },
+        {
+          "line": 3712,
+          "name": "7"
+        },
+        {
+          "line": 3715,
+          "name": "rl_Notes"
+        },
+        {
+          "line": 3741,
+          "name": "updatePreview"
+        },
+        {
+          "line": 3762,
+          "name": "notesRefreshObj"
+        },
+        {
+          "line": 3777,
+          "name": "openNotesWindow"
+        },
+        {
+          "line": 3783,
+          "name": "_notesFloatDlg"
+        },
+        {
+          "line": 3794,
+          "name": "wLoad"
+        },
+        {
+          "line": 3813,
+          "name": "wSave"
+        },
+        {
+          "line": 3928,
+          "name": "MafTools_MainDialog"
+        },
+        {
+          "line": 3936,
+          "name": "getScreenHeight"
+        },
+        {
+          "line": 3938,
+          "name": "recalcDialogSize"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Poly Actions Copy_V6.ms",
+      "bytes": 48868,
+      "sha256": "f8f2581645ba06c7599ec2ac662e337d230b48819fed63cbc1696a71fe57b970",
+      "tool_id": "MAX-32",
+      "entrypoints": [
+        {
+          "line": 7,
+          "name": "PolyActionCopierRoll"
+        },
+        {
+          "line": 80,
+          "name": "getObj"
+        },
+        {
+          "line": 87,
+          "name": "getObjSilent"
+        },
+        {
+          "line": 94,
+          "name": "redrawAll"
+        },
+        {
+          "line": 95,
+          "name": "setStatus"
+        },
+        {
+          "line": 96,
+          "name": "bitArraysEqual"
+        },
+        {
+          "line": 104,
+          "name": "getFaceCenter"
+        },
+        {
+          "line": 111,
+          "name": "getEdgeMidpoint"
+        },
+        {
+          "line": 116,
+          "name": "safeSetSubObjLevel"
+        },
+        {
+          "line": 117,
+          "name": "getGroupCenter"
+        },
+        {
+          "line": 123,
+          "name": "getGroupAvgNormal"
+        },
+        {
+          "line": 129,
+          "name": "getGroupVerts"
+        },
+        {
+          "line": 136,
+          "name": "getGroupEdges"
+        },
+        {
+          "line": 143,
+          "name": "buildGroupFrame"
+        },
+        {
+          "line": 175,
+          "name": "pointLocalCoords"
+        },
+        {
+          "line": 180,
+          "name": "faceLocalCoords"
+        },
+        {
+          "line": 181,
+          "name": "edgeLocalCoords"
+        },
+        {
+          "line": 183,
+          "name": "sortFacesByFrame"
+        },
+        {
+          "line": 207,
+          "name": "safeSortFaces"
+        },
+        {
+          "line": 214,
+          "name": "analyzeSelectionForRecord"
+        },
+        {
+          "line": 235,
+          "name": "formatAction"
+        },
+        {
+          "line": 269,
+          "name": "refreshList"
+        },
+        {
+          "line": 276,
+          "name": "refreshPresetList"
+        },
+        {
+          "line": 282,
+          "name": "findConnectedGroups"
+        },
+        {
+          "line": 308,
+          "name": "updateSnapshot"
+        },
+        {
+          "line": 310,
+          "name": "recordConnectEdgeCoords"
+        },
+        {
+          "line": 316,
+          "name": "findEdgesByLocalCoords"
+        },
+        {
+          "line": 337,
+          "name": "getFacesAfterOp"
+        },
+        {
+          "line": 343,
+          "name": "expandContextAfterOp"
+        },
+        {
+          "line": 351,
+          "name": "autoRecordSelectionChange"
+        },
+        {
+          "line": 366,
+          "name": "execSelectFacesV2"
+        },
+        {
+          "line": 399,
+          "name": "deepCopyAction"
+        },
+        {
+          "line": 427,
+          "name": "deepCopyActions"
+        },
+        {
+          "line": 429,
+          "name": "execExtrudeFast"
+        },
+        {
+          "line": 430,
+          "name": "execInsetFast"
+        },
+        {
+          "line": 431,
+          "name": "execSetMatIDFast"
+        },
+        {
+          "line": 442,
+          "name": "execConnectByCoords"
+        },
+        {
+          "line": 463,
+          "name": "execExtrude"
+        },
+        {
+          "line": 464,
+          "name": "execInset"
+        },
+        {
+          "line": 466,
+          "name": "doPreview"
+        },
+        {
+          "line": 482,
+          "name": "cancelPreview"
+        },
+        {
+          "line": 488,
+          "name": "applyActionsToGroupFast"
+        },
+        {
+          "line": 551,
+          "name": "deleteOldBackup"
+        },
+        {
+          "line": 561,
+          "name": "createBackup"
+        },
+        {
+          "line": 587,
+          "name": "restoreFromBackup"
+        },
+        {
+          "line": 623,
+          "name": "applyRecorded"
+        },
+        {
+          "line": 736,
+          "name": "sanitizeFileName"
+        },
+        {
+          "line": 742,
+          "name": "exportPresetsToFile"
+        },
+        {
+          "line": 755,
+          "name": "importPresetsFromFile"
+        },
+        {
+          "line": 774,
+          "name": "resetState"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Collizii.ms",
+      "bytes": 20013,
+      "sha256": "a11bca545c5e46d66cc57cb20dd63fcf4a233d0bc2cee94fb380d66e2ea78c4d",
+      "tool_id": "MAX-33",
+      "entrypoints": [
+        {
+          "line": 3,
+          "name": "CollisionCheckDialog"
+        },
+        {
+          "line": 65,
+          "name": "showTab1"
+        },
+        {
+          "line": 97,
+          "name": "showTab2"
+        },
+        {
+          "line": 131,
+          "name": "checkBBoxIntersection"
+        },
+        {
+          "line": 144,
+          "name": "checkPreciseIntersection"
+        },
+        {
+          "line": 164,
+          "name": "findIntersections"
+        },
+        {
+          "line": 252,
+          "name": "selectIntersectingObjects"
+        },
+        {
+          "line": 315,
+          "name": "clearResults"
+        },
+        {
+          "line": 328,
+          "name": "showHelp"
+        },
+        {
+          "line": 335,
+          "name": "selectConvexObjects"
+        },
+        {
+          "line": 352,
+          "name": "isConvex"
+        },
+        {
+          "line": 401,
+          "name": "checkConvexity"
+        },
+        {
+          "line": 455,
+          "name": "selectNonConvex"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UDIM Viewer_V1.2.ms",
+      "bytes": 12119,
+      "sha256": "1f284bbd1b1bb438a603e4f3838b6c9bb68580cea94ab5ce66dcc128b62c2f95",
+      "tool_id": "MAX-34",
+      "entrypoints": [
+        {
+          "line": 7,
+          "name": "UDIM_Viewer_Rollout"
+        },
+        {
+          "line": 26,
+          "name": "detectChannelType"
+        },
+        {
+          "line": 52,
+          "name": "parseUDIM"
+        },
+        {
+          "line": 65,
+          "name": "scanFolder"
+        },
+        {
+          "line": 108,
+          "name": "extremeAssignIDs"
+        },
+        {
+          "line": 165,
+          "name": "makeBitmap"
+        },
+        {
+          "line": 178,
+          "name": "makeAlphaBitmap"
+        },
+        {
+          "line": 187,
+          "name": "hasAlpha"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\collect_asset_v2.099b.mzp",
+      "bytes": 764398,
+      "sha256": "ff44f2d24b940a78d23199a8d7db5e56d41cde90ef1e9c204a7453f388c3a987",
+      "tool_id": "MAX-35"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\scene\\agr_inspect_max.ms",
+      "bytes": 7661,
+      "sha256": "ea79dfc035a918cf144d56ac1abcc7641ea086c05ed696d52e042905a6b4446e",
+      "tool_id": "MAX-36",
+      "entrypoints": [
+        {
+          "line": 8,
+          "name": "jsonEsc"
+        },
+        {
+          "line": 19,
+          "name": "hasCyrillic"
+        },
+        {
+          "line": 31,
+          "name": "jsonStr"
+        },
+        {
+          "line": 33,
+          "name": "envOr"
+        },
+        {
+          "line": 40,
+          "name": "faceCount"
+        },
+        {
+          "line": 73,
+          "name": "considerBbox"
+        },
+        {
+          "line": 92,
+          "name": "walkMap"
+        },
+        {
+          "line": 117,
+          "name": "walkMat"
+        },
+        {
+          "line": 273,
+          "name": "writeOut"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\scene\\scene_load_report.ms",
+      "bytes": 3461,
+      "sha256": "a9b76b4fb8c2338ca5a9088831328457ac546a00fc2a0075076095d1dfda59a3",
+      "tool_id": "MAX-36",
+      "entrypoints": [
+        {
+          "line": 5,
+          "name": "getFaceCount"
+        },
+        {
+          "line": 26,
+          "name": "getVertCount"
+        },
+        {
+          "line": 47,
+          "name": "getPrefix"
+        },
+        {
+          "line": 56,
+          "name": "bumpStat"
+        },
+        {
+          "line": 69,
+          "name": "addPair"
+        },
+        {
+          "line": 86,
+          "name": "sortPairsDesc"
+        },
+        {
+          "line": 88,
+          "name": "cmp"
+        },
+        {
+          "line": 126,
+          "name": "cmpHeavy"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\audit_scene_maps.ms",
+      "bytes": 8126,
+      "sha256": "e9601693458995c2b7e2cb0bd8ca546175960a83ed969a6802b5273930c4a382",
+      "tool_id": "MAX-37",
+      "entrypoints": [
+        {
+          "line": 19,
+          "name": "normPath"
+        },
+        {
+          "line": 28,
+          "name": "addPath"
+        },
+        {
+          "line": 34,
+          "name": "walkMaterialNode"
+        },
+        {
+          "line": 65,
+          "name": "collectUsedMapsFromGeometry"
+        },
+        {
+          "line": 79,
+          "name": "scanImageDir"
+        },
+        {
+          "line": 93,
+          "name": "getImageFiles"
+        },
+        {
+          "line": 102,
+          "name": "getProjectFolder"
+        },
+        {
+          "line": 110,
+          "name": "resolveMapsFolder"
+        },
+        {
+          "line": 123,
+          "name": "collectAssetManagerFiles"
+        },
+        {
+          "line": 144,
+          "name": "writeLines"
+        },
+        {
+          "line": 155,
+          "name": "deleteFilesWithConfirm"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\collect_scene_maps.ms",
+      "bytes": 10749,
+      "sha256": "ce77809fe39f52ccf5fa34582f6547db589c4aeff656b4ab4b30897790c97290",
+      "tool_id": "MAX-37",
+      "entrypoints": [
+        {
+          "line": 19,
+          "name": "normPath"
+        },
+        {
+          "line": 28,
+          "name": "ensureTrailingSlash"
+        },
+        {
+          "line": 36,
+          "name": "getProjectFolder"
+        },
+        {
+          "line": 43,
+          "name": "resolveSourceMapsFolder"
+        },
+        {
+          "line": 52,
+          "name": "resolveTargetFolder"
+        },
+        {
+          "line": 59,
+          "name": "addUniquePath"
+        },
+        {
+          "line": 73,
+          "name": "walkCollectPaths"
+        },
+        {
+          "line": 96,
+          "name": "collectUsedPathsFromGeometry"
+        },
+        {
+          "line": 111,
+          "name": "resolveSourceFile"
+        },
+        {
+          "line": 126,
+          "name": "makeUniqueDestPath"
+        },
+        {
+          "line": 141,
+          "name": "walkRelink"
+        },
+        {
+          "line": 182,
+          "name": "relinkGeometryMaterials"
+        },
+        {
+          "line": 192,
+          "name": "relinkEnvironment"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\zavod_lib_proxy.ms",
+      "bytes": 12403,
+      "sha256": "21666ae8fbe6d3aa9c34f5580133b5fbe085f5fd17baeee8feb7b265577b9474",
+      "tool_id": "MAX-38",
+      "entrypoints": [
+        {
+          "line": 3,
+          "name": "ZavodProxy_isCoronaProxy"
+        },
+        {
+          "line": 8,
+          "name": "ZavodProxy_collectProxies"
+        },
+        {
+          "line": 15,
+          "name": "ZavodProxy_waitForProoptimizer"
+        },
+        {
+          "line": 28,
+          "name": "ZavodProxy_applyProoptimizer"
+        },
+        {
+          "line": 57,
+          "name": "ZavodProxy_getPolyCount"
+        },
+        {
+          "line": 59,
+          "name": "ZavodProxy_findDupMesh"
+        },
+        {
+          "line": 69,
+          "name": "ZavodProxy_meta"
+        },
+        {
+          "line": 75,
+          "name": "ZavodProxy_restoreMeta"
+        },
+        {
+          "line": 96,
+          "name": "ZavodProxy_backupCgeo"
+        },
+        {
+          "line": 105,
+          "name": "ZavodProxy_cleanupTempFiles"
+        },
+        {
+          "line": 124,
+          "name": "ZavodProxy_writeCgeoFromMesh"
+        },
+        {
+          "line": 166,
+          "name": "ZavodProxy_reloadProxiesForCgeo"
+        },
+        {
+          "line": 189,
+          "name": "ZavodProxy_groupByFile"
+        },
+        {
+          "line": 202,
+          "name": "ZavodProxy_processFile"
+        },
+        {
+          "line": 245,
+          "name": "Zavod_scanProxies"
+        },
+        {
+          "line": 296,
+          "name": "Zavod_runProxyOptimize"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_lo_axis_pca.ms",
+      "bytes": 2811,
+      "sha256": "9e99b17556128c601637fff5b91b8672a2aa48e29885eeb09f2767d6ca2cb22a",
+      "tool_id": "MAX-38",
+      "entrypoints": [
+        {
+          "line": 4,
+          "name": "pipeLoPcaAxisZ"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_to_cylinder9.ms",
+      "bytes": 12128,
+      "sha256": "0d2acbc9545c2caad42f9c1dfe5441907ddb34422b2c7eceac3aed55be53de00",
+      "tool_id": "MAX-38",
+      "entrypoints": [
+        {
+          "line": 29,
+          "name": "getOrCreateLayerLo"
+        },
+        {
+          "line": 41,
+          "name": "getNodePivotWorld"
+        },
+        {
+          "line": 63,
+          "name": "mat3ZAlignToObject"
+        },
+        {
+          "line": 87,
+          "name": "doPipeToCyl9One"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_optimize_clone.ms",
+      "bytes": 5903,
+      "sha256": "466809e8c0f55baab3a5612c38cecb6a9f869cf973bb8530a0abe21e7e743f1c",
+      "tool_id": "MAX-38",
+      "entrypoints": [
+        {
+          "line": 19,
+          "name": "getOrCreateLayer"
+        },
+        {
+          "line": 29,
+          "name": "collectGeometryNodes"
+        },
+        {
+          "line": 44,
+          "name": "applyProoptimizerLikeSnapshot"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ClearCustomAttributesAndObjProp_001.ms",
+      "bytes": 10556,
+      "sha256": "4a429dc20d28269c1cbb289e4cefa32210008a931bdb350ca92a6b02dc730b13",
+      "tool_id": "MAX-39",
+      "entrypoints": [
+        {
+          "line": 16,
+          "name": "safeGetName"
+        },
+        {
+          "line": 21,
+          "name": "safeCAName"
+        },
+        {
+          "line": 29,
+          "name": "wipeCA"
+        },
+        {
+          "line": 78,
+          "name": "wipeMatRecursive"
+        },
+        {
+          "line": 121,
+          "name": "wipeUserDefined"
+        },
+        {
+          "line": 163,
+          "name": "wipeNodeAllPlaces"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ClearCustomAttributesAndObjProp_010.ms",
+      "bytes": 34132,
+      "sha256": "c1c52e21cf5adf67e6c35a5719669754a7511335573f778128f2a0c26904e53c",
+      "tool_id": "MAX-39",
+      "entrypoints": [
+        {
+          "line": 22,
+          "name": "CleanCAandUDP"
+        },
+        {
+          "line": 30,
+          "name": "safeGetName"
+        },
+        {
+          "line": 35,
+          "name": "safeCAName"
+        },
+        {
+          "line": 43,
+          "name": "udpGetLines"
+        },
+        {
+          "line": 51,
+          "name": "udpSetLines"
+        },
+        {
+          "line": 63,
+          "name": "udpMapChannelIndex"
+        },
+        {
+          "line": 81,
+          "name": "udpLineValue"
+        },
+        {
+          "line": 91,
+          "name": "mapChanClassInfo"
+        },
+        {
+          "line": 101,
+          "name": "mapChanGetSupport"
+        },
+        {
+          "line": 107,
+          "name": "mapChanSetSupport"
+        },
+        {
+          "line": 113,
+          "name": "mapChanGetNum"
+        },
+        {
+          "line": 122,
+          "name": "wipeCA"
+        },
+        {
+          "line": 174,
+          "name": "wipeMatRecursive"
+        },
+        {
+          "line": 222,
+          "name": "wipeUserDefined"
+        },
+        {
+          "line": 293,
+          "name": "wipeVertexChannels"
+        },
+        {
+          "line": 322,
+          "name": "wipeExtraMapChannels"
+        },
+        {
+          "line": 369,
+          "name": "renameMapChannel1"
+        },
+        {
+          "line": 426,
+          "name": "animKeyClearAnimatable"
+        },
+        {
+          "line": 458,
+          "name": "wipeAnimationKeys"
+        },
+        {
+          "line": 480,
+          "name": "wipeNodeAllPlaces"
+        },
+        {
+          "line": 583,
+          "name": "roCleanCustomTools"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "bytes": 295241,
+      "sha256": "ffe09299110a524cae8f3cf310f866ec8626d254b207e17c6f8a238312c6694e",
+      "tool_id": "MAX-40"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Zamena_V2.ms",
+      "bytes": 7074,
+      "sha256": "a44ac2310d5fe0a5b72e71be2a9e9b2753f2c6550e5eb8f1695d7d5dc60defa3",
+      "tool_id": "MAX-41",
+      "entrypoints": [
+        {
+          "line": 7,
+          "name": "ReplaceObjectsRollout"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\doors\\align_door_pivots_to_bottom.ms",
+      "bytes": 4930,
+      "sha256": "e22ab117fb9741ce5afb9f8069bd63abe4ccab2d431a9b4609a12a4750611608",
+      "tool_id": "MAX-41",
+      "entrypoints": [
+        {
+          "line": 14,
+          "name": "worldPointFromObject"
+        },
+        {
+          "line": 20,
+          "name": "getPivotObjectOffset"
+        },
+        {
+          "line": 33,
+          "name": "getPolyPminPmax"
+        },
+        {
+          "line": 53,
+          "name": "transpose3x3"
+        },
+        {
+          "line": 64,
+          "name": "getPivotPosDelta"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\doors\\place_box001_on_doors.ms",
+      "bytes": 5820,
+      "sha256": "93eb2d12148646b50d35dd8abdb901295a6193c90e4505bfdbf652f0ca15a928",
+      "tool_id": "MAX-41",
+      "entrypoints": [
+        {
+          "line": 17,
+          "name": "worldPointFromObject"
+        },
+        {
+          "line": 23,
+          "name": "basis3x3FromObjectTransform"
+        },
+        {
+          "line": 59,
+          "name": "getEvaluatedPminPmaxAndCentroid"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp",
+      "bytes": 88499446,
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "tool_id": "MAX-42"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp",
+      "bytes": 88499446,
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "tool_id": "MAX-42"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp",
+      "bytes": 88499446,
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "tool_id": "MAX-42"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\inspect_fbx.py",
+      "bytes": 12333,
+      "sha256": "b2e2055ae478f423efacbcb146c33a53df512038e5f2ea566e2e69c947f06734",
+      "tool_id": "GEN-13",
+      "entrypoints": [
+        {
+          "line": 29,
+          "name": "clean_name"
+        },
+        {
+          "line": 38,
+          "name": "__init__"
+        },
+        {
+          "line": 42,
+          "name": "remaining"
+        },
+        {
+          "line": 45,
+          "name": "read"
+        },
+        {
+          "line": 50,
+          "name": "u8"
+        },
+        {
+          "line": 53,
+          "name": "u32"
+        },
+        {
+          "line": 56,
+          "name": "u64"
+        },
+        {
+          "line": 59,
+          "name": "i16"
+        },
+        {
+          "line": 62,
+          "name": "i32"
+        },
+        {
+          "line": 65,
+          "name": "i64"
+        },
+        {
+          "line": 68,
+          "name": "f32"
+        },
+        {
+          "line": 71,
+          "name": "f64"
+        },
+        {
+          "line": 74,
+          "name": "_need"
+        },
+        {
+          "line": 82,
+          "name": "_skip_array"
+        },
+        {
+          "line": 92,
+          "name": "read_prop"
+        },
+        {
+          "line": 123,
+          "name": "parse_binary_nodes"
+        },
+        {
+          "line": 135,
+          "name": "walk"
+        },
+        {
+          "line": 226,
+          "name": "parse_ascii"
+        },
+        {
+          "line": 244,
+          "name": "apply_parents"
+        },
+        {
+          "line": 257,
+          "name": "inspect_fbx"
+        },
+        {
+          "line": 320,
+          "name": "collect_paths"
+        },
+        {
+          "line": 341,
+          "name": "main"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\export_fbx_inventory.ms",
+      "bytes": 14805,
+      "sha256": "fd109644dd2b05f06c16eeb96905c4273f5fcbfdf1fa9caabe63e85507e60d62",
+      "tool_id": "GEN-13",
+      "entrypoints": [
+        {
+          "line": 17,
+          "name": "ZavodFbx_applyExportSettings"
+        },
+        {
+          "line": 43,
+          "name": "ZavodFbx_removeCustomAttributes"
+        },
+        {
+          "line": 57,
+          "name": "ZavodFbx_removeCustomAttributesFromNodes"
+        },
+        {
+          "line": 73,
+          "name": "ZavodFbx_collectExportNodes"
+        },
+        {
+          "line": 92,
+          "name": "ZavodFbx_jsonUnescape"
+        },
+        {
+          "line": 104,
+          "name": "ZavodFbx_jsonStringValue"
+        },
+        {
+          "line": 133,
+          "name": "ZavodFbx_parseInventoryJson"
+        },
+        {
+          "line": 190,
+          "name": "ZavodFbx_resolveNodes"
+        },
+        {
+          "line": 205,
+          "name": "ZavodFbx_findInventoryJson"
+        },
+        {
+          "line": 222,
+          "name": "ZavodFbx_exportInventory"
+        },
+        {
+          "line": 309,
+          "name": "ZavodFbx_inventoryPathForFolder"
+        },
+        {
+          "line": 315,
+          "name": "ZavodFbx_resolveJsonPath"
+        },
+        {
+          "line": 324,
+          "name": "ZavodFbx_prepareFromInventory"
+        },
+        {
+          "line": 334,
+          "name": "ZavodFbx_stripCAFromInventory"
+        },
+        {
+          "line": 346,
+          "name": "ZavodFbx_exportOnly"
+        },
+        {
+          "line": 357,
+          "name": "ZavodFbx_trimTrailingSlash"
+        },
+        {
+          "line": 366,
+          "name": "ZavodFbx_findPythonExe"
+        },
+        {
+          "line": 394,
+          "name": "ZavodFbx_runProcess"
+        },
+        {
+          "line": 424,
+          "name": "ZavodFbx_runInspectFolder"
+        }
+      ]
+    }
+  ],
+  "archives": [
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\BMAX_3dsmax_v1.19.mzp",
+      "sha256": "b153990175a5b22aa648f81b32dec3db6816e5c77d3d4a6bf125cffea71a2d86",
+      "members": [
+        {
+          "name": "BMAX/Bmax_Connector.ms",
+          "bytes": 14558,
+          "encrypted": false
+        },
+        {
+          "name": "BMAX/Bmax_Functions.ms",
+          "bytes": 11101,
+          "encrypted": false
+        },
+        {
+          "name": "install.ms",
+          "bytes": 6254,
+          "encrypted": false
+        },
+        {
+          "name": "Macro/Titus_Scripts-BMAX_Connector.mcr",
+          "bytes": 211,
+          "encrypted": false
+        },
+        {
+          "name": "Macro/Titus_Sctipts-BMAX_Connector_Export.mcr",
+          "bytes": 294,
+          "encrypted": false
+        },
+        {
+          "name": "Macro/Titus_Sctipts-BMAX_Connector_Import.mcr",
+          "bytes": 301,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 238,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\collect_asset_v2.099b.mzp",
+      "sha256": "ff44f2d24b940a78d23199a8d7db5e56d41cde90ef1e9c204a7453f388c3a987",
+      "members": [
+        {
+          "name": "Collect_asset/7z/7z.dll",
+          "bytes": 1422336,
+          "encrypted": false
+        },
+        {
+          "name": "installCA.ms",
+          "bytes": 1551,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 121,
+          "encrypted": false
+        },
+        {
+          "name": "collect_asset_2.099.ms",
+          "bytes": 63821,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\geometry_projection_setup.mzp",
+      "sha256": "a2c8a6d2f4f8ab72139a5aabec6d4343109dbc6645dcd203f2be88d18b44be17",
+      "members": [
+        {
+          "name": "mzp.run",
+          "bytes": 368,
+          "encrypted": false
+        },
+        {
+          "name": "geom_proj.mcr",
+          "bytes": 180,
+          "encrypted": false
+        },
+        {
+          "name": "installed.mse",
+          "bytes": 766,
+          "encrypted": false
+        },
+        {
+          "name": "geom_proj_start.mse",
+          "bytes": 10639,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Objects Normal Fix v.2.4.mzp",
+      "sha256": "d540d898fd362982122153e07671362c88512feb536c99e6a44eb0ffc522b877",
+      "members": [
+        {
+          "name": "mzp.run",
+          "bytes": 197,
+          "encrypted": false
+        },
+        {
+          "name": "Uninstaller.ms",
+          "bytes": 1653,
+          "encrypted": false
+        },
+        {
+          "name": "Objects Normal Fix.ms",
+          "bytes": 4713,
+          "encrypted": false
+        },
+        {
+          "name": "Objects Normal Fix.mse",
+          "bytes": 11316,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "sha256": "ffe09299110a524cae8f3cf310f866ec8626d254b207e17c6f8a238312c6694e",
+      "members": [
+        {
+          "name": "rt_installer.ms",
+          "bytes": 5505,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastAttach.mse",
+          "bytes": 1737,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastBoolIntersect.mse",
+          "bytes": 537,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastBoolSubstract.mse",
+          "bytes": 671,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastBoolUnion.mse",
+          "bytes": 478,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastBorderSelect.mse",
+          "bytes": 813,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastBridge.mse",
+          "bytes": 782,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastEdgeLoopRegularizer.mse",
+          "bytes": 13395,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastEdgeWeightReguralizer.mse",
+          "bytes": 2162,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastExtrude.mse",
+          "bytes": 1006,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastHardwareTextureToggle.mse",
+          "bytes": 645,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastMassiveOBJExporter.mse",
+          "bytes": 2362,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastOpenDirectory.mse",
+          "bytes": 185,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastPanelizer.mse",
+          "bytes": 8369,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastPanelizerSettings.mse",
+          "bytes": 2005,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastPutObject.mse",
+          "bytes": 2186,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastPutWorkingPivot.mse",
+          "bytes": 1785,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastWorkingPivot.mse",
+          "bytes": 3220,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastZeroWelder.mse",
+          "bytes": 812,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/fastZeroWelderByElement.mse",
+          "bytes": 2082,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidMeshCleanUp.mse",
+          "bytes": 7180,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidNGonSolver.mse",
+          "bytes": 25750,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidNGonSolverSettings.mse",
+          "bytes": 2624,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidQCap.mse",
+          "bytes": 20817,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidQuadConnect.mse",
+          "bytes": 7987,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidRTConform.mse",
+          "bytes": 16212,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidRTConformSettings.mse",
+          "bytes": 3495,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidSoftSelManager.mse",
+          "bytes": 16742,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidSplineFFD.mse",
+          "bytes": 23816,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidSplineFFDsettings.mse",
+          "bytes": 9409,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastAttach.mcr",
+          "bytes": 310,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastBoolIntersect.mcr",
+          "bytes": 338,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastBoolSubstract.mcr",
+          "bytes": 338,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastBoolUnion.mcr",
+          "bytes": 322,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastBorderSelect.mcr",
+          "bytes": 334,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastBridge.mcr",
+          "bytes": 310,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastEdgeLoopRegularizer.mcr",
+          "bytes": 362,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastEdgeWeightReguralizer.mcr",
+          "bytes": 370,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastExtrude.mcr",
+          "bytes": 314,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastHardwareTextureToggle.mcr",
+          "bytes": 370,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastMassiveOBJExporter.mcr",
+          "bytes": 358,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastOpenDirectory.mcr",
+          "bytes": 338,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastPanelizer.mcr",
+          "bytes": 322,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastPanelizerSettings.mcr",
+          "bytes": 354,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastPutObject.mcr",
+          "bytes": 322,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastPutWorkingPivot.mcr",
+          "bytes": 346,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastWorkingPivot.mcr",
+          "bytes": 334,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastZeroWelder.mcr",
+          "bytes": 326,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-fastZeroWelderByElement.mcr",
+          "bytes": 362,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidMeshCleanUp.mcr",
+          "bytes": 334,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidNGonSolver.mcr",
+          "bytes": 330,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidNGonSolverSettings.mcr",
+          "bytes": 362,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidQCap.mcr",
+          "bytes": 306,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidQuadConnect.mcr",
+          "bytes": 334,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidRTConform.mcr",
+          "bytes": 326,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidRTConformSettings.mcr",
+          "bytes": 358,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidSoftSelManager.mcr",
+          "bytes": 346,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidSplineFFD.mcr",
+          "bytes": 326,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidSplineFFDsettings.mcr",
+          "bytes": 358,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidToolsMenuGenerator.mcr",
+          "bytes": 362,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidTools-rapidVertSplitter.mcr",
+          "bytes": 338,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidToolsMenuGenerator.mse",
+          "bytes": 4246,
+          "encrypted": false
+        },
+        {
+          "name": "rapidTools/rapidVertSplitter.mse",
+          "bytes": 9530,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 144,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Relink Bitmaps v2.17.mzp",
+      "sha256": "d71f92e421217ecf6d4f4d205a9d74c2f4e62ebe1adaf9f976ad5aeb46969438",
+      "members": [
+        {
+          "name": "C_Lib.mse",
+          "bytes": 7095,
+          "encrypted": false
+        },
+        {
+          "name": "InstalledMessage.ms",
+          "bytes": 444,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 783,
+          "encrypted": false
+        },
+        {
+          "name": "Relink Bitmaps.mse",
+          "bytes": 21284,
+          "encrypted": false
+        },
+        {
+          "name": "Relink Bitmaps_macro.mcr",
+          "bytes": 186,
+          "encrypted": false
+        },
+        {
+          "name": "Relink_Lib.mse",
+          "bytes": 42292,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\RizomuvBridge_1.5.1.mzp",
+      "sha256": "c6ed1b667cae08a2f852556a6a2961bc490e46222b2323452bf1d9acd51f0935",
+      "members": [
+        {
+          "name": "install.ms",
+          "bytes": 6272,
+          "encrypted": false
+        },
+        {
+          "name": "Macro/Titus_Scripts-RizomuvBridge.mcr",
+          "bytes": 200,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 247,
+          "encrypted": false
+        },
+        {
+          "name": "RizomuvBridge/RizomuvBridge.mse",
+          "bytes": 12409,
+          "encrypted": false
+        },
+        {
+          "name": "RizomuvBridge/RizomuvBridge_functions.mse",
+          "bytes": 13081,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\SweepProfile.mzp",
+      "sha256": "160b419c8360589ea466b53a6bc30fe148601ea2b635f79439947f4585158893",
+      "members": [
+        {
+          "name": "mzp.run",
+          "bytes": 198,
+          "encrypted": false
+        },
+        {
+          "name": "SweepInstall.mse",
+          "bytes": 5833,
+          "encrypted": false
+        },
+        {
+          "name": "Kstudio/IsolateSel.ms",
+          "bytes": 2426,
+          "encrypted": false
+        },
+        {
+          "name": "Kstudio/SweepProfile.mse",
+          "bytes": 80249,
+          "encrypted": false
+        },
+        {
+          "name": "KstudioScripts.ms",
+          "bytes": 576,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Backdrop Generator 2.0\\BDGen2.mzp",
+      "sha256": "9763481324977ff0fd3628320ba77d27de850ae3ecb98fa9155f497476feb960",
+      "members": [
+        {
+          "name": "Message.ms",
+          "bytes": 393,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 194,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Backdrop Generator.mse",
+          "bytes": 152788,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/44b5d833102530d37ea28bcc8752a29344d4d1c.mse",
+          "bytes": 854,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/c3cf29d6f800fcf72a6d2ca23112340479ca8a8ft.mse",
+          "bytes": 818,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/1681524d3fbebebab26d9f9bf1411f75b78bf845.mse",
+          "bytes": 39582,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/187fbf6f828b8b4f445b13df6a9bc52b2cb01d76.mse",
+          "bytes": 39730,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/53f38b2220d3e206d8f4e6be5285781f1109da1f.mse",
+          "bytes": 34512,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/87b6c6067ba44b3b4ce4595d6b8e278caa9f8957.mse",
+          "bytes": 41031,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/8a61817d8a91ad79d4843060f0835f6efcba996f.mse",
+          "bytes": 39677,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator/Scripts/dab26ec9a0544c3e488e37377a632aa8f82aaf21s.mse",
+          "bytes": 44305,
+          "encrypted": false
+        },
+        {
+          "name": "Backdrop Generator_macro.ms",
+          "bytes": 389,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Billboard Generator 1.0\\Setup.mzp",
+      "sha256": "457c9da46fc14e3f9ee4f07bf99df023167a341812ffdaee25b5cfef49d339d7",
+      "members": [
+        {
+          "name": "Billboard Generator/Billboard Generator.ms",
+          "bytes": 35355,
+          "encrypted": false
+        },
+        {
+          "name": "Billboard Generator_macro.ms",
+          "bytes": 270,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 444,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 202,
+          "encrypted": false
+        },
+        {
+          "name": "Uninstall.ms",
+          "bytes": 224,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Blinds Curtains Generator 1.0\\01-Blinds Curtains Generator.mzp",
+      "sha256": "87c8c0a4d6d0663d8a717bdaf9180c9a67ba76e98d8dc06e64f96b2b2935edeb",
+      "members": [
+        {
+          "name": "d8e07055343e.mse",
+          "bytes": 62917,
+          "encrypted": false
+        },
+        {
+          "name": "ec59df78b8d1.mse",
+          "bytes": 48875,
+          "encrypted": false
+        },
+        {
+          "name": "f062f68b7a38.mse",
+          "bytes": 37315,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 109,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Blinds Curtains Generator 1.0\\02-Blinds Curtains Generator.mzp",
+      "sha256": "39e49691690835944f47298f69a9c90881e5e4ead3dc304eaa138e693d0cf349",
+      "members": [
+        {
+          "name": "Blinds Curtains Generator/b043d7a42e4d.mse",
+          "bytes": 30704,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/b2904774a92b.mse",
+          "bytes": 10896,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/b5c66df5a2a9.mse",
+          "bytes": 24806,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/b6b5fb2ef700.mse",
+          "bytes": 16927,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/bb023d3d4175.mse",
+          "bytes": 22682,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/bc53424b0caf.mse",
+          "bytes": 50020,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/c623159122c2.mse",
+          "bytes": 7518,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/c84274cf0cf3.mse",
+          "bytes": 78301,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/cb09db89d9d2.mse",
+          "bytes": 31371,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/cb725e807ce3.mse",
+          "bytes": 38297,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/cc6b977fab93.mse",
+          "bytes": 7802,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/ccc9aed6cc3a.mse",
+          "bytes": 15084,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/ce6a9f4fd52b.mse",
+          "bytes": 67496,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d0027ecb8771.ms",
+          "bytes": 421,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d03f7f71347e.mse",
+          "bytes": 97798,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d04fe2a7ca53.mse",
+          "bytes": 87458,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d073f929b4e6.mse",
+          "bytes": 22519,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d2a15372ced3.mse",
+          "bytes": 22532,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d389daa18c34.mse",
+          "bytes": 87529,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d828a1d9ff73.mse",
+          "bytes": 75631,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d99110c6ec4b.mse",
+          "bytes": 105295,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/d9b883ca17ac.mse",
+          "bytes": 51932,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/da18f6871c28.mse",
+          "bytes": 60595,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/db47331191c2.mse",
+          "bytes": 10010,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/db80e656f43d.mse",
+          "bytes": 19586,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/db9721f9e370.mse",
+          "bytes": 46217,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/dba5c962604b.mse",
+          "bytes": 71053,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/dd4430fe2a2a.mse",
+          "bytes": 13899,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/de2695371f22.mse",
+          "bytes": 67430,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/e1024f478e9c.mse",
+          "bytes": 60480,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/e104ad28bdbe.mse",
+          "bytes": 19622,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/e20d9dcf8c69.mse",
+          "bytes": 10740,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/e26912299a83.mse",
+          "bytes": 17674,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/e97167aec306.mse",
+          "bytes": 17895,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/ec0ebe3fa35f.mse",
+          "bytes": 8335,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/eeaf7b96e18d.mse",
+          "bytes": 11438,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/efde08fcf12c.mse",
+          "bytes": 12267,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/f4ef91f5e869.mse",
+          "bytes": 14157,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/f5f43bba40ac.mse",
+          "bytes": 72544,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/f754f722777e.mse",
+          "bytes": 142385,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/f77a61a71e7a.mse",
+          "bytes": 8293,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/f87e78f4756a.mse",
+          "bytes": 37100,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/fc6dd2204ab7.mse",
+          "bytes": 17591,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/fd6a3d6424df.mse",
+          "bytes": 14280,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/fdd7bae5b837.mse",
+          "bytes": 7601,
+          "encrypted": false
+        },
+        {
+          "name": "Blinds Curtains Generator/fdebad767504.mse",
+          "bytes": 7105,
+          "encrypted": false
+        },
+        {
+          "name": "License Activation.mse",
+          "bytes": 22894,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 407,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 211,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Dappled Light Generator 2.0\\Dappled Light Generator 2.0 - iTooHelper.mzp",
+      "sha256": "0eb6ca6c8b10f6981998d0406fec202871449a342a9939e4fa653d53be59ad35",
+      "members": [
+        {
+          "name": "Dappled Light Generator/Dappled Light Generator.ms",
+          "bytes": 100794,
+          "encrypted": false
+        },
+        {
+          "name": "Dappled Light Generator_macro.ms",
+          "bytes": 278,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 450,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 214,
+          "encrypted": false
+        },
+        {
+          "name": "Uninstall.ms",
+          "bytes": 228,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Fire Flame Generator 1.0\\Setup.mzp",
+      "sha256": "7a4fec2cde081c3ae98f9d5e0e3a83f411a0be7829fe88d35136697370381cf0",
+      "members": [
+        {
+          "name": "Fire Flame Generator/Scripts/Fire Flame Generator.mse",
+          "bytes": 44861,
+          "encrypted": false
+        },
+        {
+          "name": "Fire Flame Generator_macro.ms",
+          "bytes": 284,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 397,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 206,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Max Cutouts 1.0\\MaxCutouts v1.0-cgp.mzp",
+      "sha256": "b104b7932b255b22c9f88389a4006faa9632fd1f105d940ad60834b7f5506f57",
+      "members": [
+        {
+          "name": "Message.ms",
+          "bytes": 490,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 172,
+          "encrypted": false
+        },
+        {
+          "name": "MaxCutouts.mse",
+          "bytes": 39051,
+          "encrypted": false
+        },
+        {
+          "name": "MaxCutouts_macro.ms",
+          "bytes": 324,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Ocean Waves Generator 1.1\\Ocean Waves Generator v1.1.mzp",
+      "sha256": "3878cf26577eb9606a8a253d6c4310621a5f06f4b8cc7cf7092315efdfa3830f",
+      "members": [
+        {
+          "name": "Message.ms",
+          "bytes": 625,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 194,
+          "encrypted": false
+        },
+        {
+          "name": "Ocean Waves Generator/Ocean Waves Generator.mse",
+          "bytes": 184239,
+          "encrypted": false
+        },
+        {
+          "name": "Ocean Waves Generator/Ocean Waves Generator_macro.ms",
+          "bytes": 273,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp",
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "members": [
+        {
+          "name": "Road Markings Generator/Road Markings Generator_macro.ms",
+          "bytes": 279,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 403,
+          "encrypted": false
+        },
+        {
+          "name": "Road Markings Generator/Road Markings Generator.mse",
+          "bytes": 821322,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 175,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\ZFree\\Clay Mode Advanced 1.1\\Clay Mode Advanced v1.1.mzp",
+      "sha256": "8fceda9ffc0de4da78c81f0a0f4ce33a55c2605229b53b1c113a49a5c4551692",
+      "members": [
+        {
+          "name": "Clay Mode Advanced/Clay Mode Advanced.ms",
+          "bytes": 31011,
+          "encrypted": false
+        },
+        {
+          "name": "Clay Mode Advanced_mcr.ms",
+          "bytes": 278,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 393,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 197,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\ZFree\\Layer Manager Extension 2.0\\Setup.mzp",
+      "sha256": "7832908dd9d8ca4d2f6044453527606c24e20172f339a6a3359f436f988877ee",
+      "members": [
+        {
+          "name": "Layer Manager Extension/Layer Manager Extension.mse",
+          "bytes": 24168,
+          "encrypted": false
+        },
+        {
+          "name": "Layer Manager Extension_macro.ms",
+          "bytes": 278,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 455,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 270,
+          "encrypted": false
+        },
+        {
+          "name": "Layer Manager Extension_macro_LayISO_ON_OFF.mse",
+          "bytes": 1358,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\ZFree\\Maps Cleaner 2.3\\Maps Cleaner v2.3.mzp",
+      "sha256": "db1fdf837747801a5bba4a0b124513aae9e7068c5a22050d9ffeb650c8f1b8b8",
+      "members": [
+        {
+          "name": "Message.ms",
+          "bytes": 428,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 181,
+          "encrypted": false
+        },
+        {
+          "name": "Uninstall.ms",
+          "bytes": 217,
+          "encrypted": false
+        },
+        {
+          "name": "Maps Cleaner/Scripts/Maps Cleaner.ms",
+          "bytes": 289608,
+          "encrypted": false
+        },
+        {
+          "name": "Maps Cleaner_macro.ms",
+          "bytes": 236,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\ZFree\\Remove Modifiers 1.3\\Setup.mzp",
+      "sha256": "26cfd93942292d92c92a86c0c47ec8f36c86759fce75ca64aa44869318583e05",
+      "members": [
+        {
+          "name": "Remove Modifiers/Scripts/Remove Modifiers.ms",
+          "bytes": 8929,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 436,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 193,
+          "encrypted": false
+        },
+        {
+          "name": "Remove Modifiers_macro.ms",
+          "bytes": 260,
+          "encrypted": false
+        },
+        {
+          "name": "Uninstall.ms",
+          "bytes": 221,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\FloorGen Tools 1.5.1\\FloorGen Tools 1.5.1.mzp",
+      "sha256": "5333f77f5969f1cbb9eeddc91e86765cf1c0231a029849c751ac1ab36739d442",
+      "members": [
+        {
+          "name": "_extra_/install_before.ms",
+          "bytes": 248,
+          "encrypted": false
+        },
+        {
+          "name": "install.ms",
+          "bytes": 7772,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 115,
+          "encrypted": false
+        },
+        {
+          "name": "usermacros/Nik Scripts-FloorGenTools.mcr",
+          "bytes": 547,
+          "encrypted": false
+        },
+        {
+          "name": "userscripts/NikScripts/FloorGen Tools/FloorGen_Tools.mse",
+          "bytes": 32287,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\MaxSU\\maxsu_bridge_max_1.10.mzp",
+      "sha256": "33aacf44610dd5ed41bf1ebd7e58e6cd0c79e643f6f944e86d28373717e6932b",
+      "members": [
+        {
+          "name": "install.ms",
+          "bytes": 4693,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 37,
+          "encrypted": false
+        },
+        {
+          "name": "Maxsu Bridge/main.mse",
+          "bytes": 421000,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-BitmapTracking-Resizing-v1.78.03.mzp",
+      "sha256": "f51dbd1a52e6afb677ff4716b02b8dff8db7b1bf9a255f9c48911662b2276c7e",
+      "members": [
+        {
+          "name": "InstallMessage-BTR.ms",
+          "bytes": 4462,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 631,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-BitmapTracking-Resizing.mcr",
+          "bytes": 244,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-BitmapTracking-Resizing.mse",
+          "bytes": 1182743,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-CopyPasteDWG-v1.30.00.mzp",
+      "sha256": "57a74c1aa7c14048bd455a50267dff087e21f31fe850c524735a55be113cfb03",
+      "members": [
+        {
+          "name": "InstallMessage-CPDWG.ms",
+          "bytes": 4210,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 614,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-CopyPasteDWG.mcr",
+          "bytes": 226,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-CopyPasteDWG.mse",
+          "bytes": 472725,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-dropAllHere-v0.50.00.mzp",
+      "sha256": "180814ae2c6b9c97fd21440ebdbe9bb79f6c85e1645e61c3722302ede4fde526",
+      "members": [
+        {
+          "name": "InstallMessage-DAH.ms",
+          "bytes": 4279,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 614,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-dropAllHere.mcr",
+          "bytes": 219,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-dropAllHere.mse",
+          "bytes": 515839,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-FavoriteScripts-v1.38.00.mzp",
+      "sha256": "bb25e2ba0f26c910a037d3cf8d2f9228aaaf0bd2a1569f3c65cd9d847f653288",
+      "members": [
+        {
+          "name": "FSM Sett.dll",
+          "bytes": 96768,
+          "encrypted": false
+        },
+        {
+          "name": "InstallMessage-FSM.ms",
+          "bytes": 373,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 502,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-FavoriteScripts.mcr",
+          "bytes": 237,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-FavoriteScripts.mse",
+          "bytes": 19238,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-Gamma-Organizer-v1.36.00.mzp",
+      "sha256": "99400289bd2ae552b93792f4ed1fc159477a19c4dac9e1514873a8b43486bcde",
+      "members": [
+        {
+          "name": "InstallMessage-GOP.ms",
+          "bytes": 4367,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 625,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-GammaOrganizer.mcr",
+          "bytes": 235,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-GammaOrganizer.mse",
+          "bytes": 652951,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-Library-TrackRelink-v1.05.00-Full-iTooHelper.mzp",
+      "sha256": "f253bc84305c39ee94b01cd288451b21901d4938ececca6942408a1e56c3c55f",
+      "members": [
+        {
+          "name": "InstallMessage-LTR.ms",
+          "bytes": 4096,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 531,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-Library-TrackRelink.mcr",
+          "bytes": 239,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-Library-TrackRelink.mse",
+          "bytes": 1149241,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-MatID-Organizer-v1.39.00.mzp",
+      "sha256": "6b7e239255a05e7668b23060af2b09650a80df9de76e995b0e93cd1c67257d8f",
+      "members": [
+        {
+          "name": "InstallMessage-MID.ms",
+          "bytes": 4332,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 606,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-MatID-Organizer.mcr",
+          "bytes": 271,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-MatID-Organizer.mse",
+          "bytes": 581317,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-Merge-and-Relink-v1.37.00.mzp",
+      "sha256": "f51ce16e73194a072c25dc391fbc2778a39520c55fa4895e0b76be562434c643",
+      "members": [
+        {
+          "name": "InstallMessage-MRF.ms",
+          "bytes": 4431,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 575,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-MergeAndRelink.mcr",
+          "bytes": 255,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-MergeAndRelink.mse",
+          "bytes": 485733,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-ObjID-Organizer-v1.14.00.mzp",
+      "sha256": "67bda30b762d58fc5d44ec56e6b57fd728bb23e0c33f29b181020112570667b4",
+      "members": [
+        {
+          "name": "InstallMessage-OID.ms",
+          "bytes": 4324,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 594,
+          "encrypted": false
+        },
+        {
+          "name": "OID Sett.dll",
+          "bytes": 402944,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-ObjID-Organizer.mcr",
+          "bytes": 264,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-ObjID-Organizer.mse",
+          "bytes": 589507,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-Open-and-Relink-v1.23.00.mzp",
+      "sha256": "107a37d6f9f054009b72a00626169f684888e2493a254e78b2137a2e89ae0cd3",
+      "members": [
+        {
+          "name": "InstallMessage-ORF.ms",
+          "bytes": 4425,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 564,
+          "encrypted": false
+        },
+        {
+          "name": "Pixamoon-OpenAndRelink.mcr",
+          "bytes": 247,
+          "encrypted": false
+        },
+        {
+          "name": "pxm-OpenAndRelink.mse",
+          "bytes": 531520,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Polytools\\Adv.UV_Normalizer_v2.5.0\\AUVN_250.mzp",
+      "sha256": "b0d37daed4f132a18930aaeeff6b59fbd4f1a5ccd6836cc102714b163be7157d",
+      "members": [
+        {
+          "name": "installer.ms",
+          "bytes": 3015,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 104,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/Advanced UV Normalizer/auvn.dll",
+          "bytes": 338432,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/Advanced UV Normalizer/auvn.mse",
+          "bytes": 607,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/startup/auvn_autoload.mse",
+          "bytes": 513,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Polytools\\PolySmoother_v2.6.4\\polysmoother_264.mzp",
+      "sha256": "71d3deac8c93554a5225ec0cb390b67556ab21702fe2df18e9004245b0e64831",
+      "members": [
+        {
+          "name": "installer.ms",
+          "bytes": 2701,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 101,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/PolySmoother/polysmoother.dll",
+          "bytes": 588288,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/startup/polysmoother_autoload.mse",
+          "bytes": 1836,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Polytools\\PolyUnwrapper_v4.5.0\\polyunwrapper_450.mzp",
+      "sha256": "5f87425fd662cf64589f61284a91d9ff7037b2b49b2613ddbc9d4a583deac883",
+      "members": [
+        {
+          "name": "installer.ms",
+          "bytes": 4713,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 111,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/PolyUnwrapper/assembly/Polyunwrapper.dll",
+          "bytes": 267775,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/PolyUnwrapper/polyunwrapper_toolbar.mse",
+          "bytes": 815052,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/PolyUnwrapper/polyunwrapper_utility.mse",
+          "bytes": 9952,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/PolyUnwrapper/scripts/polyunwrapper.mcr",
+          "bytes": 6447,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/startup/polyunwrapper_autoload.mse",
+          "bytes": 1411,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Polytools\\XFormer_v2.5.9\\xformer_259.mzp",
+      "sha256": "329eca471389c627a12ff45c7c5775bd82e8e06b740b31cfe2144dffcc21b79b",
+      "members": [
+        {
+          "name": "installer.ms",
+          "bytes": 2719,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 98,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/XFormer/xformer.dll",
+          "bytes": 258048,
+          "encrypted": false
+        },
+        {
+          "name": "scripts/XFormer/xformer.mse",
+          "bytes": 504,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ProjectManager_v.2.92.09\\ProjectManager.mzp",
+      "sha256": "ae4f2bdebbfe9f70a8bdb033768d407ee5d3f06974fb9d504368e0f83c271e8a",
+      "members": [
+        {
+          "name": "AssetDataMethods.mse",
+          "bytes": 47281,
+          "encrypted": false
+        },
+        {
+          "name": "AssetFunctions.mse",
+          "bytes": 62105,
+          "encrypted": false
+        },
+        {
+          "name": "Assets.mse",
+          "bytes": 12154,
+          "encrypted": false
+        },
+        {
+          "name": "BatchRenderRelink.mse",
+          "bytes": 14635,
+          "encrypted": false
+        },
+        {
+          "name": "BatchToolIni.mse",
+          "bytes": 6787,
+          "encrypted": false
+        },
+        {
+          "name": "BatchToolPreferences.mse",
+          "bytes": 29158,
+          "encrypted": false
+        },
+        {
+          "name": "CommonSettings.mse",
+          "bytes": 17865,
+          "encrypted": false
+        },
+        {
+          "name": "Constants.mse",
+          "bytes": 17281,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/BvhRender.dll",
+          "bytes": 79872,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/FreeImage.dll",
+          "bytes": 6402560,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/IesRender.dll",
+          "bytes": 54272,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/ProjectManager.License.dll",
+          "bytes": 199168,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/ProjectManager.WinApi.dll",
+          "bytes": 458752,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/SQLite.Interop.dll",
+          "bytes": 1313280,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/application/exiv2/libexpat.dll",
+          "bytes": 151552,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/BatchRenderRelink.dll",
+          "bytes": 81920,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/FreeImageNET.dll",
+          "bytes": 189440,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Ionic.Zip.dll",
+          "bytes": 462336,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.DataBase.dll",
+          "bytes": 12800,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.dll",
+          "bytes": 291840,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Logging.dll",
+          "bytes": 7168,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.2013.dll",
+          "bytes": 659456,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.Controls.dll",
+          "bytes": 332288,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.dll",
+          "bytes": 656896,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.Forms.dll",
+          "bytes": 217088,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.PlaceDialog.dll",
+          "bytes": 20992,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.MaxBindings.dll",
+          "bytes": 103424,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Resources.dll",
+          "bytes": 450048,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Thumbnail.dll",
+          "bytes": 37376,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Microsoft.WindowsAPICodePack.dll",
+          "bytes": 98304,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Microsoft.WindowsAPICodePack.Shell.dll",
+          "bytes": 509952,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/MySql.Data.dll",
+          "bytes": 444416,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/NLog.dll",
+          "bytes": 604672,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/NPOI.dll",
+          "bytes": 1406464,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/OpenMcdf.dll",
+          "bytes": 60928,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/PdfSharp.dll",
+          "bytes": 534016,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Proxy.dll",
+          "bytes": 10240,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/ShellContextMenu.dll",
+          "bytes": 13312,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/System.Data.SQLite.dll",
+          "bytes": 323584,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/System.Data.SQLite.Linq.dll",
+          "bytes": 196608,
+          "encrypted": false
+        },
+        {
+          "name": "DialogRollouts.mse",
+          "bytes": 31102,
+          "encrypted": false
+        },
+        {
+          "name": "IesOperation.mse",
+          "bytes": 14415,
+          "encrypted": false
+        },
+        {
+          "name": "install/installProcess.mse",
+          "bytes": 15182,
+          "encrypted": false
+        },
+        {
+          "name": "install/installSettings.mse",
+          "bytes": 18533,
+          "encrypted": false
+        },
+        {
+          "name": "install/installStart.mse",
+          "bytes": 4615,
+          "encrypted": false
+        },
+        {
+          "name": "install/TrackScripts.ms",
+          "bytes": 9417,
+          "encrypted": false
+        },
+        {
+          "name": "install/Update.mse",
+          "bytes": 14778,
+          "encrypted": false
+        },
+        {
+          "name": "Main.mse",
+          "bytes": 35333,
+          "encrypted": false
+        },
+        {
+          "name": "MainIniFile.mse",
+          "bytes": 13219,
+          "encrypted": false
+        },
+        {
+          "name": "MaterialOperation.mse",
+          "bytes": 65893,
+          "encrypted": false
+        },
+        {
+          "name": "MaxClassesCache.mse",
+          "bytes": 31171,
+          "encrypted": false
+        },
+        {
+          "name": "MeditDragDrop.mse",
+          "bytes": 8131,
+          "encrypted": false
+        },
+        {
+          "name": "MeshMethods.mse",
+          "bytes": 21558,
+          "encrypted": false
+        },
+        {
+          "name": "ModelOperation.mse",
+          "bytes": 34821,
+          "encrypted": false
+        },
+        {
+          "name": "ModelProxy.mse",
+          "bytes": 30180,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 336,
+          "encrypted": false
+        },
+        {
+          "name": "PaintNodeDialog.mse",
+          "bytes": 4179,
+          "encrypted": false
+        },
+        {
+          "name": "PathHelper.mse",
+          "bytes": 3236,
+          "encrypted": false
+        },
+        {
+          "name": "PlaceObjects.mse",
+          "bytes": 21561,
+          "encrypted": false
+        },
+        {
+          "name": "PlaceObjectsDialog.mse",
+          "bytes": 25568,
+          "encrypted": false
+        },
+        {
+          "name": "presets/BatchRendering Script Example.ms",
+          "bytes": 2572,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Convert To Proxy.ms",
+          "bytes": 3393,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Create-apply biped obj from file.ms",
+          "bytes": 1631,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Paint With Selection.ms",
+          "bytes": 8206,
+          "encrypted": false
+        },
+        {
+          "name": "presets/PostFileMerge Example.ms",
+          "bytes": 787,
+          "encrypted": false
+        },
+        {
+          "name": "presets/PostMerge-ConvertMaterials.ms",
+          "bytes": 2401,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Random Materials.ms",
+          "bytes": 1472,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Remove group head after merge.ms",
+          "bytes": 1073,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Arnold.mse",
+          "bytes": 15173,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Art.mse",
+          "bytes": 322,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Corona.mse",
+          "bytes": 20429,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Environment.mse",
+          "bytes": 5160,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_FinalRender.mse",
+          "bytes": 425,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_FStorm.mse",
+          "bytes": 5609,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Indigo.mse",
+          "bytes": 6977,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Maxwell.mse",
+          "bytes": 21163,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_MentalRay.mse",
+          "bytes": 18741,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Octane.mse",
+          "bytes": 12301,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Redshift.mse",
+          "bytes": 347,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Scanline.mse",
+          "bytes": 3397,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Thea.mse",
+          "bytes": 380,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Vray.mse",
+          "bytes": 39351,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Save biped object.ms",
+          "bytes": 1658,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Script Example.ms",
+          "bytes": 742,
+          "encrypted": false
+        },
+        {
+          "name": "Rendering.mse",
+          "bytes": 12852,
+          "encrypted": false
+        },
+        {
+          "name": "RendHelpers.mse",
+          "bytes": 52150,
+          "encrypted": false
+        },
+        {
+          "name": "RendProcessing.mse",
+          "bytes": 21872,
+          "encrypted": false
+        },
+        {
+          "name": "Services/AboutShow.mse",
+          "bytes": 914,
+          "encrypted": false
+        },
+        {
+          "name": "Services/BackupSettings.mse",
+          "bytes": 7179,
+          "encrypted": false
+        },
+        {
+          "name": "Services/CheckUpdate.mse",
+          "bytes": 5856,
+          "encrypted": false
+        },
+        {
+          "name": "Services/HotkeysShow.mse",
+          "bytes": 659,
+          "encrypted": false
+        },
+        {
+          "name": "Services/Registration.mse",
+          "bytes": 1731,
+          "encrypted": false
+        },
+        {
+          "name": "Services/SupportRequest.mse",
+          "bytes": 6083,
+          "encrypted": false
+        },
+        {
+          "name": "TexturesOperation.mse",
+          "bytes": 23681,
+          "encrypted": false
+        },
+        {
+          "name": "Utility.mse",
+          "bytes": 45004,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Project_Manager_3.35.75\\Project Manager 3.35.75\\ProjectManager_3.mzp",
+      "sha256": "b7a0880b20d34085a7483c7eb1ec064e616126c22846ee7f3bd33befde342713",
+      "members": [
+        {
+          "name": "AssetDataMethods.mse",
+          "bytes": 53254,
+          "encrypted": false
+        },
+        {
+          "name": "AssetFunctions.mse",
+          "bytes": 39410,
+          "encrypted": false
+        },
+        {
+          "name": "Assets.mse",
+          "bytes": 12433,
+          "encrypted": false
+        },
+        {
+          "name": "BatchRenderRelink.mse",
+          "bytes": 17793,
+          "encrypted": false
+        },
+        {
+          "name": "BatchToolIni.mse",
+          "bytes": 2472,
+          "encrypted": false
+        },
+        {
+          "name": "BatchToolPreferences.mse",
+          "bytes": 41912,
+          "encrypted": false
+        },
+        {
+          "name": "CommonSettings.mse",
+          "bytes": 21270,
+          "encrypted": false
+        },
+        {
+          "name": "Configuration.mse",
+          "bytes": 7680,
+          "encrypted": false
+        },
+        {
+          "name": "Constants.mse",
+          "bytes": 34782,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/Assimp64.dll",
+          "bytes": 5504000,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/FreeImage.dll",
+          "bytes": 6942208,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/IesRender.dll",
+          "bytes": 60584,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/ProjectManager_3.License.dll",
+          "bytes": 229032,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/64/ProjectManager_3.WinApi.dll",
+          "bytes": 469672,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Ab3d.PowerToys.Assimp.dll",
+          "bytes": 56832,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Ab3d.PowerToys.dll",
+          "bytes": 976896,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/application/exiv2/libexpat.dll",
+          "bytes": 151552,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/AssimpNet.dll",
+          "bytes": 195072,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/FreeImageNET.dll",
+          "bytes": 180224,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Ionic.Zip.dll",
+          "bytes": 462336,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.BatchRenderRelink.dll",
+          "bytes": 290984,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Configuration.dll",
+          "bytes": 80040,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Configuration.Update.dll",
+          "bytes": 44200,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.dll",
+          "bytes": 396456,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Extensions.dll",
+          "bytes": 39080,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Logging.dll",
+          "bytes": 13992,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Logging.Proxy.dll",
+          "bytes": 17064,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.AssignPreviews.dll",
+          "bytes": 151720,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.ColorProvider.dll",
+          "bytes": 29864,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.Controls.dll",
+          "bytes": 540328,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.CustomizeInterface.dll",
+          "bytes": 47272,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.dll",
+          "bytes": 991400,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.Forms.dll",
+          "bytes": 361640,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.Forms.PivotPointPanel.dll",
+          "bytes": 653992,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.PlaceDialog.dll",
+          "bytes": 27816,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Manager.Renamer.dll",
+          "bytes": 45736,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.MaxBindings.dll",
+          "bytes": 139944,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.MaxLayer.2022.dll",
+          "bytes": 11944,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.MaxLayer.2024.dll",
+          "bytes": 11944,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.MaxLayer.dll",
+          "bytes": 11944,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Product.Plugin.dll",
+          "bytes": 14504,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Resources.dll",
+          "bytes": 174248,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Thumbnail.Assimp.dll",
+          "bytes": 45736,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Kstudio.Thumbnail.dll",
+          "bytes": 59560,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/KstudioDb.Core.dll",
+          "bytes": 56488,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/KstudioDb.Core.Services.dll",
+          "bytes": 114856,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/MetadataExtractor.dll",
+          "bytes": 736768,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Microsoft.WindowsAPICodePacks.dll",
+          "bytes": 99328,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Microsoft.WindowsAPICodePacks.Shell.dll",
+          "bytes": 510976,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/MySql.Data.dll",
+          "bytes": 1437184,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/MySqlBackup.dll",
+          "bytes": 58880,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/NLog.dll",
+          "bytes": 604672,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/NPOI.dll",
+          "bytes": 1406464,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/OpenMcdf.dll",
+          "bytes": 61952,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/PdfSharp.dll",
+          "bytes": 561664,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/ShellContextMenu.dll",
+          "bytes": 12800,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/SQLite.InteropX.dll",
+          "bytes": 2096128,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/Svg.dll",
+          "bytes": 566784,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/System.Data.SQLite.dll",
+          "bytes": 378880,
+          "encrypted": false
+        },
+        {
+          "name": "Controls/XmpCore.dll",
+          "bytes": 144384,
+          "encrypted": false
+        },
+        {
+          "name": "DialogRollouts.mse",
+          "bytes": 72131,
+          "encrypted": false
+        },
+        {
+          "name": "IesOperation.mse",
+          "bytes": 14977,
+          "encrypted": false
+        },
+        {
+          "name": "install/CommonSettings.mse",
+          "bytes": 21270,
+          "encrypted": false
+        },
+        {
+          "name": "install/Configuration.mse",
+          "bytes": 7680,
+          "encrypted": false
+        },
+        {
+          "name": "install/data/Callbacks/KstudioCallbacks.mse",
+          "bytes": 2877,
+          "encrypted": false
+        },
+        {
+          "name": "install/installSettings.mse",
+          "bytes": 24541,
+          "encrypted": false
+        },
+        {
+          "name": "install/installStart.mse",
+          "bytes": 17809,
+          "encrypted": false
+        },
+        {
+          "name": "install/Kstudio-Menu v.05.ms",
+          "bytes": 7294,
+          "encrypted": false
+        },
+        {
+          "name": "install/Kstudio.Manager.Install.dll",
+          "bytes": 442536,
+          "encrypted": false
+        },
+        {
+          "name": "install/KstudioSaveStudioFile.mse",
+          "bytes": 847,
+          "encrypted": false
+        },
+        {
+          "name": "install/KstudioStartup.ms",
+          "bytes": 11059,
+          "encrypted": false
+        },
+        {
+          "name": "install/MainIniFile.mse",
+          "bytes": 3406,
+          "encrypted": false
+        },
+        {
+          "name": "install/Update.mse",
+          "bytes": 13979,
+          "encrypted": false
+        },
+        {
+          "name": "Main.mse",
+          "bytes": 31033,
+          "encrypted": false
+        },
+        {
+          "name": "MainIniFile.mse",
+          "bytes": 3406,
+          "encrypted": false
+        },
+        {
+          "name": "MaterialOperation.mse",
+          "bytes": 99847,
+          "encrypted": false
+        },
+        {
+          "name": "MaxClassesCache.mse",
+          "bytes": 39083,
+          "encrypted": false
+        },
+        {
+          "name": "MeditDragDrop.mse",
+          "bytes": 7952,
+          "encrypted": false
+        },
+        {
+          "name": "MeshMethods.mse",
+          "bytes": 27473,
+          "encrypted": false
+        },
+        {
+          "name": "ModelOperation.mse",
+          "bytes": 63851,
+          "encrypted": false
+        },
+        {
+          "name": "ModelProxy.mse",
+          "bytes": 40619,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 125,
+          "encrypted": false
+        },
+        {
+          "name": "PaintNodeDialog.mse",
+          "bytes": 4116,
+          "encrypted": false
+        },
+        {
+          "name": "PathHelper.mse",
+          "bytes": 4693,
+          "encrypted": false
+        },
+        {
+          "name": "PBRTextures.mse",
+          "bytes": 50403,
+          "encrypted": false
+        },
+        {
+          "name": "PlaceObjects.mse",
+          "bytes": 21639,
+          "encrypted": false
+        },
+        {
+          "name": "PlaceObjectsDialog.mse",
+          "bytes": 25759,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/AddToForest.ms",
+          "bytes": 7080,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Batch Convert to Corona.ms",
+          "bytes": 3418,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Batch Script Example.ms",
+          "bytes": 4432,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Collect Archive.ms",
+          "bytes": 650,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Convert To Proxy.ms",
+          "bytes": 3251,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Create Material From PBR Textures.ms",
+          "bytes": 2327,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Create-apply biped obj from file.ms",
+          "bytes": 1463,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/File Description.ms",
+          "bytes": 200,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Manage Categories.ms",
+          "bytes": 2150,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Paint With Selection.ms",
+          "bytes": 8052,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/PostFileMerge Example.ms",
+          "bytes": 1213,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/PostMerge-ConvertMaterials.ms",
+          "bytes": 3444,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/PreExport - UpdatePivotPoint.ms",
+          "bytes": 1497,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/PreFileExport Example.ms",
+          "bytes": 1138,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Random Materials.ms",
+          "bytes": 1150,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Remove group head after merge.ms",
+          "bytes": 1620,
+          "encrypted": false
+        },
+        {
+          "name": "presets/API examples/Save biped object.ms",
+          "bytes": 1423,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Arnold.mse",
+          "bytes": 15190,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Art.mse",
+          "bytes": 228,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Corona.mse",
+          "bytes": 20388,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Environment.mse",
+          "bytes": 5142,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_FinalRender.mse",
+          "bytes": 313,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_FStorm.mse",
+          "bytes": 5627,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Indigo.mse",
+          "bytes": 6967,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Maxwell.mse",
+          "bytes": 21035,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_MentalRay.mse",
+          "bytes": 18855,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Octane.mse",
+          "bytes": 12273,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Redshift.mse",
+          "bytes": 794,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Scanline.mse",
+          "bytes": 3292,
+          "encrypted": false
+        },
+        {
+          "name": "presets/Render_Preset_Vray.mse",
+          "bytes": 39360,
+          "encrypted": false
+        },
+        {
+          "name": "Rendering.mse",
+          "bytes": 16010,
+          "encrypted": false
+        },
+        {
+          "name": "RendHelpers.mse",
+          "bytes": 69941,
+          "encrypted": false
+        },
+        {
+          "name": "RendProcessing.mse",
+          "bytes": 25027,
+          "encrypted": false
+        },
+        {
+          "name": "Services/AboutShow.mse",
+          "bytes": 896,
+          "encrypted": false
+        },
+        {
+          "name": "Services/BackupSettings.mse",
+          "bytes": 7387,
+          "encrypted": false
+        },
+        {
+          "name": "Services/CheckUpdate.mse",
+          "bytes": 6040,
+          "encrypted": false
+        },
+        {
+          "name": "Services/CommonSettings.mse",
+          "bytes": 21270,
+          "encrypted": false
+        },
+        {
+          "name": "Services/Configuration.mse",
+          "bytes": 7680,
+          "encrypted": false
+        },
+        {
+          "name": "Services/ConvertDescriptionAndTags.mse",
+          "bytes": 6103,
+          "encrypted": false
+        },
+        {
+          "name": "Services/HotkeysShow.mse",
+          "bytes": 625,
+          "encrypted": false
+        },
+        {
+          "name": "Services/MainIniFile.mse",
+          "bytes": 3406,
+          "encrypted": false
+        },
+        {
+          "name": "Services/Registration.mse",
+          "bytes": 3003,
+          "encrypted": false
+        },
+        {
+          "name": "SupportRequest.mse",
+          "bytes": 6036,
+          "encrypted": false
+        },
+        {
+          "name": "TexturesOperation.mse",
+          "bytes": 39702,
+          "encrypted": false
+        },
+        {
+          "name": "Utility.mse",
+          "bytes": 67736,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Prune Scene\\PruneScene3.6.2.mzp",
+      "sha256": "a470855040fb74e6922a285045705953cce79c03b846540532c2fcffd15d6c32",
+      "members": [
+        {
+          "name": "DETECTED_THREATS.ms",
+          "bytes": 12779,
+          "encrypted": false
+        },
+        {
+          "name": "EXTERNAL_SCRIPTS.ms",
+          "bytes": 13895,
+          "encrypted": false
+        },
+        {
+          "name": "install.mse",
+          "bytes": 30708,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 93,
+          "encrypted": false
+        },
+        {
+          "name": "PruneScene.mse",
+          "bytes": 157669,
+          "encrypted": false
+        },
+        {
+          "name": "PRUNESCENE_ACTIVE_PROTECTION.ms",
+          "bytes": 151,
+          "encrypted": false
+        },
+        {
+          "name": "PRUNESCENE_ACTIVE_PROTECTION_MONITOR.ms",
+          "bytes": 101,
+          "encrypted": false
+        },
+        {
+          "name": "run_install.ms",
+          "bytes": 1070,
+          "encrypted": false
+        },
+        {
+          "name": "SCAN_LOG.ms",
+          "bytes": 7831,
+          "encrypted": false
+        },
+        {
+          "name": "signature.3dsmax.ad.web.ca.mcr",
+          "bytes": 8140,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.3dsmax.adsl.mcr",
+          "bytes": 9115,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.3dsmax.alc.clb.mcr",
+          "bytes": 7472,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.3dsmax.alc2.clb.mcr",
+          "bytes": 8730,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.3dsmax.alc3.clb.mcr",
+          "bytes": 8080,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.3dsmax.crp.bscript.mcr",
+          "bytes": 8563,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.alienbrains.mcr",
+          "bytes": 6174,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.desirefx.ca.mcr",
+          "bytes": 7572,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.kryptik.ca.mcr",
+          "bytes": 6523,
+          "encrypted": false
+        },
+        {
+          "name": "signature.worm.physx.mfx.mcr",
+          "bytes": 5798,
+          "encrypted": false
+        },
+        {
+          "name": "uninstall.ms",
+          "bytes": 2162,
+          "encrypted": false
+        },
+        {
+          "name": "update.mse",
+          "bytes": 7297,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp",
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "members": [
+        {
+          "name": "Road Markings Generator/Road Markings Generator_macro.ms",
+          "bytes": 279,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 403,
+          "encrypted": false
+        },
+        {
+          "name": "Road Markings Generator/Road Markings Generator.mse",
+          "bytes": 821322,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 175,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp",
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "members": [
+        {
+          "name": "Road Markings Generator/Road Markings Generator_macro.ms",
+          "bytes": 279,
+          "encrypted": false
+        },
+        {
+          "name": "Message.ms",
+          "bytes": 403,
+          "encrypted": false
+        },
+        {
+          "name": "Road Markings Generator/Road Markings Generator.mse",
+          "bytes": 821322,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 175,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Smart Camera View 3.99\\Smart.Camera.View.v3.99-2016-2025-iTooHelper.mzp",
+      "sha256": "2c311dcd418bcebd085baef40cda3667beb1b4c86f1146ca9b63b0f4b4a88e8d",
+      "members": [
+        {
+          "name": "mzp.run",
+          "bytes": 72,
+          "encrypted": false
+        },
+        {
+          "name": "scv3_install.ms",
+          "bytes": 3443,
+          "encrypted": false
+        },
+        {
+          "name": "scv3_macro.mcr",
+          "bytes": 297,
+          "encrypted": false
+        },
+        {
+          "name": "Smart Camera View 3/Smart_Camera_View_3.mse",
+          "bytes": 251813,
+          "encrypted": false
+        },
+        {
+          "name": "Smart Camera View 3/start.ms",
+          "bytes": 163,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Smart Merge 2.19\\Smart.Merge.v2.19-2016-2024-iTooHelper.mzp",
+      "sha256": "67e375e7c12358dc589526eee79fdba29273d94e177694661dbde47e7c7b5144",
+      "members": [
+        {
+          "name": "install.ms",
+          "bytes": 3229,
+          "encrypted": false
+        },
+        {
+          "name": "macro.mcr",
+          "bytes": 239,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 56,
+          "encrypted": false
+        },
+        {
+          "name": "Smart Merge 2/7z.dll",
+          "bytes": 1841664,
+          "encrypted": false
+        },
+        {
+          "name": "Smart Merge 2/Smart_Merge_2.mse",
+          "bytes": 155156,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Smart Merge 2.28\\Smart.Merge.v2.28-2016-2025-iTooHelper.mzp",
+      "sha256": "f169a42acce19bc2e27b30ca5739714e4964312aec3521070fde4784a098a41e",
+      "members": [
+        {
+          "name": "install.ms",
+          "bytes": 3313,
+          "encrypted": false
+        },
+        {
+          "name": "macro.mcr",
+          "bytes": 239,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 56,
+          "encrypted": false
+        },
+        {
+          "name": "Smart Merge 2/7z.dll",
+          "bytes": 1841664,
+          "encrypted": false
+        },
+        {
+          "name": "Smart Merge 2/Smart_Merge_2.mse",
+          "bytes": 157464,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UVTools_3.2m\\UVTools_3.2m\\UVTools_3.2m.mzp",
+      "sha256": "6aeed9f6cabde006477db1e2bc4a6cbb52d0c0d98b3961481049706855ff95ec",
+      "members": [
+        {
+          "name": "_extra_/install_after.ms",
+          "bytes": 28,
+          "encrypted": false
+        },
+        {
+          "name": "_extra_/install_before.ms",
+          "bytes": 422,
+          "encrypted": false
+        },
+        {
+          "name": "_extra_/uninstall_before.ms",
+          "bytes": 547,
+          "encrypted": false
+        },
+        {
+          "name": "install.ms",
+          "bytes": 11157,
+          "encrypted": false
+        },
+        {
+          "name": "mzp.run",
+          "bytes": 115,
+          "encrypted": false
+        },
+        {
+          "name": "usermacros/Nik Scripts-UVTools_Actions.mcr",
+          "bytes": 44983,
+          "encrypted": false
+        },
+        {
+          "name": "userscripts/NikScripts/UVTools/LoadIcons.dll",
+          "bytes": 8704,
+          "encrypted": false
+        },
+        {
+          "name": "userscripts/NikScripts/UVTools/UVTools.mse",
+          "bytes": 257452,
+          "encrypted": false
+        },
+        {
+          "name": "userStartupScripts/UVTools_loader.mse",
+          "bytes": 1973,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UVTools_3.3.05\\UVTools_3.3.05.mzp",
+      "sha256": "523ebe7878cf7a9f873b7e6b307591179a3de55a384a99ec0c8c052c56b5878c",
+      "members": [
+        {
+          "name": "./install.ms",
+          "bytes": 11157,
+          "encrypted": false
+        },
+        {
+          "name": "./mzp.run",
+          "bytes": 115,
+          "encrypted": false
+        },
+        {
+          "name": "./_extra_/install_after.ms",
+          "bytes": 28,
+          "encrypted": false
+        },
+        {
+          "name": "./_extra_/install_before.ms",
+          "bytes": 422,
+          "encrypted": false
+        },
+        {
+          "name": "./_extra_/uninstall_before.ms",
+          "bytes": 547,
+          "encrypted": false
+        },
+        {
+          "name": "./userStartupScripts/UVTools_loader.mse",
+          "bytes": 1983,
+          "encrypted": false
+        },
+        {
+          "name": "./userscripts/NikScripts/UVTools/LoadIcons.dll",
+          "bytes": 8704,
+          "encrypted": false
+        },
+        {
+          "name": "./userscripts/NikScripts/UVTools/UVTools.mse",
+          "bytes": 278625,
+          "encrypted": false
+        },
+        {
+          "name": "./usermacros/Nik Scripts-UVTools_Actions.mcr",
+          "bytes": 47400,
+          "encrypted": false
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\XViewInspectorMax\\XViewInspectorMax.mzp",
+      "sha256": "f2f593e9f48cc197cdc20d8c6c47ce408fa2ba859cac21b35fd7e57d4028cc10",
+      "members": [
+        {
+          "name": "install.ms",
+          "bytes": 4038,
+          "encrypted": false
+        },
+        {
+          "name": "xview_inspector_max_startup.ms",
+          "bytes": 2493,
+          "encrypted": false
+        },
+        {
+          "name": "XViewInspectorMax.mcr",
+          "bytes": 1338,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/constants.py",
+          "bytes": 325,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/__init__.py",
+          "bytes": 582,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/duplicate_faces.py",
+          "bytes": 576,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/loose_geometry.py",
+          "bytes": 932,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/ngons.py",
+          "bytes": 263,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/nonplanar_ngons.py",
+          "bytes": 1095,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/non_manifold.py",
+          "bytes": 1998,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/open_edges.py",
+          "bytes": 382,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/overlapping_vertices.py",
+          "bytes": 1252,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/self_intersections.py",
+          "bytes": 10627,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/sliver_faces.py",
+          "bytes": 1063,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/triangles.py",
+          "bytes": 264,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/zero_area_faces.py",
+          "bytes": 511,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/zero_length_edges.py",
+          "bytes": 614,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/checks/__init__.py",
+          "bytes": 36,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/analyzer.py",
+          "bytes": 1929,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/geom.py",
+          "bytes": 2069,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/maintenance.py",
+          "bytes": 3291,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/mesh_data.py",
+          "bytes": 1749,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/registry.py",
+          "bytes": 6005,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/report.py",
+          "bytes": 412,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/settings.py",
+          "bytes": 448,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/types.py",
+          "bytes": 626,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/core/__init__.py",
+          "bytes": 36,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/mesh_extract.py",
+          "bytes": 14542,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/runtime.py",
+          "bytes": 427,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/scene.py",
+          "bytes": 5719,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/selection.py",
+          "bytes": 26752,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/units.py",
+          "bytes": 2113,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/viewport.py",
+          "bytes": 552,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/max/__init__.py",
+          "bytes": 36,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/ui/app.py",
+          "bytes": 730,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/ui/main_window.py",
+          "bytes": 49129,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/ui/qt.py",
+          "bytes": 255,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/ui/widgets.py",
+          "bytes": 665,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/ui/__init__.py",
+          "bytes": 36,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/utils/compat.py",
+          "bytes": 1263,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/utils/log.py",
+          "bytes": 721,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/utils/paths.py",
+          "bytes": 626,
+          "encrypted": false
+        },
+        {
+          "name": "xview_max/utils/__init__.py",
+          "bytes": 36,
+          "encrypted": false
+        }
+      ]
+    }
+  ],
+  "archive_duplicates": [
+    {
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp"
+      ]
+    }
+  ],
+  "loose_file_duplicates": [
+    {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\facade-atlas\\ui\\__init__.py",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\references\\3dsMax-Python-HowTos\\src\\samples\\__init__.py"
+      ]
+    },
+    {
+      "sha256": "f7a5d9789c863625e139ff99e1113a503830f6b85a88f6129916df83ac76b49e",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Core\\obj\\Release\\net8.0-windows\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Revit2025\\obj\\Release\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs"
+      ]
+    },
+    {
+      "sha256": "7c94827fb7a5b73f7d1c9c7ec9da5d4d8196fa9ef15ac5d800cb9557e9e99eda",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\H_instancer-1.0.mcr",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\developer_tools-h_instancer-1.0\\developer_tools-h_instancer-1.0.mcr"
+      ]
+    }
+  ],
+  "deployment_matches": [
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\GeoAGR.mse",
+      "member": null,
+      "sha256": "a55d50fa73aca6acb7485e1932b0e5de0e5f584e68a55f677bf3d0da7db4e36c",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\GeoAGR.mse",
+      "installed_sha256": "a55d50fa73aca6acb7485e1932b0e5de0e5f584e68a55f677bf3d0da7db4e36c",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\3pt_align.mcr",
+      "member": null,
+      "sha256": "e4bc2129af7a80305b7f012302f5643f187e0905f329ffc67570492da972fe5d",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\3pt_align.mcr",
+      "installed_sha256": "e4bc2129af7a80305b7f012302f5643f187e0905f329ffc67570492da972fe5d",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\BMAX_3dsmax_v1.19.mzp",
+      "member": "Macro/Titus_Scripts-BMAX_Connector.mcr",
+      "sha256": "c75644ec9621d97c6062f10e325a3445a671b0945fd6c94743e9575405967914",
+      "installed_path": "C:\\usermacros\\Titus_Scripts-BMAX_Connector.mcr",
+      "installed_sha256": "c75644ec9621d97c6062f10e325a3445a671b0945fd6c94743e9575405967914",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\BMAX_3dsmax_v1.19.mzp",
+      "member": "Macro/Titus_Sctipts-BMAX_Connector_Export.mcr",
+      "sha256": "26c9bdb1586a9fe7937eeed35e00885390f28c8e58af5ddac47f0b5504cc881b",
+      "installed_path": "C:\\usermacros\\Titus_Sctipts-BMAX_Connector_Export.mcr",
+      "installed_sha256": "26c9bdb1586a9fe7937eeed35e00885390f28c8e58af5ddac47f0b5504cc881b",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\BMAX_3dsmax_v1.19.mzp",
+      "member": "Macro/Titus_Sctipts-BMAX_Connector_Import.mcr",
+      "sha256": "2689a31f5b144ff9a37abe161763f3c4b9faa8d51d7787d63a2bdbde84cce61b",
+      "installed_path": "C:\\usermacros\\Titus_Sctipts-BMAX_Connector_Import.mcr",
+      "installed_sha256": "2689a31f5b144ff9a37abe161763f3c4b9faa8d51d7787d63a2bdbde84cce61b",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\dragNDropReferences11.ms",
+      "member": null,
+      "sha256": "33ea01a61f6425e5421f7fd5dd56f7d13b9687c4f2ed5d8eaabd265ea4af3db6",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\dragNDropReferences11.ms",
+      "installed_sha256": "33ea01a61f6425e5421f7fd5dd56f7d13b9687c4f2ed5d8eaabd265ea4af3db6",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\objectrandomizerv3.ms",
+      "member": null,
+      "sha256": "21444101fc6125c627d365fa08563de7818ca729fa7902ac9c641fff861ebcd0",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\objectrandomizerv3.ms",
+      "installed_sha256": "21444101fc6125c627d365fa08563de7818ca729fa7902ac9c641fff861ebcd0",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastAttach.mcr",
+      "sha256": "fdd7f16afe1f58826d76f87940e91c2e11b9202833c1c990631421b85e98b127",
+      "installed_path": "C:\\usermacros\\rapidTools-fastAttach.mcr",
+      "installed_sha256": "fdd7f16afe1f58826d76f87940e91c2e11b9202833c1c990631421b85e98b127",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastBoolIntersect.mcr",
+      "sha256": "9862c01f2816c5ebec2b022f3356118b25555d5ad79b1de925341ac377808db3",
+      "installed_path": "C:\\usermacros\\rapidTools-fastBoolIntersect.mcr",
+      "installed_sha256": "9862c01f2816c5ebec2b022f3356118b25555d5ad79b1de925341ac377808db3",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastBoolSubstract.mcr",
+      "sha256": "7fa9a35daf03e1c52c989719ec8ecf457cf12f8beb0745387521180e2854a70d",
+      "installed_path": "C:\\usermacros\\rapidTools-fastBoolSubstract.mcr",
+      "installed_sha256": "7fa9a35daf03e1c52c989719ec8ecf457cf12f8beb0745387521180e2854a70d",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastBoolUnion.mcr",
+      "sha256": "f0cf2ea7971d78086a5bd9fe22d6800d515d2b534891159d792ceb1563028147",
+      "installed_path": "C:\\usermacros\\rapidTools-fastBoolUnion.mcr",
+      "installed_sha256": "f0cf2ea7971d78086a5bd9fe22d6800d515d2b534891159d792ceb1563028147",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastBorderSelect.mcr",
+      "sha256": "c4abdb85c60cbc42b473d79f65607ccc3ddc34076050d3bf907d58213cc5bfde",
+      "installed_path": "C:\\usermacros\\rapidTools-fastBorderSelect.mcr",
+      "installed_sha256": "c4abdb85c60cbc42b473d79f65607ccc3ddc34076050d3bf907d58213cc5bfde",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastBridge.mcr",
+      "sha256": "8dfec1d3c941be09c510bf456de5e020eba4c626cf83efc7fdad9bd52048ea06",
+      "installed_path": "C:\\usermacros\\rapidTools-fastBridge.mcr",
+      "installed_sha256": "8dfec1d3c941be09c510bf456de5e020eba4c626cf83efc7fdad9bd52048ea06",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastEdgeLoopRegularizer.mcr",
+      "sha256": "207e9ffa25ea21125db90a835a902223532802c2f0a77fe137421818e01cce11",
+      "installed_path": "C:\\usermacros\\rapidTools-fastEdgeLoopRegularizer.mcr",
+      "installed_sha256": "207e9ffa25ea21125db90a835a902223532802c2f0a77fe137421818e01cce11",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastEdgeWeightReguralizer.mcr",
+      "sha256": "ceacbb5b27180182ba14a61aff5cee5f4867d485b2ad2763b3b14b8faadedca9",
+      "installed_path": "C:\\usermacros\\rapidTools-fastEdgeWeightReguralizer.mcr",
+      "installed_sha256": "ceacbb5b27180182ba14a61aff5cee5f4867d485b2ad2763b3b14b8faadedca9",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastExtrude.mcr",
+      "sha256": "2d55cab908f16d75f2509fa8025bdd9e5a5052a14ef81dc51dd54e4b9cc23b16",
+      "installed_path": "C:\\usermacros\\rapidTools-fastExtrude.mcr",
+      "installed_sha256": "2d55cab908f16d75f2509fa8025bdd9e5a5052a14ef81dc51dd54e4b9cc23b16",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastHardwareTextureToggle.mcr",
+      "sha256": "c242fcfe3a39bc327782ce5d9ce90f692908526f6e14ce3557c89c04e76d6993",
+      "installed_path": "C:\\usermacros\\rapidTools-fastHardwareTextureToggle.mcr",
+      "installed_sha256": "c242fcfe3a39bc327782ce5d9ce90f692908526f6e14ce3557c89c04e76d6993",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastMassiveOBJExporter.mcr",
+      "sha256": "24e506c6bf25df8946016d2752006348697e2f267f00b6a9bf3104acc2b59e63",
+      "installed_path": "C:\\usermacros\\rapidTools-fastMassiveOBJExporter.mcr",
+      "installed_sha256": "24e506c6bf25df8946016d2752006348697e2f267f00b6a9bf3104acc2b59e63",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastOpenDirectory.mcr",
+      "sha256": "b91047c6512113e6fdcb8692a26e5f1d35b0bb51a52708442f07d46793af9eca",
+      "installed_path": "C:\\usermacros\\rapidTools-fastOpenDirectory.mcr",
+      "installed_sha256": "b91047c6512113e6fdcb8692a26e5f1d35b0bb51a52708442f07d46793af9eca",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastPanelizer.mcr",
+      "sha256": "f2d06e49cc79412d942ac52057ff23dedd503a12e5a7ede471611677be22009d",
+      "installed_path": "C:\\usermacros\\rapidTools-fastPanelizer.mcr",
+      "installed_sha256": "f2d06e49cc79412d942ac52057ff23dedd503a12e5a7ede471611677be22009d",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastPanelizerSettings.mcr",
+      "sha256": "9be80a36846192644a85ca4f66da11792aa70133f4d5997f0f7eab4e76ea0de8",
+      "installed_path": "C:\\usermacros\\rapidTools-fastPanelizerSettings.mcr",
+      "installed_sha256": "9be80a36846192644a85ca4f66da11792aa70133f4d5997f0f7eab4e76ea0de8",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastPutObject.mcr",
+      "sha256": "8399172f7fd588aa9345e5c26e7618b6dc0ffb2f49c11bd53db88204cc2f3837",
+      "installed_path": "C:\\usermacros\\rapidTools-fastPutObject.mcr",
+      "installed_sha256": "8399172f7fd588aa9345e5c26e7618b6dc0ffb2f49c11bd53db88204cc2f3837",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastPutWorkingPivot.mcr",
+      "sha256": "cf544386b1e3c6bd81a340ab60a37420e3e794bd2972c19a7af1229d2d7ceb62",
+      "installed_path": "C:\\usermacros\\rapidTools-fastPutWorkingPivot.mcr",
+      "installed_sha256": "cf544386b1e3c6bd81a340ab60a37420e3e794bd2972c19a7af1229d2d7ceb62",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastWorkingPivot.mcr",
+      "sha256": "7584d06538300807751ebbb69d901671dd407cfe3c51904aaa987b256713b2da",
+      "installed_path": "C:\\usermacros\\rapidTools-fastWorkingPivot.mcr",
+      "installed_sha256": "7584d06538300807751ebbb69d901671dd407cfe3c51904aaa987b256713b2da",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastZeroWelder.mcr",
+      "sha256": "e17388ac9db2c6e5d747b2d2af127ecffe65fc9ae4372f4fa32712ba4d2c76aa",
+      "installed_path": "C:\\usermacros\\rapidTools-fastZeroWelder.mcr",
+      "installed_sha256": "e17388ac9db2c6e5d747b2d2af127ecffe65fc9ae4372f4fa32712ba4d2c76aa",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-fastZeroWelderByElement.mcr",
+      "sha256": "eabd9ae9a3fc0fa2ba3c730274eb3b9251681def6522069961860c496873d417",
+      "installed_path": "C:\\usermacros\\rapidTools-fastZeroWelderByElement.mcr",
+      "installed_sha256": "eabd9ae9a3fc0fa2ba3c730274eb3b9251681def6522069961860c496873d417",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidMeshCleanUp.mcr",
+      "sha256": "20b33c03c237e57229beb32b3c72c12da8e61597d4fe56a6e1735d54f52e75d2",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidMeshCleanUp.mcr",
+      "installed_sha256": "20b33c03c237e57229beb32b3c72c12da8e61597d4fe56a6e1735d54f52e75d2",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidNGonSolver.mcr",
+      "sha256": "5c7915bb08128b1798ef400da7f7811c73a21dcca048dd728965057c7c5328e8",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidNGonSolver.mcr",
+      "installed_sha256": "5c7915bb08128b1798ef400da7f7811c73a21dcca048dd728965057c7c5328e8",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidNGonSolverSettings.mcr",
+      "sha256": "ee4a23c814e9ccd76fb4757c4f6cc9a04433ae7dd7ef52680e93e491e82fe804",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidNGonSolverSettings.mcr",
+      "installed_sha256": "ee4a23c814e9ccd76fb4757c4f6cc9a04433ae7dd7ef52680e93e491e82fe804",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidQCap.mcr",
+      "sha256": "d634828fc67dd3d085546a651389a05541eabc0335d5b8dcb867ca4852b8cd78",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidQCap.mcr",
+      "installed_sha256": "d634828fc67dd3d085546a651389a05541eabc0335d5b8dcb867ca4852b8cd78",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidQuadConnect.mcr",
+      "sha256": "52c723a25d6836b1889bc4d059a8c62134212b3f1e253c73b2229ad50a02b3de",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidQuadConnect.mcr",
+      "installed_sha256": "52c723a25d6836b1889bc4d059a8c62134212b3f1e253c73b2229ad50a02b3de",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidRTConform.mcr",
+      "sha256": "37fc1305c746227d6d22c86c811cac33d13b04d542864b7fd939fead6084acf7",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidRTConform.mcr",
+      "installed_sha256": "37fc1305c746227d6d22c86c811cac33d13b04d542864b7fd939fead6084acf7",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidRTConformSettings.mcr",
+      "sha256": "094b98107b23429ebd5f3dd7ba121a3bb7aec0b0021ae7df3178d4e73299e580",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidRTConformSettings.mcr",
+      "installed_sha256": "094b98107b23429ebd5f3dd7ba121a3bb7aec0b0021ae7df3178d4e73299e580",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidSoftSelManager.mcr",
+      "sha256": "cadca98b62d8fdff1eee080e0f98781dfeee49f745af675283bf32b493e1e032",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidSoftSelManager.mcr",
+      "installed_sha256": "cadca98b62d8fdff1eee080e0f98781dfeee49f745af675283bf32b493e1e032",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidSplineFFD.mcr",
+      "sha256": "86e6ba9720c77a87e7733b2557ca869355dc529768a0cca65cc86a5a70d91770",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidSplineFFD.mcr",
+      "installed_sha256": "86e6ba9720c77a87e7733b2557ca869355dc529768a0cca65cc86a5a70d91770",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidSplineFFDsettings.mcr",
+      "sha256": "6b4d7c00a15ae5c1d3229d702b48bdf3a935d092c68ddcd691039f5d67732b8a",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidSplineFFDsettings.mcr",
+      "installed_sha256": "6b4d7c00a15ae5c1d3229d702b48bdf3a935d092c68ddcd691039f5d67732b8a",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidToolsMenuGenerator.mcr",
+      "sha256": "427cda547a6c2584f4ee678783389c699ffc0bdab079487e353fa1a062fe5837",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidToolsMenuGenerator.mcr",
+      "installed_sha256": "427cda547a6c2584f4ee678783389c699ffc0bdab079487e353fa1a062fe5837",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp",
+      "member": "rapidTools/rapidTools-rapidVertSplitter.mcr",
+      "sha256": "0f06d623b69dac3837621136cc2868b7c7b88457a292a3bbc7d8053c00ddcd75",
+      "installed_path": "C:\\usermacros\\rapidTools-rapidVertSplitter.mcr",
+      "installed_sha256": "0f06d623b69dac3837621136cc2868b7c7b88457a292a3bbc7d8053c00ddcd75",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\RizomuvBridge_1.5.1.mzp",
+      "member": "Macro/Titus_Scripts-RizomuvBridge.mcr",
+      "sha256": "a6af608b92780620666caa3e6c8a7c6938ebd02cc6bbb59efc01ffc81da5493b",
+      "installed_path": "C:\\usermacros\\Titus_Scripts-RizomuvBridge.mcr",
+      "installed_sha256": "a6af608b92780620666caa3e6c8a7c6938ebd02cc6bbb59efc01ffc81da5493b",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\4. Copy Plugins and Scripts\\3ds Max 2024\\Plugins\\RayFireTool\\RayFireTool.mse",
+      "member": null,
+      "sha256": "a6aab6449b0109131da3887bff0f0ec4b220882f4f5c1239e15ad314c79e473f",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\RayFireTool\\RayFireTool.mse",
+      "installed_sha256": "a6aab6449b0109131da3887bff0f0ec4b220882f4f5c1239e15ad314c79e473f",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\4. Copy Plugins and Scripts\\3ds Max 2024\\Plugins\\RayFireTool\\RF_Shooting.mse",
+      "member": null,
+      "sha256": "ed6f61002bae442f3a1314ab8c1611a0731ef321863747972e39d52c51d04646",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\RayFireTool\\RF_Shooting.mse",
+      "installed_sha256": "ed6f61002bae442f3a1314ab8c1611a0731ef321863747972e39d52c51d04646",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\4. Copy Plugins and Scripts\\3ds Max 2024\\scripts\\Startup\\RayFireLauncher.ms",
+      "member": null,
+      "sha256": "cc49e841fd8b1bf92dbb0ee5bad01f3f27e7035181f0f7754b1cbe36d51e1cb0",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Startup\\RayFireLauncher.ms",
+      "installed_sha256": "cc49e841fd8b1bf92dbb0ee5bad01f3f27e7035181f0f7754b1cbe36d51e1cb0",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\4. Copy Plugins and Scripts\\3ds Max 2024\\stdplugs\\stdscripts\\CameraResolutionMod.mse",
+      "member": null,
+      "sha256": "2eb413949dc4fabd1c9c0dad4b786bcfc1eb9e977b88d17de85738e162d2bbf5",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\CameraResolutionMod.mse",
+      "installed_sha256": "aff9e1b885632c4971b46497cdeea7b4f351f9a25bcced85098a340fb4aa50ee",
+      "same": false
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\4. Copy Plugins and Scripts\\3ds Max 2024\\stdplugs\\stdscripts\\CameraResolutionMod.mse",
+      "member": null,
+      "sha256": "2eb413949dc4fabd1c9c0dad4b786bcfc1eb9e977b88d17de85738e162d2bbf5",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\stdplugs\\stdscripts\\CameraResolutionMod.mse",
+      "installed_sha256": "2eb413949dc4fabd1c9c0dad4b786bcfc1eb9e977b88d17de85738e162d2bbf5",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\4. Copy Plugins and Scripts\\3ds Max 2024\\stdplugs\\stdscripts\\VV_SuperLayer_Functions_1.5.ms",
+      "member": null,
+      "sha256": "d67276caa05a6dbd272328d61779a78e5c4a983cafd83c90abb0d57044ffbd71",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\stdplugs\\stdscripts\\VV_SuperLayer_Functions_1.5.ms",
+      "installed_sha256": "d67276caa05a6dbd272328d61779a78e5c4a983cafd83c90abb0d57044ffbd71",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp",
+      "member": "Road Markings Generator/Road Markings Generator_macro.ms",
+      "sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator_macro.ms",
+      "installed_sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp",
+      "member": "Road Markings Generator/Road Markings Generator.mse",
+      "sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator.mse",
+      "installed_sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG\\Road Markings Generator\\Road Markings Generator.mse",
+      "member": null,
+      "sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator.mse",
+      "installed_sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG\\Road Markings Generator\\Road Markings Generator_macro.ms",
+      "member": null,
+      "sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator_macro.ms",
+      "installed_sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Copitor_v3\\zOffTy Tools-Copitor_v3.mcr",
+      "member": null,
+      "sha256": "631ed304be7b406dbf6623a3efedc7446b063dd465d15cf8682eefc3fe06c79e",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\zOffTy Tools-Copitor_v3.mcr",
+      "installed_sha256": "631ed304be7b406dbf6623a3efedc7446b063dd465d15cf8682eefc3fe06c79e",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-BitmapTracking-Resizing-v1.78.03.mzp",
+      "member": "Pixamoon-BitmapTracking-Resizing.mcr",
+      "sha256": "b475b20ff82eebe57f190307d817a5fc208c3e75df4255d88726b81a62812091",
+      "installed_path": "C:\\usermacros\\Pixamoon-BitmapTracking-Resizing.mcr",
+      "installed_sha256": "b475b20ff82eebe57f190307d817a5fc208c3e75df4255d88726b81a62812091",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-Library-TrackRelink-v1.05.00-Full-iTooHelper.mzp",
+      "member": "Pixamoon-Library-TrackRelink.mcr",
+      "sha256": "a684e20bcb21b43a5d89b167d8a585eaacebf1744b5ae3692c4a209d94a3a326",
+      "installed_path": "C:\\usermacros\\Pixamoon-Library-TrackRelink.mcr",
+      "installed_sha256": "a684e20bcb21b43a5d89b167d8a585eaacebf1744b5ae3692c4a209d94a3a326",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Pixamoon!\\Pixamoon-MatID-Organizer-v1.39.00.mzp",
+      "member": "Pixamoon-MatID-Organizer.mcr",
+      "sha256": "b1d72c23c9c9620d61a1bb9bda1e721080a3e239016d9bad5585f7b87b7e1183",
+      "installed_path": "C:\\usermacros\\Pixamoon-MatID-Organizer.mcr",
+      "installed_sha256": "b1d72c23c9c9620d61a1bb9bda1e721080a3e239016d9bad5585f7b87b7e1183",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp",
+      "member": "Road Markings Generator/Road Markings Generator_macro.ms",
+      "sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator_macro.ms",
+      "installed_sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp",
+      "member": "Road Markings Generator/Road Markings Generator.mse",
+      "sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator.mse",
+      "installed_sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp",
+      "member": "Road Markings Generator/Road Markings Generator_macro.ms",
+      "sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator_macro.ms",
+      "installed_sha256": "affa071d9cd87efeeb2197fef7e12fdcf5a630c6be426df242f09b12ff7413cb",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp",
+      "member": "Road Markings Generator/Road Markings Generator.mse",
+      "sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "installed_path": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\Road Markings Generator\\Road Markings Generator.mse",
+      "installed_sha256": "9c5d8593916f3726edd74a03723a73dc2fafdfa47b838fae531f39114a4e82f0",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UVTools_3.2m\\UVTools_3.2m\\UVTools_3.2m.mzp",
+      "member": "usermacros/Nik Scripts-UVTools_Actions.mcr",
+      "sha256": "65b1901c0836fe29709db04e0be53641cde38d1e955554737a647032f93f35d7",
+      "installed_path": "C:\\usermacros\\Nik Scripts-UVTools_Actions.mcr",
+      "installed_sha256": "65b1901c0836fe29709db04e0be53641cde38d1e955554737a647032f93f35d7",
+      "same": true
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UVTools_3.3.05\\UVTools_3.3.05.mzp",
+      "member": "./usermacros/Nik Scripts-UVTools_Actions.mcr",
+      "sha256": "16a6cd4bb4bb81550ef9c96375339cfdf9ec850bef175e6d7f8769dd5043290d",
+      "installed_path": "C:\\usermacros\\Nik Scripts-UVTools_Actions.mcr",
+      "installed_sha256": "65b1901c0836fe29709db04e0be53641cde38d1e955554737a647032f93f35d7",
+      "same": false
+    },
+    {
+      "source": "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\XViewInspectorMax\\XViewInspectorMax.mzp",
+      "member": "XViewInspectorMax.mcr",
+      "sha256": "5f02ce46340e2c4525699742c760d129005f33c93648468f763d1630d036d065",
+      "installed_path": "C:\\usermacros\\XViewInspectorMax.mcr",
+      "installed_sha256": "b08cbb7f1e5965baa2a08627a4a0019fe117f9ff99dafa78fcdbfccb40c91b0f",
+      "same": false
+    }
+  ],
+  "xview_deployment": [
+    {
+      "member": "xview_max/constants.py",
+      "sha256": "1fb72fe1378df493011cb1038e67fb82965acc6cbc5c81f6b495918f0059e382",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\constants.py",
+      "exists": true,
+      "installed_sha256": "1fb72fe1378df493011cb1038e67fb82965acc6cbc5c81f6b495918f0059e382",
+      "same": true
+    },
+    {
+      "member": "xview_max/__init__.py",
+      "sha256": "7e55850ef77a2c0df7ec026239d20f4c1b9889162541aa88568d6346522a9bc1",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\__init__.py",
+      "exists": true,
+      "installed_sha256": "7e55850ef77a2c0df7ec026239d20f4c1b9889162541aa88568d6346522a9bc1",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/duplicate_faces.py",
+      "sha256": "5cda90fb2a31bbb840a2c1d7c177bdf6000dfd297c6a5b668cb37da250ea094f",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\duplicate_faces.py",
+      "exists": true,
+      "installed_sha256": "5cda90fb2a31bbb840a2c1d7c177bdf6000dfd297c6a5b668cb37da250ea094f",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/loose_geometry.py",
+      "sha256": "d51982cdac0bd7b031aeb83ee43173980acfd6fcf2c059130106fa997423bfda",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\loose_geometry.py",
+      "exists": true,
+      "installed_sha256": "d51982cdac0bd7b031aeb83ee43173980acfd6fcf2c059130106fa997423bfda",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/ngons.py",
+      "sha256": "cf38eb56d5bfda59877f010d82a6fc313d20b8c1337fb4f6bf4bef1e940eeda0",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\ngons.py",
+      "exists": true,
+      "installed_sha256": "cf38eb56d5bfda59877f010d82a6fc313d20b8c1337fb4f6bf4bef1e940eeda0",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/nonplanar_ngons.py",
+      "sha256": "7eaab04dde4e24655808083b4deacdbc9957bc058dd4ec74fdac85d2cf4158d9",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\nonplanar_ngons.py",
+      "exists": true,
+      "installed_sha256": "7eaab04dde4e24655808083b4deacdbc9957bc058dd4ec74fdac85d2cf4158d9",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/non_manifold.py",
+      "sha256": "889d67285738d4b3de9582199e464d4b31dd3062bca908a8b3254f90d64f8039",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\non_manifold.py",
+      "exists": true,
+      "installed_sha256": "889d67285738d4b3de9582199e464d4b31dd3062bca908a8b3254f90d64f8039",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/open_edges.py",
+      "sha256": "34e724a83442d8cd17f142501cb433547777fef9b308d7aa7f1e51ce91f98cd2",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\open_edges.py",
+      "exists": true,
+      "installed_sha256": "34e724a83442d8cd17f142501cb433547777fef9b308d7aa7f1e51ce91f98cd2",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/overlapping_vertices.py",
+      "sha256": "82715addaf07b6dca0f760931905e60820dd6681c59bcd6a1317368276eb3ab0",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\overlapping_vertices.py",
+      "exists": true,
+      "installed_sha256": "82715addaf07b6dca0f760931905e60820dd6681c59bcd6a1317368276eb3ab0",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/self_intersections.py",
+      "sha256": "3d7b6b87ac1d62e2d784376bedc7ec834e967fbb5542be6074000b146bafccd9",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\self_intersections.py",
+      "exists": true,
+      "installed_sha256": "3d7b6b87ac1d62e2d784376bedc7ec834e967fbb5542be6074000b146bafccd9",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/sliver_faces.py",
+      "sha256": "127c9799068ce5f651e922cf8408e3d22a9d0f95b8d1c5b4f5df4794aa5dea3b",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\sliver_faces.py",
+      "exists": true,
+      "installed_sha256": "127c9799068ce5f651e922cf8408e3d22a9d0f95b8d1c5b4f5df4794aa5dea3b",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/triangles.py",
+      "sha256": "e84b625f10527ece81292a3436c6340ff90714f016f1fda9834ef0fb4aa74b7a",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\triangles.py",
+      "exists": true,
+      "installed_sha256": "e84b625f10527ece81292a3436c6340ff90714f016f1fda9834ef0fb4aa74b7a",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/zero_area_faces.py",
+      "sha256": "c9d7742fd1e3a495aaed3250eef8c8eda04fe2f89de98afa9cb286e4f5a8ef30",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\zero_area_faces.py",
+      "exists": true,
+      "installed_sha256": "c9d7742fd1e3a495aaed3250eef8c8eda04fe2f89de98afa9cb286e4f5a8ef30",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/zero_length_edges.py",
+      "sha256": "1d1a18e73b4b04fd59c7904d0644c2502618e7e3469f76313ead27916f5e7cd9",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\zero_length_edges.py",
+      "exists": true,
+      "installed_sha256": "1d1a18e73b4b04fd59c7904d0644c2502618e7e3469f76313ead27916f5e7cd9",
+      "same": true
+    },
+    {
+      "member": "xview_max/checks/__init__.py",
+      "sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\checks\\__init__.py",
+      "exists": true,
+      "installed_sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/analyzer.py",
+      "sha256": "f962efcc9e553aa78f62fdc7980da5a3ed4bc17410fbdcf35ac47a425d3cb90e",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\analyzer.py",
+      "exists": true,
+      "installed_sha256": "f962efcc9e553aa78f62fdc7980da5a3ed4bc17410fbdcf35ac47a425d3cb90e",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/geom.py",
+      "sha256": "e56e6ee5ab5bbee5ea2aa238e420d866d0b283c6a5f0949e05d6e5d915300289",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\geom.py",
+      "exists": true,
+      "installed_sha256": "e56e6ee5ab5bbee5ea2aa238e420d866d0b283c6a5f0949e05d6e5d915300289",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/maintenance.py",
+      "sha256": "5a84a189f7748dad2fa27ce2c20eb4f7cb4354aea0759375b107a637a418c757",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\maintenance.py",
+      "exists": true,
+      "installed_sha256": "5a84a189f7748dad2fa27ce2c20eb4f7cb4354aea0759375b107a637a418c757",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/mesh_data.py",
+      "sha256": "fe2f37db73efe5234328416357e1424a4b58c369cc55a86e1dedaddbeeb119d1",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\mesh_data.py",
+      "exists": true,
+      "installed_sha256": "fe2f37db73efe5234328416357e1424a4b58c369cc55a86e1dedaddbeeb119d1",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/registry.py",
+      "sha256": "cffda68522f1a406cf70f4ccb740a2078e64f629f9d23c5de4ed9d8548e9da56",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\registry.py",
+      "exists": true,
+      "installed_sha256": "cffda68522f1a406cf70f4ccb740a2078e64f629f9d23c5de4ed9d8548e9da56",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/report.py",
+      "sha256": "1ddbf5ee486cc8da9be895c0c8e604ee15191b293bcf01a3e29cbcb058042ef1",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\report.py",
+      "exists": true,
+      "installed_sha256": "1ddbf5ee486cc8da9be895c0c8e604ee15191b293bcf01a3e29cbcb058042ef1",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/settings.py",
+      "sha256": "8ecd232ca05ddce9ea3b530797bfaca434bd4ffe9f84cdf46cd4fce2fb334e45",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\settings.py",
+      "exists": true,
+      "installed_sha256": "8ecd232ca05ddce9ea3b530797bfaca434bd4ffe9f84cdf46cd4fce2fb334e45",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/types.py",
+      "sha256": "0ad7d7d43e1a12bc9f58b4a32301143a3930b2dcf79337a2cd69af0043ae9bbd",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\types.py",
+      "exists": true,
+      "installed_sha256": "0ad7d7d43e1a12bc9f58b4a32301143a3930b2dcf79337a2cd69af0043ae9bbd",
+      "same": true
+    },
+    {
+      "member": "xview_max/core/__init__.py",
+      "sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\core\\__init__.py",
+      "exists": true,
+      "installed_sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/mesh_extract.py",
+      "sha256": "96cb027ef5d6adbd562849c6441f19c211682ad1d0d9767691bed6b2b0790545",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\mesh_extract.py",
+      "exists": true,
+      "installed_sha256": "96cb027ef5d6adbd562849c6441f19c211682ad1d0d9767691bed6b2b0790545",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/runtime.py",
+      "sha256": "02eae62f54e097990ca0f05eb0d3f2c3fa60e928183a5d34edf7c62ec45bac80",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\runtime.py",
+      "exists": true,
+      "installed_sha256": "02eae62f54e097990ca0f05eb0d3f2c3fa60e928183a5d34edf7c62ec45bac80",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/scene.py",
+      "sha256": "2ccbb05152ab85f7cc10b6f645afc51a875d34144f3c2f5cf1b120a3e08a7b13",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\scene.py",
+      "exists": true,
+      "installed_sha256": "2ccbb05152ab85f7cc10b6f645afc51a875d34144f3c2f5cf1b120a3e08a7b13",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/selection.py",
+      "sha256": "a2da238a7b32aabf45414294811c6f6235d37f2d9aae3956075da383d9373c22",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\selection.py",
+      "exists": true,
+      "installed_sha256": "a2da238a7b32aabf45414294811c6f6235d37f2d9aae3956075da383d9373c22",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/units.py",
+      "sha256": "19495419eef80b3235c9bd928acf998e88666b00c1fc9b3c2b1da87c202d678d",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\units.py",
+      "exists": true,
+      "installed_sha256": "19495419eef80b3235c9bd928acf998e88666b00c1fc9b3c2b1da87c202d678d",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/viewport.py",
+      "sha256": "9bec58840c5256879347e2e8203393ab145fbdb626c0be1aed4e750218936983",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\viewport.py",
+      "exists": true,
+      "installed_sha256": "9bec58840c5256879347e2e8203393ab145fbdb626c0be1aed4e750218936983",
+      "same": true
+    },
+    {
+      "member": "xview_max/max/__init__.py",
+      "sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\max\\__init__.py",
+      "exists": true,
+      "installed_sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "same": true
+    },
+    {
+      "member": "xview_max/ui/app.py",
+      "sha256": "e2db340d463d2fe3ff81679c0df18792bfdd48ea3d4336d736641fbc49cd32dc",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\ui\\app.py",
+      "exists": true,
+      "installed_sha256": "e2db340d463d2fe3ff81679c0df18792bfdd48ea3d4336d736641fbc49cd32dc",
+      "same": true
+    },
+    {
+      "member": "xview_max/ui/main_window.py",
+      "sha256": "725b7d8949eca9bc6ec68e1dfd493d712b331bd1fbe166032681351da7549a68",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\ui\\main_window.py",
+      "exists": true,
+      "installed_sha256": "725b7d8949eca9bc6ec68e1dfd493d712b331bd1fbe166032681351da7549a68",
+      "same": true
+    },
+    {
+      "member": "xview_max/ui/qt.py",
+      "sha256": "4996f05cd295454c74796beb2dae2f83a3756f7d8a3b37d9b1570806dd67d4db",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\ui\\qt.py",
+      "exists": true,
+      "installed_sha256": "4996f05cd295454c74796beb2dae2f83a3756f7d8a3b37d9b1570806dd67d4db",
+      "same": true
+    },
+    {
+      "member": "xview_max/ui/widgets.py",
+      "sha256": "6d3a015d5fb3f2cbfabbbe2ef93a3696c3bcdb4df5e9f9fee8f9420ec2e7c4b2",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\ui\\widgets.py",
+      "exists": true,
+      "installed_sha256": "6d3a015d5fb3f2cbfabbbe2ef93a3696c3bcdb4df5e9f9fee8f9420ec2e7c4b2",
+      "same": true
+    },
+    {
+      "member": "xview_max/ui/__init__.py",
+      "sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\ui\\__init__.py",
+      "exists": true,
+      "installed_sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "same": true
+    },
+    {
+      "member": "xview_max/utils/compat.py",
+      "sha256": "4585ef4a714d831304fecf01e3d41f25da34e8c44db1c1b9eb712b5c9c942dce",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\utils\\compat.py",
+      "exists": true,
+      "installed_sha256": "4585ef4a714d831304fecf01e3d41f25da34e8c44db1c1b9eb712b5c9c942dce",
+      "same": true
+    },
+    {
+      "member": "xview_max/utils/log.py",
+      "sha256": "0948d843557e8be0a9e2ea5884f5c27b90ee3ce04a202363eaf9a5ef28f49bdb",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\utils\\log.py",
+      "exists": true,
+      "installed_sha256": "0948d843557e8be0a9e2ea5884f5c27b90ee3ce04a202363eaf9a5ef28f49bdb",
+      "same": true
+    },
+    {
+      "member": "xview_max/utils/paths.py",
+      "sha256": "17b46f2ecb9f4a9e51470978cf2a165d31b2393366ad689ceb37be990e088467",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\utils\\paths.py",
+      "exists": true,
+      "installed_sha256": "17b46f2ecb9f4a9e51470978cf2a165d31b2393366ad689ceb37be990e088467",
+      "same": true
+    },
+    {
+      "member": "xview_max/utils/__init__.py",
+      "sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "installed_path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\xview_inspector_max\\xview_max\\utils\\__init__.py",
+      "exists": true,
+      "installed_sha256": "3c78788ea0fb8b468bf16f215d385ccca713e31b0d6625da9c1c4e1f920e5b92",
+      "same": true
+    }
+  ],
+  "ui_evidence": [
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms",
+      "line": 1,
+      "text": "-- Инспектор xView (3ds Max 2024+)"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms",
+      "line": 8,
+      "text": "    local macroCategory = \"Инспектор xView\""
+    },
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms",
+      "line": 9,
+      "text": "    local macroName = \"XViewInspectorMax\""
+    },
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms",
+      "line": 26,
+      "text": "    local macroFile = (getDir #userMacros) + \"\\\\XViewInspectorMax.mcr\""
+    },
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms",
+      "line": 34,
+      "text": "        local menuTitle = \"Инспектор xView\""
+    },
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\Octopus\\octopus\\myscripts.octopus",
+      "line": 416,
+      "text": "    <LocalButtonDataList IsActive=\"true\" ButtonText=\" Copitor \" IconOnly=\"false\" LeftIconName=\"attach.png\" RightIconName=\"\">"
+    },
+    {
+      "path": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\Octopus\\octopus\\myscripts.octopus",
+      "line": 422,
+      "text": "          <command>macros.run \"zOffTy Tools\" \"Copitor\"</command>"
+    }
+  ],
+  "verification": {
+    "selected_source_hashes_unchanged": 24,
+    "archive_hashes_unchanged": 48,
+    "catalogue_rows": 73,
+    "csv_fields_match": true,
+    "report_links_checked": true,
+    "dcc_execution": false
+  }
+}

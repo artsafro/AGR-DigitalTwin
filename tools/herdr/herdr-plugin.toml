@@ -1,0 +1,16 @@
+id = "artsafro.dev-layout"
+name = "dev-layout"
+version = "0.1.0"
+min_herdr_version = "0.9.0"
+platforms = ["windows"]
+description = "AGENT | TOOLS over LOGS layout; applied automatically to new worktree workspaces."
+
+[[actions]]
+id = "apply"
+title = "dev-layout: apply to focused tab"
+contexts = ["pane", "workspace"]
+command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "layout.ps1"]
+
+[[events]]
+on = "worktree.created"
+command = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "layout.ps1"]

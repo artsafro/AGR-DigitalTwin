@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agr-digitaltwin"
+version = "0.1.0"
+description = "AGR digital twin: NPM/VPM production pipeline (dt_ai) and delivery QA (twinqa)"
+requires-python = ">=3.12"
+dependencies = [
+    "PyYAML==6.0.3",
+    "pydantic==2.13.5",
+    "Pillow==12.3.0",
+    "pypdf==6.19.0",
+    "numpy==2.5.3",
+    "shapely==2.1.2",
+]
+
+[project.optional-dependencies]
+pdf-review = ["PyMuPDF==1.28.2"]
+
+[dependency-groups]
+dev = ["pytest==9.1.1"]
+
+[project.scripts]
+dt = "dt_ai.cli.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tools/qa"]
+markers = [
+    "dcc: requires an explicitly supplied Blender executable (DT_BLENDER)",
+    "blender: runs a real background Blender process (skipped when Blender is not found)",
+]

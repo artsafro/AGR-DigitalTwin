@@ -1,0 +1,117 @@
+# Ported from AGR standards/NPM_STANDARD.yaml (sha256 7fa1200635c6) on 2026-10-06; changes: added this header, inline `# conflict #N` comments and the `conflicts:` block (docs/domain/conflicts.md); no rule value changed.
+# AGR commit d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc. See standards/README.md.
+standard: NPM
+version: '0.1.0'
+status: extracted_from_source
+source:
+  file: Rasporyajenies19012026trebovaniya(2).pdf
+  sha256: 933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222
+  section: 'Приложение 1: низкополигональные модели'
+  pdf_pages: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]  # conflict #16 (noted)
+units: {linear: meter, scale: '1:1'}
+asset_format: {fbx_version: '7.4/2014', encoding: binary}
+archive:
+  format: zip
+  max_bytes: 1000000000  # conflict #12 (review): MB/GB decimal vs binary
+  fbx_total: {min: 2, max: 21, note: '1 благоустройство + до 20 ОКС'}
+  require_ground: true
+  source_pages: [6, 7]
+geometry:
+  oks_triangles_per_fbx_max: 150000
+  ground_triangles_total_max: 180000
+  oks_opaque_objects_max: 20
+  oks_transparent_objects_max: 20
+  oks_objects_total_max: 40
+  split_oks_only_when_triangle_limit_exceeded: true
+  split_only_by_indivisible_building_section_or_podium: true
+  separate_oks_inside_fbx: true
+  ground_perimeter_extrude_down_m_min: 1.0
+  no_hierarchy_or_groups: true
+  triangulated_on_export: true
+  applied_transforms: true
+  duplicate_or_self_intersection_count_max: 100
+  geometric_error_tolerance_m: 0.002  # conflict #30 (noted)
+  no_isolated_elements_or_zero_length_edges: true
+  near_coplanar_spacing_m: {min: 0.005, max: 0.02}  # conflict #30 (noted)
+  windows_not_seen_from_reverse_side: planar_without_thickness
+  visible_through_glass_interior: simplified_walls_floor_ceiling
+  source_pages: [6, 7, 8]
+materials:
+  allowed_shaders: [Standard_Legacy, Physical_Material, Principled_BSDF]
+  disallow_render_engine_shaders: [Corona, VRay, Octane, Arnold]
+  opaque_material_count_matches_texture_sets: true
+  transparent_materials_max: 7
+  transparent_material_maps: forbidden
+  transparent_material_opacity: 0.5
+  texture_sets_per_oks: {default_max: 1, with_usable_roof_max: 2}
+  source_pages: [8, 9]
+textures:
+  format: png
+  kind: atlas
+  embedded_in_fbx: true
+  allowed_square_sizes_px: [256, 512, 1024, 2048]  # conflict #5 (review): 128 px placeholder
+  max_file_bytes: 3000000  # conflict #12 (review): MB decimal vs binary
+  island_padding_px_min: 8  # conflict #29 (noted)
+  alpha_channel: forbidden  # conflicts #8 (noted), #21 (review)
+  diffuse: required
+  optional_maps: [normal, opacity, roughness, metallic]  # conflict #6 (review): NPM normal convention not named
+  roughness_metallic_together: true
+  opacity_only_if_transparent_elements: true
+  same_size_within_set_except_flat_placeholders: true
+  ground_elements_set_size_px_max: 512
+  vegetation_set_size_px_max: 2048
+  vegetation_maps: [diffuse, opacity]  # conflict #18 (review)
+  ground_density_px_per_square_meter: {min: 10, max: 40}  # conflict #4 (review): unit
+  ground_density_exceptions: [extruded_perimeter, vegetation, oks, ground_elements]  # conflict #22 (noted)
+  source_pages: [9, 10]
+glass:
+  modes:
+    - opaque_in_atlas_with_roughness_and_metallic_maps
+    - separate_transparent_mesh_with_untextured_material_opacity_0_5
+  may_mix_modes_in_project: true
+  source_pages: [9, 10]
+positioning:
+  coordinate_system: Moscow_local_coordinates_and_project_heights
+  arbitrary_coordinates: forbidden
+  transforms_applied: true
+  object_rotation: project_plan_rotation_after_reset
+  source_page: 10
+naming:
+  max_characters: 254
+  allowed_stem_characters: 'A-Z a-z 0-9 _'
+  archive_pattern: '{territory_code_4}_{Address}.zip'
+  oks_fbx_pattern: '{territory_code_4}_{Address}_{part_01_to_20}.fbx'
+  ground_fbx_pattern: '{territory_code_4}_{Address}_Ground.fbx'
+  oks_mesh_pattern: 'SM_{Address}_{oks_001_to_020}_Main'
+  oks_glass_mesh_pattern: 'SM_{Address}_{oks_001_to_020}_MainGlass'
+  ground_mesh_pattern: 'SM_{Address}_Ground'
+  material_pattern: 'M_{Address}_{oks_number}_{geometry_suffix}_{SlotNumber}'  # conflict #17 (review): glass names M_Glass_01..07 absent
+  texture_pattern: 'T_{Address}_{oks_number}_{geometry_suffix}_{map_suffix}_{SlotNumber}.png'
+  texture_map_suffixes: [d, n, o, m, r]
+  slot_number_starts_at: 1
+  numbering_project_wide_without_gaps: true
+  source_pages: [10, 11, 12, 13]
+not_in_this_standard:
+  - 'Схема UCX-коллизий для НПМ не задана; отдельное ТЗ заказчика может добавить её.'
+  - 'GeoJSON не указан в составе ZIP НПМ. Не требовать по правилам этого приложения.'
+  - 'Соответствие Material ID = номеру участка атласа является внутренним решением, не нормой приложения.'
+
+# Machine-readable link to docs/domain/conflicts.md. Keys are dotted paths of the
+# fields above. status: review = sources disagree, unresolved -> a check whose
+# outcome depends on the disputed reading ends as `review`, never pass/fail.
+# status: noted = this profile's own text is explicit; the conflict concerns the other
+# profile or local practice -> the value is used and the conflict is reported.
+conflicts:
+  source.pdf_pages: {ids: [16], status: noted, note: 'App.1 = pp.1-19; figures pp.14-19 not referenced here'}
+  archive.max_bytes: {ids: [12], status: review, note: '1 GB: decimal vs binary undefined (reg p.6)'}
+  geometry.near_coplanar_spacing_m: {ids: [30], status: noted, note: 'regulation 5 mm-2 cm (reg p.8); local tools used 5 mm / 2 mm / 5 um for other purposes'}
+  geometry.geometric_error_tolerance_m: {ids: [30], status: noted, note: 'reg 0.002 m; local tools used other tolerances'}
+  textures.allowed_square_sizes_px: {ids: [5], status: review, note: 'NPM placeholder 128x128 (reg p.3-4) is not in this list (reg p.9 §5.2)'}
+  textures.max_file_bytes: {ids: [12], status: review, note: '3 MB: decimal vs binary undefined (reg p.9)'}
+  textures.island_padding_px_min: {ids: [29], status: noted, note: 'reg 8 px; local facade work used 16/20 px'}
+  textures.alpha_channel: {ids: [8, 21], status: review, note: 'reg p.9 §5.5 forbids alpha; accepted local atlases were RGBA (#21)'}
+  textures.optional_maps: {ids: [6], status: review, note: 'NPM normal Y convention (reg p.3) is not named; VPM is DirectX'}
+  textures.vegetation_maps: {ids: [18], status: review, note: 'opacity only "if needed" (reg p.10 §5.13)'}
+  textures.ground_density_px_per_square_meter: {ids: [4], status: review, note: 'px per square metre vs example ~10 px per linear metre (reg p.10 §6.1); no auto-check until clarified'}
+  textures.ground_density_exceptions: {ids: [22], status: noted, note: 'OKS exempt (reg p.10 §6.2)'}
+  naming.material_pattern: {ids: [17], status: review, note: 'glass materials M_Glass_01..07 (reg p.13 §3.5) not encoded'}

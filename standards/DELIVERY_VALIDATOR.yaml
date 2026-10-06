@@ -1,0 +1,143 @@
+# Ported from AGR standards/DELIVERY_VALIDATOR.yaml (sha256 7f58cc21d69e) on 2026-10-06; changes: added this header and the `conflicts:` block; status stays specification_only (implementation: Scripts/qa/validate_package.py); no stage changed.
+# AGR commit d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc. See standards/README.md.
+validator: DIGITAL_TWIN_DELIVERY
+version: '0.1.0'
+status: specification_only
+source:
+  file: Rasporyajenies19012026trebovaniya(2).pdf
+  sha256: 933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222
+profiles: [NPM_STANDARD.yaml, VPM_STANDARD.yaml]
+inputs:
+  - profile: NPM_or_VPM
+  - one_or_more_zip_archives
+  - project_reference: 'утверждённые альбомы, адрес, СПОЗУ/DWG, высоты, материалы'
+  - optional_customer_addendum: 'письменные дополнительные требования'
+output:
+  format: json
+  fields: [profile, source_sha256, asset_name, checks, blocking_errors, warnings, manual_reviews, passed]
+  check_fields: [id, status, observed, expected, source_pdf_pages, evidence]
+  statuses: [pass, fail, review, not_applicable, not_run]
+pass_policy:
+  - 'passed=true только если blocking_errors=0, все обязательные машинные проверки выполнены и ручные проверки подписаны.'
+  - 'Неизвестные данные = review/not_run; не считать pass.'
+  - 'Дополнение заказчика действует отдельно от нормативного профиля и хранит собственный источник/версию.'
+stages:
+  - id: V001
+    scope: both
+    gate: blocking
+    engine: zip_inspector
+    check: 'архив читается; нет битых и посторонних файлов; размер и состав по профилю'
+    source_pdf_pages: {NPM: [6, 7], VPM: [26]}
+  - id: V002
+    scope: both
+    gate: blocking
+    engine: fbx_parser
+    check: 'binary FBX 7.4/2014, 1 unit = 1 m, scale 1:1'
+    source_pdf_pages: {NPM: [4], VPM: [24]}
+  - id: V003
+    scope: both
+    gate: blocking
+    engine: fbx_scene_inspector
+    check: 'триангуляция, количество треугольников, типы объектов, отсутствие пустых объектов и недопустимых модификаторов'
+    source_pdf_pages: {NPM: [6, 7, 8], VPM: [28, 29]}
+  - id: V004
+    scope: both
+    gate: blocking
+    engine: geometry_inspector
+    check: 'дубликаты, изолированные элементы, нулевые рёбра; применённые трансформации'
+    source_pdf_pages: {NPM: [7, 8], VPM: [29]}
+  - id: V005
+    scope: both
+    gate: blocking
+    engine: shader_inspector
+    check: 'только разрешённые шейдеры; карты, слоты и прозрачность по профилю'
+    source_pdf_pages: {NPM: [8, 9], VPM: [29, 30, 32]}
+  - id: V006
+    scope: NPM
+    gate: blocking
+    engine: atlas_inspector
+    check: 'PNG встроены в FBX; допустимые размеры, <=3 МБ, без alpha, 8 px padding; наборы и имена'
+    source_pdf_pages: [9, 11, 12, 13]
+  - id: V007
+    scope: VPM
+    gate: blocking
+    engine: texture_inspector
+    check: 'внешние PNG; Diffuse + ERM + Normal на используемые UDIM, 8 бит/канал, размеры, DirectX normal, alpha правила, padding'
+    source_pdf_pages: [23, 30, 31, 34, 36]
+  - id: V008
+    scope: VPM
+    gate: blocking
+    engine: uv_inspector
+    check: 'один UV-канал, UDIM 1001..1100 подряд, без зеркальных островов, стекло только в 1001'
+    source_pdf_pages: [31, 39]
+  - id: V009
+    scope: VPM
+    gate: blocking
+    engine: uv_inspector
+    check: 'плотность diffuse 512..1706 px/m кроме разрешённых исключений'
+    source_pdf_pages: [31, 32]
+  - id: V010
+    scope: VPM
+    gate: blocking
+    engine: collision_inspector
+    check: 'UCX для каждого основного FBX; выпуклые замкнутые непересекающиеся оболочки, без слотов, с лимитом треугольников'
+    source_pdf_pages: [34, 36, 37]
+  - id: V011
+    scope: VPM
+    gate: blocking
+    engine: geojson_schema_inspector
+    check: 'UTF-8, точные ключи, типы, обязательные значения, imageBase64, массив Glasses, соответствие имени материала'
+    source_pdf_pages: [26, 27, 51, 52, 53, 54, 55]
+  - id: V012
+    scope: both
+    gate: blocking
+    engine: name_inspector
+    check: 'имена архива/FBX/mesh/material/texture и сквозная нумерация по соответствующему профилю'
+    source_pdf_pages: {NPM: [11, 12, 13], VPM: [33, 34, 35, 36]}
+  - id: V013
+    scope: VPM
+    gate: blocking
+    engine: coordinate_inspector
+    check: 'локальный origin 0/0/0, общий pivot, rotation 0 после reset; GeoJSON координаты МСК-77 совпадают с точкой вставки'
+    source_pdf_pages: [32, 33, 55]
+  - id: V014
+    scope: NPM
+    gate: blocking
+    engine: coordinate_inspector
+    check: 'геометрия в московских проектных координатах и высотах; углы соответствуют плану'
+    source_pdf_pages: [10]
+  - id: V015
+    scope: both
+    gate: manual_review
+    engine: overlay_review
+    check: 'силуэт, этажи, фасады, материалы, оконные типы, первый этаж, крыша, благоустройство совпадают с утверждённым проектом'
+    source_pdf_pages: {NPM: [4, 7, 8], VPM: [24, 28, 29]}
+  - id: V016
+    scope: VPM
+    gate: manual_review
+    engine: collision_overlay_review
+    check: 'проходы/арки/дворы свободны, расстояние коллизий до поверхностей соответствует высотной зоне'
+    source_pdf_pages: [36, 37]
+  - id: V017
+    scope: both
+    gate: manual_review
+    engine: coord_reference_review
+    check: 'сверка точки вставки, отметки 0 и геопривязки с утверждённым DWG/СПОЗУ; у ВПМ допуск 0.5 м'
+    source_pdf_pages: {NPM: [10], VPM: [32, 33, 55]}
+implementation_order:
+  - 'Сначала ZIP/PNG/имена/GeoJSON, затем FBX геометрия/UV, затем визуальные наложения и коллизии.'
+  - 'Вернуть evidence: путь внутри архива, имя объекта/материала, измерение и страницу PDF для каждого fail.'
+  - 'Сверять NPM и VPM по составу ОКС и благоустройства, но не требовать одинаковую топологию или UV.'
+open_questions_for_project_profile:
+  - 'Нужна ли коллизия для НПМ по отдельному ТЗ заказчика? В приложении 1 UCX не задан.'
+  - 'Разрешение конфликта о пустых FNO_code/act_AGR для ОКС.'
+  - 'Сверка спецификации заказчика, если она устанавливает дополнительные карты, слот ID или JSON.'
+
+# Machine-readable link to docs/domain/conflicts.md (paths: stages.<id>).
+conflicts:
+  stages.V001: {ids: [12], status: review, note: 'archive size: decimal vs binary units'}
+  stages.V003: {ids: [1, 14], status: review, note: 'VPM triangle limit; lights in main FBX'}
+  stages.V006: {ids: [5, 12, 21], status: review, note: 'NPM placeholder 128; 3 MB unit; RGBA atlases'}
+  stages.V010: {ids: [3, 15], status: review, note: 'UCX triangle budget; gap is only recommended'}
+  stages.V011: {ids: [2, 13, 20], status: review, note: 'empty FNO_code/act_AGR; Glasses array vs object; field limits not encoded'}
+  stages.V013: {ids: [19], status: review, note: 'pivot at geometric centre not encoded'}

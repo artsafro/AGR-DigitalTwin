@@ -1,0 +1,105 @@
+DCC MCP setup smoke evidence
+Date: 2026-10-06 (local workstation time)
+Task branch: harness/dcc-mcp-routing
+
+RizomUV MCP stdio probe (server launched with the isolated Blender Lab MCP venv Python and this worktree's Scripts/mcp/rizomuv_server.py):
+- list_tools: get_session_status, open_session, get_version, load_obj, unfold_visible, optimize_visible, pack_visible, close_managed_session
+- initial get_session_status: connected=false; pid=null; port=null
+- get_version before open_session: isError=true; no process launched
+- open_session: connected=true; version=2024.1.59.gbb13aa72; PID=763988
+- get_version: RizomUV=2024.1.59.gbb13aa72; Link API=0.1.14
+- close_managed_session: closed=true; PID=763988
+- final get_session_status: connected=false; pid=null; port=null
+- concurrent open_session calls: both returned PID=763208; close_managed_session closed PID=763208
+- no OBJ was loaded and no UV operation or save/export was run
+- after adding Link responsiveness to get_session_status, two additional cold open_session attempts timed out at the Link API's 10-second limit; get_session_status returned disconnected and no process PID afterward. These failed attempts are preserved as an intermittent launch limitation; no UV work occurred.
+
+Commands/checks:
+- Python 3.12.14 environment: python -m py_compile Scripts/mcp/rizomuv_server.py (passed)
+- git diff --check (passed)
+- MCP SDK stdio initialize/list_tools/call_tool smoke (passed)
+- After the latest status-probe change: Python compile and JSON/TOML parse passed; the stdio app launch probe exposed the intermittent RizomUVLink timeout above.
+
+Live app availability:
+- Blender 5.1.2 and 4.4.0 version commands succeeded; Blender MCP stdio handshake lists 26 tools. Blender Online Access is false and its localhost MCP socket was not available.
+- AutoCAD multiCAD MCP stdio handshake lists 7 tools; status is disconnected, with no CAD app running.
+- Revit, 3ds Max and SketchUp connections were configured but not live-verified in this session.
+
+Superseding SketchUp live verification, 2026-10-06:
+- Started the installed SketchUp 2026 read-only bridge using Windows Computer Use; status confirmed 127.0.0.1:9876.
+- Actual Codex MCP calls succeeded for get_version, get_model_info, list_layers, list_components (including pagination), get_component_info, find_components, get_selection, get_viewport_screenshot.
+- Python/Ruby version 0.3.1; compatible=true. Catalog advertises 22 tools; only the eight inspection tools above are verified/supported for agents by this restricted route.
+- Repeatable command: configured SketchUp venv Python Scripts/mcp/probe_sketchup_readonly.py
+- Result: passed=true; nine calls, eight distinct tools; no skipped checks; model_readback_unchanged=true (path, entity_count, layers, bounds).
+- Active model: 18 root entities, 14 root groups/components, 27 layers; units mm.
+- Evidence: tmp/mcp/sketchup-20261006T163717765667Z/report.json and viewport.png (ignored local evidence).
+- PNG read back visually: 1024x590; SHA-256 d7b862964d8e9a94f43cdfd394fc5c508f44a12af0e723ba74c1efa6ded3231e.
+- No model edit/save/export requested. Extension startup is manual after an app restart; no autostart installed.
+
+Superseding AutoCAD live verification, 2026-10-06:
+- Actual Codex multiCAD manage_session: check_running found autocad; connect succeeded; status autocad=connected.
+- manage_files list: one open drawing, flora.dwg.
+- manage_layers list/info: 17 layers.
+- manage_blocks list: seven definitions; info with a live block name returned definition and references; get_attrs for reference EC2 succeeded with zero attributes.
+- export_data format=json scope=all: 158 entity property records; second extraction matched the first exactly.
+- Five distinct tools verified in inspection modes. draw_entities/manage_entities and write/save/export operations were not tested.
+- manage_session screenshot: per-operation success=false, Could not find window for autocad; outer isError=false. No image returned.
+- Windows Computer Use list_windows independently found Autodesk AutoCAD 2025 - [flora.dwg]; capture app-access approval timed out. Native visual gate pending.
+- Raw inspection evidence retained under ignored tmp/mcp/autocad-20261006/report.json. No drawing edit/save/export requested.
+- Native capture retry after user confirmed AutoCAD access succeeded through @oai/sky get_window_state; inspected flora.dwg landscaping plan. This closes the native visual gate, but does not fix the multiCAD screenshot operation.
+- Final old-route status was disconnected; reconnect failed on AutoCAD.Application.Documents while manage_files still succeeded. Upstream COM proxies are thread-local and synchronous FastMCP tools run in pool threads.
+- Project multicad_stdio.py now registers the same seven upstream tools with a single COM executor and no dashboard launch. Both project client configs point to this worktree script.
+- Configured-route stdio probe in the authorized local COM context: passed=true, 22 calls, four connected-status cycles, two concurrent inspection calls, identical initial/final entity records. Evidence tmp/mcp/autocad-20261006T165908586872Z/report.json.
+- First restricted-shell probe reported no running CAD; retained as environment failure at tmp/mcp/autocad-20261006T165849656914Z/report.json. No app launch was requested by that probe.
+- Pending integration gate: restart Codex to replace the loaded upstream server command, then verify status and drawing reads through the actual Codex tools.
+- Second configured-route run after final probe reporting change also passed 22 calls: tmp/mcp/autocad-20261006T170057168210Z/report.json. Native/source behavior remained unchanged.
+- Independent read-only code/evidence review found no blocking defect in the inspection scope; noted pending actual Codex reload, lack of enforced source identity in the standalone probe, and inability to interrupt a hung COM call. Probe summaries do not establish full geometry or units; COM initialization lifetime is bounded by server process exit.
+- Codex restart integration passed: actual manage_session connect/status succeeded; three cycles of actual manage_files/list, manage_layers/list, status returned flora.dwg, 17 layers, autocad=connected. Process inspection confirmed multicad_stdio.py is running from the project command. Evidence tmp/mcp/autocad-restart-20261006/report.json. Reload gate complete for inspection; write/export and built-in screenshot remain unverified/faulty as above.
+
+Blender connection continuation:
+- Actual Codex get_blendfile_summary_path_info failed: Invalid response from Blender at localhost:9876. This is the SketchUp bridge port.
+- Computer Use launched installed Blender 5.1.2, inspected default unsaved Cube/Camera/Light scene, and confirmed enabled Blender Lab MCP 1.0.3 in Preferences.
+- Changed MCP preference port from 9876 to 9877 through the visible UI; UI readback showed 9877. Project configs now agree on loopback/9877 and installed Blender 5.1 CLI path.
+- Awaiting explicit user permission for Allow Online Access, required by the add-on. Live Blender read/tool verification, preference persistence, and Codex reload remain pending. No source scene loaded, edited, saved, or exported.
+
+Blender live continuation after Online Access approval, 2026-10-06:
+- User approved enabling Online Access. Enabled it through native Computer Use and started Blender Lab MCP 1.0.3 on localhost:9877.
+- Configured stdio route: catalog 26; ten calls with outer and inner success, seven distinct inspection tools plus two image tools. Default unsaved Scene: Cube/Camera/Light, three objects, is_dirty=false. Evidence tmp/mcp/blender-20261006T173913Z/report.json and image PNGs.
+- Native UI subsequently showed Blender crash; copied crash log to that evidence folder. EXCEPTION_ACCESS_VIOLATION in NVIDIA nvoglv64.dll. The crash followed MCP screenshot calls; causal link unproven. MCP capture stability pending; use Computer Use meanwhile.
+- Crash restart lost unsaved preference changes (port reverted to 9876 and Online Access false); disconnected probe retained at tmp/mcp/blender-20261006T174008Z/report.json.
+- Reapplied approved Online Access and port 9877, explicitly Save Preferences (native confirmation observed), manually started bridge. Eight successful calls through seven distinct inspection tools at tmp/mcp/blender-20261006T174215Z/report.json.
+- Ordinary quit/relaunch: bridge auto-started on 9877, eight successful calls through seven distinct inspection tools, same default scene. Evidence tmp/mcp/blender-20261006T174305Z/report.json. This verifies persistence/autostart; no production scene edit/save/export requested.
+- Actual Codex SketchUp get_version still compatible=true, both bridge versions 0.3.1; separate ports work.
+- Pending: Codex reload and actual Blender tool inspection on 9877. CLI variants, scene writes and rendering remain untested. New Blender agent skill records route, verified subset, driver-crash fallback and source safety.
+
+Production continuation, 2026-10-06 (supersedes earlier write-tool pending status):
+- Blender create/edit/material/UV/bevel, save/reopen, FBX export/import and native visual inspection passed on a fixture. Evidence: tmp/mcp/blender-production-20261006T174642Z/recovery_report.json. Actual Codex port reload pending.
+- SketchUp installed Production extension; typed primitives/transform/material/layer and SKP/OBJ/DAE/STL outputs passed. Evidence: tmp/mcp/sketchup-production/qa-v001/report.json. Package SHA256 be98fb1292c7d1c2aba1b141a00f1b8c7e011ea045c2ab15aa5b999088ce3168. Saved SKP native open passed; bridge readback pending. Independent review identified save_copy keeps source-path document active: agents must open/verify a separate working copy before writes. Wrapper now propagates errors rather than returning success-shaped text.
+- AutoCAD seven entity types including corrected spline, five edits, genuine DWG/DXF new-path save/reopen passed; entity summaries matched. Evidence: tmp/mcp/autocad-production-20261006/compat_report.json. DWG SHA256 3ad4375883bd90314f8ce6afdb12820c2eebc69af60d10c5f75cde2e485c2732; DXF SHA256 53ef9e4896d11768f08086c852d6d03b8a281aa875ad8e31c0c79e04c5521ee1. Native screenshot passed. Final wrapper reload pending.
+- Rizom ten-tool adapter: plane OBJ load/unfold/optimize/pack/save/reload and FBX export passed. Evidence: tmp/mcp/rizom-production-20261006T175214Z/report.json. OBJ readback preserves XYZ/topology and changed UVs. Native visual, FBX reload and actual Codex route reload pending.
+- 3ds Max actual Codex tools: fixture create/material/transform/UVW modifier/MAX save+reopen/FBX export+new-node import/MAX roundtrip save passed. Evidence: tmp/mcp/max-production-20261006/report.json. MAX SHA256 790cfe7e6e1a263af50609dd231a4c1e1554a0d83062c4011ef381d3f926b1d6; FBX SHA256 708bfaf5bc484e3cbc1d607e86b45b0f9fc80b786f8e285704d74f6bf5befc98. smart_import recenters to grid origin; initial success with zero added nodes was not accepted as import evidence. Controlled renamed-source import added one node and retained vertex/face count, material, bounds. UV comparison/native visual pending; agent viewport redraw failed.
+- Computer Use foreground-window PID error halted SketchUp bridge switching. Sources remain open; source and QA-input SketchUp bridges stopped. Revit production fixture checks are next. No supported SpeedTree Modeler MCP verified.
+
+Rizom corrected lifecycle and SpeedTree reload acceptance, 2026-10-06:
+- Actual Codex SpeedTree called all six tools successfully after reload, including new FBX export to export-reload-v001. Inputs unchanged, recognized FBX header; source/preset/STMAT hashes independently verified. This new export's native geometry readback remains pending.
+- Original Rizom cube UV check failed despite successful transport calls: Unfold/Optimize omitted PrimType=Island and Pack omitted Translate=true. Corrected both; preserved failed fixture evidence.
+- Native Link runs in a separate typed JSON helper on its main thread; startup/request/shutdown waits bounded. Wait for the managed app Link port before Connect. On operation timeout terminate helper only, retain managed GUI, report unknown completion; open_session supports helper reconnect without repeating edits. Timeout recovery itself remains unverified.
+- Corrected configured route passed 23 calls covering all ten tools and three open/close cycles in each report: tmp/mcp/rizom-worker-20261006T190343Z/report.json and tmp/mcp/rizom-worker-20261006T190534Z/report.json. Independent readback: identical eight XYZ positions and six geometric quad faces, no packed UV intersections, FBX preserves packed UVs. This fixture does not establish general UV quality.
+- Quad native visual inspection passed; final cube visual checkpoint was stopped by user physical Escape and remains pending.
+- After requested Codex restart, actual status/open/version/load/pack/new OBJ save/close/reopen/status passed. Evidence tmp/mcp/rizom-reload-20261006/codex_restart_report.json. Saved codex_packed_v003.obj SHA256 d0f418d7c46cdb9c99fe17fd8a73cbbc357a2a9b4e43e819bc01e8461428cd06. Final managed PID290080/port56092 connected, no mesh loaded. Client reload gate passed.
+
+Actual Codex reload and Revit production check, 2026-10-06:
+- Actual Blender path-info tool now connects to saved fixture_roundtrip_v001.blend, is_dirty=false. AutoCAD connect/status plus project-added manage_files JSON info succeed: fixture_v002.dxf, INSUNITS=4, seven model-space entities. These confirm changed routes loaded.
+- SketchUp get_version reports bridge stopped on 9876; Rizom status reports no managed process. Catalog presence does not mean apps connected.
+- Separate new Revit non-workshared project: 20 HTTP calls across 19 tools passed, including dryRun create_level with committed=false; list_levels confirms no preview level remains. Named-pipe export_fbx succeeded for explicit QA view. Evidence tmp/mcp/revit-production-20261006/report.json. PDF 31868 bytes with valid PDF header; FBX 77360 bytes with binary FBX header independently verified.
+- fixture_v001.rvt was saved via native UI before later parameter/type/deletion edits. Current QA document retains unsaved later changes. User confirmed working behavior and explicitly declined SaveAs/reopen verification, requesting next software. RVT persistence of later changes remains unverified; do not close or save the separate original detached source.
+- Native screenshots show Revit QA plan. User accepted working behavior; all 94 tools and FBX geometry readback are not established. Computer Use menu navigation could not complete SaveAs; manual input/occlusion was detected.
+- Actual Rizom open_session did not return within several minutes; no Rizom process/window observed. Stopped waiting on that orchestration call, without killing an app or claiming the MCP request canceled. Fresh managed launch and FBX readback remain pending.
+
+SpeedTree file/batch production route, 2026-10-06:
+- Independently reviewed sibling-worktree candidate; did not adopt false-success export handling, overwrite-prone output selection, fuzzy preset guesses, hardcoded version, or forced GUI termination.
+- New Scripts/mcp/speedtree_server.py exposes six tools: installation_info, list_templates, list_presets, inspect_spm, inspect_preset, export_tree. Exact inputs, bounded inspection, serialized FBX export, empty/new output directory, exit/header/size/hash checks; no activeGUI editing or forced close.
+- Both project configs point to taskworktree adapter with installed isolated Python. Configured stdio probe passed all six tools plus overwrite and wrong-extension rejection. Evidence tmp/mcp/speedtree-mcp-20261006/report.json. Actual source/preset hashes unchanged; fresh FBX and STMAT produced. Native import/visual verification and actual Codex reload are pending.
+- Prior direct CLI seam test also passed exit0; source unchanged, FBX525392 bytes SHA256 ac05e7f006a1ef35ef047ebda233692218fc573ac5315fcc77bcb5a316707dc1, STMAT1022 bytes. Evidence tmp/mcp/speedtree-discovery-20261006/export_report.json. -help timed out with no output; no assumption of documented help support.
+- Blender interactive import could not run because Blender was closed; Max actual route reported BRIDGE_DOWN on 127.0.0.1:8765. Native readback remains pending; do not equate FBX signature with correct geometry/materials/units.
+- Actual Blender execute_blender_code_for_cli failed with CLI timeout after120s. Separate authorized local Blender5.1.2 background import succeeded: 10435 vertices/12298 faces/twoUVlayers/Sample_Mat. Saved native_readback_v002.blend SHA2569b68bd92c275dfb77b549d3c753c49433d2afbad6620357d7c116278b84a4887; report tmp/mcp/speedtree-mcp-20261006/native_readback_report.json. Builtin sample has empty normal/opacity texture paths; scale equivalence, texture completeness, native visual and actual Codex SpeedTree reload remain pending.

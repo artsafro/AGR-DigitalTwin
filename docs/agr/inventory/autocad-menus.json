@@ -1,0 +1,56 @@
+[
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Support\\custom.cuix",
+    "zip_container": true,
+    "members": [
+      "Header.cui",
+      "MenuGroup.cui",
+      "Menu_Package_Info.xml",
+      "_rels/.rels",
+      "[Content_Types].xml"
+    ],
+    "external_script_macro_references": []
+  },
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Support\\acad.CUIX",
+    "zip_container": true,
+    "members": [
+      "AcceleratorRoot.cui",
+      "DigitizerButtonRoot.cui",
+      "DoubleClickRoot.cui",
+      "Header.cui",
+      "ImageMenuRoot.cui",
+      "MenuGroup.cui",
+      "MouseButtonRoot.cui",
+      "OverrideRoot.cui",
+      "PopMenuRoot.cui",
+      "QuickAccessToolbarRoot.cui",
+      "QuickPropertiesRoot.cui",
+      "RibbonRoot.cui",
+      "RolloverTooltipRoot.cui",
+      "ScreenMenuRoot.cui",
+      "TabletMenuRoot.cui",
+      "ToolbarRoot.cui",
+      "WorkspaceRoot.cui",
+      "Menu_Package_Info.xml",
+      "_rels/.rels",
+      "[Content_Types].xml"
+    ],
+    "external_script_macro_references": []
+  },
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Support\\acetmain.cuix",
+    "zip_container": true,
+    "members": [
+      "Header.cui",
+      "MenuGroup.cui",
+      "PopMenuRoot.cui",
+      "RibbonRoot.cui",
+      "ToolbarRoot.cui",
+      "Menu_Package_Info.xml",
+      "_rels/.rels",
+      "[Content_Types].xml"
+    ],
+    "external_script_macro_references": []
+  }
+]

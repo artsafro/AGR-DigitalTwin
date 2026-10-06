@@ -1,0 +1,37 @@
+{
+  "png_readback_verified": true,
+  "manifest_readback_verified": true,
+  "ids": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "minimum_white_door_run_px": 9,
+  "reference_png_pixels_equal": true,
+  "reference_manifest_geometry_and_mapping_equal": true,
+  "source_text_sanitized": true,
+  "png_sha256": "889c1fc54ca543ce6fa541f52f0e1d7081e04e0d1ef2f4d84bd7c94faee848ca",
+  "native_model_uv_or_fbx_tested": false,
+  "full_agr_delivery_verified": false,
+  "date": "2026-10-01",
+  "scope": "Window/door atlas v8 PNG and UV CSV only; no new user visual acceptance",
+  "source_original_unchanged": true,
+  "script_sha256": {
+    "atlas.py": "4d3fc9e8661c68588ec7034c3bbbdc9020dd4449f5e588998b9811ee815f19d9",
+    "cli.py": "1268e00a094c820f8c749b1d692120f5130c7f72253b425cf1dd8bbc694fce66"
+  },
+  "config_sha256": "7f821bbbccd5b0c0bca9bc44a739ea1dde720ac7464629f712cdc347a77dfe6a",
+  "font_sha256": {
+    "arial.ttf": "b3658eadae55e682b5f69eb64c439c1ecc8f196c0bb8d4756d145d13bc86476a",
+    "arialbd.ttf": "e8f4e3baf6cc35fed6fcce3a540e8b39e8f6cda1d22a28f2ec8f526fef7a43f5"
+  }
+}

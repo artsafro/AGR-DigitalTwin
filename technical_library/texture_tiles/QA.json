@@ -1,0 +1,154 @@
+{
+  "tiles": [
+    {
+      "id": 1,
+      "udim": 1001,
+      "size": [
+        4096,
+        4096
+      ],
+      "solid": false,
+      "opposite_edges_equal": true,
+      "sha256": "9995b9b63cffe86c86e6bbf4472e6df9e6f4333f435d5f1ab6a685480291a013",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 2,
+      "udim": 1002,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "226c00c7c1297b0bf9099ba46b43fc8033eb0e5a164bcfba3633bedddcb5372a",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 3,
+      "udim": 1003,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "e8c201f879fd9450fa7133621b84ccbfdac79efabdb9198338002841b6ce7c3d",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 4,
+      "udim": 1004,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "30ba0a528f6f5fd5e7269f8fec00adc4ed30a765e45a8d591befb24aa3c1f892",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 5,
+      "udim": 1005,
+      "size": [
+        4096,
+        4096
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "24bb6bfc8d7ad062eeef1126816604c4d7cf23be5529eae234cebb6654613822",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 6,
+      "udim": 1006,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "3f4d4aa1d8e55218d84335817abdde2a5d46c3b1bfa738655f3b75dc0a530d7d",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 7,
+      "udim": 1007,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "30ba0a528f6f5fd5e7269f8fec00adc4ed30a765e45a8d591befb24aa3c1f892",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 8,
+      "udim": 1008,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "3f4d4aa1d8e55218d84335817abdde2a5d46c3b1bfa738655f3b75dc0a530d7d",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 9,
+      "udim": 1009,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "30ba0a528f6f5fd5e7269f8fec00adc4ed30a765e45a8d591befb24aa3c1f892",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 10,
+      "udim": 1010,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "1baa18ac3459c2cde15cb8429f5a4abf86ec95006f167b62f484513c865f9419",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    },
+    {
+      "id": 11,
+      "udim": 1011,
+      "size": [
+        256,
+        256
+      ],
+      "solid": true,
+      "opposite_edges_equal": true,
+      "sha256": "3719e9b2de8d3f39c290d3cf434ac92c4f24d9963fea65d1bd30f5868e4322d4",
+      "reference_pixels_equal": true,
+      "reference_bytes_equal": true
+    }
+  ],
+  "archive_readback_equal": true,
+  "delivery_passed": false,
+  "scope": "RGB map generation/readback only; no shader, model UV, physical-scale or native Max acceptance",
+  "implementation_sha256": {
+    "cli.py": "fb7a03e548133ca27b8ddb827449c7f8701852711698bd85b1fbc9799965195c",
+    "panels.py": "cdd9d8ede1bde9a06e475d8c4b352b107d1e68b9f409918fd468117c17e96654"
+  }
+}

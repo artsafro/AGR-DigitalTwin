@@ -1,0 +1,1291 @@
+{
+  "date": "2026-09-26",
+  "base_commit": "3dfaaef37af4b1bb82289df491928d773ed4946c",
+  "source": "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63",
+  "compared_installation": "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts",
+  "excluded": [
+    "GeoAGR.ini (license; contents not read or hashed)"
+  ],
+  "comparison_counts": {
+    "same": 32,
+    "absent": 13,
+    "different": 14
+  },
+  "files": [
+    {
+      "name": "7z.exe",
+      "bytes": 557056,
+      "sha256": "8cebb25e240db3b6986fcaed6bc0b900fa09dad763a56fb71273529266c5c525",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "abbr.csv",
+      "bytes": 5555,
+      "sha256": "311a4aef29bba46da8bf24d0b299ff0375413995278bb2939046569486424336",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "abbr2.csv",
+      "bytes": 4274,
+      "sha256": "81ae3ff20b9896b31d390828c866171fa254e713031aeaecff73e4839313c16b",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "abbr3.csv",
+      "bytes": 2678,
+      "sha256": "6923953ecbb0ee6b1877345eacc47b7069e65bbcd2fbc17b23a114ca03c2490d",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "abbr4.csv",
+      "bytes": 954,
+      "sha256": "390036979a19f03a9801719227f183552b1499a903dca488fb43cb632443572c",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "composite.exe",
+      "bytes": 23206272,
+      "sha256": "045e856fc3f668e1ac283e0468e62724a41d7913b6fbcca9ba2a3bc6108b3eef",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "DelaunayCore.dll",
+      "bytes": 7168,
+      "sha256": "a481d857243d04a51213a265a174583c3d1196e12cf991cf27203299d99f9866",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "FastFaceFinder.dll",
+      "bytes": 8192,
+      "sha256": "2fce02ecdf5deeb5e20fbe581a5268b76efec69c5ad0941a94118e7bfc3c533b",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "FbxFormatConverter.exe",
+      "bytes": 8035328,
+      "sha256": "283711354050abbc6c0bd6db64a68b7c2339b22f7189cb0b29ae291b63310a56",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "fbx_light_ascii.fbx",
+      "bytes": 33085,
+      "sha256": "2bed505062cd8a66c7be6912b845a640d93d24afb97d2119bf2d03ec00dea4de",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "fbx_light_ascii_edited.fbx",
+      "bytes": 17554,
+      "sha256": "4b4109390857d1e1c240ae24eab9b81e54944b0c1e5a2742631baa5717ece5cc",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "fbx_light_bin.fbx",
+      "bytes": 26752,
+      "sha256": "c0567279cf3770f0d3daf9d6051979492c066ea26865f49f5d1a46e225937854",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "GeoAGR.exe",
+      "bytes": 6168064,
+      "sha256": "22d425d6f669a65998a1e8f754a2f06b52d335ca97fa7e44a928c0d0f228e593",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "GeoAGR.mse",
+      "bytes": 458,
+      "sha256": "a55d50fa73aca6acb7485e1932b0e5de0e5f584e68a55f677bf3d0da7db4e36c",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "identify.exe",
+      "bytes": 23206400,
+      "sha256": "ee21172bfad16b8c1bf3e9005dc0dcb6f9c1ed12d6f77e28b5c63b8cc225b13e",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "magick.exe",
+      "bytes": 23206400,
+      "sha256": "fef4ce8073ef4cdc168f82fc6fecb9c667f6019f29ba41a352e5d08acb2ef282",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "montage.exe",
+      "bytes": 23206272,
+      "sha256": "60c5bee2144a970d72e4b0d56437a0ab20b3ed5ee9fd001b123784487a04963f",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "Moscow_boundaries_MSK.max",
+      "bytes": 9601024,
+      "sha256": "4d55aa24bfd94b59f48779cbc92f8b4396a7fd57e3250e5a3a1298da662c6a75",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "moveall.dll",
+      "bytes": 9728,
+      "sha256": "aee152cc3d669084ea5ca645fa14912832e5078a7363840fedfb13e5b74a1bea",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "normalmap.exe",
+      "bytes": 130135,
+      "sha256": "5e17b841ac432124b3c35760b29fdaedfe31afc66aa29683ffb4039ec7e8fa8d",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "OMK_TE.csv",
+      "bytes": 6742,
+      "sha256": "73603d61dfc45361397e05617a8bb57b81d01aff514cefe97ffd5d6c1e3890cf",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "OMK_TE2.csv",
+      "bytes": 35680,
+      "sha256": "5a2a6f10ac55c77075513aa81bad5fc46eb890d085f9807db6ab9300e906a1e4",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "OMK_TE3.csv",
+      "bytes": 246205,
+      "sha256": "961fd8ad7d8e0e7d44f43dcb6b959b12924700f40b46adb988064b558398a3da",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "pngquant.exe",
+      "bytes": 743424,
+      "sha256": "7aadad6a50aa5c40cfcb20f9478c92f6030360a3424bc262ce383dc1e97fb86a",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ral_classic.csv",
+      "bytes": 11111,
+      "sha256": "584fbd0a8d3214c09abc2c3c33d925c63c8460f9aed0f701d46f6280cb375794",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "rules1.csv",
+      "bytes": 14085,
+      "sha256": "1fc7ff08e4af0ec83bef832e65f13acf9fd235874c800db391f23757075a117f",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "rules2.csv",
+      "bytes": 33496,
+      "sha256": "8485ad00a19bbb66b1315a30bf968e62d1e0a569aef20d184834bcb58e12dfcc",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "rules3.csv",
+      "bytes": 17832,
+      "sha256": "8ace0c644f4886c52ea9f0a06304d1ee04b5cfa04e7d10b7862347b5006b2732",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "rules4.csv",
+      "bytes": 54383,
+      "sha256": "2cb18f0e7395c17c210d3d19aabbcb2ce214ef601f0cd2df37f19fb2df420033",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "rules5.csv",
+      "bytes": 7536,
+      "sha256": "a064332089d3b192d155c7262b4ba37fd8b6f76b9c2797c9215084d8d4f41ddf",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tech1.txt",
+      "bytes": 2722,
+      "sha256": "f456c99dc8ef522ace1ea1a06c33a3d96f39b3ca407d7a2306028be9dbb63a37",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tech2.txt",
+      "bytes": 15072,
+      "sha256": "2638094aa539bda272f44ef414d79d1afe6b8315aeb81bd38ae0960234c99f30",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tech3.txt",
+      "bytes": 3767,
+      "sha256": "2656dbdc6bf8038b509506977d1d37a79f7b15071d962db9c8a1d68ea546c8a5",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tech4.txt",
+      "bytes": 2854,
+      "sha256": "fd1077395b96f7bf5ab8f84fc989fb9ebaddfcc5faa94f161d3f7e5e7a963768",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_Controls.ini",
+      "bytes": 786,
+      "sha256": "2a8c5437b84d02edb252b825b5ff0f8a45708f4066454fcee68b66a452cdbf5a",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_Docker.ini",
+      "bytes": 970,
+      "sha256": "74e4361e5781a1094fd15ef4ab91bdac712b5162566e0b3a2961384c829978b5",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_File.ini",
+      "bytes": 5496,
+      "sha256": "f0f1d40c115a273768a0bf721124933b3fcc2d979cce1ba4c46622720b38fb2e",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_files.ini",
+      "bytes": 5836,
+      "sha256": "672c9185216431b6ddf957a5f91b567e45a805a0ddac0d8fa69a223bd619e46e",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_Geojson.ini",
+      "bytes": 3652,
+      "sha256": "4747a3681fe5b320ad6f96db4f397c734fdccc01d461821d97ab10930e2e45c5",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_MAF.ini",
+      "bytes": 2668,
+      "sha256": "ec42cfbdf8c86bef338d8aae7489aaefaf5d40138c6dfdfb4cab87150a6395bc",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_objs.ini",
+      "bytes": 22166,
+      "sha256": "d9782aed213812a492dc0345524240e1424c90de2e35133f65107ae43c8c0496",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_ProjectMap.ini",
+      "bytes": 2866,
+      "sha256": "b6dcd8446efba8699e5ff72687f36bc5b629aa7c8a2644e45d2d8835f6e1fe69",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_rocount_area.ini",
+      "bytes": 2570,
+      "sha256": "d39ffb3f80eec76e8ecc9248a12e7f98d3b107c6269527ac669208bd59236f95",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_rocount_colors.ini",
+      "bytes": 450,
+      "sha256": "75de74c46cae7d527a96dfaf4e263bb212e9f6d6a76547b677dea76ad4d22b24",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_rocount_texel.ini",
+      "bytes": 6118,
+      "sha256": "c7574b854f691b70f27717e08108c7df90f751cd846a27c4f7698ff6ba8516fa",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_Rules.ini",
+      "bytes": 128,
+      "sha256": "7abff8ed5f5af625140b955a8009f6aa12f0abe354e81f283f1eeaca3d3587ae",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_slicers.ini",
+      "bytes": 19220,
+      "sha256": "46245325b959fd17a5d78319154277586dd797455cb3a674eeec5f5c8d0b097a",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_syssetup.ini",
+      "bytes": 2612,
+      "sha256": "156d026b48c4f727a5618769adf796db304822314bf0107cd0529bdafe0aa29a",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_tools.ini",
+      "bytes": 18630,
+      "sha256": "a19fea150d8cde1b308997996ffb620a55efd7dc9bd9f31f39af5c119a93f854",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_Tree.ini",
+      "bytes": 16822,
+      "sha256": "5f055674da804223ee1ae9f07b6b5d7481bd3e8c8ca051920cd58f50c25ea5e7",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_UCX.ini",
+      "bytes": 13522,
+      "sha256": "970678695b8026d149930f8e14f456c82ea06516baf4a39c8df9a665eb4cd200",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "tooltips_UDIMs.ini",
+      "bytes": 64442,
+      "sha256": "3d46f96d14d5624dd084cd3194445e647d22be05bfe276bec7568b3019d66747",
+      "installed_comparison": "different",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ucx_check.exe",
+      "bytes": 624640,
+      "sha256": "e40e33a5b32362d557c8712608fc4018ffa1bd43585824d950b1a48da1d0484f",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ul.csv",
+      "bytes": 763932,
+      "sha256": "43d490819afca7e2b0039e42191f5fcfa57cb7058745ec07424e9586783595ad",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ul2.csv",
+      "bytes": 522125,
+      "sha256": "bb28135a5b025585228514095fefbd1bdd77417afc22ce9c51399d86a01dfba1",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ul3.csv",
+      "bytes": 462154,
+      "sha256": "c48fee2abddd0a0e898ae6232701d83fe588a73bb48e5586807f4fc56a84e66a",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ul4.csv",
+      "bytes": 10311,
+      "sha256": "104956f4a13db346330c0b354c60d2c1c3eb4daf8601f1e8b7f4905030865530",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "ul5.csv",
+      "bytes": 538072,
+      "sha256": "9c99c522ad12785c1a4ec8607c30c2791213c1ac965b6534eb1ce921ca4579d3",
+      "installed_comparison": "same",
+      "unchanged_after_probes": true
+    },
+    {
+      "name": "uvdilate.exe",
+      "bytes": 475136,
+      "sha256": "33229bd81a00c2d15673a144f702c643bb00ef45917e5ee928b925a2353c575e",
+      "installed_comparison": "absent",
+      "unchanged_after_probes": true
+    }
+  ],
+  "managed_metadata": [
+    {
+      "file": "DelaunayCore.dll",
+      "sha256": "a481d857243d04a51213a265a174583c3d1196e12cf991cf27203299d99f9866",
+      "assembly": "DelaunayCore",
+      "version": "0.0.0.0",
+      "references": [
+        {
+          "name": "mscorlib",
+          "version": "4.0.0.0"
+        },
+        {
+          "name": "System.Core",
+          "version": "4.0.0.0"
+        }
+      ],
+      "types": [
+        {
+          "name": "DelaunayCore.Triangulator",
+          "attributes": "Public, BeforeFieldInit",
+          "methods": [
+            {
+              "name": "InCircle",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Boolean",
+              "parameter_types": [
+                "Point2D",
+                "Point2D",
+                "Point2D",
+                "Point2D"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "pA",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "pB",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "pC",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "pD",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 169
+            },
+            {
+              "name": "SegmentsIntersect",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Boolean",
+              "parameter_types": [
+                "Point2D",
+                "Point2D",
+                "Point2D",
+                "Point2D"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "pA",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "pB",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "pC",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "pD",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 242
+            },
+            {
+              "name": "IsPointInPolygon",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Boolean",
+              "parameter_types": [
+                "Point2D",
+                "Point2D[]"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "p",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "polygon",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 181
+            },
+            {
+              "name": "ProcessAllFaces",
+              "attributes": "Public, Static, HideBySig",
+              "returns": "Int32[]",
+              "parameter_types": [
+                "Double[]",
+                "Int32[]",
+                "Int32[]",
+                "Double[]"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "allVertsXYZ",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "facesVertsCount",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "facesVertsFlat",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "facesNormalsAndCentersFlat",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 1545
+            },
+            {
+              "name": "ProcessAndAddGlobalEdge",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Void",
+              "parameter_types": [
+                "Int32",
+                "Int32",
+                "Int32",
+                "Point2D[]",
+                "Int32[]",
+                "System.Collections.Generic.HashSet`1<String>",
+                "System.Collections.Generic.List`1<Int32>"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "i",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "j",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "maxCount",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "points",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 5,
+                  "name": "faceVerts",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 6,
+                  "name": "uniquePairs",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 7,
+                  "name": "globalResultEdges",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 282
+            },
+            {
+              "name": ".ctor",
+              "attributes": "Public, HideBySig, SpecialName, RTSpecialName",
+              "returns": "Void",
+              "parameter_types": [],
+              "parameters": [],
+              "il_bytes": 7
+            }
+          ]
+        }
+      ],
+      "referenced_member_owners": [
+        "System.Attribute",
+        "System.AttributeUsageAttribute",
+        "System.Collections.Generic.HashSet`1<String>",
+        "System.Collections.Generic.List`1<Int32>",
+        "System.Diagnostics.DebuggableAttribute",
+        "System.Int32",
+        "System.Math",
+        "System.Object",
+        "System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+        "System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
+        "System.String"
+      ]
+    },
+    {
+      "file": "FastFaceFinder.dll",
+      "sha256": "2fce02ecdf5deeb5e20fbe581a5268b76efec69c5ad0941a94118e7bfc3c533b",
+      "assembly": "FastFaceFinder",
+      "version": "0.0.0.0",
+      "references": [
+        {
+          "name": "mscorlib",
+          "version": "4.0.0.0"
+        },
+        {
+          "name": "System.Core",
+          "version": "4.0.0.0"
+        }
+      ],
+      "types": [
+        {
+          "name": "FastFaceFinder",
+          "attributes": "Public, BeforeFieldInit",
+          "methods": [
+            {
+              "name": "Dot",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Double",
+              "parameter_types": [
+                "Vec3",
+                "Vec3"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "a",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "b",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 42
+            },
+            {
+              "name": "Cross",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Vec3",
+              "parameter_types": [
+                "Vec3",
+                "Vec3"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "a",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "b",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 87
+            },
+            {
+              "name": "EdgeIntersectsTriangle",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Boolean",
+              "parameter_types": [
+                "Vec3",
+                "Vec3",
+                "Vec3",
+                "Vec3",
+                "Vec3"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "p1",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "p2",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "t0",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "t1",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 5,
+                  "name": "t2",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 260
+            },
+            {
+              "name": "CoplanarTrianglesOverlap",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Boolean",
+              "parameter_types": [
+                "Vec3[]",
+                "Vec3[]",
+                "Vec3"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "tri1",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "tri2",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "normal",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 170
+            },
+            {
+              "name": "PointInTriangle2D",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Boolean",
+              "parameter_types": [
+                "Vec3",
+                "Vec3",
+                "Vec3",
+                "Vec3",
+                "Int32"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "p",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "a",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "b",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "c",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 5,
+                  "name": "axis",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 322
+            },
+            {
+              "name": "FindOverlaps",
+              "attributes": "Public, Static, HideBySig",
+              "returns": "Boolean[]",
+              "parameter_types": [
+                "Double[]",
+                "Int32[]",
+                "Double[]",
+                "Int32[]",
+                "Double[]"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "flatTriVerts",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "triOrigFaceIDs",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "flatTriBoxes",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "flatTriVertIDs",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 5,
+                  "name": "flatTriNormals",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 1817
+            },
+            {
+              "name": ".ctor",
+              "attributes": "Public, HideBySig, SpecialName, RTSpecialName",
+              "returns": "Void",
+              "parameter_types": [],
+              "parameters": [],
+              "il_bytes": 7
+            }
+          ]
+        }
+      ],
+      "referenced_member_owners": [
+        "Enumerator<CellKey,System.Collections.Generic.List`1<Int32>>",
+        "System.Attribute",
+        "System.AttributeUsageAttribute",
+        "System.Collections.Generic.Dictionary`2<CellKey,System.Collections.Generic.List`1<Int32>>",
+        "System.Collections.Generic.HashSet`1<Int64>",
+        "System.Collections.Generic.KeyValuePair`2<CellKey,System.Collections.Generic.List`1<Int32>>",
+        "System.Collections.Generic.List`1<Int32>",
+        "System.Diagnostics.DebuggableAttribute",
+        "System.IDisposable",
+        "System.Math",
+        "System.Object",
+        "System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+        "System.Runtime.CompilerServices.RuntimeCompatibilityAttribute"
+      ]
+    },
+    {
+      "file": "moveall.dll",
+      "sha256": "aee152cc3d669084ea5ca645fa14912832e5078a7363840fedfb13e5b74a1bea",
+      "assembly": "moveall",
+      "version": "0.0.0.0",
+      "references": [
+        {
+          "name": "mscorlib",
+          "version": "4.0.0.0"
+        }
+      ],
+      "types": [
+        {
+          "name": "FastCollisionSolver",
+          "attributes": "Public, BeforeFieldInit",
+          "methods": [
+            {
+              "name": "Dot",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Double",
+              "parameter_types": [
+                "Vector3D",
+                "Vector3D"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "a",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "b",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 42
+            },
+            {
+              "name": "Cross",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Vector3D",
+              "parameter_types": [
+                "Vector3D",
+                "Vector3D"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "a",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "b",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 87
+            },
+            {
+              "name": "TriangulateDelaunay2D",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "System.Collections.Generic.List`1<Int32[]>",
+              "parameter_types": [
+                "System.Collections.Generic.List`1<Double[]>"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "points2D",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 280
+            },
+            {
+              "name": "AddTriangleToVoxelGrid",
+              "attributes": "Private, Static, HideBySig",
+              "returns": "Void",
+              "parameter_types": [
+                "System.Collections.Generic.Dictionary`2<CellKey,System.Collections.Generic.List`1<LargeFaceCache>>",
+                "Vector3D",
+                "Vector3D",
+                "Vector3D",
+                "Vector3D",
+                "Double",
+                "Double",
+                "Double",
+                "Double"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "grid",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "v1",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "v2",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "v3",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 5,
+                  "name": "normal",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 6,
+                  "name": "oX",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 7,
+                  "name": "oY",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 8,
+                  "name": "oZ",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 9,
+                  "name": "invVoxel",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 469
+            },
+            {
+              "name": "SolveCollisions",
+              "attributes": "Public, Static, HideBySig",
+              "returns": "Double[]",
+              "parameter_types": [
+                "Double[]",
+                "Int32[]",
+                "Double[]",
+                "Int32[]",
+                "Int32[]",
+                "Double[]",
+                "Double[]",
+                "Double",
+                "Double",
+                "Double",
+                "Double",
+                "Int32",
+                "Int32",
+                "Int32",
+                "Int32",
+                "Int32"
+              ],
+              "parameters": [
+                {
+                  "sequence": 1,
+                  "name": "sVertPositions",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 2,
+                  "name": "sEdgeVerts",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 3,
+                  "name": "lVertPositions",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 4,
+                  "name": "lFaceVerts",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 5,
+                  "name": "lFaceCounts",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 6,
+                  "name": "lNormals",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 7,
+                  "name": "lBoxes",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 8,
+                  "name": "targetGap",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 9,
+                  "name": "offsetX",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 10,
+                  "name": "offsetY",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 11,
+                  "name": "offsetZ",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 12,
+                  "name": "p1",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 13,
+                  "name": "p2",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 14,
+                  "name": "p3",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 15,
+                  "name": "p4",
+                  "attributes": "None"
+                },
+                {
+                  "sequence": 16,
+                  "name": "p5",
+                  "attributes": "None"
+                }
+              ],
+              "il_bytes": 2791
+            },
+            {
+              "name": ".ctor",
+              "attributes": "Public, HideBySig, SpecialName, RTSpecialName",
+              "returns": "Void",
+              "parameter_types": [],
+              "parameters": [],
+              "il_bytes": 7
+            }
+          ]
+        }
+      ],
+      "referenced_member_owners": [
+        "Enumerator<Int32[]>",
+        "Enumerator<LargeFaceCache>",
+        "System.Attribute",
+        "System.AttributeUsageAttribute",
+        "System.Collections.Generic.Dictionary`2<CellKey,System.Collections.Generic.List`1<LargeFaceCache>>",
+        "System.Collections.Generic.List`1<Double[]>",
+        "System.Collections.Generic.List`1<Int32[]>",
+        "System.Collections.Generic.List`1<LargeFaceCache>",
+        "System.Diagnostics.DebuggableAttribute",
+        "System.IDisposable",
+        "System.Math",
+        "System.Object",
+        "System.Runtime.CompilerServices.CompilationRelaxationsAttribute",
+        "System.Runtime.CompilerServices.CompilerGeneratedAttribute",
+        "System.Runtime.CompilerServices.RuntimeCompatibilityAttribute",
+        "System.Runtime.CompilerServices.RuntimeHelpers"
+      ]
+    }
+  ],
+  "autoit_script_resources": [
+    {
+      "path": [
+        "10",
+        "SCRIPT",
+        "0"
+      ],
+      "bytes": 5210010,
+      "sha256": "fb2df6c44980f57a80a320f15a10ef39d6711df861dfefafa27cc9f8ae8f43fc",
+      "autoit_marker": true
+    }
+  ],
+  "ucx_probe": {
+    "synthetic": true,
+    "executable": "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\ucx_check.exe",
+    "sha256": "e40e33a5b32362d557c8712608fc4018ffa1bd43585824d950b1a48da1d0484f",
+    "cases": [
+      {
+        "case": "apart",
+        "returncode": 0,
+        "input_unchanged": true,
+        "findings_file_exists": true,
+        "names": [],
+        "sidecar_files": [
+          "synthetic.log",
+          "synthetic.txt"
+        ]
+      },
+      {
+        "case": "intersect",
+        "returncode": 0,
+        "input_unchanged": true,
+        "findings_file_exists": true,
+        "names": [
+          "UCX_SyntheticA",
+          "UCX_SyntheticB"
+        ],
+        "sidecar_files": [
+          "synthetic.log",
+          "synthetic.txt"
+        ]
+      },
+      {
+        "case": "contained",
+        "returncode": 0,
+        "input_unchanged": true,
+        "findings_file_exists": true,
+        "names": [],
+        "sidecar_files": [
+          "synthetic.log",
+          "synthetic.txt"
+        ]
+      },
+      {
+        "case": "touch",
+        "returncode": 0,
+        "input_unchanged": true,
+        "findings_file_exists": true,
+        "names": [
+          "UCX_SyntheticA",
+          "UCX_SyntheticB"
+        ],
+        "sidecar_files": [
+          "synthetic.log",
+          "synthetic.txt"
+        ]
+      },
+      {
+        "case": "invalid",
+        "returncode": 1,
+        "input_unchanged": true,
+        "findings_file_exists": false,
+        "names": null,
+        "sidecar_files": [
+          "synthetic.log"
+        ]
+      }
+    ],
+    "scope": "OBJ pair intersection diagnostic; not full UCX validation"
+  },
+  "uvdilate_probe": {
+    "synthetic": true,
+    "executable": "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\uvdilate.exe",
+    "sha256": "33229bd81a00c2d15673a144f702c643bb00ef45917e5ee928b925a2353c575e",
+    "cases": [
+      {
+        "input_mode": "RGBA",
+        "returncode": 0,
+        "input_unchanged": true,
+        "output_exists": true,
+        "output_mode": "RGB",
+        "size": [
+          16,
+          16
+        ],
+        "center": [
+          37,
+          113,
+          211
+        ],
+        "corner": [
+          37,
+          113,
+          211
+        ]
+      },
+      {
+        "input_mode": "RGB",
+        "returncode": 1,
+        "input_unchanged": true,
+        "output_exists": false
+      }
+    ],
+    "conclusion": "RGB dilation works on this fixture; alpha is dropped; not a production adapter"
+  },
+  "limits": [
+    "Main GeoAGR EXE not executed or decompiled",
+    "DLL methods not executed; signatures only",
+    "No DCC scene opened or edited",
+    "No production or real OKS validation",
+    "Source binaries/code not copied to Git"
+  ]
+}

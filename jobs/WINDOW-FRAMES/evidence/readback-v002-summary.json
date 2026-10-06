@@ -1,0 +1,42 @@
+{
+  "new_lights": 247,
+  "total_lights_including_sample": 248,
+  "frame_components_served": 148,
+  "quads": 1235,
+  "non_quads": 0,
+  "zero_area": 0,
+  "boundary_edges": 988,
+  "edges_more_than_two_faces": 0,
+  "duplicate_faces": 0,
+  "inset_m": 0.1146,
+  "height_m": 0.09459304809570312,
+  "drop_m": 0.0211029052734375,
+  "skipped": [
+    {
+      "face": 1081,
+      "reason": "existing sample retained"
+    }
+  ],
+  "delivery_passed": false,
+  "pending": [
+    "visual acceptance",
+    "AGR Checker and export outside this modeling stage"
+  ],
+  "readback": {
+    "original_frames_unchanged": true,
+    "sample_unchanged": true,
+    "warped_quads": 0,
+    "light_light_surface_intersections": 0,
+    "saved_objects": 3
+  },
+  "provenance": {
+    "source_chat": "01a0f403-0b4f-7ab1-b544-8a887ba49039",
+    "date": "2026-09-30",
+    "original_report_sha256": "9a96e0f1b12bd5d1c43f6fd61677623ca66cc57e1983b53fc883424f246cea52",
+    "accepted_blend_sha256": "ac464bb8fb903976a8aefcc89c2281978d5f1391f028e479aec5395863b7d15a",
+    "summary_omits": [
+      "per-section mapping",
+      "per-face planar corrections"
+    ]
+  }
+}

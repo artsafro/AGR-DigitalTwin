@@ -1,0 +1,188 @@
+{
+  "color_space": "sRGB",
+  "material_maps": "diffuse/base color",
+  "source_legend_sha256": "2125fd54ff7b728f7522a5c0009a2a649f7d417bf316ad6eb30947927f6802d3",
+  "color_note": "RGB sampled from supplied legend, not certified NCS/RAL conversion; RAL7016 reused from school register",
+  "1002_note": "User requested white frames; light F.1 swatch takes priority over ambiguous NCS S 700-N code",
+  "1001_note": "Three columns and eight rows, working layout; physical panel size not specified",
+  "1005_note": "Solid yellow metal; actual gaps and shape belong to slat geometry",
+  "1011_note": "White diffuse only; transparency/IOR/roughness require shader settings",
+  "tiles": [
+    {
+      "id": 1,
+      "udim": 1001,
+      "name": "Жёлтые панели со швами",
+      "code": "NCS S 2030-Y20R",
+      "size": [
+        4096,
+        4096
+      ],
+      "rgb": [
+        231,
+        189,
+        126
+      ],
+      "kind": "kpp_panels"
+    },
+    {
+      "id": 2,
+      "udim": 1002,
+      "name": "Белые рамы",
+      "code": "NCS S 700-N",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        233,
+        226,
+        222
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 3,
+      "udim": 1003,
+      "name": "Жёлтый металл",
+      "code": "RAL 1002",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        250,
+        204,
+        139
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 4,
+      "udim": 1004,
+      "name": "Интерьер",
+      "code": "RAL 7001",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        132,
+        132,
+        132
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 5,
+      "udim": 1005,
+      "name": "Металлические декоративные плашки",
+      "code": "NCS S 2030-Y20R",
+      "size": [
+        4096,
+        4096
+      ],
+      "rgb": [
+        231,
+        189,
+        126
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 6,
+      "udim": 1006,
+      "name": "Металл",
+      "code": "RAL 7016",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        62,
+        67,
+        73
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 7,
+      "udim": 1007,
+      "name": "Кровля",
+      "code": "RAL 7001",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        132,
+        132,
+        132
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 8,
+      "udim": 1008,
+      "name": "Рамы",
+      "code": "RAL 7016",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        62,
+        67,
+        73
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 9,
+      "udim": 1009,
+      "name": "Стемалит",
+      "code": "RAL 7001",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        132,
+        132,
+        132
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 10,
+      "udim": 1010,
+      "name": "Красные рамки",
+      "code": "NCS S 1060-Y90R",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        234,
+        122,
+        83
+      ],
+      "kind": "solid"
+    },
+    {
+      "id": 11,
+      "udim": 1011,
+      "name": "Стекло",
+      "code": "RGB 255 255 255",
+      "size": [
+        256,
+        256
+      ],
+      "rgb": [
+        255,
+        255,
+        255
+      ],
+      "kind": "solid"
+    }
+  ]
+}

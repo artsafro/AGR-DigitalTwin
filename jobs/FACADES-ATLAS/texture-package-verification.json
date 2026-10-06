@@ -1,0 +1,67 @@
+{
+  "png_count": 8,
+  "maps": {
+    "Atlases/T_Facades_01_Atlas_d.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "cbbbbea11a1d82755116f5316f7ad1043d59eef2fed390959243dd81aea9935f"
+    },
+    "Atlases/T_Facades_02_Atlas_d.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "43e98b52169debd16d0fece010cbbde1299397432c5249266ce6d15c23319fd4"
+    },
+    "Atlases/T_Facades_03_Atlas_d.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "e1fdfe9d5b9f41d97d44c6c17b4cbc9d27d1e690b1616ad6491e2c1b4880fb5c"
+    },
+    "Textures_2K/ID101_BaseColor_2K_4800x4800mm.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "45a7c007408e203fa3c87e416d961d1e1db54b5990be207f1327ab98f0409080"
+    },
+    "Textures_2K/ID102_BaseColor_2K_4800x4800mm.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "3b68eb3468afe58f6458c5acee8d10e23a2120e4b129484c73e7cf66b40291a9"
+    },
+    "Textures_2K/ID103_BaseColor_2K_4800x4800mm.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "97ab5eb55da8aeebac13c1b1ab7dd5668bbb1561feeac33b41ebca2665bdb9d4"
+    },
+    "Textures_2K/ID104_BaseColor_2K_4800x4800mm.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "cc32a836da9147452a70741972cebf0e8246bcf3d533e86ecfd43b4203bcb62d"
+    },
+    "Textures_2K/ID105_BaseColor_2K_4800x4800mm.png": {
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "a8dda113010a82fb1280e26b0edff433e0d0ea11f387244e3ec12f93d22a92d9"
+    }
+  },
+  "accepted_tile_bands_unchanged": {
+    "01": true,
+    "02": true,
+    "03": true
+  },
+  "archive": "C:\\Users\\artsafro\\.AGR_Project\\jobs\\FACADES-ATLAS\\outputs\\metric-v004\\Facades_3_Atlases_5_Textures_2K.zip"
+}

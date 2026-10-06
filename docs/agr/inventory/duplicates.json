@@ -1,0 +1,192 @@
+[
+  {
+    "sha256": "c343563ca0f355b3ee6d70ee4360929cc0f4d039804a85e67c8583fecfde6d5d",
+    "paths": [
+      "C:\\usermacros\\Flora Tools-FloraAtlas.mcr",
+      "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Flora Atlas.mcr"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "c75644ec9621d97c6062f10e325a3445a671b0945fd6c94743e9575405967914",
+    "paths": [
+      "C:\\usermacros\\Titus_Scripts-BMAX_Connector.mcr",
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2026 - 64bit\\ENU\\usermacros\\Titus_Scripts-BMAX_Connector.mcr",
+      "B:\\Backup\\3dMax2026\\ENU\\usermacros\\Titus_Scripts-BMAX_Connector.mcr"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "26c9bdb1586a9fe7937eeed35e00885390f28c8e58af5ddac47f0b5504cc881b",
+    "paths": [
+      "C:\\usermacros\\Titus_Sctipts-BMAX_Connector_Export.mcr",
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2026 - 64bit\\ENU\\usermacros\\Titus_Sctipts-BMAX_Connector_Export.mcr",
+      "B:\\Backup\\3dMax2026\\ENU\\usermacros\\Titus_Sctipts-BMAX_Connector_Export.mcr"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "2689a31f5b144ff9a37abe161763f3c4b9faa8d51d7787d63a2bdbde84cce61b",
+    "paths": [
+      "C:\\usermacros\\Titus_Sctipts-BMAX_Connector_Import.mcr",
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2026 - 64bit\\ENU\\usermacros\\Titus_Sctipts-BMAX_Connector_Import.mcr",
+      "B:\\Backup\\3dMax2026\\ENU\\usermacros\\Titus_Sctipts-BMAX_Connector_Import.mcr"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "3179a425f8d391cdba641211988fdd850d671b8adb1464232eda0a013b679dca",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Connector.ms",
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2026 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Connector.ms",
+      "B:\\Backup\\3dMax\\ENU\\scripts\\BMAX\\Bmax_Connector.ms",
+      "B:\\Backup\\3dMax2026\\ENU\\scripts\\BMAX\\Bmax_Connector.ms"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "eb85ba0a4f5c2b78256715bb9194cafa1f764d014a7d60065996e06dc4cbc5ac",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Functions.ms",
+      "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2026 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Functions.ms",
+      "B:\\Backup\\3dMax\\ENU\\scripts\\BMAX\\Bmax_Functions.ms",
+      "B:\\Backup\\3dMax2026\\ENU\\scripts\\BMAX\\Bmax_Functions.ms"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "ead769481c1a83a81eeb40fd48c68539148106d669e991f4b5b709a651886246",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\__init__.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\__init__.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\__init__.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "249b5cf15b8591913c53d6ef5812b792ca1421f9360a712a1ad9cfda9435a894",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\core\\common.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\core\\common.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\core\\common.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "a0c50fa8f2b7c0347c2267c1db328151413e7846cfcac6311644f7377e7cdc99",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\core\\mesh_helpers.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\core\\mesh_helpers.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\core\\mesh_helpers.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "4f1dccd49acfc10533270ec97d23639f9a6f87c2ca13eccf0c9c8bb36f620c43",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\core\\operators.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\core\\operators.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\core\\operators.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "9fa94593e24801514e5411405ef62fd887d194b750572cee68436a112dfea6a5",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\core\\report.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\core\\report.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\core\\report.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "97ba015377a237f551c600ea8a25e914f2cd5f246535b57ab3e496e8c5b43384",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\core\\total_operator.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\core\\total_operator.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\core\\total_operator.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "84f69fa64077bbd93755b5ab23b03ea844b2a8dee23788e6f699379b73145e09",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\ui\\total_ui.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\ui\\total_ui.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\ui\\total_ui.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "b7d918556d7c710aa1dc067bba84674ef93ae6fb3336eac10c270436d330c4f7",
+    "paths": [
+      "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5\\ui\\ui.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\facade_wall_4357352\\qa\\CheckToolBox_v1_5\\ui\\ui.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\recycling_12874\\qa\\CheckToolBox_v1_5\\ui\\ui.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "b7f8e7001d71ca410a1c439f93dd10b3a21f724140cd678534d907149e98f459",
+    "paths": [
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\bear_2500\\qa\\checktoolbox_run.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\kpl201311\\qa\\checktoolbox_run.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\kpx131\\qa\\checktoolbox_run.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\kronos_vi\\qa\\checktoolbox_run.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\lightning_rods\\qa\\checktoolbox_run.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\norlys_ski_1392\\qa\\checktoolbox_run.py",
+      "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\streetlamp_3500\\qa\\checktoolbox_run.py"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "f7a5d9789c863625e139ff99e1113a503830f6b85a88f6129916df83ac76b49e",
+    "paths": [
+      "C:\\Users\\artsafro\\.Facades_Modelling\\research\\ContourProbe\\obj\\Release\\net8.0-windows\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+      "C:\\Users\\artsafro\\.codex\\codex-3ds-max\\examples\\csharp\\MaxAssemblyProbe\\obj\\Debug\\net8.0-windows\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+      "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Core\\obj\\Release\\net8.0-windows\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs",
+      "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Revit2025\\obj\\Release\\.NETCoreApp,Version=v8.0.AssemblyAttributes.cs"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "fe45ea572aadfd1a9b54cf7251405cfa11b748ca88b034f06a724d49758ced2d",
+    "paths": [
+      "C:\\Users\\artsafro\\.Facades_Modelling\\research\\ContourProbe\\obj\\Release\\net8.0-windows\\ContourProbe.GlobalUsings.g.cs",
+      "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Revit2025\\obj\\Release\\RevitBridge.Revit2025.GlobalUsings.g.cs"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "1ff3ef251f3ffb2b631b158be803b34c1652419a4d338ffd117431d7bee7e40e",
+    "paths": [
+      "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\texmapgen_errors\\ConcaveFixer.ms",
+      "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\AlexYo_ConcaveFixer.ms"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "f8208a00e110434a5d2b0054bc3369c07351b71fbb5bf6e2e335bf71c0e40099",
+    "paths": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Dummy_placer\\PlaceWindowDummies.ms",
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Windows_Creator\\PlaceWindowDummies.ms"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "39681da261110a752194155f49d891104bf6702b2dac63ef17165eb8cb757df8",
+    "paths": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Dummy_placer\\PlaceWindowDummies_MCP.ms",
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Windows_Creator\\PlaceWindowDummies_MCP.ms"
+    ],
+    "status": "exact_bytes_not_usage"
+  },
+  {
+    "sha256": "91e96741f728e7d6b39da39d44ebb8a12109447e5602d9a71a393d15f46f3508",
+    "paths": [
+      "B:\\Backup\\scripts\\UDIM-MultiSub_Universal(max22-26).ms",
+      "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\UDIM-MultiSub_Universal(max22-26).ms"
+    ],
+    "status": "exact_bytes_not_usage"
+  }
+]

@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "Check": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Evidence",
+          "type": "string"
+        },
+        "id": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "not_run",
+            "review"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "evidence"
+      ],
+      "title": "Check",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "checks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Check"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "delivery_passed": {
+      "const": false,
+      "default": false,
+      "title": "Delivery Passed",
+      "type": "boolean"
+    },
+    "execution": {
+      "enum": [
+        "completed",
+        "failed",
+        "not_run"
+      ],
+      "title": "Execution",
+      "type": "string"
+    },
+    "input_manifest": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Input Manifest",
+      "type": "string"
+    },
+    "limitations": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Limitations",
+      "type": "array"
+    },
+    "operation": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Operation",
+      "type": "string"
+    },
+    "output_manifest": {
+      "anyOf": [
+        {
+          "maxLength": 1000,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output Manifest"
+    },
+    "pending_decisions": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Pending Decisions",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1.0.0",
+      "default": "1.0.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "scope": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Scope",
+      "type": "string"
+    },
+    "tool_version": {
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Tool Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "operation",
+    "tool_version",
+    "scope",
+    "execution",
+    "input_manifest"
+  ],
+  "title": "AdapterReport",
+  "type": "object"
+}

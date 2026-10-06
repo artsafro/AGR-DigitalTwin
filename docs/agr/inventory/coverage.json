@@ -1,0 +1,290 @@
+{
+  "date": "2026-09-26",
+  "unique_metadata_files": 70623,
+  "roots": [
+    {
+      "root": "C:\\usermacros",
+      "status": "enumerated",
+      "files": 816
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax",
+      "status": "enumerated",
+      "files": 997
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation",
+      "status": "enumerated",
+      "files": 176
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\ApplicationPlugins",
+      "status": "enumerated",
+      "files": 33
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\AutoCAD 2025",
+      "status": "enumerated",
+      "files": 122
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\Revit",
+      "status": "enumerated",
+      "files": 19
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\Dynamo",
+      "status": "missing",
+      "files": 0
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\pyRevit",
+      "status": "missing",
+      "files": 0
+    },
+    {
+      "root": "C:\\ProgramData\\Autodesk\\ApplicationPlugins",
+      "status": "enumerated",
+      "files": 9579
+    },
+    {
+      "root": "C:\\ProgramData\\Autodesk\\Revit\\Addins",
+      "status": "enumerated",
+      "files": 19
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Autodesk",
+      "status": "enumerated",
+      "files": 10
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Documents\\3dsMax",
+      "status": "enumerated",
+      "files": 4
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Documents\\3ds Max 2024",
+      "status": "enumerated",
+      "files": 24
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Documents\\3ds Max 2026",
+      "status": "enumerated",
+      "files": 3
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Documents\\RizomUV Bridge",
+      "status": "enumerated",
+      "files": 4
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender",
+      "status": "enumerated",
+      "files": 670
+    },
+    {
+      "root": "C:\\Users\\artsafro\\.Facades_Modelling",
+      "status": "enumerated",
+      "files": 97
+    },
+    {
+      "root": "C:\\Users\\artsafro\\.window_facades",
+      "status": "enumerated",
+      "files": 71
+    },
+    {
+      "root": "C:\\Users\\artsafro\\.codex\\codex-3ds-max",
+      "status": "enumerated",
+      "files": 257
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\zavod",
+      "status": "enumerated",
+      "files": 449
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\!3D viz",
+      "status": "enumerated",
+      "files": 2651
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\Atlas_Builde",
+      "status": "enumerated",
+      "files": 1
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\atlas_portable",
+      "status": "enumerated",
+      "files": 686
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\npm_vpm_maps",
+      "status": "enumerated",
+      "files": 0
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\blenderNew",
+      "status": "enumerated",
+      "files": 10
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop\\compressor",
+      "status": "enumerated",
+      "files": 6
+    },
+    {
+      "root": "C:\\Users\\artsafro\\INTERACTIVE_TOUR",
+      "status": "enumerated",
+      "files": 647
+    },
+    {
+      "root": "B:\\Backup\\scripts",
+      "status": "enumerated",
+      "files": 230
+    },
+    {
+      "root": "B:\\Backup\\Plugins",
+      "status": "enumerated",
+      "files": 22
+    },
+    {
+      "root": "B:\\Backup\\3dMax",
+      "status": "enumerated",
+      "files": 634
+    },
+    {
+      "root": "B:\\Backup\\3dMax2026",
+      "status": "enumerated",
+      "files": 359
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts",
+      "status": "enumerated",
+      "files": 230
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\3ds Max 2026\\scripts",
+      "status": "enumerated",
+      "files": 76
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Desktop",
+      "status": "enumerated",
+      "files": 6059
+    },
+    {
+      "root": "C:\\Users\\artsafro\\Documents",
+      "status": "enumerated",
+      "files": 980
+    },
+    {
+      "root": "C:\\Users\\artsafro\\.cursor",
+      "status": "enumerated",
+      "files": 22418
+    },
+    {
+      "root": "C:\\Users\\artsafro\\.codex",
+      "status": "enumerated",
+      "files": 4340
+    },
+    {
+      "root": "C:\\Users\\artsafro\\mcp",
+      "status": "enumerated",
+      "files": 256
+    },
+    {
+      "root": "C:\\Users\\artsafro\\developmet",
+      "status": "enumerated",
+      "files": 15
+    },
+    {
+      "root": "C:\\Users\\artsafro\\.dev",
+      "status": "enumerated",
+      "files": 70
+    },
+    {
+      "root": "C:\\Users\\Public\\Documents",
+      "status": "enumerated",
+      "files": 136
+    },
+    {
+      "root": "C:\\Users\\Public\\Desktop",
+      "status": "enumerated",
+      "files": 4
+    },
+    {
+      "root": "C:\\Users\\Users\\Documents",
+      "status": "missing",
+      "files": 0
+    },
+    {
+      "root": "C:\\Users\\raowf\\Documents",
+      "status": "missing",
+      "files": 0
+    },
+    {
+      "root": "C:\\Users\\raowf\\Desktop",
+      "status": "missing",
+      "files": 0
+    },
+    {
+      "root": "C:\\Users\\FixProfile\\Documents",
+      "status": "enumerated",
+      "files": 1
+    },
+    {
+      "root": "C:\\Users\\FixProfile\\Desktop",
+      "status": "enumerated",
+      "files": 1
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\3ds Max 2024",
+      "status": "enumerated",
+      "files": 2872
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\3ds Max 2026",
+      "status": "enumerated",
+      "files": 2233
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\AutoCAD 2025\\Support",
+      "status": "enumerated",
+      "files": 17
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\AutoCAD 2025\\Express",
+      "status": "enumerated",
+      "files": 93
+    },
+    {
+      "root": "C:\\Program Files\\Autodesk\\Revit 2025\\AddIns",
+      "status": "enumerated",
+      "files": 17054
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\AutoCAD 2025",
+      "status": "enumerated",
+      "files": 19
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\McNeel",
+      "status": "enumerated",
+      "files": 24
+    },
+    {
+      "root": "C:\\Users\\artsafro\\AppData\\Roaming\\Dynamo Revit",
+      "status": "missing",
+      "files": 0
+    },
+    {
+      "root": "C:\\ProgramData\\Dynamo",
+      "status": "enumerated",
+      "files": 131
+    }
+  ],
+  "errors": [],
+  "exclusions": "No secrets/chats/session contents; no cloud hydration; no junction traversal; cache/venv/dependency and map folders pruned. Files filtered by extension. Not an exhaustive disk image. Private metadata discovery stays in ignored tmp/inventory.",
+  "drives": "B: Backup, C: user/programs, D: top-level assets/software. No mapped UNC drive observed. Dropbox/OneDrive/Yandex roots inspected at top level; no useful shared script library exposed there.",
+  "catalog_scope": "Curated tools/workflows, not each vendor dependency DLL. Useful custom scripts grouped; no originals copied."
+}

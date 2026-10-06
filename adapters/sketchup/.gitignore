@@ -1,0 +1,4 @@
+vendor/
+.venv/
+dist/
+verification/

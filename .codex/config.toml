@@ -1,0 +1,32 @@
+# Machine-specific project MCP routes; adapters run from the main checkout C:/Users/artsafro/AGR-DigitalTwin.
+# The user's config also provides 3dsmax-mcp.
+[mcp_servers.revit-bridge]
+command = "node"
+args = ["C:\\Users\\artsafro\\tools\\revit-bridge-mcp\\src\\index.js"]
+env = { REVIT_BRIDGE_VERSION = "2025" }
+
+# Broad RevitMCPServer/RevitMCPAddin route. Verified live on port 7891;
+# exposes 94 tools. Use for broad model information retrieval.
+[mcp_servers.revit-http-2025]
+command = "node"
+args = ["C:\\Users\\artsafro\\INTERACTIVE_TOUR\\RevitMCPServer\\dist\\index.js"]
+env = { REVIT_MCP_VERSION = "2025", REVIT_MCP_PORT = "7891" }
+
+[mcp_servers.blender]
+command = "C:\\Users\\artsafro\\AppData\\Local\\CodexMCP\\BlenderLab103\\venv\\Scripts\\blender-mcp.exe"
+args = ["--transport", "stdio"]
+env = { BLENDER_MCP_HOST = "127.0.0.1", BLENDER_MCP_PORT = "9877", BLENDER_PATH = "C:/Program Files/Blender Foundation/Blender 5.1/blender.exe" }
+
+[mcp_servers.rizomuv]
+command = "C:\\Users\\artsafro\\AppData\\Local\\CodexMCP\\BlenderLab103\\venv\\Scripts\\python.exe"
+args = ["C:/Users/artsafro/AGR-DigitalTwin/tools/mcp/rizomuv_server.py"]
+env = { RIZOMUV_EXE = "C:\\Program Files\\Rizom Lab\\RizomUV 2024.1\\rizomuv.exe", RIZOMUV_LINK_DIR = "C:\\Program Files\\Rizom Lab\\RizomUV 2024.1\\RizomUVLink" }
+
+[mcp_servers.multiCAD]
+command = "C:\\Users\\artsafro\\AppData\\Local\\CodexMCP\\MultiCAD\\venv\\Scripts\\python.exe"
+args = ["C:/Users/artsafro/AGR-DigitalTwin/tools/mcp/multicad_stdio.py"]
+
+[mcp_servers.speedtree]
+command = "C:/Users/artsafro/AppData/Local/CodexMCP/BlenderLab103/venv/Scripts/python.exe"
+args = ["C:/Users/artsafro/AGR-DigitalTwin/tools/mcp/speedtree_server.py"]
+env = { SPEEDTREE_ROOT = "C:/Program Files/SpeedTree/SpeedTree Modeler v10.0.1" }

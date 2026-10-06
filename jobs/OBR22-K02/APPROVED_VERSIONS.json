@@ -1,0 +1,43 @@
+{
+  "status": "accepted_by_user",
+  "acceptance_message": "теперь ты сделал верно, успех, коммить GitHub",
+  "implementation_commit": "709edb40de063759291d580351b4cf43b55e7f4d",
+  "scope": "Current geometry, material scale, NPM atlas and VPM UV layout; not complete OKS delivery",
+  "files": [
+    {
+      "path": "outputs/npm_v012/OBR22_K02_v012_NPM_ATLAS.blend",
+      "sha256": "1cdb088043489334b3cc22865fdcc4eccae1ae2cf6919636681b1c21693a024a",
+      "bytes": 6299399
+    },
+    {
+      "path": "outputs/npm_v012/NPM_ATLAS_Diffuse.png",
+      "sha256": "04ed6549340c9ab249a7e7ec66def11c1cce7a27a0c5d98d58a03095b3822c8f",
+      "bytes": 282366
+    },
+    {
+      "path": "outputs/shared_v011/OBR22_K02_v011_VPM_UDIM.blend",
+      "sha256": "d35ea7eb6c64029770a9044071719d7dbbe3f2e86e28e4dcea25bac450a98b34",
+      "bytes": 9075026
+    },
+    {
+      "path": "outputs/shared_v011/VPM_Diffuse.1001.png",
+      "sha256": "02c00f100a0e462d9133e8f966418b876778bfe27eb580cf0a38883092b795dc",
+      "bytes": 59118
+    },
+    {
+      "path": "outputs/shared_v011/VPM_Diffuse.1002.png",
+      "sha256": "73e14bd20f8280bb9d53bdc92fcaf05318f1feb37b2ab1a2180953284da4caaf",
+      "bytes": 59120
+    },
+    {
+      "path": "outputs/shared_v011/VPM_Diffuse.1003.png",
+      "sha256": "894d63d8f9128310f54ea0ea783f798a140bd938625d4b5f153102d162c53984",
+      "bytes": 59094
+    },
+    {
+      "path": "outputs/shared_v011/VPM_Diffuse.1004.png",
+      "sha256": "cee95e4aa386e27c065e2f1df8a228a130830bd188e3db353ed7dd05650396ac",
+      "bytes": 1620192
+    }
+  ]
+}

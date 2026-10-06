@@ -1,0 +1,90 @@
+[
+  {
+    "config": "C:\\Users\\artsafro\\.cursor\\mcp.json",
+    "server": "3dsmax-mcp",
+    "command": "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\3dsmax-mcp\\.venv\\Scripts\\python.exe",
+    "local_path_args": [],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.cursor\\mcp.json",
+    "server": "filesystem-interactive-tour",
+    "command": "npx",
+    "local_path_args": [
+      "@modelcontextprotocol/server-filesystem",
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.cursor\\mcp.json",
+    "server": "interactive-tour-mcp",
+    "command": "node",
+    "local_path_args": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\interactive-tour-mcp\\index.js"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.cursor\\mcp.json",
+    "server": "multiCAD",
+    "command": "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\.venv\\Scripts\\python.exe",
+    "local_path_args": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\src\\server.py"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.cursor\\mcp.json",
+    "server": "revit-2025",
+    "command": "node",
+    "local_path_args": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\RevitMCPServer\\dist\\index.js"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.cursor\\mcp.json",
+    "server": "revit-bridge",
+    "command": "node",
+    "local_path_args": [
+      "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.McpServer\\src\\index.js"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.codex\\config.toml",
+    "server": "filesystem-interactive-tour",
+    "command": "npx",
+    "local_path_args": [
+      "@modelcontextprotocol/server-filesystem",
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.codex\\config.toml",
+    "server": "interactive-tour-mcp",
+    "command": "node",
+    "local_path_args": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\interactive-tour-mcp\\index.js"
+    ],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.codex\\config.toml",
+    "server": "3dsmax-mcp",
+    "command": "C:\\Users\\artsafro\\.codex\\codex-3ds-max\\.local\\mcp-venv\\Scripts\\python.exe",
+    "local_path_args": [],
+    "disabled": false
+  },
+  {
+    "config": "C:\\Users\\artsafro\\.codex\\config.toml",
+    "server": "multiCAD",
+    "command": "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\.venv\\Scripts\\python.exe",
+    "local_path_args": [
+      "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\src\\server.py"
+    ],
+    "disabled": false
+  }
+]

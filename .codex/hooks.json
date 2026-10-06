@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|shell|exec_command|local_shell|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 .claude/hooks/guard.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "Atlases/T_Facades_01_Atlas_d.png": {
+    "sha256": "7587866cfbdd3ca709ee3e5fb03e675314f585d4e51ec352c48dfed279e8e061",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Atlases/T_Facades_02_Atlas_d.png": {
+    "sha256": "01051d58a5e365fe6c000363e1650b5fda1b788b51213a9db3ffdc369706f32c",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Atlases/T_Facades_03_Atlas_d.png": {
+    "sha256": "d834244cd39c2250e11a9a64228177985b51314ad90a552559d83e5cd7ad33a4",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Textures_2K/ID101_BaseColor_2K_4800x4800mm.png": {
+    "sha256": "c885515716818747743279f5fab7b8af0bb79c21c15c2008cb5242ede29bd76e",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Textures_2K/ID102_BaseColor_2K_4800x4800mm.png": {
+    "sha256": "2776ba18fc45fe0847e30203f6178804444c033013849b5e6a0bc312a39bf014",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Textures_2K/ID103_BaseColor_2K_4800x4800mm.png": {
+    "sha256": "08d0ff2fd2b5e62e68e90b8bf1cdac608a12207d78265117cc4c46e72b77ca97",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Textures_2K/ID104_BaseColor_2K_4800x4800mm.png": {
+    "sha256": "b6347a62ad64e47aa81d468cf2e51ffd5cfdd1ecb3c932d6ff7f0398cd474f3e",
+    "size": [
+      2048,
+      2048
+    ]
+  },
+  "Textures_2K/ID105_BaseColor_2K_4800x4800mm.png": {
+    "sha256": "11b9b76aedfad9f7332c19c6570303833fd1d8d6a383117b9938cbfcc0e598b1",
+    "size": [
+      2048,
+      2048
+    ]
+  }
+}

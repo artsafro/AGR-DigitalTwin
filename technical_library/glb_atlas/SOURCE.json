@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-02",
+  "migration": "One common renderer plus A/B data config",
+  "source_chat": {
+    "thread_id": "01a0ebe4-71b4-70c3-90dc-03fa3cc956ff",
+    "title": "\u0421\u043f\u043b\u0430\u043d\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043c\u043e\u0434\u0435\u043b\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u0435 \u0431\u0430\u0448\u0435\u043d\u043e\u043a \u041d",
+    "A_acceptance_turn_started_at_unix": 1790861121
+  },
+  "sources": [
+    {
+      "path": "jobs/B-MAIN-ATLAS/scripts/build_atlas.py",
+      "sha256": "e6c14753839e118f0e5e2dbba89495040a81b5496177b911fae9154e2fc7100f"
+    },
+    {
+      "path": "jobs/B-MAIN-ATLAS/scripts/make_apply_script.py",
+      "sha256": "fe9777dac0c825a20838ec015ca30633b38a197f8d23c05aaeb919c47fadef01"
+    },
+    {
+      "path": "jobs/A-MAIN-ATLAS/scripts/apply_atlas.ms",
+      "sha256": "0bb55df1b1ed6e5214b4f8716de121e1125d5529155230d213379e1dd99b8bc9"
+    },
+    {
+      "path": "docs/case_studies/GLB_A_MAIN_ATLAS.md",
+      "sha256": "0b91e410f3c6455f8960b97b99988478ccb78f1412fc5b4f67c9c476d124544d"
+    },
+    {
+      "path": "docs/case_studies/GLB_B_MAIN_ATLAS.md",
+      "sha256": "e68655b992f1afd7f19acd25e47a2f6ec425f46626ac3b121eda9e804c32cc14"
+    }
+  ],
+  "hash_format": "SHA256 of exact source bytes; published Markdown entries use Git LF blob bytes",
+  "acceptance_date": "2026-10-01",
+  "acceptance_scope": {
+    "A_Main": "User approved current atlas/ID/white-glass result; snapshot v005 has unknown subsequent changes.",
+    "B_Main": "User approved atlas/ID approach; v001 glass needed white correction preserved in v002."
+  },
+  "reused": "Existing window_atlas and texture_tiles inspected; algorithms differ from captured-UV/face-bounds recipe.",
+  "not_transferred": [
+    {
+      "operation": "Native MAX UV/material-ID remap",
+      "reason": "Parameterization changes guard and staging behavior; no native fileIn and saved-file readback on separate source copy yet.",
+      "next_step": "Validate isolated source-copy adapter against historical UV/ID route before publication."
+    },
+    {
+      "operation": "A_Main later ID5-to13 and current v005 scene",
+      "reason": "PNG replay predates that mutation; current v005 UV readback absent and subsequent changes unknown.",
+      "next_step": "Reconcile current source UV/ID state without overwriting accepted snapshot."
+    }
+  ]
+}

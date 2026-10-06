@@ -1,0 +1,84 @@
+# Local-only data: heavy sources, archives, scratch (see docs/PROJECT_STATE.md).
+/data/
+/tmp/
+
+# jobs/: track specs, STATE, evidence text and scripts; outputs and binaries stay local.
+/jobs/**
+!/jobs/**/
+!/jobs/**/*.md
+!/jobs/**/*.py
+!/jobs/**/*.json
+!/jobs/**/*.yaml
+!/jobs/**/*.ms
+!/jobs/**/*.rb
+/jobs/*/outputs/
+/jobs/*/runs/
+/jobs/*/cli-runs/
+/jobs/**/pytest-tmp/
+
+# SketchUp adapter local environment and build output
+adapters/sketchup/.venv/
+adapters/sketchup/dist/
+tools/assembly_inventory/bin/
+tools/assembly_inventory/obj/
+
+# Unreal Engine generated / cache
+Unreal/**/Binaries/
+Unreal/**/Intermediate/
+Unreal/**/Saved/
+Unreal/**/DerivedDataCache/
+Unreal/**/Build/
+Unreal/**/Plugins/*/Binaries/
+Unreal/**/Plugins/*/Intermediate/
+*.VC.db
+*.VC.opendb
+
+# Visual Studio / Rider / VS Code generated
+.vs/
+.idea/
+*.sln
+*.suo
+*.user
+*.sdf
+*.opensdf
+*.ipch
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+
+# Blender backups / autosaves
+*.blend[0-9]
+*.blend[0-9][0-9]
+*.blend@
+
+# 3ds Max backups / autosaves
+*.max.bak
+*_autobak*.max
+**/autoback/
+*.mxp.bak
+
+# Temporary exports and renders (keep deliverables outside these folders)
+temp/
+**/_tmp_export/
+**/_tmp_render/
+*.tmp
+
+# Agent temporary / local-only files
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md
+
+# OS / secrets
+Thumbs.db
+desktop.ini
+.DS_Store
+.env
+.env.*
+!.env.example

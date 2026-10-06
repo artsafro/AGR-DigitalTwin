@@ -1,0 +1,289 @@
+{
+  "SIZE": 2048,
+  "RAL": {
+    "8022": "#1A1718",
+    "7040": "#9DA3A6",
+    "7037": "#7A7B7A",
+    "7024": "#45494E",
+    "8023": "#A65E2E"
+  },
+  "GLASS": "#FFFFFF",
+  "FRAME": "#45494E",
+  "BG": "#55565B",
+  "BLACK": "#000000",
+  "WHITE": "#F7F7F7",
+  "DOCX_IMAGES": {
+    "6": "image6.png",
+    "7": "image7.png",
+    "8": "image9.png",
+    "9": "image8.png",
+    "10": "image10.png",
+    "11": "image11.png",
+    "12": "image12.png",
+    "13": "image13.png",
+    "14": "image14.png",
+    "15": "image15.png",
+    "16": "image16.png",
+    "17": "image18.png"
+  },
+  "SWATCHES": [
+    [
+      "8022",
+      "1, 19"
+    ],
+    [
+      "7040",
+      "2, 20, 23"
+    ],
+    [
+      "7037",
+      "3, 21"
+    ],
+    [
+      "7024",
+      "4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 25"
+    ],
+    [
+      "8023",
+      "5"
+    ]
+  ],
+  "WINDOWS": [
+    {
+      "id": 6,
+      "leaves": 1,
+      "width": 60,
+      "height": 120,
+      "kind": "PVC apartment",
+      "transom": false,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": true,
+      "side_glass_left": false
+    },
+    {
+      "id": 7,
+      "leaves": 2,
+      "width": 120,
+      "height": 120,
+      "kind": "PVC apartment",
+      "transom": false,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": true,
+      "side_glass_left": false
+    },
+    {
+      "id": 8,
+      "leaves": 3,
+      "width": 200,
+      "height": 120,
+      "kind": "PVC apartment",
+      "transom": false,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": true,
+      "side_glass_left": false
+    },
+    {
+      "id": 9,
+      "leaves": 1,
+      "width": 70,
+      "height": 104,
+      "kind": "PVC stair",
+      "transom": false,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": true,
+      "side_glass_left": false
+    },
+    {
+      "id": 10,
+      "leaves": 2,
+      "width": 110,
+      "height": 94,
+      "kind": "PVC stair wide",
+      "transom": false,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0,
+      "asymmetric_split": 0.32,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": true,
+      "side_glass_left": false
+    },
+    {
+      "id": 11,
+      "leaves": 1,
+      "width": 70,
+      "height": 149,
+      "kind": "aluminium shopfront",
+      "transom": true,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0.31,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": false,
+      "side_glass_left": false
+    },
+    {
+      "id": 12,
+      "leaves": 2,
+      "width": 98,
+      "height": 169,
+      "kind": "aluminium shopfront",
+      "transom": true,
+      "door_leaves": [],
+      "frame_px": 8,
+      "mullion_px": 6,
+      "transom_fraction": 0.31,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": false,
+      "side_glass_left": false
+    },
+    {
+      "id": 13,
+      "leaves": 3,
+      "width": 174,
+      "height": 123,
+      "kind": "aluminium shopfront",
+      "transom": true,
+      "door_leaves": [],
+      "frame_px": 4,
+      "mullion_px": 4,
+      "transom_fraction": 0.18,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": true,
+      "lower_pane": false,
+      "side_glass_left": false
+    },
+    {
+      "id": 14,
+      "leaves": 1,
+      "width": 110,
+      "height": 183,
+      "kind": "aluminium door without transom",
+      "transom": false,
+      "door_leaves": [
+        0
+      ],
+      "frame_px": 5,
+      "mullion_px": 4,
+      "transom_fraction": 0,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": false,
+      "side_glass_left": true
+    },
+    {
+      "id": 15,
+      "leaves": 1,
+      "width": 100,
+      "height": 197,
+      "kind": "aluminium door with transom",
+      "transom": true,
+      "door_leaves": [
+        0
+      ],
+      "frame_px": 5,
+      "mullion_px": 4,
+      "transom_fraction": 0.135,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": false,
+      "side_glass_left": true
+    },
+    {
+      "id": 16,
+      "leaves": 3,
+      "width": 198,
+      "height": 164,
+      "kind": "aluminium three-leaf door",
+      "transom": true,
+      "door_leaves": [
+        1
+      ],
+      "frame_px": 3,
+      "mullion_px": 3,
+      "transom_fraction": 0.11,
+      "asymmetric_split": null,
+      "split_ratios": [
+        0.28,
+        0.72
+      ],
+      "middle_sash": false,
+      "lower_pane": false,
+      "side_glass_left": false
+    },
+    {
+      "id": 17,
+      "leaves": 6,
+      "width": 390,
+      "height": 159,
+      "kind": "aluminium six-leaf door",
+      "transom": true,
+      "door_leaves": [
+        4
+      ],
+      "frame_px": 3,
+      "mullion_px": 3,
+      "transom_fraction": 0.18,
+      "asymmetric_split": null,
+      "split_ratios": [],
+      "middle_sash": false,
+      "lower_pane": false,
+      "side_glass_left": false
+    }
+  ],
+  "scope": "Accepted new-building window atlas v8; RAL RGB display approximations, not a universal mapping",
+  "TITLE": "ОКНА И ВИТРАЖИ  •  ID 6–17",
+  "SUBTITLE": "Рамы RAL 7024  •  фасады нового здания",
+  "SWATCH_LABEL_LINES": {
+    "8022": [
+      "ID 1, 19"
+    ],
+    "7040": [
+      "ID 2, 20, 23"
+    ],
+    "7037": [
+      "ID 3, 21"
+    ],
+    "7024": [
+      "ID 4, 6, 7, 8, 9, 10, 11, 12,",
+      "13, 14, 15, 16, 17, 18, 22, 25"
+    ],
+    "8023": [
+      "ID 5"
+    ]
+  }
+}

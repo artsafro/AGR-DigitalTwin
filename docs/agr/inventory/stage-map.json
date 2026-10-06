@@ -1,0 +1,177 @@
+{
+  "date": "2026-09-26",
+  "status": "proposed_integration_not_runtime_proof",
+  "stages": [
+    {
+      "stage": "Источники и утверждённые материалы",
+      "tasks": [
+        "DT-010",
+        "DT-011"
+      ],
+      "tools": [
+        "GEN-01",
+        "GEN-02",
+        "GEN-04",
+        "RVT-03",
+        "RVT-04",
+        "CAD-01",
+        "CAD-02"
+      ],
+      "gate": "sources_confirmed + materials_approved"
+    },
+    {
+      "stage": "НПМ-атлас и UV",
+      "tasks": [
+        "DT-012"
+      ],
+      "tools": [
+        "BL-09",
+        "GEN-01",
+        "GEN-02",
+        "GEN-03",
+        "MAX-01",
+        "MAX-03",
+        "MAX-07",
+        "MAX-14",
+        "MAX-06",
+        "MAX-27",
+        "GEN-12",
+        "MAX-31",
+        "MAX-35",
+        "MAX-37",
+        "MAX-38",
+        "MAX-42"
+      ],
+      "gate": "approved registry + geometry"
+    },
+    {
+      "stage": "ВПМ карты/UDIM",
+      "tasks": [
+        "DT-013"
+      ],
+      "tools": [
+        "MAX-01",
+        "MAX-08",
+        "MAX-10",
+        "GEN-04",
+        "BL-01",
+        "GEN-08",
+        "MAX-06",
+        "MAX-27",
+        "GEN-12",
+        "MAX-31",
+        "MAX-34"
+      ],
+      "gate": "ERM/normal pixel proof + tile/slot mapping"
+    },
+    {
+      "stage": "Инвалидация зависимостей",
+      "tasks": [
+        "DT-014"
+      ],
+      "tools": [
+        "GEN-08",
+        "BL-09",
+        "MAX-31"
+      ],
+      "gate": "input hashes + stable IDs + approved preserved"
+    },
+    {
+      "stage": "Валидация и publisher",
+      "tasks": [
+        "DT-020",
+        "DT-021",
+        "DT-022"
+      ],
+      "tools": [
+        "BL-01",
+        "BL-05",
+        "MAX-14",
+        "MAX-15",
+        "MAX-16",
+        "MAX-26",
+        "GEN-07",
+        "GEN-08",
+        "MAX-29",
+        "GEN-11",
+        "MAX-33",
+        "MAX-35",
+        "MAX-36",
+        "MAX-37",
+        "MAX-39",
+        "GEN-13"
+      ],
+      "gate": "PDF rule mapping + actual ZIP readback + manual gates"
+    },
+    {
+      "stage": "Размещение и высоты",
+      "tasks": [
+        "DT-023"
+      ],
+      "tools": [
+        "CAD-01",
+        "CAD-02",
+        "CAD-03",
+        "MAX-01",
+        "MAX-10",
+        "MAX-14",
+        "MAX-24",
+        "RVT-01",
+        "RVT-03"
+      ],
+      "gate": "source CRS/units/zero/orientation confirmed"
+    },
+    {
+      "stage": "Геометрия и окна",
+      "tasks": [
+        "DT-030",
+        "DT-031",
+        "DT-032"
+      ],
+      "tools": [
+        "RVT-03",
+        "RVT-04",
+        "MAX-11",
+        "MAX-19",
+        "MAX-21",
+        "MAX-23",
+        "MAX-25",
+        "GEN-01",
+        "MAX-28",
+        "MAX-30",
+        "MAX-32",
+        "MAX-38",
+        "MAX-40",
+        "MAX-41",
+        "MAX-42"
+      ],
+      "gate": "contours/openings/source IDs verified"
+    },
+    {
+      "stage": "UCX",
+      "tasks": [
+        "DT-033",
+        "DT-021"
+      ],
+      "tools": [
+        "BL-08",
+        "MAX-09",
+        "MAX-12",
+        "MAX-17",
+        "MAX-22",
+        "BL-01",
+        "MAX-29",
+        "GEN-11",
+        "MAX-28",
+        "MAX-30",
+        "GEN-11",
+        "MAX-33",
+        "MAX-36",
+        "MAX-39",
+        "MAX-40",
+        "GEN-13"
+      ],
+      "gate": "closed/convex/overlap/passages/coverage + collision review"
+    }
+  ]
+}

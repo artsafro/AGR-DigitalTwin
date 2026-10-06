@@ -1,0 +1,172 @@
+# Ported from AGR standards/VPM_STANDARD.yaml (sha256 f31188cd3b38) on 2026-10-06; changes: added this header, inline `# conflict #N` comments and the `conflicts:` block (docs/domain/conflicts.md); no rule value changed.
+# AGR commit d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc. See standards/README.md.
+standard: VPM
+version: '0.1.0'
+status: extracted_from_source
+source:
+  file: Rasporyajenies19012026trebovaniya(2).pdf
+  sha256: 933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222
+  section: 'Приложение 2: высокополигональные модели; Приложение 3: GeoJSON'
+  pdf_pages: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 51, 52, 53, 54, 55]
+units: {linear: meter, scale: '1:1'}
+asset_format: {fbx_version: '7.4/2014', encoding: binary}
+archive:
+  format: zip
+  oks_max_bytes: 500000000  # conflict #12 (review)
+  ground_max_bytes: 1000000000  # conflict #12 (review)
+  per_oks_separate_archive: true
+  per_ground_separate_archive: true
+  required: [fbx, geojson, png_textures]
+  optional: [lighting_fbx]
+  png_count_range: [3, 2100]
+  source_page: 26
+geometry:
+  oks_triangles_per_fbx_max_excluding_collision: 1000000  # conflict #1 (review)
+  ground_triangles_max_by_area_ha:  # conflict #1 (review)
+    - {area_max: 0.05, triangles_max: 300000}
+    - {area_max: 0.1, triangles_max: 705000}
+    - {area_max: 0.25, triangles_max: 1125000}
+    - {area_max: 0.5, triangles_max: 1650000}
+    - {area_max: 0.75, triangles_max: 1950000}
+    - {area_max: 1.0, triangles_max: 2625000}
+    - {area_max: 1.5, triangles_max: 3150000}
+    - {area_above: 1.5, triangles_max: 4500000}
+  ground_area_basis: 'территория минус пятно застройки'
+  one_default_layer_or_collection: true
+  no_empty_unrelated_animation_or_modifier_objects: true  # conflict #14 (review): lights
+  glazing_separate_from_facade_mesh: true
+  oks_perimeter_extrude_down_m_min: 1.0
+  ground_perimeter_extrude_down_m_min: 1.0
+  no_groups_or_mesh_hierarchy: true
+  duplicate_or_self_intersection_count_max: 100
+  geometric_error_tolerance_m: 0.002  # conflict #30 (noted)
+  near_coplanar_spacing_m: {min: 0.005, max: 0.02}  # conflict #30 (noted)
+  interior: 'replace with solid simplified walls and floors; wall thickness >= 0.1 m'
+  bake_minor_details_up_to_m: 0.05
+  minor_detail_exception: curb_projections
+  triangulated_on_export: true
+  applied_transforms_including_collision: true
+  source_pages: [28, 29, 32]
+materials:
+  allowed_shaders: [Standard_Legacy, Physical_Material, Principled_BSDF]
+  external_texture_paths_removed_in_fbx: true
+  max_materials_per_mesh: 7
+  main_material_slots: 'one slot until more than 100 UDIM tiles; extra slots sequential 1..7'  # conflict #11 (review)
+  glass_slots_max: 7
+  glass_has_no_texture_maps: true
+  do_not_combine_opaque_and_glass_under_one_parent_material: true
+  source_pages: [29, 30, 32]
+textures:
+  format: png
+  embedded_in_fbx: false
+  allowed_square_sizes_px: [2048, 4096]
+  required_maps: [Diffuse, ERM, Normal]
+  erm_rgb: {R: Emissive, G: Roughness, B: Metallic}
+  erm_red_if_no_emissive: 0
+  normal_convention: DirectX  # conflict #6 (noted): explicit for VPM
+  normal_and_erm_alpha: forbidden
+  diffuse_alpha: optional_for_cuts_and_transparency  # conflict #8 (noted)
+  cut_alpha_thresholds: {invisible: [0, 127], visible: [128, 255]}
+  bits_per_channel: 8
+  diffuse_resolution_at_least_erm_and_normal: true
+  padding_px_min: {2048: 16, 4096: 32}  # conflict #29 (noted)
+  unused_maps: forbidden
+  flat_placeholder: {size_px: 256, alpha: forbidden, single_average_color: true, no_texel_density_limit: true, prohibited_for: [marble, brick, tile]}  # conflict #5 (noted)
+  source_pages: [23, 30, 31, 36, 37]
+uv:
+  facade_and_ground: {method: UDIM, uv_channels: 1, uv_sets: 1}
+  udim_grid: '10 x 10; tiles 1001..1100'  # conflict #9 (noted): figure p.39 typo
+  numbering: sequential_from_1001_without_gaps
+  mirrored_islands: forbidden
+  repeating_islands_may_overlap: true
+  tile_boundary_padding: required
+  glass: {tile: 1001, uv_channels: 1, overlap_allowed: true}
+  diffuse_density_px_per_m: {min: 512, max: 1706, formula: 'texture_side_px / polygon_length_m'}  # conflicts #10, #27 (noted)
+  density_exempt: [ERM, Normal, flat_placeholders]
+  source_pages: [31, 32, 39]
+glass:
+  all_constructions_in_one_mesh_per_model: true
+  up_to_7_distinct_untextured_materials: true
+  back_not_visible: planar_without_thickness
+  description_in_geojson: true
+  source_pages: [31, 32, 51, 52, 55]
+collision:
+  required_per_geometry_fbx_except_lighting_fbx: true
+  each_piece: {mesh: true, convex: true, closed: true, holes: false, material_slots: false}
+  naming_pattern_oks: 'UCX_SM_{Address}_Main_{001..999}'
+  naming_pattern_ground: 'UCX_SM_{Address}_Ground_{001..999}'
+  pieces_must_not_intersect: true
+  recommended_gap_cm: [0.02, 1.0]  # conflict #15 (noted): recommendation, not blocking
+  coverage: [ground_surface, existing_oks_on_site, all_oks_including_arches_courtyards_large_projections]
+  exempt: [small_ground_items, vegetation, fences_and_canopies_thinner_than_0_05_m]
+  max_surface_offset_m: {ground: 0.1, pedestrian_accessible_oks: 0.3, other_oks: 1.0}
+  entrance_stairs_collision_shape: truncated_pyramid
+  triangle_limit: 'if render triangles < 50000: 15000; otherwise ceil(render triangles * 0.05)'  # conflict #3 (review)
+  note: 'Стр. 37 также упоминает до 100000 дополнительных треугольников; применять более строгий расчёт и отправить неоднозначность на проверку.'
+  source_pages: [34, 36, 37]
+positioning:
+  per_fbx_local_origin_xyz: [0, 0, 0]  # conflict #19 (review)
+  per_fbx_own_geojson_coordinates: true
+  rotations_after_applied_transforms_degrees: 0
+  shared_pivot_for_all_meshes_in_same_fbx: true
+  collision_pivots: unconstrained
+  project_zero_elevation: required
+  source_pages: [32, 33]
+naming:
+  max_characters: 254
+  stem_characters: 'A-Z a-z 0-9 _'
+  explicit_texture_filename_exception: 'dot between SlotNumber and UDIM before .png'
+  oks_fbx_geojson_zip_stem: 'SM_{Address}'  # conflict #20 (review)
+  ground_fbx_geojson_zip_stem: 'SM_{Address}_Ground'
+  oks_mesh: 'SM_{Address}_Main'
+  oks_glass_mesh: 'SM_{Address}_MainGlass'
+  ground_mesh: 'SM_{Address}_Ground'
+  texture_oks: 'T_{Address}_{Diffuse|ERM|Normal}_{SlotNumber}.{UDIM}.png'
+  texture_ground: 'T_{Address}_Ground_{Diffuse|ERM|Normal}_{SlotNumber}.{UDIM}.png'
+  oks_material: 'M_{Address}_Main_{SlotNumber}'
+  glass_material: 'M_{Address}_MainGlass_{SlotNumber}'
+  source_pages: [33, 34, 35, 36, 41]
+geojson:
+  schema_source_pages: [26, 27, 51, 52, 53, 54, 55]
+  encoding: UTF-8
+  top_level: {type: FeatureCollection, features_count: 1}
+  feature: {type: ObjectFeature, geometry_type: Point}
+  properties_keys: [address, okrug, rajon, name, developer, designer, cadNum, FNO_code, FNO_name, ZU_area, h_relief, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, act_AGR, imageBase64, other]  # conflict #20 (review): length/mask/precision limits absent
+  coordinates: {system: MSK-77, axes: [x, y], decimal_places: 3, plan_tolerance_m: 0.5}
+  imageBase64_input: {format: jpg, width_px: 256, height_px: 256}
+  Glasses: 'array: [] when absent; one object keyed by each glass material name when present'  # conflict #13 (review)
+  glass_fields: {color_RGB: [Red, Green, Blue], transparency: '0..1; 0 = fully transparent', refraction: '1..3', roughness: '0..1', metallicity: '0..1'}
+  missing_oks_properties: fail_except_other  # conflict #2 (review)
+  ground_nullable_as_empty_string: [FNO_name, FNO_code, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, other]
+  missing_value_note: 'Пример и таблица допускают отсутствие act_AGR/FNO_code при отсутствии информации; конфликт с общим правилом обязательности ОКС требует ручной проверки.'
+  no_renamed_or_duplicate_keys: true
+  nonstandard_geojson_feature_type: 'ObjectFeature is literal source value; use exact source schema, not generic GeoJSON Feature.'
+not_in_this_standard:
+  - 'Правило один Material ID на один UDIM не установлено. UDIM описывает плитку, слот материала — набор до 100 плиток.'
+  - 'Отдельная четвёртая карта не обязательна: alpha допускается в diffuse.'
+
+# Machine-readable link to docs/domain/conflicts.md; semantics as in NPM_STANDARD.yaml.
+conflicts:
+  archive.oks_max_bytes: {ids: [12], status: review, note: '500 MB: decimal vs binary undefined (reg p.26)'}
+  archive.ground_max_bytes: {ids: [12], status: review, note: '1 GB: decimal vs binary undefined (reg p.26)'}
+  geometry.oks_triangles_per_fbx_max_excluding_collision: {ids: [1], status: review, note: 'table 1 000 000 (reg p.28) vs figure 2.1 800 000 (reg p.40)'}
+  geometry.ground_triangles_max_by_area_ha: {ids: [1], status: review, note: 'table up to 4 500 000 (reg p.29) vs figure 2.1 3 000 000 (reg p.40)'}
+  geometry.no_empty_unrelated_animation_or_modifier_objects: {ids: [14], status: review, note: 'VPM cleanup list omits lights (reg p.24); lights belong in the Light FBX (reg p.33, 37-38)'}
+  geometry.near_coplanar_spacing_m: {ids: [30], status: noted, note: 'regulation 5 mm-2 cm (reg p.29)'}
+  geometry.geometric_error_tolerance_m: {ids: [30], status: noted, note: 'reg 0.002 m'}
+  materials.main_material_slots: {ids: [11], status: review, note: 'exactly 100 maps undefined; maps vs tiles (reg p.30 §4.3-4.4)'}
+  textures.normal_convention: {ids: [6], status: noted, note: 'explicit DirectX for VPM (reg p.23, p.30 §5.1.7); the doubt concerns NPM'}
+  textures.diffuse_alpha: {ids: [8], status: noted, note: 'VPM alpha in Diffuse allowed; ERM/Normal never (reg p.30)'}
+  textures.padding_px_min: {ids: [29], status: noted, note: 'reg >= 16/32 px; a local 4096 map used 20 px'}
+  textures.flat_placeholder: {ids: [5], status: noted, note: 'VPM 256x256 explicit (reg p.22, p.31); NPM says 128'}
+  uv.udim_grid: {ids: [9], status: noted, note: 'text 1001-1100 sequential (reg p.23, 31) wins over figure typo (reg p.39) per local ADR'}
+  uv.diffuse_density_px_per_m: {ids: [10, 27], status: noted, note: 'formula is division (reg p.32, image-verified); local targets inside 512..1706'}
+  collision.recommended_gap_cm: {ids: [15], status: noted, note: 'recommendation only (reg p.36 §13.4)'}
+  collision.triangle_limit: {ids: [3], status: review, note: '15 000 / ceil(5%) (reg p.36-37 §13.7) vs up to 100 000 additional (reg p.37 §13.8)'}
+  collision.note: {ids: [3], status: review, note: 'see collision.triangle_limit'}
+  positioning.per_fbx_local_origin_xyz: {ids: [19], status: review, note: 'pivot at geometric centre X/Y, Z = project zero (reg p.32-33 §9.4) not encoded'}
+  naming.oks_fbx_geojson_zip_stem: {ids: [20], status: review, note: 'Address _001 index for free-standing buildings (reg p.26 §3.7) not encoded'}
+  geojson.properties_keys: {ids: [20], status: review, note: 'length/mask/precision limits (reg p.53-55) not encoded'}
+  geojson.Glasses: {ids: [13], status: review, note: '"array" (reg p.55 §22) vs object keyed by material name in the example (reg p.51-53)'}
+  geojson.missing_oks_properties: {ids: [2], status: review, note: 'all OKS values mandatory (reg p.27 §2.6) vs empty FNO_code/act_AGR allowed (reg p.53-54)'}
+  geojson.missing_value_note: {ids: [2], status: review, note: 'see geojson.missing_oks_properties'}

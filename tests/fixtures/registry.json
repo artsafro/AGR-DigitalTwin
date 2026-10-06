@@ -1,0 +1,62 @@
+{
+  "materials": [
+    {
+      "approval": {
+        "actor": "fixture-author",
+        "date": "2026-09-26",
+        "note": "Only authorizes this software test; not approval by a customer or architect.",
+        "scope": "synthetic_fixture"
+      },
+      "diffuse_rgb": [
+        184,
+        102,
+        61
+      ],
+      "emissive": 0,
+      "id": "MAT_Copper",
+      "label": "Synthetic warm stripes",
+      "metallic": 210,
+      "normal_opengl_rgb": [
+        128,
+        152,
+        252
+      ],
+      "pattern_delta": 12,
+      "roughness": 165,
+      "source": {
+        "kind": "synthetic",
+        "reference": "fixture-definition.json"
+      },
+      "status": "approved"
+    },
+    {
+      "approval": {
+        "actor": "fixture-author",
+        "date": "2026-09-26",
+        "note": "Only authorizes this software test; not approval by a customer or architect.",
+        "scope": "synthetic_fixture"
+      },
+      "diffuse_rgb": [
+        220,
+        225,
+        232
+      ],
+      "emissive": 37,
+      "id": "MAT_Plaster",
+      "label": "Synthetic pale stripes",
+      "metallic": 0,
+      "normal_opengl_rgb": [
+        142,
+        110,
+        252
+      ],
+      "pattern_delta": 10,
+      "roughness": 220,
+      "source": {
+        "kind": "synthetic",
+        "reference": "fixture-definition.json"
+      },
+      "status": "approved"
+    }
+  ]
+}

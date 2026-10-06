@@ -1,0 +1,126 @@
+{
+  "date": "2026-09-26",
+  "method": "QuickBMS decoding to text only; no recovered MAXScript evaluated",
+  "quickbms_runtime_version": "0.6.4",
+  "recipe_version": "0.1.1",
+  "tool_files": {
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\quickbms.exe": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 11305984,
+      "sha256": "6c8f950f82f0eb56083dc20675b4a14a869a058e8bb547b71d66276f475106ee"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\Mse_Decrypter.txt": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2185,
+      "sha256": "a127ec810fd95ff216e609ab867ff477e5efc8d301524ddd5c438f77bcc889b3"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\README.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7925,
+      "sha256": "aa148e514bbb6aaf370e8b7f3c3e437e76a99e358d75c70a658a77031b691257"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\LICENSE": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1070,
+      "sha256": "ff591d1a2190c5eaa39f183d7844b6ef7f2643d7ca64b6819445b50b462aaa84"
+    }
+  },
+  "sample": {
+    "input": "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\input\\encrypded_file.mse",
+    "input_sha256": "97d6347704044b4115e51710f1ff0c3a54136941b69bdb7b098caff508b6b86b",
+    "output_sha256": "8d57edb10b2413ac879ed15c514f6ec70222ee6a80a13f6e3dd3057da5996dd4",
+    "bytes": 58998,
+    "matches_supplied_output": true
+  },
+  "installed_scripts": [
+    {
+      "tool_id": "MAX-01",
+      "input": "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\GeoAGR.mse",
+      "sha256": "a55d50fa73aca6acb7485e1932b0e5de0e5f584e68a55f677bf3d0da7db4e36c",
+      "input_bytes": 458,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 406,
+      "output_sha256": "cc9e0ad85f05041fbb3bf958bf6d46ebf28283edf754eff5619d6a01ac88b07e",
+      "nul_bytes": 0
+    },
+    {
+      "tool_id": "MAX-06",
+      "input": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\RizomuvBridge\\RizomuvBridge.mse",
+      "sha256": "d1388f7060f0a1ad441a0d250142845534a78503105eee25122a690a90d712c0",
+      "input_bytes": 12409,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 12321,
+      "output_sha256": "b429b7d2b10edaa7890cdff0c04e67273feb2b0e76d06f6c46f26c7110c5105c",
+      "nul_bytes": 0
+    },
+    {
+      "tool_id": "MAX-07",
+      "input": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\UVTools_loader.mse",
+      "sha256": "882be02818b91a88e74c253856655ddbbe95ef8af2d75d404052214b15208f54",
+      "input_bytes": 1973,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 1867,
+      "output_sha256": "63657ebbfc80b7c184c2207028f2ff214dd8697445c52d237530183db1e5821a",
+      "nul_bytes": 0
+    },
+    {
+      "tool_id": "MAX-07",
+      "input": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\polyunwrapper_autoload.mse",
+      "sha256": "979e3e9720dde7cc174e8d619087b0c357fe8ac44fbd87428f2154b372600ad7",
+      "input_bytes": 1411,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 1246,
+      "output_sha256": "3d1bd9a7a5961ed154c587520ff9fbf63827eee08a4e0069934a153f91c65d1f",
+      "nul_bytes": 0
+    },
+    {
+      "tool_id": "MAX-07",
+      "input": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\auvn_autoload.mse",
+      "sha256": "c28bb7e36cd2d0dbab5d7ec8d3bb4d0d1f4b6657b4e7d647f1a31c656273cd34",
+      "input_bytes": 513,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 356,
+      "output_sha256": "594a909641d022c9d085567b84b347b771589f666a85f313b9df5d90bc44deba",
+      "nul_bytes": 0
+    },
+    {
+      "tool_id": "MAX-25",
+      "input": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\RappaTools3.mse",
+      "sha256": "b06d8e72375adc04ee0392d05e24ec0e8b50a4e6341863d9e30c274b38aa5cc8",
+      "input_bytes": 1122072,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 1121948,
+      "output_sha256": "a0742e27eb0fb01cbc1553e153a3c25a740f80ac094b634f1bf2d3e62e8148ee",
+      "nul_bytes": 0
+    },
+    {
+      "tool_id": "MAX-06",
+      "input": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\RizomuvBridge\\RizomuvBridge_functions.mse",
+      "sha256": "d45e4a26fbba8f96012e246cd54bc205914417d8435dfbcc28d9d1e173bee9fc",
+      "input_bytes": 13081,
+      "exit_code": 0,
+      "output_exists": true,
+      "input_unchanged": true,
+      "output_bytes": 12995,
+      "output_sha256": "eb8f667f7ba3e9413fea033692b66ba0d4d3c0be56fd212a820a4cbe57ad4b69",
+      "nul_bytes": 0
+    }
+  ],
+  "limitations": "Decode success and static inspection only; no Max runtime validation; recovered source excluded from git"
+}

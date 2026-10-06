@@ -1,0 +1,34 @@
+{
+  "scope": "Exterior adapter only; prepared OBR22 grid to pre-Shell surface",
+  "review_date": "2026-09-30",
+  "base_commit": "eebcecc7dcaae7b44f038bdcb655fbdb867d4730",
+  "legacy_exterior_exact_match": true,
+  "vertices": 544,
+  "quads": 357,
+  "facade_runs": 40,
+  "invalid_or_nonconvex_quads": 0,
+  "inward_faces": 0,
+  "unregistered_cut_coordinates": 0,
+  "max_profile_difference_m2": 0.0,
+  "coplanar_overlap_m2": 3.6415315207705135e-14,
+  "opening_fill_area_m2": 0.0,
+  "readback_max_error_m": 1.6898575879695797e-06,
+  "mesh_validate_repairs": 0,
+  "adapter_checks": {
+    "geometry": "pass",
+    "npz_readback": "pass",
+    "dcc_profile_readback": "pass"
+  },
+  "pending_decisions": [
+    "Review perimeter, opening and wall-top interpretation for this output"
+  ],
+  "approved_hashes_unchanged": 7,
+  "pytest": "115 passed, 1 skipped",
+  "profiles": 3,
+  "schemas": 8,
+  "synthetic_dcc_development_checks_passed": true,
+  "delivery_passed": false,
+  "shell_included": false,
+  "second_project_tested": false,
+  "visual_review": "pending"
+}

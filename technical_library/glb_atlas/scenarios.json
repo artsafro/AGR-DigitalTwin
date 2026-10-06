@@ -1,0 +1,229 @@
+{
+  "SIZE": 2048,
+  "PAD": 8,
+  "POTENTIAL_ORDER": [
+    2,
+    3,
+    6,
+    11,
+    15,
+    20,
+    24,
+    27,
+    30,
+    31,
+    32,
+    50,
+    100
+  ],
+  "LABELS": {
+    "2": "concrete_no_joints",
+    "3": "dark_reveals_and_sills",
+    "6": "dark_reveals_and_sill",
+    "11": "ac_units",
+    "15": "dark_upper_detail_unconfirmed",
+    "20": "fluted_columns",
+    "24": "dark_roof",
+    "27": "yellow_sill",
+    "30": "yellow_panel_top",
+    "31": "light_roof",
+    "32": "roof_ac_units",
+    "50": "windows",
+    "100": "spandrel"
+  },
+  "RECTS": {
+    "2": [
+      0,
+      0,
+      1024,
+      512
+    ],
+    "3": [
+      0,
+      1536,
+      512,
+      256
+    ],
+    "6": [
+      0,
+      1024,
+      512,
+      256
+    ],
+    "11": [
+      512,
+      1024,
+      512,
+      256
+    ],
+    "15": [
+      512,
+      1536,
+      512,
+      256
+    ],
+    "20": [
+      1024,
+      0,
+      512,
+      1024
+    ],
+    "24": [
+      1024,
+      1024,
+      512,
+      256
+    ],
+    "27": [
+      0,
+      1280,
+      512,
+      256
+    ],
+    "30": [
+      0,
+      512,
+      1024,
+      512
+    ],
+    "31": [
+      1536,
+      1024,
+      512,
+      256
+    ],
+    "32": [
+      512,
+      1280,
+      512,
+      256
+    ],
+    "50": [
+      1536,
+      0,
+      512,
+      1024
+    ],
+    "100": [
+      1024,
+      1280,
+      512,
+      256
+    ]
+  },
+  "colors": {
+    "3": [
+      68,
+      68,
+      68,
+      255
+    ],
+    "6": [
+      71,
+      71,
+      71,
+      255
+    ],
+    "11": [
+      46,
+      47,
+      46,
+      255
+    ],
+    "15": [
+      71,
+      71,
+      71,
+      255
+    ],
+    "24": [
+      94,
+      94,
+      94,
+      255
+    ],
+    "27": [
+      206,
+      190,
+      147,
+      255
+    ],
+    "31": [
+      198,
+      193,
+      184,
+      255
+    ],
+    "32": [
+      48,
+      49,
+      48,
+      255
+    ],
+    "50": [
+      52,
+      57,
+      59,
+      255
+    ],
+    "100": [
+      61,
+      65,
+      67,
+      255
+    ]
+  },
+  "textures": [
+    {
+      "file": "mat_25_colorized.png",
+      "id": 2,
+      "crop": [
+        1450,
+        730,
+        2650,
+        1330
+      ]
+    },
+    {
+      "file": "mat_26_colorized.png",
+      "id": 20,
+      "crop": [
+        20,
+        20,
+        1080,
+        2155
+      ]
+    },
+    {
+      "file": "mat_09_colorized.png",
+      "id": 30,
+      "crop": null
+    }
+  ],
+  "scenarios": {
+    "A_Main": {
+      "face_count": 12791,
+      "material_ids": [2, 3, 6, 11, 15, 20, 24, 27, 30, 31, 32, 50, 100],
+      "input_sha256": {
+        "input/uv_before.csv": "55c4c2b31b980fdbdceea7fb282ff9c1fbadf079ad095351d1ca56b0d5053b4d",
+        "input/face_uv_before.csv": "ea2b89e6055be9c4777335b2b9796fc09fe0c2e52bc2eb270a3e5591f6302511",
+        "textures/mat_25_colorized.png": "0fcf95581ff652b8686329b2fd0de11d6121019f9262e3101a28065bc7cea364",
+        "textures/mat_26_colorized.png": "1ca26789a6057dc88f277649b5eb8b75943d002db2dd65b0275008fbf38b3eb0",
+        "textures/mat_09_colorized.png": "95f14b0c0f08716bec19e40abf7980d0e2c985231a1ca3aeda681c9a1ce3532e"
+      },
+      "expected_png_sha256": "1d91e00464e534fb3155cb86fa16ffecac55abdb190a3f88cc56a8a5a0f39a7c"
+    },
+    "B_Main": {
+      "face_count": 12156,
+      "material_ids": [2, 6, 11, 20, 24, 27, 30, 31, 32, 50, 100],
+      "input_sha256": {
+        "input/uv_before.csv": "293fbb0dcb5b107d40cd609a2ffc07f0bee48971616b2d88ee4b81d2313ffe12",
+        "input/face_uv_before.csv": "2836318f070236818bc09f9a6ad38552f558598e3f28cd3146d911f06a387145",
+        "textures/mat_25_colorized.png": "0fcf95581ff652b8686329b2fd0de11d6121019f9262e3101a28065bc7cea364",
+        "textures/mat_26_colorized.png": "1ca26789a6057dc88f277649b5eb8b75943d002db2dd65b0275008fbf38b3eb0",
+        "textures/mat_09_colorized.png": "95f14b0c0f08716bec19e40abf7980d0e2c985231a1ca3aeda681c9a1ce3532e"
+      },
+      "expected_png_sha256": "1c5c675dcbdfe99a810d0e8acfd8342392648588dd476cb1a79a3df92277fb42"
+    }
+  }
+}

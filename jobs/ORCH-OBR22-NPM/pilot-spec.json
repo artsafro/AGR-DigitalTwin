@@ -1,0 +1,39 @@
+{
+  "document_kind": "pilot_design_not_BuildJob",
+  "version": "0.1.0",
+  "job_id": "ORCH-OBR22-NPM",
+  "date": "2026-10-01",
+  "status": "designed_not_executed",
+  "profile": "NPM",
+  "scope": "Approved OBR22 typical-floor component snapshot transfer; not full OKS delivery",
+  "synthetic": false,
+  "execution_authorized": true,
+  "authorization_source": "User 2026-10-01: вроде все включил, доделай задачу; implementation and isolated pilot authorized, production scenes preserved",
+  "delivery_passed": false,
+  "approved_manifest": "jobs/OBR22-K02/APPROVED_VERSIONS.json",
+  "sources": [
+    {
+      "role": "npm_scene_read_only",
+      "path": "jobs/OBR22-K02/outputs/npm_v012/OBR22_K02_v012_NPM_ATLAS.blend",
+      "sha256": "1cdb088043489334b3cc22865fdcc4eccae1ae2cf6919636681b1c21693a024a"
+    },
+    {
+      "role": "npm_atlas_read_only",
+      "path": "jobs/OBR22-K02/outputs/npm_v012/NPM_ATLAS_Diffuse.png",
+      "sha256": "04ed6549340c9ab249a7e7ec66def11c1cce7a27a0c5d98d58a03095b3822c8f"
+    },
+    {
+      "role": "approved_vpm_scale_reference_only",
+      "path": "jobs/OBR22-K02/outputs/shared_v011/OBR22_K02_v011_VPM_UDIM.blend",
+      "sha256": "d35ea7eb6c64029770a9044071719d7dbbe3f2e86e28e4dcea25bac450a98b34"
+    }
+  ],
+  "dependency_discovery_required": ["blend external images", "npm_v012/shared-uv-manifest.json", "uv_trial/uv-manifest.json", "shared_v011 scene and PNG reference dependencies"],
+  "constraints": ["Preserve approved geometry, UV, atlas, Material IDs, names, collections and instance provenance", "Export triangulation only on isolated copy", "No production live scene changes", "NPM OKS Ground texel-density requirement not_applicable", "Do not silently resolve ID0 or invent coordinates/customer metadata"],
+  "run_output_template": "jobs/ORCH-OBR22-NPM/runs/<run_id>/attempt-001",
+  "owners": {"documents": "lead", "code_wrappers": "one_executor", "scene_and_output": "one_background_DCC_executor", "verification": "independent_readonly_verifier"},
+  "planned_artifacts": ["working-copy.blend", "technical.fbx", "NPM_ATLAS_Diffuse.png", "technical-transfer.zip", "input-manifest.json", "export-manifest.json", "actual-file-readback.json", "report.json", "comparison-renders", "run-record.json"],
+  "plan": "docs/organization/local-orchestration/PILOT.md",
+  "evidence": "docs/organization/local-orchestration/evidence.json",
+  "pending": ["snapshot exporter/readback wrappers implementation", "native source and actual file QA", "restart/failure fixtures", "full AGR Checker execution", "Max runtime/import/reverse-export", "user visual acceptance of new transfer result"]
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\config\\userpref.blend",
+    "status": "parsed_DNA_bAddon",
+    "enabled_modules": [
+      "io_anim_bvh",
+      "io_curve_svg",
+      "io_mesh_uv_layout",
+      "io_scene_fbx",
+      "io_scene_gltf2",
+      "cycles",
+      "pose_library",
+      "bl_pkg",
+      "bl_ext.user_default.sintez_agr_checker",
+      "BMAX_Connector",
+      "quad_remesher"
+    ],
+    "struct": [
+      "bAddon",
+      [
+        [
+          "bAddon",
+          "*next"
+        ],
+        [
+          "bAddon",
+          "*prev"
+        ],
+        [
+          "char",
+          "module[128]"
+        ],
+        [
+          "IDProperty",
+          "*prop"
+        ]
+      ]
+    ],
+    "note": "Saved preferences only; no addon executed, no current runtime claim."
+  },
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\5.0\\config\\userpref.blend",
+    "status": "unsupported_header",
+    "header": "BLENDER17-01v050"
+  }
+]

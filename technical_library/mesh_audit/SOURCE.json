@@ -1,0 +1,29 @@
+{
+  "operation": "Common basic topology inventory and saved-file readback; redesigned pure core plus DCC adapter",
+  "references": [
+    {
+      "path": "jobs/GROUND-PROJECTION/inspect_geometry.py",
+      "sha256": "738cf3983bc08d657e3759bdc8ec0f592bef08da65230f8933f3aa081efbf2b7"
+    },
+    {
+      "path": "jobs/GROUND-PROJECTION/qa_geometry.py",
+      "sha256": "7c1dda402b2a37ecfedf034dee0bb38f0e1f45d866634a107eb907ab6ecce374"
+    },
+    {
+      "path": "jobs/MASHI-LP/scripts/inspect_scene.py",
+      "sha256": "3a3e4a7faa9f7fcf69203d883a41ff5454ea5ef28a4844c53603910a96e84e68"
+    },
+    {
+      "path": "related/blender_projects/projects/kpx131/qa/final_readback.py",
+      "sha256": "de0240bdb445abdfb639bf68fc9254fc7a361084c74fafb713124ce0505ea139"
+    }
+  ],
+  "not_equivalent_to": [
+    "specialized contour QA",
+    "BVH/contact classification",
+    "CheckToolBox add-on",
+    "fit error",
+    "visual/model acceptance"
+  ],
+  "full_source_registry": "../SOURCE_COVERAGE.jsonl"
+}

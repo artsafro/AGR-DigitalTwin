@@ -1,0 +1,73 @@
+{
+  "archive_sha256": "9439de2bc18bab0f30f23b180357d18e5b6213f1badf53085613b7a62c7fd02d",
+  "checks": [
+    {
+      "evidence": "development_bundle.zip",
+      "expected": "Exact inventory and valid input contracts",
+      "id": "C001",
+      "observed": "12 members, contracts and SHA-256 verified",
+      "schema_version": "1.0.0",
+      "source_pdf_pages": [
+        6,
+        26
+      ],
+      "status": "pass"
+    },
+    {
+      "evidence": "development_bundle.zip",
+      "expected": "NPM atlas + VPM Diffuse/ERM/Normal",
+      "id": "C002",
+      "observed": "7 PNGs; RGB, ERM R/G/B, DirectX green, padding checked",
+      "schema_version": "1.0.0",
+      "source_pdf_pages": [
+        9,
+        23,
+        30,
+        37
+      ],
+      "status": "pass"
+    },
+    {
+      "evidence": "layout.json",
+      "expected": "Sequential tiles, nonmirrored UV, padding, rectangular-surface density",
+      "id": "C003",
+      "observed": "UDIM [1001, 1002]; edge density 1008.0..1008.0 px/m",
+      "schema_version": "1.0.0",
+      "source_pdf_pages": [
+        9,
+        30,
+        31,
+        32,
+        39
+      ],
+      "status": "pass"
+    },
+    {
+      "evidence": "dcc-roundtrip.json",
+      "expected": "Validate actual FBX bytes from ZIP",
+      "id": "C004",
+      "observed": "Both FBX 7400 files reimported in isolated Blender; triangles, world vertices, UV, materials and embedding match",
+      "schema_version": "1.0.0",
+      "source_pdf_pages": [
+        4,
+        9,
+        24,
+        30,
+        31,
+        32
+      ],
+      "status": "pass"
+    }
+  ],
+  "delivery_passed": false,
+  "indexed_images": 96,
+  "note": "Recorded evidence for this implementation; rerun before relying on it after changes.",
+  "source_pdf_pages": 56,
+  "tested_on": "Windows / Python 3.12 / Blender 4.4.0",
+  "tests": {
+    "dcc_executed": true,
+    "failed": 0,
+    "passed": 33,
+    "skipped": 0
+  }
+}

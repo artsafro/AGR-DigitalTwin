@@ -1,0 +1,250 @@
+{
+  "date": "2026-10-01",
+  "blender_version": "4.4",
+  "cases": [
+    {
+      "case": "ground_blend",
+      "source_filename": "GROUND_NPM_v008.blend",
+      "source_sha256": "06b1013b9d3978a119bf8aa8168de0dbd8dd525f69e5d8635eda702052ec523f",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 1.85,
+      "objects": 1,
+      "vertices": 33103,
+      "faces": 32392,
+      "triangles": 64784,
+      "polygon_sizes": {
+        "4": 32392
+      },
+      "boundary_edges": 1876,
+      "multi_face_edges": 316,
+      "duplicate_vertices_rounded": 0,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false,
+      "historical_ground_counts_and_material_slots_match": true
+    },
+    {
+      "case": "ground_fbx",
+      "source_filename": "GROUND_NPM_QUADS_v008.fbx",
+      "source_sha256": "120b897fb56385d7970197513e92eafcd88a71d155f0eaf478f6149fd205752e",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 1.97,
+      "objects": 1,
+      "vertices": 33103,
+      "faces": 32392,
+      "triangles": 64784,
+      "polygon_sizes": {
+        "4": 32392
+      },
+      "boundary_edges": 1876,
+      "multi_face_edges": 316,
+      "duplicate_vertices_rounded": 0,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false,
+      "historical_ground_counts_and_material_slots_match": true
+    },
+    {
+      "case": "mashi",
+      "source_filename": "organized-v001.blend",
+      "source_sha256": "a22773e9fbfc86c4200e77fffdcef49a4624f2888ce0077f33c3fe22c8739093",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 15.91,
+      "objects": 53,
+      "vertices": 409947,
+      "faces": 605194,
+      "triangles": 615536,
+      "polygon_sizes": {
+        "3": 596371,
+        "4": 8661,
+        "5": 20,
+        "6": 14,
+        "7": 2,
+        "8": 4,
+        "11": 6,
+        "12": 53,
+        "13": 7,
+        "14": 4,
+        "16": 6,
+        "17": 4,
+        "18": 10,
+        "19": 2,
+        "21": 6,
+        "22": 4,
+        "23": 14,
+        "25": 2,
+        "29": 2,
+        "31": 2
+      },
+      "boundary_edges": 130387,
+      "multi_face_edges": 1049,
+      "duplicate_vertices_rounded": 106459,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 740,
+      "collections": {
+        "LP": {
+          "meshes": 25
+        },
+        "Revit": {
+          "meshes": 26
+        },
+        "LP_old": {
+          "meshes": 2
+        }
+      },
+      "delivery_passed": false
+    },
+    {
+      "case": "mesh_opt",
+      "source_filename": "Object013_optimized_v001.blend",
+      "source_sha256": "f1239f0bef2704327dcab09f6f0b002cfc5ff97dc3b80fb30c6d99ab96d679c2",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 0.89,
+      "objects": 1,
+      "vertices": 4482,
+      "faces": 3677,
+      "triangles": 8144,
+      "polygon_sizes": {
+        "3": 90,
+        "4": 3340,
+        "6": 63,
+        "7": 18,
+        "8": 148,
+        "10": 18
+      },
+      "boundary_edges": 652,
+      "multi_face_edges": 0,
+      "duplicate_vertices_rounded": 0,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false
+    },
+    {
+      "case": "signs",
+      "source_filename": "facade_signs_v001.blend",
+      "source_sha256": "f3f695ec6102f8f76618f661d5f69a5d7e71999bfaad02322a36dd4a53f21410",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 0.84,
+      "objects": 8,
+      "vertices": 1148,
+      "faces": 1144,
+      "triangles": 2288,
+      "polygon_sizes": {
+        "4": 1144
+      },
+      "boundary_edges": 0,
+      "multi_face_edges": 0,
+      "duplicate_vertices_rounded": 0,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false
+    },
+    {
+      "case": "revit_openings",
+      "source_filename": "SOSH1150_Body_Openings_Replaced_v005.blend",
+      "source_sha256": "f8a51c2b35e44fd79410a8da37c25a88efc6a82a868c93dc9181523d68ee7efb",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 45.46,
+      "objects": 25382,
+      "vertices": 1032951,
+      "faces": 1794778,
+      "triangles": 1841337,
+      "polygon_sizes": {
+        "3": 1748227,
+        "4": 46547,
+        "6": 4
+      },
+      "boundary_edges": 194433,
+      "multi_face_edges": 12708,
+      "duplicate_vertices_rounded": 0,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false
+    },
+    {
+      "case": "sketchup_glb_reference",
+      "source_filename": "GLB_AB_source_reference.blend",
+      "source_sha256": "abacf898196505e06b48b16db3c664cd21342cd94fc27638cb7a812a57689d42",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 1.25,
+      "objects": 9,
+      "vertices": 10632,
+      "faces": 6032,
+      "triangles": 6032,
+      "polygon_sizes": {
+        "3": 6032
+      },
+      "boundary_edges": 10632,
+      "multi_face_edges": 0,
+      "duplicate_vertices_rounded": 7156,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false
+    },
+    {
+      "case": "facade_uv",
+      "source_filename": "facade_atlas_uv_v003.blend",
+      "source_sha256": "0afb836363fb7f421a0ff6f922f75f2859efefc74df800c0c909fea855f016d1",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 1.66,
+      "objects": 1,
+      "vertices": 28709,
+      "faces": 23951,
+      "triangles": 47945,
+      "polygon_sizes": {
+        "4": 23925,
+        "5": 17,
+        "6": 5,
+        "8": 4
+      },
+      "boundary_edges": 12753,
+      "multi_face_edges": 0,
+      "duplicate_vertices_rounded": 0,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false
+    },
+    {
+      "case": "blender_products",
+      "source_filename": "kpx131_v011.blend",
+      "source_sha256": "f3d17401acf9bd2594bf1fe61f89b8d6714d6eef79368621f958c7b3653f66de",
+      "source_unchanged": true,
+      "exit_code": 0,
+      "seconds": 0.83,
+      "objects": 1,
+      "vertices": 2959,
+      "faces": 2574,
+      "triangles": 5148,
+      "polygon_sizes": {
+        "4": 2574
+      },
+      "boundary_edges": 708,
+      "multi_face_edges": 0,
+      "duplicate_vertices_rounded": 2,
+      "duplicate_faces_by_vertex_set": 0,
+      "zero_area_faces_fan": 0,
+      "collections": {},
+      "delivery_passed": false
+    }
+  ],
+  "scope": "Read-only shared mesh inspection; no new modeling acceptance or full Checker, intersection or modifier certification",
+  "implementation_sha256": {
+    "blender.py": "117379a0ae6708e8378f284bee81f2a357b6155ded842a577963b00e2430b96d",
+    "core.py": "d2d39199f891b739ac75e01505ecf26ffc3294672ab72236af232c80f5787487"
+  }
+}

@@ -1,0 +1,171 @@
+{
+  "date": "2026-10-01",
+  "blender_version": "4.4",
+  "input_sha256": {
+    "source_v001.blend": "a916eee9a3f93f5a58a716f67d2dfff0d19cb1e8a56f349588a3c8e51ce39433",
+    "T_Template_Address_001_Diffuse_1.1001.png": "0d56252fc4a6beaf4026104453b74cc8b989f62b4d30ce8fa0cd2838e7fee7df"
+  },
+  "steps": [
+    {
+      "script": "inventory.py",
+      "exit_code": 0,
+      "seconds": 1.07,
+      "sha256": "fd5102e26e122da3c5c390ff217c934f3cdd8103da5e1223961c577336b474e5"
+    },
+    {
+      "script": "plan.py",
+      "exit_code": 0,
+      "seconds": 1.47,
+      "sha256": "87f21216f5e509e7ce40839d4155368491026778dd8d73733dc660cf0256cea8"
+    },
+    {
+      "script": "closure_final.py",
+      "exit_code": 0,
+      "seconds": 0.29,
+      "sha256": "823a0d1fa6df035489c2f439818d67b3612ce0dd4331fd004e1b502933d1280d"
+    },
+    {
+      "script": "final_plan.py",
+      "exit_code": 0,
+      "seconds": 0.42,
+      "sha256": "46d0e88705a65b2abed0f35fdd51aef4ee5c75e769ff698de90e68be64019b7e"
+    },
+    {
+      "script": "build_v005.py",
+      "exit_code": 0,
+      "seconds": 7.98,
+      "sha256": "f23afa03078d19a6ebaf371a18cd2f9160bea2796802cf3a7812a1a22b0b6560"
+    },
+    {
+      "script": "build_final_texture.py",
+      "exit_code": 0,
+      "seconds": 2.22,
+      "sha256": "8743a22ca916ef4503a762981742907335bab12db81614b4a180272671da2f35"
+    },
+    {
+      "script": "apply_v006.py",
+      "exit_code": 0,
+      "seconds": 1.74,
+      "sha256": "fd7817b691f86e71b3c5429f19be79fe44fe981697564d5a42bc47a682bee1ff"
+    },
+    {
+      "script": "readback_v006.py",
+      "exit_code": 0,
+      "seconds": 2.93,
+      "sha256": "c38a10216e0d7badaa7bf21bf17b415de319daeb8cd7a7356912abc784d2e97b"
+    },
+    {
+      "script": "export_max_v006.py",
+      "exit_code": 0,
+      "seconds": 2.1,
+      "sha256": "fb8414f7a8f28898e6826cc387f74472f850032bec5bcae03da4ad6d80c8530e"
+    },
+    {
+      "script": "package_max_v006.py",
+      "exit_code": 0,
+      "sha256": "ce866ffbde374ef1267aeaeee4016511bd6e4bd045600c7dbfb4ad3a5b5260c6"
+    }
+  ],
+  "operational_patch": "Guard viewport UI loop when bpy.context.screen is None in background mode; geometry and UV algorithm unchanged",
+  "readback": {
+    "file": "${REPLAY}\\jobs\\UV-CONTINUOUS\\outputs\\walls_UV550-1500_FlipH_v006.blend",
+    "faces": 42686,
+    "polygon_sizes": {
+      "4": 42686
+    },
+    "density_min_max": [
+      550.9206463055806,
+      614.890219523213
+    ],
+    "td_outside_550_1500": 0,
+    "uv_bounds": [
+      0.0048828125,
+      0.9951171875
+    ],
+    "outside_1001": 0,
+    "surface_area_m2": 5124.335990821505,
+    "edge_counts": {
+      "2": 80060,
+      "1": 10624
+    },
+    "nonmanifold_gt2": 0,
+    "mesh_validate_repairs": false,
+    "packed_diffuse_matches": true,
+    "delivery_passed": false,
+    "source_surface_distance_m": 0.00016021728515625,
+    "face_density_min_max": [
+      551.0469565393527,
+      614.8812629666389
+    ],
+    "loose_vertices": 0,
+    "vertical_shared_edge_sample_max_phase_px": 0.012695312665528036,
+    "vertical_shared_edge_samples": 159584,
+    "vertical_phase_samples_over_0_1px": 0
+  },
+  "texture": {
+    "resolution": [
+      4096,
+      4096
+    ],
+    "padding": 20,
+    "period_pixels": 4056,
+    "base": 114.0,
+    "cassette_columns": 3,
+    "cassette_rows": 8,
+    "white_horizontal_lines": 8,
+    "diagonal_lines": 2,
+    "horizontal_mirror": true,
+    "bilinear_boundary_samples_equal": true,
+    "sha256": "e3a6708fbd89d79e2b44de900eb8bac9a41842f44099a9b972e157a5d74d4f99",
+    "method": "Native editable F1 procedural texture source; imagegen study discarded because counts/edge continuity were not preserved"
+  },
+  "fbx": {
+    "source": "${REPLAY}\\jobs\\UV-CONTINUOUS\\outputs\\walls_UV550-1500_FlipH_v006.blend",
+    "fbx": "${REPLAY}\\jobs\\UV-CONTINUOUS\\outputs\\FBX_For_Max_v006\\Walls_FlipH_v006.fbx",
+    "fbx_version": 7400,
+    "objects": 1,
+    "vertices": 47800,
+    "polygon_sizes": {
+      "4": 42686
+    },
+    "uv_channels": 1,
+    "uv_max_error": 0.0,
+    "world_max_error_m": 9.775161743164062e-06,
+    "dimensions_m": [
+      61.29999542236328,
+      110.75005340576172,
+      25.294721603393555
+    ],
+    "material_slots": 1,
+    "embedded_diffuse_sha256": "e3a6708fbd89d79e2b44de900eb8bac9a41842f44099a9b972e157a5d74d4f99",
+    "embedded_diffuse_verified": true,
+    "diffuse_material_binding_verified": true,
+    "mesh_validate_repairs": false,
+    "blender_fbx_roundtrip_passed": true,
+    "native_max_import_verified": false
+  },
+  "package": {
+    "zip": "${REPLAY}\\jobs\\UV-CONTINUOUS\\outputs\\Walls_FlipH_v006_FBX_For_Max.zip",
+    "archive_readback_verified": true,
+    "files": {
+      "Walls_FlipH_v006.fbx": {
+        "bytes": 1506188,
+        "sha256": "b94dfb63c0c009101d1c373fc92a1e8687d28b65af70dc113926dcaa6c622a90"
+      },
+      "Walls_FlipH_v006_Diffuse.png": {
+        "bytes": 271916,
+        "sha256": "e3a6708fbd89d79e2b44de900eb8bac9a41842f44099a9b972e157a5d74d4f99"
+      },
+      "README.txt": {
+        "bytes": 133,
+        "sha256": "1bcc8fd4385dc3413d9dda0f401c4856e1114f995e98e0096c2d2f23982dab43"
+      },
+      "FBX_READBACK.json": {
+        "bytes": 922,
+        "sha256": "a9d9cc627adb4d87c652b4c7fe3a818f36e5794d8b82b78b7d47396fa25dc2b1"
+      }
+    }
+  },
+  "native_max_import_verified": false,
+  "full_agr_delivery_verified": false
+}

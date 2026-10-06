@@ -1,0 +1,5 @@
+{
+  "source": "window_facades/build_new_building_atlas.py",
+  "source_sha256": "22fbbc9c81443cfb93ed0d9f58526bd15dc85bca1c3a20cd798a7d9ee732bde3",
+  "changes": "Rendering logic retained; ID-specific geometry parameters moved to case JSON; output and fonts explicit; no import-time filesystem writes"
+}

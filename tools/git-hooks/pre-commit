@@ -1,0 +1,5 @@
+#!/bin/sh
+# Commit large new files as links (tools/git-hooks/link_large_files.py, toggle: git config twin.linkLarge).
+script="$(git rev-parse --show-toplevel)/tools/git-hooks/link_large_files.py"
+[ -f "$script" ] || exit 0
+exec py -3 "$script"

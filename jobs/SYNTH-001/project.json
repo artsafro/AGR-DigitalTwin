@@ -1,0 +1,250 @@
+{
+  "master": {
+    "source": {
+      "kind": "synthetic",
+      "reference": "fixture-definition.json"
+    },
+    "surfaces": [
+      {
+        "id": "SURF_Bottom",
+        "material_id": "MAT_Copper",
+        "vertices": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            2,
+            2,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ]
+        ]
+      },
+      {
+        "id": "SURF_South",
+        "material_id": "MAT_Plaster",
+        "vertices": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            2,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            2
+          ]
+        ]
+      },
+      {
+        "id": "SURF_East",
+        "material_id": "MAT_Copper",
+        "vertices": [
+          [
+            2,
+            0,
+            0
+          ],
+          [
+            2,
+            2,
+            0
+          ],
+          [
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            0,
+            2
+          ]
+        ]
+      },
+      {
+        "id": "SURF_North",
+        "material_id": "MAT_Plaster",
+        "vertices": [
+          [
+            2,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            2
+          ]
+        ]
+      },
+      {
+        "id": "SURF_West",
+        "material_id": "MAT_Copper",
+        "vertices": [
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            2,
+            2
+          ]
+        ]
+      },
+      {
+        "id": "SURF_Roof",
+        "material_id": "MAT_Plaster",
+        "vertices": [
+          [
+            0,
+            0,
+            2
+          ],
+          [
+            2,
+            0,
+            2
+          ],
+          [
+            2,
+            2,
+            2
+          ],
+          [
+            0,
+            2,
+            2
+          ]
+        ]
+      }
+    ],
+    "synthetic": true
+  },
+  "project": {
+    "address_token": "Synthetic_001",
+    "inputs": {
+      "fixture-definition.json": "b49ac9b966ab96b1be0b8c9fa9ef4801294f1c00288172a253bdc6704aa05142"
+    },
+    "placement": {
+      "coordinate_system": "SYNTHETIC_LOCAL",
+      "source": {
+        "kind": "synthetic",
+        "reference": "fixture-definition.json"
+      },
+      "status": "unknown"
+    },
+    "profile_versions": {
+      "NPM": "0.1.0",
+      "VPM": "0.1.0"
+    },
+    "project_id": "SYNTH_001",
+    "standards_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "synthetic": true
+  },
+  "registry": {
+    "materials": [
+      {
+        "approval": {
+          "actor": "fixture-author",
+          "date": "2026-09-26",
+          "note": "Only authorizes this software test; not approval by a customer or architect.",
+          "scope": "synthetic_fixture"
+        },
+        "diffuse_rgb": [
+          184,
+          102,
+          61
+        ],
+        "emissive": 0,
+        "id": "MAT_Copper",
+        "label": "Synthetic warm stripes",
+        "metallic": 210,
+        "normal_opengl_rgb": [
+          128,
+          152,
+          252
+        ],
+        "pattern_delta": 12,
+        "roughness": 165,
+        "source": {
+          "kind": "synthetic",
+          "reference": "fixture-definition.json"
+        },
+        "status": "approved"
+      },
+      {
+        "approval": {
+          "actor": "fixture-author",
+          "date": "2026-09-26",
+          "note": "Only authorizes this software test; not approval by a customer or architect.",
+          "scope": "synthetic_fixture"
+        },
+        "diffuse_rgb": [
+          220,
+          225,
+          232
+        ],
+        "emissive": 37,
+        "id": "MAT_Plaster",
+        "label": "Synthetic pale stripes",
+        "metallic": 0,
+        "normal_opengl_rgb": [
+          142,
+          110,
+          252
+        ],
+        "pattern_delta": 10,
+        "roughness": 220,
+        "source": {
+          "kind": "synthetic",
+          "reference": "fixture-definition.json"
+        },
+        "status": "approved"
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "height_m": 1.2,
+  "id": "WIN_Test",
+  "source": {
+    "kind": "synthetic",
+    "reference": "fixture-definition.json"
+  },
+  "status": "proposed",
+  "width_m": 1.0
+}

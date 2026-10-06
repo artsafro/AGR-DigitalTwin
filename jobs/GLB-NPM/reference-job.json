@@ -1,0 +1,8 @@
+{
+  "status": "source reference only; not NPM geometry",
+  "definition_base_z_m": 0.02,
+  "floors": [
+    {"label": "A", "definition_id": 170455, "z_offset_m": 0.0},
+    {"label": "B", "definition_id": 169173, "z_offset_m": 3.3}
+  ]
+}

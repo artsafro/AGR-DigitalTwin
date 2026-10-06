@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-01",
+  "base_main": "946acade8b7e90244be156d37afff38a17d62434",
+  "branch": "codex/recovered-technical-library",
+  "pytest": {
+    "passed": 156,
+    "skipped": 1,
+    "warning": "expected duplicate ZIP member in negative test",
+    "exit_code": 0
+  },
+  "profiles": 3,
+  "schemas": 8,
+  "blender_saved_file_audits": 9,
+  "kpp_pngs_pixel_and_byte_identical": 11,
+  "archive_member_readback_equal": true,
+  "synthetic_dcc": {
+    "development_checks_passed": true,
+    "delivery_passed": false
+  },
+  "groups": 15,
+  "source_paths": 601,
+  "source_read": 590,
+  "deferred_Workbench_metadata_only": 11,
+  "byte_duplicate_clusters": 5,
+  "identical_function_candidates": 57,
+  "python_import_path": "PR checkout/src explicitly selected through PYTHONPATH; root editable install not used for final checks",
+  "first_test_attempt": "one Shell name-guard failure from root editable install; not evidence about PR checkout",
+  "native_max": "BRIDGE_DOWN; not tested",
+  "hosted_ci": "not claimed",
+  "delivery_passed": false,
+  "implementation_commit": "4a34712a19babdd7438777b31099f4dda1a92412",
+  "pr25": "merged in base main as 946acad",
+  "mesh_audit_replay": {
+    "cases_matching_reference": 9,
+    "source_unchanged": true,
+    "ground_blend_object": "SM_GROUND_NPM_Ground",
+    "native_max_verified": false
+  },
+  "uv_four_stage_replay": {
+    "passed": true,
+    "blender": "4.4.0",
+    "disable_autoexec": true,
+    "fbx_readback": true,
+    "common_sha256": "ba1a2c207d7764b5ca7c88d35d78d51c5d72a9fc124f95dacd132588d3bf136e",
+    "native_max_verified": false
+  },
+  "static_validation": {
+    "compileall": true,
+    "json": true,
+    "source_paths": 601,
+    "groups": 15,
+    "diff_check": true
+  }
+}

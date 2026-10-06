@@ -1,0 +1,140 @@
+[
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\3dsmax-civilview-2024-1.2.1.0\\PackageContents.xml",
+    "name": "Autodesk 3ds Max 2024 CivilView",
+    "version": "1.2.1.0",
+    "description": "Autodesk 3ds Max 2024 CivilView"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\3dsmax-civilview-2026-1.2.6.0\\PackageContents.xml",
+    "name": "Autodesk 3ds Max 2026 CivilView",
+    "version": "1.2.6.0",
+    "description": "Autodesk 3ds Max 2026 CivilView"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\3dsMaxSceneSecurityTools\\PackageContents.xml",
+    "name": "3ds Max Scene Security Tools",
+    "version": "2.1.8",
+    "description": "3ds Max Scene Security Tools"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\AdvancedModeling3dsMax2024\\PackageContents.xml",
+    "name": "Advanced Modeling Tools for 3ds Max 2024",
+    "version": "1.4.0.19",
+    "description": "Advanced Modeling Tools for 3ds Max 2024"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\AdvancedModeling3dsMax2026\\PackageContents.xml",
+    "name": "Advanced Modeling Tools for 3ds Max 2026",
+    "version": "1.11.0.6",
+    "description": "Advanced Modeling Tools for 3ds Max 2026"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\ChaosScatter3dsMax2024\\PackageContents.xml",
+    "name": "Chaos Scatter for 3ds Max",
+    "version": "6.1.510227",
+    "description": ""
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\FlowRetopologyFor3dsMax2026\\PackageContents.xml",
+    "name": "Flow Retopology for 3ds Max 2026",
+    "version": "1.6.0.5",
+    "description": "3ds Max 2026 Flow Retopology Component"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\ForestPackPro2024\\PackageContents.xml",
+    "name": "Forest Pack Pro",
+    "version": "9.2.4",
+    "description": null
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\MAXtoA_2024\\PackageContents.xml",
+    "name": "MAXtoA for 3ds Max 2024",
+    "version": "5.6.5.1",
+    "description": "Arnold Plug-in for 3ds Max"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\MAXtoA_2026\\PackageContents.xml",
+    "name": "MAXtoA for 3ds Max 2026",
+    "version": "5.8.4.0",
+    "description": "Arnold Plug-in for 3ds Max"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\Octopus3dsMax2024\\PackageContents.xml",
+    "name": "Octopus for 3ds Max",
+    "version": "3.15.0",
+    "description": null
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\Octopus3dsMax2026\\PackageContents.xml",
+    "name": "Octopus for 3ds Max",
+    "version": "3.16.0",
+    "description": null
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\RailClonePro2024\\PackageContents.xml",
+    "name": "RailClone Pro",
+    "version": "7.0.8",
+    "description": null
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\Retopology3dsMax2024\\PackageContents.xml",
+    "name": "Retopology Tools for 3ds Max 2024",
+    "version": "1.4.0.1239",
+    "description": "3ds Max 2024 Retopology Component"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\Retopology3dsMax2026\\PackageContents.xml",
+    "name": "Retopology Tools for 3ds Max 2026",
+    "version": "1.8.0.16",
+    "description": "3ds Max 2026 Retopology Component"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SiNiSoftware2024\\PackageContents.xml",
+    "name": "SiNi Software",
+    "version": "2.0.0",
+    "description": ""
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SiNiSoftware2026\\PackageContents.xml",
+    "name": "SiNi Software",
+    "version": "2.0.2",
+    "description": ""
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SubstanceIn3dsMax2026\\PackageContents.xml",
+    "name": "Substance in 3ds Max",
+    "version": "3.0.5",
+    "description": null
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\UnrealDatasmithMax\\PackageContents.xml",
+    "name": "Unreal Datasmith Exporter for Autodesk 3ds Max",
+    "version": "Unreal Engine 5.0",
+    "description": "Unreal Datasmith Exporter for Autodesk 3ds Max"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\USD for 3ds Max 2026\\PackageContents.xml",
+    "name": "USD for 3ds Max 2026",
+    "version": "0.13.0.7",
+    "description": "Autodesk USD for 3ds Max 2026"
+  },
+  {
+    "path": "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\VRay3dsMax2024\\PackageContents.xml",
+    "name": "V-Ray for 3ds Max",
+    "version": "7.00.04",
+    "description": ""
+  },
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\ApplicationPlugins\\FBX Converter for Autodesk Navisworks.bundle\\PackageContents.xml",
+    "name": "FBX Converter for Autodesk® Navisworks®",
+    "version": "27.26.4.0",
+    "description": "FBX Converter for Autodesk® Navisworks®"
+  },
+  {
+    "path": "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\ApplicationPlugins\\Phoenix3dsMax2024\\PackageContents.xml",
+    "name": "Phoenix for 3ds Max",
+    "version": "5.20.00",
+    "description": ""
+  }
+]

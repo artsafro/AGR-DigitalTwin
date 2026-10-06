@@ -1,0 +1,2646 @@
+{
+  "schema_version": "1.0",
+  "date": "2026-09-26",
+  "mode": "Originals/settings unchanged; static metadata and isolated synthetic CLI probes; main GeoAGR/DLL methods/DCC scenes not executed in GeoAGR follow-up",
+  "status_definitions": {
+    "runtime_verified": "Успешный текущий read-only вызов",
+    "runtime_loaded": "Есть live DLL/global; функция инструмента не тестировалась",
+    "configured_ui": "Связь с действующим workspace/menu, не доказательство исполнения",
+    "enabled_preferences": "Включён в сохранённых prefs, приложение сейчас не запущено",
+    "installed_not_enabled": "Файл есть, отсутствует в разобранных prefs4.4",
+    "workflow_artifacts": "Исходники+сохранённый результат; в этом этапе не пересчитывался",
+    "installed_usage_unknown": "Файл установлен/лежит на диске; запуск не доказан",
+    "older_version": "Версия старее соседней; не обязательно ненужная",
+    "duplicate_evidence": "Побайтовое равенство подтверждено SHA256",
+    "synthetic_verified": "Узкая операция проверена на синтетических файлах; не production integration или real OKS",
+    "distribution_available": "Компонент поставки на диске; подключение в рабочее приложение и использование не подтверждены"
+  },
+  "tools": [
+    {
+      "id": "MAX-01",
+      "application": "3ds Max",
+      "name": "GeoAGR",
+      "paths": [
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\GeoAGR.exe",
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\GeoAGR.mse",
+        "C:\\usermacros\\Geoscript-GeoAGR.mcr",
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\tech2.txt",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\GeoAGR.exe",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoAGR_start.ms"
+      ],
+      "version": "Рабочая установка Max2024 без EXE VersionInfo; отдельно поставка GeoAGR13.63 по имени папки, не установлена",
+      "purpose": "НПМ/ВПМ: материалы, UDIM, GeoJSON, UCX, позиционирование и упаковка по локальным подсказкам.",
+      "status": "configured_ui",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-020",
+        "DT-021",
+        "DT-022",
+        "DT-023",
+        "DT-033"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:477; Octopus myscripts:88–94. Макрос указывает на GeoAGR.mse. tech2 описывает workflow; запуск не выполнялся. Поставка13.63: 32 same/14 different/13 absent относительно GeoScripts2024; запуск основного EXE не выполнялся.",
+      "dependencies": "3ds Max, EXE/MSE, ImageMagick, 7z, FbxFormatConverter, normalmap.exe",
+      "source_code": "MSE loader раскрыт ранее; новый EXE — AutoIt SCRIPT resource, не декомпилирован. API трёх DLL прочитан как metadata. См. GEOAGR_13_63_REVIEW.md.",
+      "limitations": "Нет проверенного CLI/API; версии правил и совместимость с PDF 2026 не доказаны. Сначала записать контрольный вывод, затем решать об адаптере. Лицензионные настройки исключены из реестра. Статически подтверждён clipboard execution; не считать поддерживаемым API. Новый каталог на Desktop не доказывает использование13.63. Два CLI отдельно испытаны: GEN-11/12; это не проверка GeoAGR целиком.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-01",
+      "application": "Blender",
+      "name": "SINTEZ AGR Checker",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker",
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\archive_preflight.py",
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\autochecks\\hp_checks.py",
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\autochecks\\lp_checks.py",
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\autochecks\\check_utils.py"
+      ],
+      "version": "1.6.1, Blender >=4.2; профиль 4.4",
+      "purpose": "Проверки архивов/FBX/имен/UV/UDIM/UCX/GeoJSON, отчёты и инструменты исправления.",
+      "status": "enabled_preferences",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-020",
+        "DT-021",
+        "DT-022",
+        "DT-023",
+        "DT-033"
+      ],
+      "evidence": "blender_manifest.toml; бинарный userpref.blend: bAddon = bl_ext.user_default.sintez_agr_checker. ucx_test/STATE.md содержит сохранённые результаты agr.refresh_check_group.",
+      "dependencies": "Blender bpy/bmesh; Pillow, python-docx, lxml, openpyxl; Windows; bundled wheels/PNG utilities",
+      "source_code": "Python доступен; manifest declares GPL-3.0-or-later.",
+      "limitations": "Не считать приёмкой заказчика. Утверждение PDF проверять отдельно. check_utils:1099 выбирает трактовку UCX 15k/5%/100k; ADR-0002 остаётся открытым. Не вызывать import_models/clear_blender_file на рабочей сцене; разнести read checks и fix.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-02",
+      "application": "Blender",
+      "name": "SINTEZ AGR Checker в профиле 5.0",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\5.0\\extensions\\user_default\\sintez_agr_checker"
+      ],
+      "version": "1.5.0",
+      "purpose": "Предыдущая версия того же проверяющего расширения.",
+      "status": "older_version",
+      "decision": "заменить",
+      "tasks": [
+        "DT-020",
+        "DT-021"
+      ],
+      "evidence": "Manifest 5.0 =1.5.0, profile4.4=1.6.1; бинарный формат prefs5.0 не разобран.",
+      "dependencies": "Blender5.0 executable пока не найден в стандартной установке",
+      "source_code": "Python; GPL по manifest",
+      "limitations": "Не байтовый дубль и не доказанно неиспользуемая установка. В будущем унифицировать после проверки; сейчас ничего не обновлялось.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-02",
+      "application": "3ds Max",
+      "name": "Octopus + artsafro/myscripts + встроенный A101LP",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\Octopus\\octopus\\myscripts.octopus",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\Octopus\\octopus\\artsafro.octopus"
+      ],
+      "version": "3.15.0 для2024; 3.16.0 для2026",
+      "purpose": "Рабочая панель; встроенные UCX_Concave, UVTools, GeoAGR, 3Pt Align, PolyXYZ, Copitor и A101LP.",
+      "status": "runtime_loaded",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-021",
+        "DT-022",
+        "DT-033"
+      ],
+      "evidence": "Octopus DLL загружена; global OctopusInterface существует. 16 активных записей в двух меню; A101LP содержит 63058 символов команд. Fresh Octopus myscripts416/422 links Copitor; installedv3 script hash matches source.",
+      "dependencies": "Octopus; вызываемые MCR/плагины; Max2024",
+      "source_code": "XML-команды доступны, плагин закрыт",
+      "limitations": "Вынести принадлежащую команде логику из меню в версионируемые функции с явными входами. Наличие кнопки не доказывает частоту её использования.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-03",
+      "application": "3ds Max",
+      "name": "Flora Atlas",
+      "paths": [
+        "C:\\usermacros\\Flora Tools-FloraAtlas.mcr",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\FloraAtlas.ms"
+      ],
+      "version": "версия не заявлена; Max2024",
+      "purpose": "Сбор diffuse/opacity из выделения, упаковка атласа, remap UV и назначение материала.",
+      "status": "configured_ui",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-014"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:519; global ATLAS_files существует. MCR содержит полный код; Andrew MS — другой файл.",
+      "dependencies": "System.Drawing/Windows.Forms/CSharp; Max selection/materials",
+      "source_code": "Открытый текст MCR/MS; права не определены",
+      "limitations": "Сохраняет alpha, default padding2; для НПМ нельзя слепо принять настройки. Сохранить source IDs, добавить profile/padding/RGB и output manifest; тестировать копию.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-04",
+      "application": "3ds Max",
+      "name": "AGR Mat & Tex Renamer",
+      "paths": [
+        "C:\\usermacros\\AlexYo Tools-RenameObjMatTex.mcr"
+      ],
+      "version": "версия не заявлена; Max2024",
+      "purpose": "Переименование объектов, материалов и текстур.",
+      "status": "configured_ui",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-020",
+        "DT-022"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:504 action RenameObjMatTex, label AGRrenamer.",
+      "dependencies": "Max scene/maps; внешние файлы текстур",
+      "source_code": "MCR читается; доступность всех внешних вызовов требует аудита",
+      "limitations": "Ввести preview и таблицу old→new; проверять коллизии имён/ID и маски из PDF. Не переименовывать approved provenance.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-05",
+      "application": "3ds Max",
+      "name": "BMAX Connector — сторона Max",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Connector.ms",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Functions.ms",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\bmax.ini"
+      ],
+      "version": "в заголовке .016/.018; installer 1.19 — не равнять этим версиям",
+      "purpose": "Двусторонний обмен Max↔Blender через временные FBX.",
+      "status": "configured_ui",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-021"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:247; bmax.ini Export FBX201200, Z, m, scale1; папка Temp/BMAX.",
+      "dependencies": "FBXEXP/FBXIMP; общий exchange dir; Blender addon",
+      "source_code": "MAXScript открыт",
+      "limitations": "Транспорт для редактирования, не publisher. Развести temp по job, единицы/ось и версию2014, сохранить IDs. Source делает export/import/delete временных копий; не запускался.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-03",
+      "application": "Blender",
+      "name": "BMAX Connector — сторона Blender",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\BMAX_Connector\\__init__.py"
+      ],
+      "version": "bl_info0.1.1, Blender4.4",
+      "purpose": "Приём/передача BMAX FBX.",
+      "status": "enabled_preferences",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-021"
+      ],
+      "evidence": "bAddon BMAX_Connector присутствует в prefs4.4; Max-toolbar привязан.",
+      "dependencies": "Blender io_scene_fbx, Max BMAX, единая папка",
+      "source_code": "Python доступен",
+      "limitations": "Обе стороны настроены, но end-to-end повторная проверка именно BMAX в этой инвентаризации не выполнялась.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-06",
+      "application": "3ds Max",
+      "name": "RizomUV Bridge",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\RizomuvBridge\\RizomuvBridge.mse",
+        "C:\\usermacros\\Titus_Scripts-RizomuvBridge.mcr",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\RizomuvBridge\\RizomuvBridge_functions.mse"
+      ],
+      "version": "1.5.1 по changelog раскрытого UI; runtime не проверен",
+      "purpose": "Вынос UV-развёртки в RizomUV и возврат.",
+      "status": "configured_ui",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-013"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:455–462; MCR вызывает установленный MSE. MSE_REVIEW.md и mse-evidence.json: FBX/Lua/channel transfer исследованы статически.",
+      "dependencies": "RizomUV executable/license; Max",
+      "source_code": "UI и functions MSE раскрыты локально; исходники не включены в Git.",
+      "limitations": "Не заменяет source→material mapping, padding/UDIM правила. Runtime RizomUV не подтверждён. New очищает UV2+; execute для ID; нет проверки топологии и надёжного сигнала готовности. Нужен job isolation и UV round-trip.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-04",
+      "application": "Blender",
+      "name": "RizomUV Bridge Ultimate",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\rizomuvbridge_ultimate"
+      ],
+      "version": "версия требует уточнения; Blender4.4 folder",
+      "purpose": "Альтернативный Blender↔RizomUV мост.",
+      "status": "installed_not_enabled",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-012",
+        "DT-013"
+      ],
+      "evidence": "Пакет присутствует; отсутствует среди bAddon сохранённых prefs4.4.",
+      "dependencies": "RizomUVLink/native libs, RizomUV",
+      "source_code": "Python+native libs",
+      "limitations": "Не заключать «никогда не используют»: может включаться вручную/в другом профиле. Пока не основная зависимость.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-05",
+      "application": "Blender",
+      "name": "CheckToolBox 1.5",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5",
+        "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\kpx131\\qa\\checktoolbox_run.py"
+      ],
+      "version": "1.5",
+      "purpose": "Проверки меша и отчёт качества.",
+      "status": "workflow_artifacts",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-021",
+        "DT-030",
+        "DT-033"
+      ],
+      "evidence": "Не включён в bAddon; имеются одинаковые runner-скрипты в7 проектах и QA-выводы. Это запуск скриптом, а не постоянное включение UI.",
+      "dependencies": "bpy/bmesh; isolated Blender",
+      "source_code": "Python, GPL notice в __init__.py",
+      "limitations": "Сохранить различие geometric QA и нормативной проверки. Проверить смысл overlap tolerance; не переносить параметры KPX на ОКС.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-06",
+      "application": "Blender",
+      "name": "CheckToolBox 1.4",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_4"
+      ],
+      "version": "1.4",
+      "purpose": "Предыдущий CheckToolBox.",
+      "status": "older_version",
+      "decision": "заменить",
+      "tasks": [
+        "DT-021"
+      ],
+      "evidence": "Папка есть, в prefs4.4 отсутствует; рядом1.5 и runner1.5.",
+      "dependencies": "Blender",
+      "source_code": "Python",
+      "limitations": "Кандидат на архивную копию, не удалён. Ручное использование1.4 требует подтверждения.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-07",
+      "application": "Blender",
+      "name": "Quad Remesher",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\quad_remesher"
+      ],
+      "version": "версия требует уточнения; профиль4.4",
+      "purpose": "Перестроение топологии.",
+      "status": "enabled_preferences",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-031"
+      ],
+      "evidence": "bAddon quad_remesher присутствует в prefs4.4.",
+      "dependencies": "Внешний remesh engine/license, bpy",
+      "source_code": "Python оболочка, вычислительный движок отдельно",
+      "limitations": "Не использовать для сохранения точных проёмов без сравнения с источником. Автоматическая ретопология не доказывает геометрическое соответствие.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-07",
+      "application": "3ds Max",
+      "name": "UVTools / PolyUnwrapper / Advanced UV Normalizer",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\UVTools_loader.mse",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\polyunwrapper_autoload.mse",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\auvn_autoload.mse"
+      ],
+      "version": "версии отдельных продуктов не установлены;2024, частично2026",
+      "purpose": "Развёртка, выравнивание UV, texel density.",
+      "status": "configured_autoload",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-012",
+        "DT-013"
+      ],
+      "evidence": "LoadStartupScripts=1; loader files; UVTools button в toolbar и Octopus. Fresh SHA: UVTools3.2m macro matches installed;3.3.05 macro differs. This does not identify full runtime version.",
+      "dependencies": "Max Unwrap_UVW, коммерческие пакеты",
+      "source_code": "Три startup MSE раскрыты; основной UVTools/PolyUnwrapper/auvn не исследован.",
+      "limitations": "Использовать существующий ручной этап. Из отсутствия выбранного global нельзя заключать, что модуль не загружен. Output всё равно проверяет профиль. auvn_autoload имеет пустой try: этот путь не запускает основной скрипт; другие пути запуска неизвестны. UVTools loader меняет INI/DLX; не выполнять для read-only анализа.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-08",
+      "application": "3ds Max",
+      "name": "UDIM MultiSub Universal",
+      "paths": [
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\UDIM-MultiSub_Universal(max22-26).ms"
+      ],
+      "version": "заявлено Max22–26",
+      "purpose": "Разбор UDIM и материалов MultiSub.",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-013"
+      ],
+      "evidence": "Script присутствует; SHA совпадает с B:/Backup/scripts. В проверенных меню точная привязка не найдена.",
+      "dependencies": "Max Bitmap/MultiSub/UV",
+      "source_code": "MS доступен",
+      "limitations": "Перед адаптацией проверить slot↔tile, имена, DirectX и повторный импорт; не считать резервную копию второй реализацией.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-09",
+      "application": "3ds Max",
+      "name": "Andrew UCX Tools",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\UCX_Tools.ms",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\UCX_Check.ms"
+      ],
+      "version": "Checker Turbo v2; Tools версия не объявлена",
+      "purpose": "Создание UCX, разрезание, выпуклые части, зазоры; быстрый поиск пересечений.",
+      "status": "installed_usage_unknown",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-033",
+        "DT-021"
+      ],
+      "evidence": "Исходники прочитаны: doDetachWithGap(gapMM2), mmToSystem, meshesIntersectFast. Папка Andrew_scripts в истории диалога Max.",
+      "dependencies": "Max mesh/poly/spline; единицы сцены",
+      "source_code": "MS UTF-16 открыт",
+      "limitations": "История папки не доказывает запуск каждого файла. Нужно покрытие арок/дворов, манifold/convex/overlap и устойчивые IDs; gap2 — preset, не автоматически обязательная норма.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-10",
+      "application": "3ds Max",
+      "name": "Andrew GeoJSON + UDIM Importer",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Udim_Geo_Json.ms"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "Импорт готовых пакетов, чтение координат, назначение UDIM/ID.",
+      "status": "installed_usage_unknown",
+      "decision": "доработать",
+      "tasks": [
+        "DT-013",
+        "DT-021",
+        "DT-023"
+      ],
+      "evidence": "parseUDIM:273–280 разрешает1001–1999; extractNumberByKey/extractCoordinates — ручной разбор строк.",
+      "dependencies": "Max FBX importer, JSON, PNG",
+      "source_code": "MS открыт",
+      "limitations": "Заменить разбор JSON на строгую схему; ограничение DT-профиля не равно1001–1999; не смешивать координаты/units и назначение материалов.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-11",
+      "application": "3ds Max",
+      "name": "Andrew Ground Tools / Region Cut",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Ground_Tools.ms",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Region_Cut.ms",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Texture_Zaglushki_Ground.ms"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "Контуры, упрощение границ, fan topology, Ground-заглушки.",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-023",
+        "DT-031"
+      ],
+      "evidence": "Исходники: Douglas–Peucker, boundary chains, fan patch; операции меняют геометрию.",
+      "dependencies": "Editable Poly, система единиц",
+      "source_code": "MS открыт",
+      "limitations": "Предпочесть существующий ручной инструмент. Допуски weld/упрощения вывести в manifest; соответствие DWG/отверстиям проверять отдельно.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-12",
+      "application": "3ds Max",
+      "name": "ConcaveFixer",
+      "paths": [
+        "C:\\usermacros\\AlexYo Tools-ConcaveFixer.mcr",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\AlexYo_ConcaveFixer.ms"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "Подготовка/исправление вогнутой геометрии UCX.",
+      "status": "configured_ui",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-033"
+      ],
+      "evidence": "Octopus myscripts: кнопка UCX_Concave вызывает макрос. MS SHA совпадает с копией в texmapgen_errors.",
+      "dependencies": "Max geometry",
+      "source_code": "MS/MCR доступен",
+      "limitations": "Контроль непрерывности проходов и покрытия обязателен. Не заменяет валидатор convex/closed.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-13",
+      "application": "3ds Max",
+      "name": "TS Tools UE4 FBX exporter",
+      "paths": [
+        "C:\\usermacros\\TS_Tools-TS_UE4_ObjectExportTool.mcr",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\TS_Tools_20140911b\\TS_UE4FBXExporter.ms"
+      ],
+      "version": "архив20140911b; Max2024 binding",
+      "purpose": "Поштучный FBX, naming UCX primitives.",
+      "status": "configured_ui",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-021",
+        "DT-022",
+        "DT-033"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:405 UE4 FBX Export.",
+      "dependencies": "Max FBXEXP",
+      "source_code": "MS/MCR доступен",
+      "limitations": "Старый UE4 preset не равен НПМ/ВПМ delivery. Не назначать основным publisher до тестов.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-14",
+      "application": "3ds Max",
+      "name": "FBX exporter и пользовательские presets",
+      "paths": [
+        "C:\\Users\\artsafro\\Documents\\3dsmax\\FBX\\3dsMax2024_X64\\Presets\\export\\User defined.fbxexportpreset",
+        "C:\\Users\\artsafro\\Documents\\3dsmax\\FBX\\3dsMax2026_X64\\Presets\\export\\User defined.fbxexportpreset"
+      ],
+      "version": "2024/2026; runtime2024 FBX201400",
+      "purpose": "Доставка и обмен FBX.",
+      "status": "runtime_loaded",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-021",
+        "DT-022"
+      ],
+      "evidence": "FBXExporterGetParam:2014, EmbedTextures=false, Triangulate=true, UpAxis=y, ConvertUnit=m. fbxmax.dlu загружен.",
+      "dependencies": "Max FBX plugin",
+      "source_code": "Preset XML доступен; plugin binary",
+      "limitations": "Нужны отдельные явные npm/vpm profiles с восстановлением прежних настроек; для НПМ embedding=false недопустим. Roundtrip проверять фактические файлы.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-15",
+      "application": "3ds Max",
+      "name": "3dsmax MCP: Codex и Cursor",
+      "paths": [
+        "C:\\Users\\artsafro\\.codex\\codex-3ds-max",
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\3dsmax-mcp",
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\mcp_bridge.gup"
+      ],
+      "version": "две локальные реализации; Max2024 runtime",
+      "purpose": "Уже существующий канал управления/чтения Max.",
+      "status": "runtime_verified",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-021",
+        "DT-030"
+      ],
+      "evidence": "Успешные read-only get_plugin_capabilities/MAXScript; mcp_bridge.gup loaded. Cursor и Codex configs указывают на разные checkout.",
+      "dependencies": "Native named pipe bridge, Python MCP, Max2024",
+      "source_code": "Python/C++ source в checkout",
+      "limitations": "Не создавать третий мост. Два процесса Max требуют закрепить PID/session. Совместимость двух checkout не считать байтовым дублем.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-16",
+      "application": "3ds Max",
+      "name": "SiNi PreFlight/Forensic/Sculpt",
+      "paths": [
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SiNiSoftware2024"
+      ],
+      "version": "2.0.0 для2024;2.0.2 для2026",
+      "purpose": "Проверка и очистка сцены/мешей.",
+      "status": "runtime_loaded",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-021",
+        "DT-030"
+      ],
+      "evidence": "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\en-US\\UI\\Workspaces\\usersave\\artsafro__usersave__.cuix:357/361; desipher.gup и sculpt.dlu loaded.",
+      "dependencies": "SiNi/Max",
+      "source_code": "Бинарная логика; некоторые macro wrappers",
+      "limitations": "Использовать в ручном preflight, не считать заменой нормативных V-checks.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-17",
+      "application": "3ds Max",
+      "name": "Forest Pack / RailClone / tyFlow",
+      "paths": [
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\ForestPackPro2024",
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\RailClonePro2024",
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\tyFlow_2024.dlo"
+      ],
+      "version": "Forest9.2.4; RailClone7.0.8; tyFlow version не зафиксирована",
+      "purpose": "Инстансы растений/МАФ, повторяемая геометрия; tyFlow mesh/convex инструменты.",
+      "status": "runtime_loaded",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-031",
+        "DT-032",
+        "DT-033"
+      ],
+      "evidence": "Live capability=true; соответствующие DLL загружены.",
+      "dependencies": "Коммерческие plugins/Max",
+      "source_code": "Основная логика бинарная",
+      "limitations": "Не доказано применение к текущему ОКС; для экспорта проверить collapse/instances/polycount. Не зависеть от них в независимом ядре.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-18",
+      "application": "3ds Max",
+      "name": "Corona / V-Ray / Datasmith / Substance",
+      "paths": [
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\CoronaMax2024.dlr",
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\VRay3dsMax2024",
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\UnrealDatasmithMax",
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SubstanceIn3dsMax2024"
+      ],
+      "version": "V-Ray7.00.04; Datasmith5.0; версии остальных частично неизвестны",
+      "purpose": "Исходные render-материалы и альтернативный обмен.",
+      "status": "installed_and_partly_loaded",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-011",
+        "DT-013",
+        "DT-021"
+      ],
+      "evidence": "Renderer=Corona live; V-Ray/Datasmith DLL loaded; Substance folder installed.",
+      "dependencies": "Max/renderer-specific maps and native plugins",
+      "source_code": "Бинарная логика",
+      "limitations": "Требуется нормализация параметров материала, не перенос render graph в delivery. Не генерировать реальную metallic/roughness из цвета без утверждения.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-19",
+      "application": "3ds Max",
+      "name": "Retopology/Advanced Modeling/MCG",
+      "paths": [
+        "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\Retopology3dsMax2024",
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\MaxCreationGraph\\Packages"
+      ],
+      "version": "Retopology1.4.0.1239; Advanced Modeling1.4.0.19",
+      "purpose": "Сетка и mesh→splines; вспомогательные штатные инструменты.",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-030",
+        "DT-031"
+      ],
+      "evidence": "PackageContents.xml и MCG_MeshEdgesToSpline_v1.0.1.mcg. Runtime проверки этих команд не было.",
+      "dependencies": "Max2024; native engines",
+      "source_code": "MCG packages/часть graphs; binaries",
+      "limitations": "Не заменяет точные контуры/проёмы. Стандартные примеры не считать командным workflow.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-20",
+      "application": "3ds Max",
+      "name": "Relink/MatID Organizer/Normal Fix/Pivot tools",
+      "paths": [
+        "C:\\usermacros\\ColinScripts-RelinkBitmaps.mcr",
+        "C:\\usermacros\\Pixamoon-MatID-Organizer.mcr",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\Objects Normal Fix.ms",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\LBTools_PivotAlignTools.ms"
+      ],
+      "version": "версии не определены",
+      "purpose": "Восстановление ресурсов, material IDs, нормали и pivot.",
+      "status": "configured_autoload_and_macros",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-011",
+        "DT-021",
+        "DT-023"
+      ],
+      "evidence": "Macro files и два Startup scripts существуют; точные menu bindings остальных не доказаны.",
+      "dependencies": "Max, пути текстур",
+      "source_code": "MS/MCR частично открыты",
+      "limitations": "Ручная подготовка с dry-run/copy. Наличие файла Relink не доказывает активную кнопку.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-08",
+      "application": "Blender",
+      "name": "UCX geometry lab / batch repair",
+      "paths": [
+        "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\ucx_test\\scripts",
+        "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\ucx_test\\STATE.md"
+      ],
+      "version": "локальные версии batch_v001/live_fix_v001/merged_v001",
+      "purpose": "Исправление пересечений UCX, разделение компонентов, convex/closure/gaps/coverage и readback.",
+      "status": "workflow_artifacts",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-033",
+        "DT-021"
+      ],
+      "evidence": "STATE26.09 и verification/final_check JSON; recent-files содержит ucx_test. Результаты прочитаны, заново не выполнялись.",
+      "dependencies": "Blender/bmesh, numpy/scipy по отдельным скриптам; source_ucx_id/component",
+      "source_code": "Python открыт, авторство команды подтвердить",
+      "limitations": "Перенести геометрическое ядро/аудит, не scene-specific scripts и не приём удвоения polygon budget. Фиксированные допуски2–10мм/30см относятся к тому эксперименту, не глобальному ТЗ.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "BL-09",
+      "application": "Blender",
+      "name": "Фасадный atlas UV + Max roundtrip",
+      "paths": [
+        "C:\\Users\\artsafro\\.window_facades\\layout_facade_atlas_uv.py",
+        "C:\\Users\\artsafro\\.window_facades\\export_facade_atlas_fbx.py",
+        "C:\\Users\\artsafro\\.window_facades\\verify_facade_fbx_roundtrip.py",
+        "C:\\Users\\artsafro\\.window_facades\\verify_live_max_fbx.ms"
+      ],
+      "version": "v003 artifacts",
+      "purpose": "Seam-aware UV по ID фасада, FBX, повторное чтение и сверка Max.",
+      "status": "workflow_artifacts",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-012",
+        "DT-014",
+        "DT-021"
+      ],
+      "evidence": "Есть v003 QA/readback JSON, скрипты и recent-files.",
+      "dependencies": "Blender, Max, atlas images, explicit face IDs",
+      "source_code": "Python/MS доступен",
+      "limitations": "Четыре полосы и плотность85 из того проекта параметризовать. Сохранить исходные UV, не переносить материалы/габариты.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-01",
+      "application": "Python",
+      "name": "Window/door/sign atlas из DOCX",
+      "paths": [
+        "C:\\Users\\artsafro\\.window_facades\\build_window_atlas.py",
+        "C:\\Users\\artsafro\\.window_facades\\build_door_signs_atlas.py",
+        "C:\\Users\\artsafro\\.window_facades\\build_new_building_atlas.py"
+      ],
+      "version": "локальные scripts",
+      "purpose": "Извлечение изображений/ID, RAL, сборка атласа окон/дверей.",
+      "status": "workflow_artifacts",
+      "decision": "доработать",
+      "tasks": [
+        "DT-010",
+        "DT-011",
+        "DT-012",
+        "DT-032"
+      ],
+      "evidence": "Скрипты и output/sign_planes/*audit.json присутствуют.",
+      "dependencies": "Pillow, python-docx, входные документы",
+      "source_code": "Python открыт",
+      "limitations": "Убрать project-specific ID/paths; источники и утверждение материалов передавать через MaterialRegistry. Не делать предположение по цвету.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-02",
+      "application": "Python/Qt",
+      "name": "Facade Atlas Builder",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\facade-atlas",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\facade-atlas\\maxscript\\apply_atlas_uv.ms"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "GUI: PNG фасадов → atlas.png/atlas_m.png/atlas.json → Max UV.",
+      "status": "workflow_source",
+      "decision": "доработать",
+      "tasks": [
+        "DT-010",
+        "DT-011",
+        "DT-012"
+      ],
+      "evidence": "README описывает manifest UV bounds/object names, uniform scale, 2K output.",
+      "dependencies": "Python Qt/Pillow/numpy по requirements, Max script",
+      "source_code": "Python/MS доступен",
+      "limitations": "White≥235 glass detection — предложение, не утверждение материала. Вынести renderer/layout отдельно от detection; размеры/padding задаёт профиль.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-03",
+      "application": "Python/Qt",
+      "name": "Atlas Builder portable /24",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\atlas_portable\\atlas_builder.py",
+        "C:\\Users\\artsafro\\Desktop\\Atlas_Builde\\atlas_builder_24.py"
+      ],
+      "version": "portable и24 — разные файлы; версия канонической ветки неизвестна",
+      "purpose": "Атлас и производные карты, RAL, GUI.",
+      "status": "installed_usage_unknown",
+      "decision": "доработать",
+      "tasks": [
+        "DT-011",
+        "DT-012",
+        "DT-013"
+      ],
+      "evidence": "Оба исходника доступны, SHA различается; portable содержит _install и gen_normal/gen_roughness/gen_metalness.",
+      "dependencies": "PyQt6,numpy,Pillow; auto-install hook",
+      "source_code": "Python доступен",
+      "limitations": "Не импортировать как библиотеку до удаления автоустановки и GUI side effects. Выбрать актуальную ветку с пользователем. Карты из diffuse только proposed.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-04",
+      "application": "Python/OpenCV",
+      "name": "Texture Map Generator",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\texmapgen_errors\\texture_map_generator\\maps.py",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\texmapgen_errors\\texture_map_generator\\save.py"
+      ],
+      "version": "локальная модульная версия",
+      "purpose": "Normal/Roughness/Metallic/Emissive/ERM из изображений.",
+      "status": "workflow_source",
+      "decision": "доработать",
+      "tasks": [
+        "DT-011",
+        "DT-013"
+      ],
+      "evidence": "maps.py generate_erm_map и invert_green; RGB↔BGR OpenCV требует пиксельного теста.",
+      "dependencies": "OpenCV,numpy,GUI",
+      "source_code": "Python доступен",
+      "limitations": "Сохранить обработку/preview, убрать автоматическое утверждение физсвойств по яркости; тест каналов ERM и DirectX до применения.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-05",
+      "application": "Python/Pillow",
+      "name": "ERM→ORM для realtime",
+      "paths": [
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\maps_preparator\\Process_ERM_Python.py"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "Выделение emissive; ORM с AO, вычисленным из diffuse.",
+      "status": "workflow_source",
+      "decision": "использовать как есть",
+      "tasks": [
+        "вне-нормативного-publisher"
+      ],
+      "evidence": "Строки split R=emissive,G=rough,B=metal; output Prepared Maps; AO autocontrast diffuse.",
+      "dependencies": "Pillow",
+      "source_code": "Python доступен",
+      "limitations": "Только вспомогательный realtime preview. Это НЕ генератор нормативного ERM и AO из diffuse — эвристика; не включать в НПМ/ВПМ publish.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-06",
+      "application": "Python",
+      "name": "PNG RGB/compression",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\8BIT_TO_24BIT&COMPRESS\\convert_8bit_to_24bit.py",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\index_color\\index to rgb.py",
+        "C:\\Users\\artsafro\\Desktop\\compressor"
+      ],
+      "version": "локальные scripts",
+      "purpose": "Преобразование indexed PNG и сжатие.",
+      "status": "workflow_source",
+      "decision": "доработать",
+      "tasks": [
+        "DT-020",
+        "DT-022"
+      ],
+      "evidence": "Файлы найдены, неизвестный код не выполнялся.",
+      "dependencies": "Pillow/внешние PNG utilities — проверять конкретную ветку",
+      "source_code": "Python доступен, рядом возможны бинарные утилиты",
+      "limitations": "Включать только lossless и проверку pixel/channel invariants. Не снимать alpha у допустимых исключений глобально.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-07",
+      "application": "Python/Max",
+      "name": "AGR CLI из zavod",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\tools\\agr\\src\\agr",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\tools\\agr\\README.md"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "JobResult, host_unavailable, inspect/prepare/export, Max/CAD/Revit wrappers.",
+      "status": "workflow_source",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-003",
+        "DT-021",
+        "DT-022",
+        "DT-023"
+      ],
+      "evidence": "hosts/autocad.py GetActiveObject; revit.py named pipe; jobs/export.py agr_export_fbx/dry-run.",
+      "dependencies": "Python,pywin32,Max/Revit bridge",
+      "source_code": "Python открыт",
+      "limitations": "Не создавать второй orchestrator/registry. Использовать хостовые функции через узкий контракт; существующие правила сверить с PDF, fallback не приравнивать к выполненному экспорту. Revit export dry-run fallback explicitly returns document info without FBX; source jobs/export.py48–74.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-21",
+      "application": "3ds Max",
+      "name": "Zavod mesh/material/FBX utilities",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\mesh\\clean_opening_grid.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\materials\\assign_fbm_standard_maps.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\materials\\retarget_fbm_to_new.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\zavod_fbx_tool.ms"
+      ],
+      "version": "локальные scripts",
+      "purpose": "Очистка сетки, назначение/retarget текстур, FBX инспекция/подготовка.",
+      "status": "workflow_source",
+      "decision": "доработать",
+      "tasks": [
+        "DT-011",
+        "DT-012",
+        "DT-021",
+        "DT-030"
+      ],
+      "evidence": "Файлы в структурированных scripts/*; прежние root пути изменились.",
+      "dependencies": "Max2024, FBXEXP, bitmap materials",
+      "source_code": "MS/Python доступен",
+      "limitations": "Заменить имена/пути объектов на manifest/selection; не запускать оптимизаторы удаления ресурсов на оригинале.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-22",
+      "application": "3ds Max",
+      "name": "Collision Splitter UCX",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\collision\\collision_splitter_ucx.ms"
+      ],
+      "version": "локальная версия; Max2024",
+      "purpose": "Сетка-разделитель и per-cell convex hull/box.",
+      "status": "workflow_source",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-033"
+      ],
+      "evidence": "Файл найден в scripts/collision, nvpx global есть live. Исторический тест не повторялся.",
+      "dependencies": "Max PhysX nvpx",
+      "source_code": "MS доступен",
+      "limitations": "Гибрид с Andrew/SAT; не считать grid/hull достаточным для арок и внутреннего двора.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-23",
+      "application": "3ds Max",
+      "name": "Windows Creator / Dummy placer",
+      "paths": [
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Windows_Creator\\WindowHelpersMerged.ms",
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Windows_Creator\\PlaceWindowDummies.ms",
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Dummy_placer\\PlaceWindowDummies.ms"
+      ],
+      "version": "несколько локальных вариантов",
+      "purpose": "Подготовка оконных dummy, слои по размерам/именам/RAL.",
+      "status": "workflow_source",
+      "decision": "доработать",
+      "tasks": [
+        "DT-032"
+      ],
+      "evidence": "Одинаковые SHA PlaceWindowDummies в двух каталогах; отдельные merged/layers-only версии.",
+      "dependencies": "Max; реальные контуры/размеры и RAL",
+      "source_code": "MS доступен",
+      "limitations": "Это helpers, не подтверждённый полный WindowType generator. Source IDs/dimensions получить из источника, выбрать canonical файл.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "CAD-01",
+      "application": "AutoCAD",
+      "name": "multiCAD MCP",
+      "paths": [
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\src\\server.py",
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\src\\adapters\\autocad_adapter.py"
+      ],
+      "version": "AutoCAD2025 R25.0.72.0.0",
+      "purpose": "COM доступ к DWG, объектам/слоям/таблицам.",
+      "status": "configured_not_running",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-023",
+        "DT-030"
+      ],
+      "evidence": "Cursor и Codex mcp registrations существуют; acad.exe не запущен при проверке.",
+      "dependencies": "Python,pywin32,AutoCAD COM25",
+      "source_code": "Python source доступен",
+      "limitations": "Не запускать bridge ради status: сначала убедиться в GetActiveObject-only. Этот этап не подтвердил COM/doc runtime.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "CAD-02",
+      "application": "AutoCAD/Max",
+      "name": "GP DWG → ведомости → пакеты → Max",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\autocad-mcp\\build_max_ready_contours.py",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\autocad-mcp\\split_gp_packages.py",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\autocad-mcp\\MAX_PIPELINE.md"
+      ],
+      "version": "локальная цепочка2025/Max2024",
+      "purpose": "AcDbTable, HATCHGENERATEBOUNDARY, COV/HOLE, Wblock, named packages.",
+      "status": "workflow_artifacts",
+      "decision": "доработать",
+      "tasks": [
+        "DT-023",
+        "DT-031"
+      ],
+      "evidence": "README/MAX_PIPELINE и exports/max_naming_catalog.json; скрипт содержит project-specific layer maps и очистку прежних контуров.",
+      "dependencies": "pywin32, DWG/таблицы/блоки; AutoCAD",
+      "source_code": "Python/LISP доступны",
+      "limitations": "Переиспользовать extraction, но классификацию largest loop/holes заменить вложенностью. Нужны UCS/WCS, INSUNITS, bulges, elevation и georef evidence; pipeline сам по себе не даёт отметку нуля.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "CAD-03",
+      "application": "AutoCAD",
+      "name": "Andrew NUM2CIRCLE / SelectNumbers",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\NUM2CIRCLE.lsp",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\SelectNumbers.lsp"
+      ],
+      "version": "версия не объявлена",
+      "purpose": "Выбор числовых текстов/создание окружностей по числам.",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-023"
+      ],
+      "evidence": "Функции c:NUM2CIRCLE/c:SELECTNUMBERS найдены; автозагрузка не подтверждена.",
+      "dependencies": "AutoCAD/AutoLISP",
+      "source_code": "Открытый LISP",
+      "limitations": "Число в тексте не доказательство высотной отметки; NUM2CIRCLE изменяет DWG. Не запускались.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "CAD-04",
+      "application": "AutoCAD",
+      "name": "Support/CUI/Express/DWT",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Support",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Template",
+        "C:\\Program Files\\Autodesk\\AutoCAD 2025\\Express"
+      ],
+      "version": "AutoCAD2025",
+      "purpose": "Штатные меню/Express Tools/метрические и имперские шаблоны.",
+      "status": "installed_usage_unknown",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-023"
+      ],
+      "evidence": "HKCU profile General.ACAD содержит стандартные support paths;18 DWT найдены. Кастомная LISP startup suite не выявлена.",
+      "dependencies": "AutoCAD",
+      "source_code": "Часть LISP/menus открыта, шаблоны бинарные",
+      "limitations": "Наличие DWT не доказательство рабочего эталона команды. Настройки из реестра не дают успешный runtime load.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "RVT-01",
+      "application": "Revit",
+      "name": "Cursor RevitBridge",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\Revit\\Addins\\2025\\RevitBridge.addin",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Revit2025"
+      ],
+      "version": "Revit2025.2 (25.2.0.38)",
+      "purpose": "Named Pipe + ExternalEvent, document/links/stats/FBX/AGR команды.",
+      "status": "registered_not_running",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-030",
+        "DT-023"
+      ],
+      "evidence": "Manifest указывает на DLL; исходный dispatcher содержит agr_export_fbx; Revit.exe не запущен.",
+      "dependencies": "Revit2025 .NET8, local bridge/MCP Node",
+      "source_code": "C# и Node source доступны",
+      "limitations": "Installed DLL ≠ latest source build. Handshake revit_status перед любым API. В inspected dispatcher нет wall contour command.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "RVT-02",
+      "application": "Revit",
+      "name": "HTTP Revit MCP Addin",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\Revit\\Addins\\2025\\RevitMCPAddin.addin",
+        "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\RevitMCPServer"
+      ],
+      "version": "upstream folder v0.8.31 не равен доказанной версии DLL",
+      "purpose": "Второй Revit bridge.",
+      "status": "registered_not_running",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-030"
+      ],
+      "evidence": "Второй addin и Cursor server revit-2025; разные transports.",
+      "dependencies": "Revit/WebView2/HTTP MCP",
+      "source_code": "Часть upstream source в _thirdparty; DLL установлен",
+      "limitations": "Выбрать один transport. Не считать port/process успешным API; сейчас не подключён.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "RVT-03",
+      "application": "Revit/Python",
+      "name": "Facade ContourProbe + contour_core",
+      "paths": [
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\ContourProbe\\App.cs",
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_contour_check\\contour_core.py",
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_contour_check\\REPORT.md",
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\experiment_001\\wall_faces.json"
+      ],
+      "version": "Revit2025 / локальный эксперимент",
+      "purpose": "Exterior Face loops, стены/вставки/этажи, мм; quad topology, holes/nesting, seam audit.",
+      "status": "workflow_artifacts",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-030",
+        "DT-031",
+        "DT-032"
+      ],
+      "evidence": "App.cs43–84 HostObjectUtils+loops, levels*304.8, scope host-only. REPORT:916/936 граней;20 исключений; окно↔HostId. Не повторялось live.",
+      "dependencies": "Revit API2025, C#/.NET8; Python geometry",
+      "source_code": "C#/Python доступны",
+      "limitations": "Контур наружной стороны стены ≠ оболочка всего здания. Допуск T-стыка<100мм из старого проекта не переносить. Аддин ContourProbe не найден среди текущих зарегистрированных2025.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "RVT-04",
+      "application": "Revit/Blender",
+      "name": "FBX facade scan/reconstruction",
+      "paths": [
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_blender_pipeline\\scan_fbx.py",
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_blender_pipeline\\build_blender.py",
+        "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_blender_pipeline\\README.md"
+      ],
+      "version": "локальная ветка prototype",
+      "purpose": "FBX → кандидаты плоскостей/контуры → Blender patch.",
+      "status": "workflow_artifacts",
+      "decision": "доработать",
+      "tasks": [
+        "DT-030",
+        "DT-031"
+      ],
+      "evidence": "README и output Facade_FBX_4357352.json/Facade_Revit_2storeys.json.",
+      "dependencies": "Blender/Python/FBX, contour core",
+      "source_code": "Python доступен",
+      "limitations": "Сохранить как альтернативу RVT API, не выводить этажи/материалы только по bbox. Scope одного участка.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "RVT-05",
+      "application": "Revit",
+      "name": "Dynamo/Generative Design и pyRevit search",
+      "paths": [
+        "C:\\Program Files\\Autodesk\\Revit 2025\\AddIns",
+        "C:\\ProgramData\\Dynamo"
+      ],
+      "version": "Revit2025 bundled",
+      "purpose": "Штатные пакеты/образцы; пользовательская цепочка не установлена.",
+      "status": "installed_samples_only",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-030"
+      ],
+      "evidence": "User AppData/Dynamo, Dynamo Revit и pyRevit отсутствуют; custom .dyn/.dyf в просмотренных рабочих roots не найдены. Bundled samples существуют.",
+      "dependencies": "Revit/Dynamo",
+      "source_code": "Часть graphs/source открыта",
+      "limitations": "Не утверждать, что pyRevit отсутствует во всей машине: отрицательный результат только для охваченных путей. Новый Dynamo pipeline пока не нужен.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-08",
+      "application": "Cross-app",
+      "name": "Blender background bridge Digital Twin AI",
+      "paths": [
+        "C:\\Users\\artsafro\\.AGR_Project\\adapters\\blender\\bridge.py"
+      ],
+      "version": "текущий проект, Blender4.4.0",
+      "purpose": "Экспорт и независимое повторное чтение synthetic FBX.",
+      "status": "tested_previous_stage",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-021"
+      ],
+      "evidence": "STATE и docs/examples/verification.json:33 tests, actual Blender roundtrip. В этом этапе тест не повторялся.",
+      "dependencies": "Blender4.4, Python3.12 project venv",
+      "source_code": "Код репозитория",
+      "limitations": "Это проверенный synthetic transport, не полный DCC validator; расширять под внешние findings без переписывания ядра.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-24",
+      "application": "3ds Max",
+      "name": "Scene templates/render presets",
+      "paths": [
+        "C:\\Users\\artsafro\\Documents\\3ds Max 2024\\renderpresets",
+        "C:\\Users\\artsafro\\Documents\\3ds Max 2024\\startuptemplates",
+        "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\Moscow_boundaries_MSK.max"
+      ],
+      "version": "Max2024; presets BIRD/PERSP/PRSN",
+      "purpose": "Настройки рендера и сцена московских границ для проверки положения.",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-023"
+      ],
+      "evidence": "RPS присутствуют; Additional Startup Templates path настроен. maxstart.max в просканированных местах не найден.",
+      "dependencies": "Max/renderer; проверенная CRS границ",
+      "source_code": "RPS/MAX бинарные; только metadata",
+      "limitations": "Не открывались. Сцена границ не заменяет исходные координаты/СПОЗУ; канонический production scene template пока неизвестен.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "GEN-09",
+      "application": "Cross-app",
+      "name": "Backup / duplicated deployments",
+      "paths": [
+        "B:\\Backup\\scripts",
+        "B:\\Backup\\3dMax",
+        "B:\\Backup\\3dMax2026"
+      ],
+      "version": "архивные копии; даты не доказывают актуальность",
+      "purpose": "Резерв установленных скриптов и настроек.",
+      "status": "duplicate_evidence",
+      "decision": "заменить",
+      "tasks": [
+        "DT-001"
+      ],
+      "evidence": "Exact SHA группы BMAX/UDIM-MultiSub; список duplicates.json.",
+      "dependencies": "Те же host versions",
+      "source_code": "Mixed source/binary",
+      "limitations": "Заменить зависимость от разрозненных копий на canonical path+hash lock, а не удалять backup. Одинаковое имя с иным SHA — вариант, не дубль.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-25",
+      "application": "3ds Max",
+      "name": "RappaTools3 / SplineBridge / LB Tools",
+      "paths": [
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\RappaTools3.mse",
+        "C:\\usermacros\\RappaTools3-SplineBridge.mcr",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\LBTools_PivotAlignTools.ms"
+      ],
+      "version": "RappaTools3; точная release неизвестна",
+      "purpose": "Геометрия, spline bridge, align/pivot, массовые операции.",
+      "status": "runtime_loaded",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-031",
+        "DT-023"
+      ],
+      "evidence": "global RappaTools3 exists; SplineBridge в текущем toolbar; Startup scripts enabled. MSE_REVIEW.md: найдены точки анализа spline/normals/elements/material IDs, не runtime proof.",
+      "dependencies": "Max; установленный MSE",
+      "source_code": "RappaTools3 MSE раскрыт в локальный текст: 621 fn, 11 строк; минифицирован, полный аудит не выполнен.",
+      "limitations": "Сохранить ручной производственный этап. Не переписывать удобства моделирования; генератор требует явных source IDs и геометрического QA.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "id": "MAX-26",
+      "application": "3ds Max",
+      "name": "xView Inspector / Prune Scene",
+      "paths": [
+        "C:\\usermacros\\XViewInspectorMax.mcr",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms",
+        "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\PRUNESCENE_ACTIVE_PROTECTION.ms",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\XViewInspectorMax\\XViewInspectorMax.mzp"
+      ],
+      "version": "версии неизвестны",
+      "purpose": "Диагностика сцены и защита/очистка.",
+      "status": "configured_ui",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-021"
+      ],
+      "evidence": "xView и PruneScene есть в текущем toolbar; startup files присутствуют. Fresh follow-up:40 Python modules SHA-identical between MZP and installed package; startup reread.",
+      "dependencies": "Max xView; PruneScene",
+      "source_code": "Смешанный MS/MCR/MSE xview_max Python0.1.0 available; all rights reserved; local adapter before source copying.",
+      "limitations": "Использовать read-only inspection отдельно от cleanup. Наличие защиты не доказывает отсутствие дефектов в реальном файле. xView MeshData uses0-based faces, findings1-based; self-intersection limit20000 raises RuntimeError; fan triangulation/duplicate vertex-ID semantics require tests.",
+      "copy_policy": "Исходники/бинарники не скопированы. Для переноса внутреннего кода подтвердить владельца; для стороннего сохранить условия поставки.",
+      "usage_confirmation": "Частота и использование командой требуют подтверждения, если нет свежего журнала конкретной операции."
+    },
+    {
+      "copy_policy": "В Git только метаданные и наблюдения; восстановленный текст остаётся в игнорируемой tmp. Право переноса чужого кода отдельно от декодирования.",
+      "usage_confirmation": "Проверка этого этапа не доказывает использование командой.",
+      "id": "GEN-10",
+      "application": "Исследование / 3ds Max",
+      "name": "QuickBMS MSE decoder",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\quickbms.exe",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\Mse_Decrypter.txt",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\README.md",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\LICENSE"
+      ],
+      "version": "QuickBMS 0.6.4 runtime; recipe 0.1.1; README bundle 0.6.4a",
+      "purpose": "Статическое исследование логики локальных MSE без их выполнения.",
+      "status": "runtime_verified",
+      "decision": "использовать как есть",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-030",
+        "DT-033"
+      ],
+      "evidence": "MSE_REVIEW.md; mse-evidence.json. Пример совпал побайтово, 7 установленных MSE раскрыты; входы не изменились.",
+      "dependencies": "Windows executable QuickBMS + рецепт; для декодирования Max не нужен",
+      "source_code": "Рецепт доступен; исходного C QuickBMS в папке нет. LICENSE MIT, quickbms.txt отдельно указывает GPL.",
+      "limitations": "Runtime_verified относится только к декодированию. Не универсальный декомпилятор EXE/DLL; успешный decode не доказывает корректность инструмента."
+    },
+    {
+      "copy_policy": "В Git только метаданные и наблюдения; восстановленный текст остаётся в игнорируемой tmp. Право переноса чужого кода отдельно от декодирования.",
+      "usage_confirmation": "Проверка этого этапа не доказывает использование командой.",
+      "id": "MAX-27",
+      "application": "3ds Max",
+      "name": "Decal Projector — пример MSE decoder",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\input\\encrypded_file.mse",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\output\\encrypded_file.ms"
+      ],
+      "version": "0.87o по коду, OYH 2011; совместимость Max2024 неизвестна",
+      "purpose": "Проекция decal, UV по лучу/точке, разделение по UV-швам, композиция и baking.",
+      "status": "workflow_artifacts",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-012",
+        "DT-013"
+      ],
+      "evidence": "MSE_REVIEW.md; восстановленный пример идентичен комплектному output. Установленное подключение не найдено.",
+      "dependencies": "3ds Max; стандартные mesh/material APIs; UI assets DecalProjector; viewport/render context",
+      "source_code": "Раскрытый MAXScript доступен локально; условия переноса не установлены.",
+      "limitations": "Bake меняет сцену, предлагает удалить lights, удаляет dpObject_*; это не готовый нормативный atlas/ERM pipeline."
+    },
+    {
+      "id": "MAX-28",
+      "application": "3ds Max / .NET",
+      "name": "GeoAGR DelaunayCore",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\DelaunayCore.dll"
+      ],
+      "version": "Assembly0.0.0.0, mscorlib4.0; pinned SHA256 в evidence",
+      "purpose": "Триангуляция граней: ProcessAllFaces -> Int32[]; семантика рёбер/индексов ещё не проверена.",
+      "status": "distribution_available",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-030",
+        "DT-033"
+      ],
+      "evidence": "GEOAGR_13_63_REVIEW.md; geoagr-13.63-evidence.json. PEReader metadata без Assembly.Load/выполнения DLL.",
+      "dependencies": ".NET Framework reference mscorlib4.0; Delaunay/FastFace также System.Core4.0; host compatibility untested",
+      "source_code": "Имена типов/методов/параметров доступны; C#/IL не декомпилировались.",
+      "limitations": "prototype; metadata only; packing и база индексов неизвестны",
+      "copy_policy": "В Git только свой harness/metadata; исходные DLL/EXE не копируются. Права переноса/модификации уточнить отдельно.",
+      "usage_confirmation": "Компонент отсутствует в проверенной установке Max2024; фактическое использование неизвестно."
+    },
+    {
+      "id": "MAX-29",
+      "application": "3ds Max / .NET",
+      "name": "GeoAGR FastFaceFinder",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\FastFaceFinder.dll"
+      ],
+      "version": "Assembly0.0.0.0, mscorlib4.0; pinned SHA256 в evidence",
+      "purpose": "Поиск перекрытий треугольников: FindOverlaps -> Boolean[].",
+      "status": "distribution_available",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-020",
+        "DT-021"
+      ],
+      "evidence": "GEOAGR_13_63_REVIEW.md; geoagr-13.63-evidence.json. PEReader metadata без Assembly.Load/выполнения DLL.",
+      "dependencies": ".NET Framework reference mscorlib4.0; Delaunay/FastFace также System.Core4.0; host compatibility untested",
+      "source_code": "Имена типов/методов/параметров доступны; C#/IL не декомпилировались.",
+      "limitations": "prototype; metadata only; mapping flags, tolerances, adjacency не проверены",
+      "copy_policy": "В Git только свой harness/metadata; исходные DLL/EXE не копируются. Права переноса/модификации уточнить отдельно.",
+      "usage_confirmation": "Компонент отсутствует в проверенной установке Max2024; фактическое использование неизвестно."
+    },
+    {
+      "id": "MAX-30",
+      "application": "3ds Max / .NET",
+      "name": "GeoAGR FastCollisionSolver",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\moveall.dll"
+      ],
+      "version": "Assembly0.0.0.0, mscorlib4.0; pinned SHA256 в evidence",
+      "purpose": "Решатель коррекции коллизий: SolveCollisions -> Double[].",
+      "status": "distribution_available",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-030",
+        "DT-033"
+      ],
+      "evidence": "GEOAGR_13_63_REVIEW.md; geoagr-13.63-evidence.json. PEReader metadata без Assembly.Load/выполнения DLL.",
+      "dependencies": ".NET Framework reference mscorlib4.0; Delaunay/FastFace также System.Core4.0; host compatibility untested",
+      "source_code": "Имена типов/методов/параметров доступны; C#/IL не декомпилировались.",
+      "limitations": "prototype; значения p1-p5 и смысл результата неизвестны; не выполнять с выдуманными параметрами",
+      "copy_policy": "В Git только свой harness/metadata; исходные DLL/EXE не копируются. Права переноса/модификации уточнить отдельно.",
+      "usage_confirmation": "Компонент отсутствует в проверенной установке Max2024; фактическое использование неизвестно."
+    },
+    {
+      "id": "GEN-11",
+      "application": "Windows CLI",
+      "name": "GeoAGR UCX checker (CGAL)",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\ucx_check.exe"
+      ],
+      "version": "Версия не в VersionInfo; pinned SHA256 в evidence; ucx banner CGAL6.2",
+      "purpose": "OBJ -> .txt имён + .log: частичная проверка попарных пересечений поверхностей.",
+      "status": "synthetic_verified",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-021",
+        "DT-033"
+      ],
+      "evidence": "GEOAGR_13_63_REVIEW.md; geoagr-13.63-evidence.json. Реальные CLI-вызовы на собственных синтетических файлах и readback.",
+      "dependencies": "Windows; локальный EXE; Python+Pillow для probe",
+      "source_code": "Бинарник без исходников; проверен файловый интерфейс.",
+      "limitations": "prototype; вложенный куб пропущен, касание finding; exit0 бывает и при пересечениях; не проверяет полное UCX соответствие",
+      "copy_policy": "В Git только свой harness/metadata; исходные DLL/EXE не копируются. Права переноса/модификации уточнить отдельно.",
+      "usage_confirmation": "Synthetic test доказан для CLI; использование этой поставки командой не подтверждено."
+    },
+    {
+      "id": "GEN-12",
+      "application": "Windows CLI",
+      "name": "GeoAGR uvdilate",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\uvdilate.exe"
+      ],
+      "version": "Версия не в VersionInfo; pinned SHA256 в evidence; ucx banner CGAL6.2",
+      "purpose": "RGBA PNG -> RGB PNG с заполненным фоном; CLI pixel dilation.",
+      "status": "synthetic_verified",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-013"
+      ],
+      "evidence": "GEOAGR_13_63_REVIEW.md; geoagr-13.63-evidence.json. Реальные CLI-вызовы на собственных синтетических файлах и readback.",
+      "dependencies": "Windows; локальный EXE; Python+Pillow для probe",
+      "source_code": "Бинарник без исходников; проверен файловый интерфейс.",
+      "limitations": "prototype; alpha теряется, RGB input отклоняется; радиус CLI не найден; без -o перезаписывает вход",
+      "copy_policy": "В Git только свой harness/metadata; исходные DLL/EXE не копируются. Права переноса/модификации уточнить отдельно.",
+      "usage_confirmation": "Synthetic test доказан для CLI; использование этой поставки командой не подтверждено."
+    },
+    {
+      "id": "MAX-31",
+      "application": "3ds Max",
+      "name": "Andrew Maf Tools",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Maf Tools.mcr"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "MatID→UDIM, texel density, tile packing",
+      "status": "distribution_available",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-012",
+        "DT-013",
+        "DT-014"
+      ],
+      "evidence": "стр.243 unwrapByMatIDToUDIM_Advanced;438 units;819 ua_packTiles; folder-followup-evidence.json",
+      "dependencies": "3ds Max/Unwrap UVW",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "ConvertToPoly/channel1/selection changes; preserve IDs/UV, sparse IDs and scale tests required; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-32",
+      "application": "3ds Max",
+      "name": "Andrew Poly Actions Copy",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Poly Actions Copy_V6.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Повторение extrude/inset/MatID/connect по группам, backup/restore, PAC presets",
+      "status": "distribution_available",
+      "decision": "доработать",
+      "tasks": [
+        "DT-030",
+        "DT-031",
+        "DT-032"
+      ],
+      "evidence": "UI v7.6.0; functions buildGroupFrame/applyRecorded; PAC import line765; folder-followup-evidence.json",
+      "dependencies": "3ds Max Editable Poly",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "PAC import executes text; declarative safe parser and topology/rollback tests required; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-33",
+      "application": "3ds Max",
+      "name": "Collizii bbox/convex UI",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Collizii.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Поиск bbox пересечений и эвристическая выпуклость",
+      "status": "distribution_available",
+      "decision": "заменить",
+      "tasks": [
+        "DT-021",
+        "DT-033"
+      ],
+      "evidence": "checkPreciseIntersection:144–161 only bbox+snapshots then true; isConvex:352–398; folder-followup-evidence.json",
+      "dependencies": "3ds Max snapshotAsMesh",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Precise does not test triangle intersections; fixed tolerance0.001; <4 faces/verts returns convex true; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-34",
+      "application": "3ds Max",
+      "name": "UDIM Viewer",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UDIM Viewer_V1.2.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Preview UDIM с назначением MatID и PhysicalMaterial",
+      "status": "distribution_available",
+      "decision": "доработать",
+      "tasks": [
+        "DT-013"
+      ],
+      "evidence": "Header v7.4; ERM recognized43–45 but no assignment branch257–275; folder-followup-evidence.json",
+      "dependencies": "3ds Max PhysicalMaterial/Normal_Bump",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "ERM/ORM ignored; convertToPoly, MatID by UV centroid, negative UV clamp; not read-only validator; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-35",
+      "application": "3ds Max",
+      "name": "Collect Asset",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\collect_asset_v2.099b.mzp"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Поиск/сбор IFL, xref, maps, proxy и renderer assets, hashes, relink",
+      "status": "distribution_available",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-012",
+        "DT-022"
+      ],
+      "evidence": "Archive collect_asset_2.099.ms: getAssetFiles/getAssetFilesSelected/getFileHash/collect_as; folder-followup-evidence.json",
+      "dependencies": "3ds Max; Corona/V-Ray classes; bundled7z",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Isolate discovery/copy; same UI also deletes files, saves scene and recursively removes temp paths; installer not executed; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-36",
+      "application": "3ds Max",
+      "name": "Zavod Max scene census",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\scene\\agr_inspect_max.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\scene\\scene_load_report.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Scene→JSON: identity/units/bbox/materials/maps/instances; layer weight report",
+      "status": "distribution_available",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-020",
+        "DT-021"
+      ],
+      "evidence": "agr_inspect_max JSON fields186–261, writeOut273; scene_load_report counts/layers; folder-followup-evidence.json",
+      "dependencies": "3ds Max; agr CLI reads temp report",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Fixed temp output overwritten; pin PID/scene, job-specific path and readback required; not run now; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-37",
+      "application": "3ds Max",
+      "name": "Zavod map audit and collection",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\audit_scene_maps.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\collect_scene_maps.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Аудит used/missing/unused maps; copy/relink и _manifest.txt",
+      "status": "distribution_available",
+      "decision": "доработать",
+      "tasks": [
+        "DT-012",
+        "DT-022"
+      ],
+      "evidence": "collect_scene_maps globals6–10; dryRun=false202; manifest288; audit deleteFilesWithConfirm155; folder-followup-evidence.json",
+      "dependencies": "3ds Max materials/assets/filesystem",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Explicit dry-run needed; environment excluded by default; audit can delete files; split read/copy/delete; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-38",
+      "application": "3ds Max",
+      "name": "Zavod proxy and pipe LOD",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\zavod_lib_proxy.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_lo_axis_pca.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_to_cylinder9.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_optimize_clone.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Corona proxy decimation; PCA-based low-poly pipe representation",
+      "status": "distribution_available",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-012",
+        "DT-030"
+      ],
+      "evidence": "ZavodProxy_writeCgeoFromMesh124; PCA/cylinder9; clone tool; folder-followup-evidence.json",
+      "dependencies": "3ds Max, Corona, ProOptimizer",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Proxy kernel overwrites .cgeo; clone output and quantitative geometry preservation needed;9 sides is not a PDF norm; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-39",
+      "application": "3ds Max",
+      "name": "CA/UDP/channel cleaner",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ClearCustomAttributesAndObjProp_001.ms",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ClearCustomAttributesAndObjProp_010.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Очистка custom attributes/user properties/map channels/animation",
+      "status": "distribution_available",
+      "decision": "доработать",
+      "tasks": [
+        "DT-021",
+        "DT-022"
+      ],
+      "evidence": "010 UI587–598 defaults; wipeNodeAllPlaces480; folder-followup-evidence.json",
+      "dependencies": "3ds Max",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Defaults clear provenance/UDP/animation/vertex channels; export-copy allowlist required;001/010 not proved duplicates; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-40",
+      "application": "3ds Max",
+      "name": "rapidTools distribution",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Mesh cleanup, quad/ngon, panelizer/conform, OBJ exporter",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-030",
+        "DT-033"
+      ],
+      "evidence": "31 archive macros SHA-identical to C:/usermacros; installer only inspected; folder-followup-evidence.json",
+      "dependencies": "3ds Max; MSE kernels + macros",
+      "source_code": "MSE kernels; installer/macros visible",
+      "limitations": "Macro presence not kernel/runtime proof; main functions encrypted MSE; do not run installer to inventory; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-41",
+      "application": "3ds Max",
+      "name": "Object replacement and door template placement",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Zamena_V2.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\doors\\align_door_pivots_to_bottom.ms",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\doors\\place_box001_on_doors.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Замена по имени/world transform; размещение шаблона по дверям",
+      "status": "distribution_available",
+      "decision": "доработать",
+      "tasks": [
+        "DT-031",
+        "DT-032"
+      ],
+      "evidence": "Zamena_V2 headerMax2024, replacement105+; doors file15 hardcoded Box001; folder-followup-evidence.json",
+      "dependencies": "3ds Max; Box001 and scene naming conventions",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Use approved WindowType/manifest and IDs, clone-only output; source templates are not measured real OKS geometry; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "MAX-42",
+      "application": "3ds Max",
+      "name": "Road Markings Generator",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp",
+        "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Генератор дорожной разметки для Ground",
+      "status": "installed_usage_unknown",
+      "decision": "изучить на тестовой сцене",
+      "tasks": [
+        "DT-012",
+        "DT-030"
+      ],
+      "evidence": "3 archive SHA-identical; installed MSE/macro identical to members; folder-followup-evidence.json",
+      "dependencies": "3ds Max; MSE and supplied assets",
+      "source_code": "MSE kernels; installer/macros visible",
+      "limitations": "Configured usage not verified; original geometry/coordinates must come from project; archives not installed; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    },
+    {
+      "id": "GEN-13",
+      "application": "Python / 3ds Max",
+      "name": "Zavod offline FBX metadata inspector",
+      "paths": [
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\inspect_fbx.py",
+        "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\export_fbx_inventory.ms"
+      ],
+      "version": "По исходнику/имени поставки; см. ZAVOD_AND_MAX_PLUGINS_REVIEW.md. Runtime не проверен.",
+      "purpose": "Binary/ASCII FBX→metadata JSON; paired Max exporter",
+      "status": "distribution_available",
+      "decision": "обернуть адаптером",
+      "tasks": [
+        "DT-020",
+        "DT-021",
+        "DT-022"
+      ],
+      "evidence": "inspect_fbx.py parse_binary_nodes123/parse_ascii226/inspect_fbx257/CLI341; folder-followup-evidence.json",
+      "dependencies": "Python stdlib for parser; Max required only for exporter",
+      "source_code": "Source text inspected in place/archive; not copied to Git",
+      "limitations": "Parser is not UV/normals/geometry verifier; -o required to avoid sidecars in input folder; no fresh execution here; production workflow prototype.",
+      "copy_policy": "Оригинал не менялся; в Git только метаданные/выводы. Права переноса исходников не предполагаются.",
+      "usage_confirmation": "Функция не запускалась; использование командой не установлено. Наличие/настройка не равно успешной работе."
+    }
+  ],
+  "path_evidence": {
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\GeoAGR.exe": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 5062656,
+      "sha256": "a06477633bd44840e77ab4aa059d769936d6954b32f9d4e5cabac19e5c5cf05d"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\GeoAGR.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 458,
+      "sha256": "a55d50fa73aca6acb7485e1932b0e5de0e5f584e68a55f677bf3d0da7db4e36c"
+    },
+    "C:\\usermacros\\Geoscript-GeoAGR.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 100,
+      "sha256": "f88708c2d1b8c1c619de8bd1c8879b9989f4cc875439ef736a6649b9bc2fb68c"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\tech2.txt": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 15072,
+      "sha256": "2638094aa539bda272f44ef414d79d1afe6b8315aeb81bd38ae0960234c99f30"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\archive_preflight.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 33594,
+      "sha256": "8000620e03db3f698054ef1ee99156f2a7a2d39ab148e318b99e93dab846b8a7"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\autochecks\\hp_checks.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 108691,
+      "sha256": "bc9ddcf709e718ccf6e7ae5878235aabcc4abdafd4434e4744f84e79e268457d"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\autochecks\\lp_checks.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 70749,
+      "sha256": "b4e40f7a0ba1d90e88d8dfbe9527e5a666aea5d167340c2287dcb8c7250cdb96"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\extensions\\user_default\\sintez_agr_checker\\scripts\\autochecks\\check_utils.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 158545,
+      "sha256": "00ff3f967595cd7831b428abbdc46202f79af1e71922a59ed8221d762fc9e5c2"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\5.0\\extensions\\user_default\\sintez_agr_checker": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\Octopus\\octopus\\myscripts.octopus": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 144036,
+      "sha256": "e2bc00eb562410242832b5c7ffce976789b3c7b91cbf3907350f01812905cb92"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\Octopus\\octopus\\artsafro.octopus": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 43794,
+      "sha256": "7a88f154f6f57da55be22d382aeb3625322b948447a8e4b531fc97b7a491afa7"
+    },
+    "C:\\usermacros\\Flora Tools-FloraAtlas.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 38201,
+      "sha256": "c343563ca0f355b3ee6d70ee4360929cc0f4d039804a85e67c8583fecfde6d5d"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\FloraAtlas.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 51024,
+      "sha256": "0160f807f05e5ae36a32afd82e562ebb1b82bbf048f7444de05080632b511093"
+    },
+    "C:\\usermacros\\AlexYo Tools-RenameObjMatTex.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2588,
+      "sha256": "a4ee92628b27b05365034cf8d89ef77cb9e34708c46f463bb0728c72de167ac3"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Connector.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 14558,
+      "sha256": "3179a425f8d391cdba641211988fdd850d671b8adb1464232eda0a013b679dca"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\Bmax_Functions.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 11101,
+      "sha256": "eb85ba0a4f5c2b78256715bb9194cafa1f764d014a7d60065996e06dc4cbc5ac"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\BMAX\\bmax.ini": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1486,
+      "sha256": "de539051e10b5a248da9a688a3ff25248a6c0c6ae37ce9e914c27ae4f35d4d2d"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\BMAX_Connector\\__init__.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8955,
+      "sha256": "993b2c7084f9a61ff5900c51fe97d0b042fd655a632d1c66e079e58f8c5cbce7"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\RizomuvBridge\\RizomuvBridge.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 12409,
+      "sha256": "d1388f7060f0a1ad441a0d250142845534a78503105eee25122a690a90d712c0"
+    },
+    "C:\\usermacros\\Titus_Scripts-RizomuvBridge.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 200,
+      "sha256": "a6af608b92780620666caa3e6c8a7c6938ebd02cc6bbb59efc01ffc81da5493b"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\rizomuvbridge_ultimate": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_5": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\kpx131\\qa\\checktoolbox_run.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1777,
+      "sha256": "b7f8e7001d71ca410a1c439f93dd10b3a21f724140cd678534d907149e98f459"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\CheckToolBox_v1_4": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Blender Foundation\\Blender\\4.4\\scripts\\addons\\quad_remesher": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\UVTools_loader.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1973,
+      "sha256": "882be02818b91a88e74c253856655ddbbe95ef8af2d75d404052214b15208f54"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\polyunwrapper_autoload.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1411,
+      "sha256": "979e3e9720dde7cc174e8d619087b0c357fe8ac44fbd87428f2154b372600ad7"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\auvn_autoload.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 513,
+      "sha256": "c28bb7e36cd2d0dbab5d7ec8d3bb4d0d1f4b6657b4e7d647f1a31c656273cd34"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\scripts\\UDIM-MultiSub_Universal(max22-26).ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2671,
+      "sha256": "91e96741f728e7d6b39da39d44ebb8a12109447e5602d9a71a393d15f46f3508"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\UCX_Tools.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 75130,
+      "sha256": "39fcbd8a59c32a49d3b8369fa28446dbcf091e148f9704864ad63769701cd665"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\UCX_Check.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 14603,
+      "sha256": "0d816cd1ff4624f8e01e06a5791ddda1247e9bf09fbb2ed38f6deaed4c9eb033"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Udim_Geo_Json.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 45843,
+      "sha256": "bae233508acf235542df41523f53193c1ae204ed611a8ccc4a6a228f83244033"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Ground_Tools.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 47330,
+      "sha256": "a81a8633375a2e73cf54f4d331bea0a6bd004f960a1b3f2494288bf99d135ec3"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Region_Cut.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 6533,
+      "sha256": "d700e3110e1496b28875aed1a4e4b658399f9899a82edc885b0ab30a3b0d42ed"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Texture_Zaglushki_Ground.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 11864,
+      "sha256": "888eacc9f477b3de8353819d4920ba842bf9af89b322c26fd0ab9415c414867c"
+    },
+    "C:\\usermacros\\AlexYo Tools-ConcaveFixer.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 9138,
+      "sha256": "7e06fcce3a91e6bcad5867de2956f70291e7812fadfde1e143cf904cc0f4805a"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\AlexYo_ConcaveFixer.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 9140,
+      "sha256": "1ff3ef251f3ffb2b631b158be803b34c1652419a4d338ffd117431d7bee7e40e"
+    },
+    "C:\\usermacros\\TS_Tools-TS_UE4_ObjectExportTool.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 16977,
+      "sha256": "5d95da5256d744abc5ac31cc38945f7bde23961c495bafc2c632b4b839dca914"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\TS_Tools_20140911b\\TS_UE4FBXExporter.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 16977,
+      "sha256": "5d95da5256d744abc5ac31cc38945f7bde23961c495bafc2c632b4b839dca914"
+    },
+    "C:\\Users\\artsafro\\Documents\\3dsmax\\FBX\\3dsMax2024_X64\\Presets\\export\\User defined.fbxexportpreset": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 9981,
+      "sha256": "222274ebcee792b0f97ae8a4c1842b84e7f925dd5264642bc894c8a2d252295b"
+    },
+    "C:\\Users\\artsafro\\Documents\\3dsmax\\FBX\\3dsMax2026_X64\\Presets\\export\\User defined.fbxexportpreset": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 10081,
+      "sha256": "f32563f4c1a57eadf9503b68a044ca060848f718232b6ed6ba7d83d287fa95c5"
+    },
+    "C:\\Users\\artsafro\\.codex\\codex-3ds-max": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\3dsmax-mcp": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\mcp_bridge.gup": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1076224,
+      "sha256": "bec61eb154ea7ccee819ba888d4e7888347e8a9b4061d93e610204ec0439af2c"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SiNiSoftware2024": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\ForestPackPro2024": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\RailClonePro2024": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\tyFlow_2024.dlo": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 159729664
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\Plugins\\CoronaMax2024.dlr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 62976,
+      "sha256": "1e8ecf4a3765e27739eb5b8de7a81aaccbb03dc101200271e36adb5cb9d8c817"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\VRay3dsMax2024": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\UnrealDatasmithMax": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\SubstanceIn3dsMax2024": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\ProgramData\\Autodesk\\ApplicationPlugins\\Retopology3dsMax2024": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\MaxCreationGraph\\Packages": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\usermacros\\ColinScripts-RelinkBitmaps.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 188,
+      "sha256": "fb5697ed0dc185bbe6b24fff3f7bbd9422756e90722a771d487dc11166047137"
+    },
+    "C:\\usermacros\\Pixamoon-MatID-Organizer.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 271,
+      "sha256": "b1d72c23c9c9620d61a1bb9bda1e721080a3e239016d9bad5585f7b87b7e1183"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\Objects Normal Fix.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 6092,
+      "sha256": "ed0cafb0951f0cb73fe99d546677b38f9849a32113827eaf16e5dbff9a3121d1"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\LBTools_PivotAlignTools.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 200588,
+      "sha256": "93e94bc6d767a6321990a953217c93d3eba339dd0b6907b2d915ce11e5c7b7da"
+    },
+    "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\ucx_test\\scripts": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\Documents\\ChatGPT\\Blender\\projects\\ucx_test\\STATE.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 16920,
+      "sha256": "5142e4ab91612f1f772fe9242d02e53c2fb11bc91a178f368057a3c17152e935"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\layout_facade_atlas_uv.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 3585,
+      "sha256": "d9bb7db85718e1278824e4079c5e8445eda68c72748030fa17c47dfd9d0f56a7"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\export_facade_atlas_fbx.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1417,
+      "sha256": "8e7e7aa8ea702d695af2a2ae41542ab4281d924fe2907f6f61a332709e32ad3a"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\verify_facade_fbx_roundtrip.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1057,
+      "sha256": "72dda136eb804c104e4b5da2600f697ad5b49f215261edf28a4126736b3be33b"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\verify_live_max_fbx.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2004,
+      "sha256": "b26cd26edc3131b38f7ade2727c8185aa0ccdd6e1e78b31f2691a5be2dcf26f9"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\build_window_atlas.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7199,
+      "sha256": "5f7c46b6853482aed90fd014ba0f85a9ffd44e582cf40c15a3253d0f41da0012"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\build_door_signs_atlas.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 4333,
+      "sha256": "598d6b5e46ddd76103ceaf9b3aad8a536cf0521b7846f2ad80f1275351208704"
+    },
+    "C:\\Users\\artsafro\\.window_facades\\build_new_building_atlas.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8932,
+      "sha256": "22fbbc9c81443cfb93ed0d9f58526bd15dc85bca1c3a20cd798a7d9ee732bde3"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\facade-atlas": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\facade-atlas\\maxscript\\apply_atlas_uv.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 54295,
+      "sha256": "138d0f697b9f4d666a4acb85bda6dd1347c17283de031f78e320ac355ecaa711"
+    },
+    "C:\\Users\\artsafro\\Desktop\\atlas_portable\\atlas_builder.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 106121,
+      "sha256": "e56216f2b43b7c71359ae1ae7ad8725a56de2fcbb01b1deb0ef7376a6267c51a"
+    },
+    "C:\\Users\\artsafro\\Desktop\\Atlas_Builde\\atlas_builder_24.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 62836,
+      "sha256": "3da51002544a246f39f6314b19ab33095c3081e8219d79eb823ebe072db2bdf6"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\texmapgen_errors\\texture_map_generator\\maps.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 14604,
+      "sha256": "b9c650eb3922b59febe9b934c04b6d5de656a2e1b9285fd1d92965f33e4601c5"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\texmapgen_errors\\texture_map_generator\\save.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 17960,
+      "sha256": "4f5500e9274a90b2bd18d69d478491ef7ac0203b32d0d17866cf5e64776ddd0f"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\maps_preparator\\Process_ERM_Python.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2893,
+      "sha256": "ce1dea6734db8271abf1ebcd90ef32df0be908a2a2c16a79d286ac62fad5c009"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\8BIT_TO_24BIT&COMPRESS\\convert_8bit_to_24bit.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8323,
+      "sha256": "4cf2675c0846342b28163cdcbee63fc3c655f671d930a383aec202b4f5d75139"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Hotkeys_Workspaces_Scripts\\index_color\\index to rgb.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 17213,
+      "sha256": "90070bbf04c7545b066e2506618655efb9d6c22d3859b048582da40bce2750dc"
+    },
+    "C:\\Users\\artsafro\\Desktop\\compressor": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\tools\\agr\\src\\agr": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\tools\\agr\\README.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 418,
+      "sha256": "fd79a8ea820f2a1e097ac9c3708c4ef3ef017ecfe50ae9734b0bb92f72a83753"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\mesh\\clean_opening_grid.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 18460,
+      "sha256": "e70a2e4427f050d8890fa86aac4a3ef21a0e840ca2a9fdcb5c913cc1fbc887d9"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\materials\\assign_fbm_standard_maps.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 9971,
+      "sha256": "27b79996ba8b6e26f8d29b676793ac4a3a1d69d0485af5ed32ffe8bf47e547b0"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\materials\\retarget_fbm_to_new.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 5114,
+      "sha256": "c2a35390b1a12636654b444d6b58f5798c792829cb9ba04958c251bccf3c4bb7"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\zavod_fbx_tool.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 4770,
+      "sha256": "1a76482b13c6fadb9b30dd47a95942d5bd5624f6ed474516bf766e1465641527"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\collision\\collision_splitter_ucx.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 28396,
+      "sha256": "6c318e99a96fc2c9f493ea3e9ba8dd9f52890974fe8b47e3dfb42c29f7b615a1"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Windows_Creator\\WindowHelpersMerged.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 21769,
+      "sha256": "fdfff79296b81a7aa07ab18a4b27a7e002bac40c7eca0f678a33b67024f790f1"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Windows_Creator\\PlaceWindowDummies.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8763,
+      "sha256": "f8208a00e110434a5d2b0054bc3369c07351b71fbb5bf6e2e335bf71c0e40099"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\Dummy_placer\\PlaceWindowDummies.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8763,
+      "sha256": "f8208a00e110434a5d2b0054bc3369c07351b71fbb5bf6e2e335bf71c0e40099"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\src\\server.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 3950,
+      "sha256": "c69c368a7f43afee65c3d6ca994690690756845dfd836ff3af64711c30b7269f"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\multiCAD-mcp\\src\\adapters\\autocad_adapter.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2492,
+      "sha256": "3083d4b5e0e69c13be33f0f01b3476ee78ead43b786c3a83bb3795966bff2445"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\autocad-mcp\\build_max_ready_contours.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 14733,
+      "sha256": "008d3a51578ad60680b88f97ecbf90a0fa578445850eef37bd357eef40469586"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\autocad-mcp\\split_gp_packages.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 11912,
+      "sha256": "b384805db5606580be29b8e2bdf29e89e8396f0ecc3dc504d9ce0ac0542ad37a"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\autocad-mcp\\MAX_PIPELINE.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 4599,
+      "sha256": "1744163bf1d7560a7a002032638fb69e9543b32770b691e39a2f26654276ca11"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\NUM2CIRCLE.lsp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 3022,
+      "sha256": "4c8fcc0a9ac442c47f92d54afedbbece76c5405ce2bb0bd0615dc7b68564bf2a"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\SelectNumbers.lsp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1839,
+      "sha256": "a517eb6d98c578a0b04ed741a5bbf256a3c778dde7bf20bfbae987b4cd86ab2f"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Support": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\AutoCAD 2025\\R25.0\\enu\\Template": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Program Files\\Autodesk\\AutoCAD 2025\\Express": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\Revit\\Addins\\2025\\RevitBridge.addin": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 537,
+      "sha256": "4d02cebf3ecae886326507c579f1c0189e5bf135bd8db299b35a45d9610b6b32"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\projects\\revit-bridge\\src\\RevitBridge.Revit2025": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Roaming\\Autodesk\\Revit\\Addins\\2025\\RevitMCPAddin.addin": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 431,
+      "sha256": "7506c22313e20f9b77342630cbee4b80cc1bef1adcab84d011756b4fac78833a"
+    },
+    "C:\\Users\\artsafro\\INTERACTIVE_TOUR\\RevitMCPServer": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\ContourProbe\\App.cs": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 6054,
+      "sha256": "1cd06475523fe91dfe5d8fbebec62f9a360bbf7837cfa9fe55ed534937d15385"
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_contour_check\\contour_core.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7565,
+      "sha256": "d988ee23907f592a70173c400ffd0ae692e8424dfccfcf172da29afbc99d0232"
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_contour_check\\REPORT.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 10235,
+      "sha256": "6d4b4560a9ac7500db4129e7768970489baa109c7e19db1ca84bea6ef1a454ab"
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\experiment_001\\wall_faces.json": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 18589411
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_blender_pipeline\\scan_fbx.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1126,
+      "sha256": "fc7386b984a06d5c66989ffc4153ab050b79f51348c0adfc9bbcbef317ee8699"
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_blender_pipeline\\build_blender.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7158,
+      "sha256": "5e17ef3b7de9e92ead4abe23b7acfca51b78d1303d0a8c48f8b6e63c87a8b9cb"
+    },
+    "C:\\Users\\artsafro\\.Facades_Modelling\\research\\codex_blender_pipeline\\README.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 967,
+      "sha256": "e3634fe332f52c76d7f5e1167fe206fec9cded38c78c53f3a111f6004eb7a1f7"
+    },
+    "C:\\Program Files\\Autodesk\\Revit 2025\\AddIns": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\ProgramData\\Dynamo": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\.AGR_Project\\adapters\\blender\\bridge.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 4899,
+      "sha256": "18537f9a46e5d02134283d96e56a0bdc2d6f721415f7c63905b444337c745b98"
+    },
+    "C:\\Users\\artsafro\\Documents\\3ds Max 2024\\renderpresets": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\Documents\\3ds Max 2024\\startuptemplates": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Program Files\\Autodesk\\3ds Max 2024\\GeoScripts\\Moscow_boundaries_MSK.max": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 9601024,
+      "sha256": "4d55aa24bfd94b59f48779cbc92f8b4396a7fd57e3250e5a3a1298da662c6a75"
+    },
+    "B:\\Backup\\scripts": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "B:\\Backup\\3dMax": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "B:\\Backup\\3dMax2026": {
+      "exists": true,
+      "kind": "directory"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\RappaTools3.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1122072,
+      "sha256": "b06d8e72375adc04ee0392d05e24ec0e8b50a4e6341863d9e30c274b38aa5cc8"
+    },
+    "C:\\usermacros\\RappaTools3-SplineBridge.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 267,
+      "sha256": "d29e1c6e7bb6c7e184289e66c66e8f6454521d1c7392cee2d6257940127e3b92"
+    },
+    "C:\\usermacros\\XViewInspectorMax.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1319,
+      "sha256": "b08cbb7f1e5965baa2a08627a4a0019fe117f9ff99dafa78fcdbfccb40c91b0f"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\xview_inspector_max_startup.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2493,
+      "sha256": "093713562a5cfa486c6bab397bdde45028fea3f5bccea4ed34b945574c3cd357"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\startup\\PRUNESCENE_ACTIVE_PROTECTION.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 151,
+      "sha256": "37af19b793a835d34fe20cd84060ec4563ee5b6550670c3311ca6cef87824fc8"
+    },
+    "C:\\Users\\artsafro\\AppData\\Local\\Autodesk\\3dsMax\\2024 - 64bit\\ENU\\scripts\\RizomuvBridge\\RizomuvBridge_functions.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 13081,
+      "sha256": "d45e4a26fbba8f96012e246cd54bc205914417d8435dfbcc28d9d1e173bee9fc"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\quickbms.exe": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 11305984,
+      "sha256": "6c8f950f82f0eb56083dc20675b4a14a869a058e8bb547b71d66276f475106ee"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\Mse_Decrypter.txt": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2185,
+      "sha256": "a127ec810fd95ff216e609ab867ff477e5efc8d301524ddd5c438f77bcc889b3"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\README.md": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7925,
+      "sha256": "aa148e514bbb6aaf370e8b7f3c3e437e76a99e358d75c70a658a77031b691257"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\LICENSE": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 1070,
+      "sha256": "ff591d1a2190c5eaa39f183d7844b6ef7f2643d7ca64b6819445b50b462aaa84"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\input\\encrypded_file.mse": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 59120,
+      "sha256": "97d6347704044b4115e51710f1ff0c3a54136941b69bdb7b098caff508b6b86b"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\3ds-max-maxscript-mse-encoder-main\\output\\encrypded_file.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 58998,
+      "sha256": "8d57edb10b2413ac879ed15c514f6ec70222ee6a80a13f6e3dd3057da5996dd4"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\GeoAGR.exe": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 6168064,
+      "sha256": "22d425d6f669a65998a1e8f754a2f06b52d335ca97fa7e44a928c0d0f228e593"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoAGR_start.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 103,
+      "sha256": "484a8e1be4a35324f69afa31556bf19679a3ad70cb3e5641c6403488341755b7"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\DelaunayCore.dll": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7168,
+      "sha256": "a481d857243d04a51213a265a174583c3d1196e12cf991cf27203299d99f9866"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\FastFaceFinder.dll": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8192,
+      "sha256": "2fce02ecdf5deeb5e20fbe581a5268b76efec69c5ad0941a94118e7bfc3c533b"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\moveall.dll": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 9728,
+      "sha256": "aee152cc3d669084ea5ca645fa14912832e5078a7363840fedfb13e5b74a1bea"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\ucx_check.exe": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 624640,
+      "sha256": "e40e33a5b32362d557c8712608fc4018ffa1bd43585824d950b1a48da1d0484f"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\GeoAGR13.63\\GeoScripts\\uvdilate.exe": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 475136,
+      "sha256": "33229bd81a00c2d15673a144f702c643bb00ef45917e5ee928b925a2353c575e"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\XViewInspectorMax\\XViewInspectorMax.mzp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 44553,
+      "sha256": "f2f593e9f48cc197cdc20d8c6c47ce408fa2ba859cac21b35fd7e57d4028cc10"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Maf Tools.mcr": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 152261,
+      "sha256": "df1a3a3ef97f4c195c284231291ec6b6285ac412983646e9a0481e378e19fa05"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Poly Actions Copy_V6.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 48868,
+      "sha256": "f8f2581645ba06c7599ec2ac662e337d230b48819fed63cbc1696a71fe57b970"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Collizii.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 20013,
+      "sha256": "a11bca545c5e46d66cc57cb20dd63fcf4a233d0bc2cee94fb380d66e2ea78c4d"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\UDIM Viewer_V1.2.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 12119,
+      "sha256": "1f284bbd1b1bb438a603e4f3838b6c9bb68580cea94ab5ce66dcc128b62c2f95"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\collect_asset_v2.099b.mzp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 764398,
+      "sha256": "ff44f2d24b940a78d23199a8d7db5e56d41cde90ef1e9c204a7453f388c3a987"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\scene\\agr_inspect_max.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7661,
+      "sha256": "ea79dfc035a918cf144d56ac1abcc7641ea086c05ed696d52e042905a6b4446e"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\scene\\scene_load_report.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 3461,
+      "sha256": "a9b76b4fb8c2338ca5a9088831328457ac546a00fc2a0075076095d1dfda59a3"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\audit_scene_maps.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 8126,
+      "sha256": "e9601693458995c2b7e2cb0bd8ca546175960a83ed969a6802b5273930c4a382"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\collect_scene_maps.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 10749,
+      "sha256": "ce77809fe39f52ccf5fa34582f6547db589c4aeff656b4ab4b30897790c97290"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\optimizer\\zavod_lib_proxy.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 12403,
+      "sha256": "21666ae8fbe6d3aa9c34f5580133b5fbe085f5fd17baeee8feb7b265577b9474"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_lo_axis_pca.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 2811,
+      "sha256": "9e99b17556128c601637fff5b91b8672a2aa48e29885eeb09f2767d6ca2cb22a"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_to_cylinder9.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 12128,
+      "sha256": "0d2acbc9545c2caad42f9c1dfe5441907ddb34422b2c7eceac3aed55be53de00"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\pipes\\pipe_optimize_clone.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 5903,
+      "sha256": "466809e8c0f55baab3a5612c38cecb6a9f869cf973bb8530a0abe21e7e743f1c"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ClearCustomAttributesAndObjProp_001.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 10556,
+      "sha256": "4a429dc20d28269c1cbb289e4cefa32210008a931bdb350ca92a6b02dc730b13"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ClearCustomAttributesAndObjProp_010.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 34132,
+      "sha256": "c1c52e21cf5adf67e6c35a5719669754a7511335573f778128f2a0c26904e53c"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\rapidToolsInstaller_v1.14.mzp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 295241,
+      "sha256": "ffe09299110a524cae8f3cf310f866ec8626d254b207e17c6f8a238312c6694e"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Andrew_scripts\\Zamena_V2.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 7074,
+      "sha256": "a44ac2310d5fe0a5b72e71be2a9e9b2753f2c6550e5eb8f1695d7d5dc60defa3"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\doors\\align_door_pivots_to_bottom.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 4930,
+      "sha256": "e22ab117fb9741ce5afb9f8069bd63abe4ccab2d431a9b4609a12a4750611608"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\doors\\place_box001_on_doors.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 5820,
+      "sha256": "93eb2d12148646b50d35dd8abdb901295a6193c90e4505bfdbf652f0ca15a928"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\ArchViz Tools\\Road Markings Generator 2.0\\RMG.mzp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 88499446,
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\RMG.mzp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 88499446,
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c"
+    },
+    "C:\\Users\\artsafro\\Desktop\\!3D viz\\Плагины 3dMax\\Road Markings Generator v2.0\\Road Markings Generator v2.0.mzp": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 88499446,
+      "sha256": "7b6fc1e723dcf8e54ff94e114c452d4fd60d19a9b35b086762696adcfcaec31c"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\inspect_fbx.py": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 12333,
+      "sha256": "b2e2055ae478f423efacbcb146c33a53df512038e5f2ea566e2e69c947f06734"
+    },
+    "C:\\Users\\artsafro\\Desktop\\zavod\\scripts\\fbx\\export_fbx_inventory.ms": {
+      "exists": true,
+      "kind": "file",
+      "bytes": 14805,
+      "sha256": "fd109644dd2b05f06c16eeb96905c4273f5fcbfdf1fa9caabe63e85507e60d62"
+    }
+  }
+}

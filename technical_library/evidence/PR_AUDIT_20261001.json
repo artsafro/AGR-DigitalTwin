@@ -1,0 +1,170 @@
+{
+  "date": "2026-10-01",
+  "pull_requests": [
+    {
+      "number": 1,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "feature/digital-twin-core",
+      "head_sha": "96340db441866564fd0fe1fc42260585fea7de80",
+      "changed_files": 103,
+      "title": "Digital Twin AI: синтетический НПМ/ВПМ срез и аудит инструментов",
+      "url": "https://github.com/artsafro/AGR_Project/pull/1"
+    },
+    {
+      "number": 2,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/glb-window-lessons",
+      "head_sha": "6491270e29a9fd6dc4ad97c7a6d9c017c02314cd",
+      "changed_files": 2,
+      "title": "docs: урок ошибки упрощения составных окон ГЛБ",
+      "url": "https://github.com/artsafro/AGR_Project/pull/2"
+    },
+    {
+      "number": 3,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/chat-learning-loop",
+      "head_sha": "8f796cfb6af107904024bfb3ca0418f0edd66ebc",
+      "changed_files": 5,
+      "title": "docs: реестр 43 чатов и правила накопления опыта",
+      "url": "https://github.com/artsafro/AGR_Project/pull/3"
+    },
+    {
+      "number": 4,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "feature/revit-typical-floor",
+      "head_sha": "83b4a51e141c3c86477422c30e2b853f40c95cdf",
+      "changed_files": 57,
+      "title": "feat: инструменты типового этажа Обр22 с ограниченной приёмкой",
+      "url": "https://github.com/artsafro/AGR_Project/pull/4"
+    },
+    {
+      "number": 5,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/project-map",
+      "head_sha": "816063ed99a31ea26e4308506427e12798ff183c",
+      "changed_files": 6,
+      "title": "docs: карта проекта, очередь PR и фиксация опыта",
+      "url": "https://github.com/artsafro/AGR_Project/pull/5"
+    },
+    {
+      "number": 15,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/adapter-report",
+      "head_sha": "6e61f2de6e3ae8942e70c0085c6f194992490fba",
+      "changed_files": 8,
+      "title": "feat: контракт AdapterReport и компактный reader отчётов",
+      "url": "https://github.com/artsafro/AGR_Project/pull/15"
+    },
+    {
+      "number": 16,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/job-casefiles",
+      "head_sha": "69cce437437a6bdb8cd6bb34a945575048e4cbaf",
+      "changed_files": 10,
+      "title": "docs: кейсы Ground, MASHI и фасадов с границами приёмки",
+      "url": "https://github.com/artsafro/AGR_Project/pull/16"
+    },
+    {
+      "number": 17,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/facade-pattern",
+      "head_sha": "26d1ff8d38f35b031637df153be3dc4beb404098",
+      "changed_files": 3,
+      "title": "feat: периодический рисунок фасадов и проверенная растеризация",
+      "url": "https://github.com/artsafro/AGR_Project/pull/17"
+    },
+    {
+      "number": 18,
+      "state": "open",
+      "merged": false,
+      "draft": true,
+      "head": "codex/workbench-source",
+      "head_sha": "c5898f9faa00f59bdb12f5aacc06648a8c0aa81f",
+      "changed_files": 13,
+      "title": "Preserve AGR Workbench 0.5 source as a scoped Max package",
+      "url": "https://github.com/artsafro/AGR_Project/pull/18"
+    },
+    {
+      "number": 19,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/revit-openings-status",
+      "head_sha": "99208dce7f780ecda9c054a6ac7522a370033df9",
+      "changed_files": 2,
+      "title": "docs: статус пилота СОШ1150 и открытые проверки проёмов",
+      "url": "https://github.com/artsafro/AGR_Project/pull/19"
+    },
+    {
+      "number": 21,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/project-map-refresh",
+      "head_sha": "08b01e4465f59c4385b59359d9263bacd2971930",
+      "changed_files": 1,
+      "title": "docs: актуализировать карту слитых PR и отложить Workbench",
+      "url": "https://github.com/artsafro/AGR_Project/pull/21"
+    },
+    {
+      "number": 22,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/connect-adapter",
+      "head_sha": "6581fd298f99833a460a678764ca3a3fa9ab74ca",
+      "changed_files": 6,
+      "title": "refactor: выделить Connect с совместимостью и Blender readback",
+      "url": "https://github.com/artsafro/AGR_Project/pull/22"
+    },
+    {
+      "number": 23,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/exterior-adapter",
+      "head_sha": "984d9ad7a2b059659fc2c6f2d68337680a810e24",
+      "changed_files": 10,
+      "title": "refactor: выделить Exterior с AdapterReport и Blender readback",
+      "url": "https://github.com/artsafro/AGR_Project/pull/23"
+    },
+    {
+      "number": 24,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/shell-adapter",
+      "head_sha": "36acce22c58c7a28b9eaafee19442039cb426f0e",
+      "changed_files": 9,
+      "title": "Extract reviewed exterior Shell adapter",
+      "url": "https://github.com/artsafro/AGR_Project/pull/24"
+    },
+    {
+      "number": 25,
+      "state": "closed",
+      "merged": true,
+      "draft": false,
+      "head": "codex/window-frames-box-lights-case",
+      "head_sha": "c5e84b05d095798d7011e14bca681258a0b97db5",
+      "changed_files": 14,
+      "title": "Preserve reviewed box-lights scenario and evidence",
+      "url": "https://github.com/artsafro/AGR_Project/pull/25"
+    }
+  ]
+}

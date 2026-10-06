@@ -1,0 +1,25 @@
+{
+  "_provenance": "Ported from AGR standards/source/source-lock.json (sha256 e463877cfdfe) on 2026-10-06; changes: `profiles` now lock the annotated project copies, added traceability_sha256, agr_origin and pdf_default_location; the PDF itself is not copied. 2026-10-06: moved into AGR-DigitalTwin; the PDF is now committed at standards/source/ (Git LFS), pdf_default_location removed.",
+  "agr_origin": {
+    "repository": "C:\\Users\\artsafro\\.AGR_Project",
+    "commit": "d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc",
+    "handoff_matches_initial_commit": "e77018f",
+    "profile_status": "original_0.1.0_with_open_decisions",
+    "files_sha256": {
+      "standards/DELIVERY_VALIDATOR.yaml": "7f58cc21d69e8a8738314c073d40aae21ff9dbf3e0cfedc22617991b9cb17ab1",
+      "standards/NPM_STANDARD.yaml": "7fa1200635c6873d6e49535777080183d80032d0c9e540f505e2f09fe81429b9",
+      "standards/VPM_STANDARD.yaml": "f31188cd3b387201a0522c4e93cb12791b65740d73e95704bb515e75370ec192",
+      "standards/traceability.json": "d524a137af81591d09ac27ad0488b58bfece92842377bf916d14bf80176d6422",
+      "standards/source/source-lock.json": "e463877cfdfe9770657fd3c5202a8c91d42fea314e0ee0e3cb7d65e1bd7f6127"
+    }
+  },
+  "pdf_file": "Rasporyajenies19012026trebovaniya(2).pdf",
+  "pdf_pages": 56,
+  "pdf_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+  "profiles": {
+    "DELIVERY_VALIDATOR.yaml": "286d1a2a95d04a82dd35f20182e6329268a938be6c0a8a1be67871013bb8f501",
+    "NPM_STANDARD.yaml": "4cabcfb40f140822d86757461ed63c749b7ede3f815a2697070a1cd75af8f6a4",
+    "VPM_STANDARD.yaml": "c758c489b895ca50f1d77973d34839a72e6c5b0eae46cc1bde446d60c508bdbb"
+  },
+  "traceability_sha256": "d524a137af81591d09ac27ad0488b58bfece92842377bf916d14bf80176d6422"
+}

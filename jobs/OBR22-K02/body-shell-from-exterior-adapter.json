@@ -1,0 +1,11 @@
+{
+  "units": "m",
+  "surface_npz": "outputs/exterior-adapter-v001/exterior-surface.npz",
+  "profiles_json": "outputs/exterior-adapter-v001/exterior-surface.json",
+  "angle_rad": 0.0008694922982310782,
+  "thickness_m": 0.4,
+  "tolerance_m": 1e-07,
+  "body_name": "BODY_Shell_400mm_NoInnerFaces",
+  "surface_review_ref": "Regression: exact arrays/profile equality to recorded accepted OBR22 exterior; new output visual review pending",
+  "thickness_decision_ref": "User requested inward shell 0.4 m without inner back faces; docs/GEOMETRY_RULES.md"
+}

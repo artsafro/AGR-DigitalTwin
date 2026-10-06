@@ -1,0 +1,1190 @@
+{
+  "date": "2026-10-01",
+  "groups": [
+    {
+      "group": "tools",
+      "sources": 60,
+      "status": "Существующее ядро + адаптеры",
+      "route": "src/dt_ai/geometry; tools/facades_texture_pattern.py; texture_tiles",
+      "decision": "Connect/Exterior/Shell/UV/pattern уже имеют исполнители и тесты. Старые job-specific построители не заменяют их и остаются локальными.",
+      "evidence": "pytest; profiles; schemas; metric-raster regression",
+      "python_ast_checked": 60,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "blender",
+      "sources": 1,
+      "status": "Существующий транспорт",
+      "route": "adapters/blender/bridge.py; mesh_audit/blender.py",
+      "decision": "Не создавать второй bridge; общий read-only инспектор использует background Blender. Он не сертифицирует модификаторы и пересечения.",
+      "evidence": "nine saved-file readbacks",
+      "python_ast_checked": 1,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "sketchup",
+      "sources": 59,
+      "status": "Извлечение источника; отклонённые построители оставлены локально",
+      "route": "adapters/sketchup; mesh_audit",
+      "decision": "GLB reference проверен чтением. Composite-window/plane метод отклонён: bbox не доказывает реальные проёмы. Новая сборка из этих прототипов не публикуется.",
+      "evidence": "GLB_AB_source_reference.blend read-only",
+      "python_ast_checked": 59,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "AGR_Workbench",
+      "sources": 11,
+      "status": "Отложено пользователем",
+      "route": "draft PR #18",
+      "decision": "Исходники повторно не читались, QA и изменения PR18 не выполнялись. Новый общий запрос не снимает ранее заданный адресный запрет.",
+      "evidence": "previous inventory metadata only",
+      "python_ast_checked": 0,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "GROUND-PROJECTION",
+      "sources": 25,
+      "status": "Общая диагностика выделена",
+      "route": "mesh_audit",
+      "decision": "Построители v001-v008 остаются историями одного объекта. Повторный blend/FBX readback сохранил 33103 вершины, 32392 квада, 18 слотов; 316 multi-face edges и 1876 boundary edges сохранены. Разрешённые исходные overlaps не исправлялись. Native Max/Checker/финальная приёмка не подтверждены.",
+      "evidence": "ground_blend; ground_fbx",
+      "python_ast_checked": 25,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "MASHI-LP",
+      "sources": 44,
+      "status": "Общий inventory вместо копий аудита",
+      "route": "mesh_audit; existing Exterior/Shell",
+      "decision": "LP/Revit/LP_old сохранены; 53 mesh, 605194 faces, 615536 triangles совпали с историческим суммарным inventory. Неудачный trial master и его версии не продвигаются в библиотеку; моделирование/проекция/визуальная приёмка не повторялись.",
+      "evidence": "organized-v001.blend read-only",
+      "python_ast_checked": 44,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "REVIT-OPENINGS",
+      "sources": 34,
+      "status": "Отдельные операции карт и диагностики",
+      "route": "texture_tiles; mesh_audit; existing Exterior/Shell",
+      "decision": "КПП: 11 карт вынесены в данные и общий генератор. Body-v005 прочитан, но fit/окна/визуальная приёмка не проверялись заново. Геометрические QA одного объекта не являются универсальным конвертером RVT.",
+      "evidence": "KPP PNG+ZIP readback; body-v005 mesh inventory",
+      "python_ast_checked": 34,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "UV-CONTINUOUS",
+      "sources": 23,
+      "status": "Рефакторинг проверен в PR #26",
+      "route": "uv_continuous/inventory.py → solve.py → build.py → verify.py",
+      "decision": "10 операций объединены в четыре этапа и common; остальные диагностические версии локальны. Численный replay одного СОШ1150 совпал. Native Max/полный Checker/второй проект не проверены.",
+      "evidence": "evidence/UV_FOUR_STAGES_REPLAY.json",
+      "python_ast_checked": 23,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "WINDOW-FRAMES",
+      "sources": 11,
+      "status": "Существующий этапный пакет",
+      "route": "main (PR #25); mesh_audit",
+      "decision": "Четыре box-light этапа из PR25 уже находятся в main; не копировать ещё раз в PR26. Остальные упрощённые версии не являются принятыми окнами.",
+      "evidence": "PR25 native Blender replay: 247 sections / 1235 quads",
+      "python_ast_checked": 11,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "FACADE-SIGNS",
+      "sources": 3,
+      "status": "Общая диагностика выделена",
+      "route": "mesh_audit",
+      "decision": "8 объектов/1144 faces прочитаны. UV/толщина/геометрия знаков остаются кейсовыми параметрами. Старый BVH/volume QA не заменён этим инспектором; новый build не объявлен готовым.",
+      "evidence": "facade_signs_v001.blend read-only",
+      "python_ast_checked": 3,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "MESH-OPT-AUDIT",
+      "sources": 3,
+      "status": "Общая диагностика выделена",
+      "route": "mesh_audit",
+      "decision": "Object013 оптимизированной версии прочитан. Новый inspector не доказывает сохранение внешнего вида или качество decimation; алгоритм оптимизации без визуальной приёмки не обобщается.",
+      "evidence": "Object013_optimized_v001.blend read-only",
+      "python_ast_checked": 3,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "window_facades",
+      "sources": 37,
+      "status": "Один алгоритм атласа + параметры",
+      "route": "window_atlas; mesh_audit; texture_tiles",
+      "decision": "Принятый v8 совпал по пикселям и mapping CSV. Сохранённый facade_atlas_uv_v003 прочитан; native Max/визуальный UV экспорт не повторялся. Остальные ID/atlas версии являются данными или локальными экспериментами.",
+      "evidence": "window_atlas/QA.json; facade_uv read-only",
+      "python_ast_checked": 34,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "zavod",
+      "sources": 70,
+      "status": "Модульные Max-инструменты сохраняют ответственности",
+      "route": "existing local scripts; Max native gate",
+      "decision": "Скрипты выбора, pivot, borders, retarget, atlas — разные операции; склейка в монолит не оправдана. Python AST / hash inventory выполнен; синтаксис MAXScript не проверен; fileIn/native scene QA не выполнены: BRIDGE_DOWN. Непроверенный Max-код не публикуется как успешная универсальная библиотека.",
+      "evidence": "source fingerprints; Max MCP BRIDGE_DOWN",
+      "python_ast_checked": 21,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "facades_modelling",
+      "sources": 28,
+      "status": "Reuse наружных контуров; исследовательские источники локальны",
+      "route": "src/dt_ai/geometry/exterior.py; existing adapters",
+      "decision": "Contour research synthetic fixture PASS (disconnected loops, island, order). Это не RVT геометрия и не замена Revit bridge. Другая система единиц/проекций требует отдельной адаптации; источники не копируются массово.",
+      "evidence": "research/codex_contour_check/test_core.py: 3 synthetic scenarios",
+      "python_ast_checked": 28,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    },
+    {
+      "group": "blender_projects",
+      "sources": 192,
+      "status": "Общая QA, разные asset builders остаются кейсами",
+      "route": "mesh_audit; per-asset configs before promotion",
+      "decision": "kpx131_v011 прочитан. Остальные продуктовые/коллизионные версии не запускались: они создают разные формы, их нельзя без проверки объединить в универсальный генератор. Точная функция-копия — кандидат на reuse, не разрешение удалять оригинал.",
+      "evidence": "kpx131_v011.blend read-only",
+      "python_ast_checked": 192,
+      "python_parse_errors": 0,
+      "delivery_passed": false
+    }
+  ],
+  "source_count": 601,
+  "group_count": 15,
+  "scope": "274 own AGR paths + 327 previously selected related own sources; 29 third-party/personal-path exclusions remain outside; no model/output upload",
+  "deferred_source_count": 11,
+  "byte_identical_source_clusters": [
+    [
+      "related/blender_projects/projects/bear_2500/qa/audit.py",
+      "related/blender_projects/projects/kpl201311/qa/audit.py",
+      "related/blender_projects/projects/kpx131/qa/audit.py",
+      "related/blender_projects/projects/kronos_vi/qa/audit.py",
+      "related/blender_projects/projects/lightning_rods/qa/audit.py",
+      "related/blender_projects/projects/norlys_ski_1392/qa/audit.py",
+      "related/blender_projects/projects/streetlamp_3500/qa/audit.py"
+    ],
+    [
+      "related/blender_projects/projects/bear_2500/qa/checktoolbox_run.py",
+      "related/blender_projects/projects/kpl201311/qa/checktoolbox_run.py",
+      "related/blender_projects/projects/kpx131/qa/checktoolbox_run.py",
+      "related/blender_projects/projects/kronos_vi/qa/checktoolbox_run.py",
+      "related/blender_projects/projects/lightning_rods/qa/checktoolbox_run.py",
+      "related/blender_projects/projects/norlys_ski_1392/qa/checktoolbox_run.py",
+      "related/blender_projects/projects/streetlamp_3500/qa/checktoolbox_run.py"
+    ],
+    [
+      "related/blender_projects/projects/kpl201311/qa/verify_clean.py",
+      "related/blender_projects/projects/lightning_rods/qa/verify.py",
+      "related/blender_projects/projects/recycling_12874/qa/verify_clean.py"
+    ],
+    [
+      "related/blender_projects/projects/kpx131/qa/classify_contacts.py",
+      "related/blender_projects/projects/kronos_vi/qa/classify_contacts.py"
+    ],
+    [
+      "related/blender_projects/projects/kpx131/qa/final_readback.py",
+      "related/blender_projects/projects/kronos_vi/qa/final_readback.py"
+    ]
+  ],
+  "identical_function_candidates": [
+    {
+      "sha256": "d6a11c17735a4d6eda1e89ff9a92ee2772455732b4388e007a481fe1d60efef5",
+      "occurrences": [
+        {
+          "path": "tools/build_shell_windows.py",
+          "function": "root"
+        },
+        {
+          "path": "jobs/GROUND-PROJECTION/npm_mesh.py",
+          "function": "root"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/loft_master_profiles.py",
+          "function": "root"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/measure_components.py",
+          "function": "root"
+        },
+        {
+          "path": "jobs/WINDOW-FRAMES/build_quad_frames.py",
+          "function": "root"
+        }
+      ]
+    },
+    {
+      "sha256": "856bfa414de231f50caa52eee6e1b79f433c30d32ddfb9dc96f93fe0025d3305",
+      "occurrences": [
+        {
+          "path": "jobs/MASHI-LP/scripts/build_master.py",
+          "function": "fingerprint"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/load_master_live.py",
+          "function": "fingerprint"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/verify_master.py",
+          "function": "fingerprint"
+        }
+      ]
+    },
+    {
+      "sha256": "a6f1c752ab31f88f16366ad820695aff141908697ad745a339fd667279ab9b91",
+      "occurrences": [
+        {
+          "path": "jobs/MASHI-LP/scripts/build_v002.py",
+          "function": "fingerprint"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/load_result_live.py",
+          "function": "fingerprint"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/verify_v002.py",
+          "function": "fingerprint"
+        }
+      ]
+    },
+    {
+      "sha256": "41fa32e9169a1a08ff1d34769dc13e78fb878b31d3e52c7071e1521f6af8db0e",
+      "occurrences": [
+        {
+          "path": "jobs/MASHI-LP/scripts/organize.py",
+          "function": "signature"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/readback.py",
+          "function": "signature"
+        }
+      ]
+    },
+    {
+      "sha256": "6665aca0c6ceccaea24884821ccb2c68688a294953edb8aea2f94aaf4f9fb4f9",
+      "occurrences": [
+        {
+          "path": "jobs/MASHI-LP/scripts/prepare_master.py",
+          "function": "proj"
+        },
+        {
+          "path": "jobs/MASHI-LP/scripts/prepare_master_windows.py",
+          "function": "proj"
+        }
+      ]
+    },
+    {
+      "sha256": "ebee78caa01c5d1ec13f035bcf1b88e5660f9d6180bcad92858d31e1ca3bc421",
+      "occurrences": [
+        {
+          "path": "jobs/REVIT-OPENINGS/scripts/group_assemblies.py",
+          "function": "find"
+        },
+        {
+          "path": "jobs/REVIT-OPENINGS/scripts/group_body_window_faces_v005.py",
+          "function": "find"
+        },
+        {
+          "path": "jobs/UV-CONTINUOUS/scripts/plan.py",
+          "function": "find"
+        }
+      ]
+    },
+    {
+      "sha256": "808aa5ba239199c8ad3ff39390c4fd101ba1fcfee3b2f62bd9ff34cf0e1345bb",
+      "occurrences": [
+        {
+          "path": "jobs/REVIT-OPENINGS/scripts/group_body_window_faces_v005.py",
+          "function": "union"
+        },
+        {
+          "path": "related/window_facades/analyze_facade_islands.py",
+          "function": "union"
+        }
+      ]
+    },
+    {
+      "sha256": "760dc5a5e263c90bada805c9132d2f06f1bb1cf2c2afc88ae1291e08cdaf3cb1",
+      "occurrences": [
+        {
+          "path": "jobs/UV-CONTINUOUS/scripts/build.py",
+          "function": "clip"
+        },
+        {
+          "path": "jobs/UV-CONTINUOUS/scripts/build_v005.py",
+          "function": "clip"
+        }
+      ]
+    },
+    {
+      "sha256": "85d2d7198ca9c3a718358d6e16652ba0aaaa8e7d995f0b084e9d44ecd5adda5b",
+      "occurrences": [
+        {
+          "path": "jobs/UV-CONTINUOUS/scripts/build.py",
+          "function": "vert"
+        },
+        {
+          "path": "jobs/UV-CONTINUOUS/scripts/build_v005.py",
+          "function": "vert"
+        }
+      ]
+    },
+    {
+      "sha256": "7c6e2cb8f8c66e5f2157e2068ad2a46ba1d456cc2b67592a7017e96b30da8bd4",
+      "occurrences": [
+        {
+          "path": "related/window_facades/analyze_facade_islands.py",
+          "function": "find"
+        },
+        {
+          "path": "related/blender_projects/projects/frames_contours/scripts/analyze.py",
+          "function": "find"
+        }
+      ]
+    },
+    {
+      "sha256": "46a56c6489720a930cfa6db6f189d785328e854f759563c0210f8a91a7f93cda",
+      "occurrences": [
+        {
+          "path": "related/facades_modelling/research/analyze_contours.py",
+          "function": "area"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_contour_check/contour_core.py",
+          "function": "area"
+        }
+      ]
+    },
+    {
+      "sha256": "f60c9224f4538c2fdba636dd2c4e45eb089607a6cfd398bb842fd4e4ec4b217a",
+      "occurrences": [
+        {
+          "path": "related/facades_modelling/research/analyze_contours.py",
+          "function": "inside"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_blender_pipeline/extract_fbx_patch.py",
+          "function": "inside"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_contour_check/contour_core.py",
+          "function": "inside"
+        }
+      ]
+    },
+    {
+      "sha256": "e628c0f8750e833649763918fc1810cef67344a8da169abc2a3cfec8a8f3b9de",
+      "occurrences": [
+        {
+          "path": "related/facades_modelling/research/analyze_contours.py",
+          "function": "canonical"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_contour_check/contour_core.py",
+          "function": "canonical"
+        }
+      ]
+    },
+    {
+      "sha256": "8f9a1f0a096f8be14a7b20b3d2c43681be99f3b9b2556ed85479d2e4b235a6fe",
+      "occurrences": [
+        {
+          "path": "related/facades_modelling/research/analyze_contours.py",
+          "function": "main"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_contour_check/contour_core.py",
+          "function": "main"
+        }
+      ]
+    },
+    {
+      "sha256": "2ca03a521b6d4048366d80c0e41f9d47bb46b93e0c9b291bc016b68eaddd84dd",
+      "occurrences": [
+        {
+          "path": "related/facades_modelling/research/analyze_contours.py",
+          "function": "vertex"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_contour_check/contour_core.py",
+          "function": "vertex"
+        }
+      ]
+    },
+    {
+      "sha256": "7929a2be3520c7a564096c0f4e3c462118f566157879ba2be86b93a7196ac41a",
+      "occurrences": [
+        {
+          "path": "related/facades_modelling/research/analyze_contours.py",
+          "function": "distance_segment"
+        },
+        {
+          "path": "related/facades_modelling/research/codex_contour_check/contour_core.py",
+          "function": "distance_segment"
+        }
+      ]
+    },
+    {
+      "sha256": "233449d71cd93c6a634ce89db1edf42caeb8880f83b0cf4a21ac336daea50964",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/araknea4/scripts/build.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/arm_stretcher/scripts/build.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build_clean.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/render_clean.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/build_kub.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/lightning_rods/scripts/render.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/norlys_ski_1392/scripts/render.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build_clean.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/render_clean.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/streetlamp_3500/scripts/render.py",
+          "function": "mat"
+        },
+        {
+          "path": "related/blender_projects/projects/taifun/scripts/build_taifun.py",
+          "function": "mat"
+        }
+      ]
+    },
+    {
+      "sha256": "39f09e9c228bec759b24f4695c8761993c7bfffe15e883fc8e8f2d62f6c50e1f",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/araknea4/scripts/build.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/arm_stretcher/scripts/build.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build_clean.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/build_kub.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/taifun/scripts/build_taifun.py",
+          "function": "tube"
+        }
+      ]
+    },
+    {
+      "sha256": "b440f2d8272bbd954a6d07b0a07ff8fa4fa4eb7f2b548ddcf3e75f04d47efcde",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/araknea4/scripts/build.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/arm_stretcher/scripts/build.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build_clean.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/geometry.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/build_kub.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/geometry.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build.py",
+          "function": "box"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build_clean.py",
+          "function": "box"
+        }
+      ]
+    },
+    {
+      "sha256": "5ae891a1574aee18cc3aa852560e3b89934523ab12d9b625ead9efe976b33aff",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/araknea4/scripts/build.py",
+          "function": "point"
+        },
+        {
+          "path": "related/blender_projects/projects/araknea4/scripts/parts.py",
+          "function": "point"
+        }
+      ]
+    },
+    {
+      "sha256": "2c9d6c3c2f8b3de04c7b0e19b9b90421f22f418b3f4b9bcd1acffeac10871e98",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/araknea4/scripts/build.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/arm_stretcher/scripts/build.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/render_clean.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/build_kub.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/render_clean.py",
+          "function": "cam"
+        },
+        {
+          "path": "related/blender_projects/projects/taifun/scripts/build_taifun.py",
+          "function": "cam"
+        }
+      ]
+    },
+    {
+      "sha256": "6d40d3f59c2597bf1a84404808c7857c7ded267107a4b0bc54dfd267f8543e8a",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "rod"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/geometry.py",
+          "function": "rod"
+        }
+      ]
+    },
+    {
+      "sha256": "a77e4e025d7e7de216ebe74480d8b26a75d8ee6494d6a4ca4ee0b6f374dc7105",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "ring"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/geometry.py",
+          "function": "ring"
+        }
+      ]
+    },
+    {
+      "sha256": "b1675846f5df60b8f455a163b52d2ec0c29611faeacc39dee887ee4a3cf23804",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "arch"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/geometry.py",
+          "function": "arch"
+        }
+      ]
+    },
+    {
+      "sha256": "244fda1f2c42c6dc405c2cca6db67a1ea6ef54dd7d3e81dd0f4bb0e33cfae43a",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "panel"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/geometry.py",
+          "function": "panel"
+        }
+      ]
+    },
+    {
+      "sha256": "5ca3758743a3f22b07645ea99eee2d17535eb21392435b9c44d097d9a0591a7c",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/build.py",
+          "function": "idx"
+        },
+        {
+          "path": "related/blender_projects/projects/arc_course/scripts/geometry.py",
+          "function": "idx"
+        }
+      ]
+    },
+    {
+      "sha256": "15a584215f30f6265726ce59520e79fe9baca24723087656893289850b80b6e5",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_combined_optimized_v008.py",
+          "function": "inside"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "inside"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "inside"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "inside"
+        }
+      ]
+    },
+    {
+      "sha256": "e0222f8352922fd6db261e37c15e51f10fb9beba5d32533e2ea324ee1f9bcc88",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_combined_optimized_v008.py",
+          "function": "canonical"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "canonical"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "canonical"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "canonical"
+        }
+      ]
+    },
+    {
+      "sha256": "7b1f19c8b8f477eb80a1b0160c214a92082fffa637c009479637673eb119f55a",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "cluster_values"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "cluster_values"
+        }
+      ]
+    },
+    {
+      "sha256": "00df44f9aa622d18c949ac5067b507ce3b0d1f9ff506f9835e2b313a45cff99f",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "normalize"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "normalize"
+        }
+      ]
+    },
+    {
+      "sha256": "f80195aa703451f642721ab64be3ae3564161acef4b2628e0d065a7c36d8ba5a",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "vertex"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "vertex"
+        }
+      ]
+    },
+    {
+      "sha256": "fa0ebbbfd58d0ec28ca8af5aaa27a7fb8edbe723949a4815e900a3c58ab06e22",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "boundary_info"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "boundary_info"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "boundary_info"
+        }
+      ]
+    },
+    {
+      "sha256": "0c653267151d2920fceb791982d59e89cfdf93f3b62f5968a827542a4a4a6664",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "opposite_edge"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "opposite_edge"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "opposite_edge"
+        }
+      ]
+    },
+    {
+      "sha256": "ae57cd74e1703390235c548ce7813819c8f3674113bf6892269013fdfc2d8d3e",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "ring"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "ring"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "ring"
+        }
+      ]
+    },
+    {
+      "sha256": "66c33d627ec180afef3fbccd8a614f776184c7783521aaf014ed66f31afae0ad",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f1_v004.py",
+          "function": "camera"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_full_f2_v005.py",
+          "function": "camera"
+        },
+        {
+          "path": "related/blender_projects/projects/facade_wall_4357352/scripts/build_transition_v003.py",
+          "function": "camera"
+        }
+      ]
+    },
+    {
+      "sha256": "66103c04134b735db157265d821530e51f97164973c00270952512dfb6ba96d4",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build.py",
+          "function": "rod"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build_clean.py",
+          "function": "rod"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/parts.py",
+          "function": "rod"
+        }
+      ]
+    },
+    {
+      "sha256": "9fdda989dd948de56300be5c1ae1bdebdb5485e9b47461e9e2b57a9c1728d346",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build.py",
+          "function": "sheet"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/build_clean.py",
+          "function": "sheet"
+        },
+        {
+          "path": "related/blender_projects/projects/kpl201311/scripts/parts.py",
+          "function": "sheet"
+        }
+      ]
+    },
+    {
+      "sha256": "910dfc089175863b65cdab2a8331eb473a9c4dfee26df06c6253659b6e960ca8",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/qa/classify_contacts.py",
+          "function": "pierces"
+        },
+        {
+          "path": "related/blender_projects/projects/kronos_vi/qa/classify_contacts.py",
+          "function": "pierces"
+        }
+      ]
+    },
+    {
+      "sha256": "796f5f9db7d607e217c6a837bdda86248d0f83125657437d42f0f1b9fa79a0d0",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/qa/classify_contacts.py",
+          "function": "coplanar_area"
+        },
+        {
+          "path": "related/blender_projects/projects/kronos_vi/qa/classify_contacts.py",
+          "function": "coplanar_area"
+        }
+      ]
+    },
+    {
+      "sha256": "d857483b889e49640da46324ef87044790f829cbed0a7fa4a03c39b24c5a45d1",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/qa/classify_v010.py",
+          "function": "dist_boundary"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/qa/classify_v011.py",
+          "function": "dist_boundary"
+        }
+      ]
+    },
+    {
+      "sha256": "b21169fbdac8a8ce0fd46ccdb29e3c455cf09bf0a82ec2d0d1c9c3eafb1d8b17",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/qa/classify_v010.py",
+          "function": "hits"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/qa/classify_v011.py",
+          "function": "hits"
+        }
+      ]
+    },
+    {
+      "sha256": "0e66823dd6743abbf42206823287831c3e1e3772c4b957f508095d489704f358",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build_v010.py",
+          "function": "tube"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build_v011.py",
+          "function": "tube"
+        }
+      ]
+    },
+    {
+      "sha256": "d36e86602f553ca806aded227f6b463cd69cea04a90fb83aff4c03a7558ddda4",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build.py",
+          "function": "rounded_path"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build_v010.py",
+          "function": "rounded_path"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build_v011.py",
+          "function": "rounded_path"
+        }
+      ]
+    },
+    {
+      "sha256": "e096ecbc36e21d61a91dc2f7653692ed3385abf98f9ba279b7a4e1bc04ff9a26",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build.py",
+          "function": "panel"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build_v010.py",
+          "function": "panel"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/build_v011.py",
+          "function": "panel"
+        }
+      ]
+    },
+    {
+      "sha256": "7efca881604e5a046d85f45e1d4b4125887567f4c24b70b705c3ed6133643dc3",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/repair_quad.py",
+          "function": "bad"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/repair_v010.py",
+          "function": "bad"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/repair_v011.py",
+          "function": "bad"
+        },
+        {
+          "path": "related/blender_projects/projects/kronos_vi/scripts/repair_quad.py",
+          "function": "bad"
+        }
+      ]
+    },
+    {
+      "sha256": "2b1aae579bb94728b3872962aea83ca2bf95b20dfa424130aea2f64a2d423a51",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/retopo.py",
+          "function": "good"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/retopo_v010.py",
+          "function": "good"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/retopo_v011.py",
+          "function": "good"
+        },
+        {
+          "path": "related/blender_projects/projects/kronos_vi/scripts/retopo.py",
+          "function": "good"
+        }
+      ]
+    },
+    {
+      "sha256": "b1c7981d01539c263e69a73ab45988717af2d0450f993d9f284b113f0f62f0a5",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/retopo.py",
+          "function": "cut"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/retopo_v010.py",
+          "function": "cut"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/retopo_v011.py",
+          "function": "cut"
+        },
+        {
+          "path": "related/blender_projects/projects/kronos_vi/scripts/retopo.py",
+          "function": "cut"
+        }
+      ]
+    },
+    {
+      "sha256": "a5eb2a0a356b60e2652de3218218e2d57ae30d8a7717f1a8fb0a4ac43d7f0001",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/trim_v010.py",
+          "function": "bounds"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/trim_v011.py",
+          "function": "bounds"
+        }
+      ]
+    },
+    {
+      "sha256": "fbbc7ca2aa2102dce595b0f7d11c26cd81bfcc6e892e9d3328bd3e3bc8d21a59",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/trim_v010.py",
+          "function": "intersects"
+        },
+        {
+          "path": "related/blender_projects/projects/kpx131/scripts/trim_v011.py",
+          "function": "intersects"
+        }
+      ]
+    },
+    {
+      "sha256": "97e5010aff0a6ce80326ea1dfc17c178c65221508f951687cef72fb5954a0147",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kronos_vi/scripts/retopo_legacy.py",
+          "function": "cut"
+        },
+        {
+          "path": "related/blender_projects/projects/kronos_vi/scripts/retopo_patch.py",
+          "function": "cut"
+        }
+      ]
+    },
+    {
+      "sha256": "ea44ea8aceeae68da1c007eca52af564e133a5424b5f9caa1b83629cb29140ba",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kub/scripts/build_kub.py",
+          "function": "pt"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/geometry.py",
+          "function": "pt"
+        }
+      ]
+    },
+    {
+      "sha256": "b359d8bc691cdaa09d99f21471d7900dcb45d7c1cd3e27f4dbf57b754de80930",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/kub/scripts/build_kub.py",
+          "function": "shell"
+        },
+        {
+          "path": "related/blender_projects/projects/kub/scripts/geometry.py",
+          "function": "shell"
+        }
+      ]
+    },
+    {
+      "sha256": "30b95176f22b35205711601840651a4e3147adffc766d07f69426ad8d0a64e21",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build.py",
+          "function": "rod"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/parts.py",
+          "function": "rod"
+        }
+      ]
+    },
+    {
+      "sha256": "deedd456406610218d628412d4a3e37efe1be21760d0b2b0e43427ec3d3e43a2",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/build.py",
+          "function": "half"
+        },
+        {
+          "path": "related/blender_projects/projects/recycling_12874/scripts/parts.py",
+          "function": "half"
+        }
+      ]
+    },
+    {
+      "sha256": "aca0f897583d9c4cf226a24a6cdae2e664c9731158a8d29ef870a2b8a9991141",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/batch_clean.py",
+          "function": "clean_points"
+        },
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/live_clean.py",
+          "function": "clean_points"
+        }
+      ]
+    },
+    {
+      "sha256": "ba049d47cddb9317bae6c78df22c0b2707d040b9dcdc2a16dc47e2c6c114fcc0",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/batch_verify.py",
+          "function": "sig"
+        },
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/merge_collisions.py",
+          "function": "sig"
+        },
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/merge_finalize_check.py",
+          "function": "sig"
+        }
+      ]
+    },
+    {
+      "sha256": "9f7499eb8cea812e3d961d2a7490295e70ab0ef41630312410abfdcd1f3a7910",
+      "occurrences": [
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/live_fix.py",
+          "function": "signature"
+        },
+        {
+          "path": "related/blender_projects/projects/ucx_test/scripts/live_verify.py",
+          "function": "signature"
+        }
+      ]
+    }
+  ],
+  "candidate_warning": "Exact source/function identity is not behavioral or cross-project acceptance; no original deleted",
+  "max_bridge": "BRIDGE_DOWN 127.0.0.1:8765; no fileIn/native validation",
+  "delivery_passed": false,
+  "source_registry": "SOURCE_COVERAGE.jsonl"
+}

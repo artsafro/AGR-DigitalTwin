@@ -1,0 +1,139 @@
+{
+  "date": "2026-10-01",
+  "blender_version": "4.4",
+  "stages": [
+    {
+      "stage": "inventory.py",
+      "exit_code": 0,
+      "seconds": 1.04,
+      "sha256": "530a3e3cc5b518bf2cf4c9898b9f3c079d6762bdc46965b44085d09806affae0"
+    },
+    {
+      "stage": "solve.py",
+      "exit_code": 0,
+      "seconds": 2.05,
+      "sha256": "8bd904facbdd62557e3fed4e9109dda2ec21eecf5a428ce611e0cf99b8049e2d"
+    },
+    {
+      "stage": "build.py",
+      "exit_code": 0,
+      "seconds": 14.46,
+      "sha256": "1bfb22f01156832ae4ef51c91fd297a6107fd29c562e30838b913f830ecdda53"
+    },
+    {
+      "stage": "verify.py",
+      "exit_code": 0,
+      "seconds": 5.52,
+      "sha256": "4ea4bead5f25e10ecc80e7975d86bf2cd76c9965c5273cdaa3812ec1b2747268"
+    }
+  ],
+  "historical_vs_refactored_readback_equal": {
+    "faces": true,
+    "polygon_sizes": true,
+    "density_min_max": true,
+    "td_outside_550_1500": true,
+    "uv_bounds": true,
+    "outside_1001": true,
+    "surface_area_m2": true,
+    "edge_counts": true,
+    "nonmanifold_gt2": true,
+    "mesh_validate_repairs": true,
+    "packed_diffuse_matches": true,
+    "delivery_passed": true,
+    "source_surface_distance_m": true,
+    "face_density_min_max": true,
+    "loose_vertices": true,
+    "vertical_shared_edge_sample_max_phase_px": true,
+    "vertical_shared_edge_samples": true,
+    "vertical_phase_samples_over_0_1px": true
+  },
+  "inputs": {
+    "source_v001.blend": "a916eee9a3f93f5a58a716f67d2dfff0d19cb1e8a56f349588a3c8e51ce39433",
+    "T_Template_Address_001_Diffuse_1.1001.png": "0d56252fc4a6beaf4026104453b74cc8b989f62b4d30ce8fa0cd2838e7fee7df"
+  },
+  "readback": {
+    "file": "${REPLAY}\\walls_UV550-1500_FlipH_v006.blend",
+    "faces": 42686,
+    "polygon_sizes": {
+      "4": 42686
+    },
+    "density_min_max": [
+      550.9206463055806,
+      614.890219523213
+    ],
+    "td_outside_550_1500": 0,
+    "uv_bounds": [
+      0.0048828125,
+      0.9951171875
+    ],
+    "outside_1001": 0,
+    "surface_area_m2": 5124.335990821505,
+    "edge_counts": {
+      "2": 80060,
+      "1": 10624
+    },
+    "nonmanifold_gt2": 0,
+    "mesh_validate_repairs": false,
+    "packed_diffuse_matches": true,
+    "delivery_passed": false,
+    "source_surface_distance_m": 0.00016021728515625,
+    "face_density_min_max": [
+      551.0469565393527,
+      614.8812629666389
+    ],
+    "loose_vertices": 0,
+    "vertical_shared_edge_sample_max_phase_px": 0.012695312665528036,
+    "vertical_shared_edge_samples": 159584,
+    "vertical_phase_samples_over_0_1px": 0
+  },
+  "fbx": {
+    "source": "${REPLAY}\\walls_UV550-1500_FlipH_v006.blend",
+    "fbx": "${REPLAY}\\FBX_For_Max_v006\\Walls_FlipH_v006.fbx",
+    "fbx_version": 7400,
+    "objects": 1,
+    "vertices": 47800,
+    "polygon_sizes": {
+      "4": 42686
+    },
+    "uv_channels": 1,
+    "uv_max_error": 0.0,
+    "world_max_error_m": 9.775161743164062e-06,
+    "dimensions_m": [
+      61.29999542236328,
+      110.75005340576172,
+      25.294721603393555
+    ],
+    "material_slots": 1,
+    "embedded_diffuse_sha256": "e3a6708fbd89d79e2b44de900eb8bac9a41842f44099a9b972e157a5d74d4f99",
+    "embedded_diffuse_verified": true,
+    "diffuse_material_binding_verified": true,
+    "mesh_validate_repairs": false,
+    "blender_fbx_roundtrip_passed": true,
+    "native_max_import_verified": false
+  },
+  "package": {
+    "zip": "${REPLAY}\\Walls_FlipH_v006_FBX_For_Max.zip",
+    "archive_readback_verified": true,
+    "files": {
+      "Walls_FlipH_v006.fbx": {
+        "bytes": 1506076,
+        "sha256": "a2c51b26e1295c8927938257018e1936e535542335d536b351e05579517221dd"
+      },
+      "Walls_FlipH_v006_Diffuse.png": {
+        "bytes": 271916,
+        "sha256": "e3a6708fbd89d79e2b44de900eb8bac9a41842f44099a9b972e157a5d74d4f99"
+      },
+      "README.txt": {
+        "bytes": 91,
+        "sha256": "060f05db3f3aa93364d8a4998831f91305359389a003a663225de444bec3b975"
+      },
+      "FBX_READBACK.json": {
+        "bytes": 862,
+        "sha256": "797521674c1b2bc3c5482498af723b7b121ba30aedff355f287f6baab2c7412f"
+      }
+    }
+  },
+  "native_max_import_verified": false,
+  "full_agr_delivery_verified": false,
+  "second_project_verified": false
+}

@@ -1,0 +1,56 @@
+{
+  "date": "2026-09-30",
+  "base_main": "11df305ed1a68e1a4e71587522c18872e66f7721",
+  "scope": "OBR22 reviewed Exterior surface to inward 0.4 m Shell; no windows or inner back faces",
+  "blender": {
+    "version": "4.4.0",
+    "vertices": 1008,
+    "quads": 821,
+    "coordinate_error_m": 1.8421561449599722e-06,
+    "mesh_validate_repairs": 0,
+    "provenance_preserved": true,
+    "materials_preserved": true,
+    "properties_preserved": true
+  },
+  "readback_qa": {
+    "geometry_checks_passed": true,
+    "duplicate_vertices": 0,
+    "duplicate_faces": 0,
+    "edges_with_more_than_two_faces": 0,
+    "inconsistent_shared_edge_winding": 0,
+    "invalid_boundary_vertices_or_edges": 0,
+    "invalid_or_nonconvex_faces": 0,
+    "coplanar_overlaps": 0,
+    "unapproved_crossings": 0,
+    "minimum_edge_m": 0.18953330545124994
+  },
+  "tests": {
+    "targeted": "15 passed",
+    "pytest": "128 passed, 1 skipped, 1 warning",
+    "profiles": "3 OK",
+    "schemas": "8 OK",
+    "py_compile": "OK",
+    "synthetic_build": {
+      "development_checks_passed": true,
+      "delivery_passed": false
+    }
+  },
+  "legacy_body_exact_match": true,
+  "legacy_shell_windows_exact_match": {
+    "meshes": true,
+    "windows": true,
+    "pending": true
+  },
+  "approved_hashes_unchanged": 7,
+  "hosted_ci": "not run; GitHub Actions billing/startup_failure remains open",
+  "pending": [
+    "visual review of the new Shell output",
+    "second-project portability",
+    "hosted CI and clean dependency installation"
+  ],
+  "delivery_passed": false,
+  "evidence": [
+    "tmp/shell-review-20260930/result",
+    "tmp/shell-synth-20260930/report.json"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "scope": "SOSH1150 UV v006; one accepted case, not universal",
+  "stages": [
+    {
+      "historical_script": "inventory.py",
+      "stage": "inventory.py",
+      "historical_materialized_sha256": "ec75acd91a07fb7d544b00785f8bffbb7ffc8dc6b723bd394991f7258885ff6e",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "plan.py",
+      "stage": "solve.py",
+      "historical_materialized_sha256": "87f21216f5e509e7ce40839d4155368491026778dd8d73733dc660cf0256cea8",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "closure_final.py",
+      "stage": "solve.py",
+      "historical_materialized_sha256": "823a0d1fa6df035489c2f439818d67b3612ce0dd4331fd004e1b502933d1280d",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "final_plan.py",
+      "stage": "solve.py",
+      "historical_materialized_sha256": "46d0e88705a65b2abed0f35fdd51aef4ee5c75e769ff698de90e68be64019b7e",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "build_v005.py",
+      "stage": "build.py",
+      "historical_materialized_sha256": "f23afa03078d19a6ebaf371a18cd2f9160bea2796802cf3a7812a1a22b0b6560",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "build_final_texture.py",
+      "stage": "build.py",
+      "historical_materialized_sha256": "8743a22ca916ef4503a762981742907335bab12db81614b4a180272671da2f35",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "apply_v006.py",
+      "stage": "build.py",
+      "historical_materialized_sha256": "6041ca056d9333b6802d2872d147310e99c305dd41e44b5b1957bffc99c50146",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "readback_v006.py",
+      "stage": "verify.py",
+      "historical_materialized_sha256": "dfdb76a7731bdbb5ec61ca99ff3cc1f550a5dd8d87887b514bf074c39095f9c7",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "export_max_v006.py",
+      "stage": "verify.py",
+      "historical_materialized_sha256": "67748785a0ea125eee55647b0f1fbc9123d36d4a6698ad5b800293833deb94a4",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    },
+    {
+      "historical_script": "package_max_v006.py",
+      "stage": "verify.py",
+      "historical_materialized_sha256": "ce866ffbde374ef1267aeaeee4016511bd6e4bd045600c7dbfb4ad3a5b5260c6",
+      "transformation": "Wrap top-level operation in function(root); remove fixed root assignment; no geometry/UV algorithm change"
+    }
+  ]
+}

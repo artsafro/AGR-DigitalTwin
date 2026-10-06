@@ -1,0 +1,3813 @@
+[
+  {
+    "clause": "Табл.1 §2.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      4
+    ],
+    "rule": "NPM.units.linear",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "meter",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §2.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      4
+    ],
+    "rule": "NPM.units.scale",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "1:1",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §1.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      4
+    ],
+    "rule": "NPM.asset_format.fbx_version",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "7.4/2014",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §1.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      4
+    ],
+    "rule": "NPM.asset_format.encoding",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "binary",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      6,
+      7
+    ],
+    "rule": "NPM.archive.format",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "zip",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      6,
+      7
+    ],
+    "rule": "NPM.archive.max_bytes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 1000000000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      6,
+      7
+    ],
+    "rule": "NPM.archive.fbx_total.min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 2,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      6,
+      7
+    ],
+    "rule": "NPM.archive.fbx_total.max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 21,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      6,
+      7
+    ],
+    "rule": "NPM.archive.fbx_total.note",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "1 благоустройство + до 20 ОКС",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      6,
+      7
+    ],
+    "rule": "NPM.archive.require_ground",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.oks_triangles_per_fbx_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 150000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.ground_triangles_total_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 180000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.oks_opaque_objects_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 20,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.oks_transparent_objects_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 20,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.oks_objects_total_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 40,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.split_oks_only_when_triangle_limit_exceeded",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.split_only_by_indivisible_building_section_or_podium",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.separate_oks_inside_fbx",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.ground_perimeter_extrude_down_m_min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1.0,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.no_hierarchy_or_groups",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.triangulated_on_export",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.applied_transforms",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.duplicate_or_self_intersection_count_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 100,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.geometric_error_tolerance_m",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.002,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.no_isolated_elements_or_zero_length_edges",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.near_coplanar_spacing_m.min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.005,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.near_coplanar_spacing_m.max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.02,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.windows_not_seen_from_reverse_side",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "planar_without_thickness",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1–3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      6,
+      7,
+      8
+    ],
+    "rule": "NPM.geometry.visible_through_glass_interior",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "simplified_walls_floor_ceiling",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.allowed_shaders",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Standard_Legacy",
+      "Physical_Material",
+      "Principled_BSDF"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.disallow_render_engine_shaders",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Corona",
+      "VRay",
+      "Octane",
+      "Arnold"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.opaque_material_count_matches_texture_sets",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.transparent_materials_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 7,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.transparent_material_maps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.transparent_material_opacity",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.5,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.texture_sets_per_oks.default_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      8,
+      9
+    ],
+    "rule": "NPM.materials.texture_sets_per_oks.with_usable_roof_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 2,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.format",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "png",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.kind",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "atlas",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.embedded_in_fbx",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.allowed_square_sizes_px",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      256,
+      512,
+      1024,
+      2048
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.max_file_bytes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 3000000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.island_padding_px_min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 8,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.alpha_channel",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.diffuse",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "required",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.optional_maps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "normal",
+      "opacity",
+      "roughness",
+      "metallic"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.roughness_metallic_together",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.opacity_only_if_transparent_elements",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.same_size_within_set_except_flat_placeholders",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.ground_elements_set_size_px_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 512,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.vegetation_set_size_px_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 2048,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.vegetation_maps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "diffuse",
+      "opacity"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": "ADR-0002 §8",
+    "method": "manual_review",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.ground_density_px_per_square_meter.min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 10,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": "ADR-0002 §8",
+    "method": "manual_review",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.ground_density_px_per_square_meter.max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 40,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5–6",
+    "decision": "ADR-0002 §8",
+    "method": "manual_review",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.textures.ground_density_exceptions",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": [
+      "extruded_perimeter",
+      "vegetation",
+      "oks",
+      "ground_elements"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.10, §7",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.glass.modes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "opaque_in_atlas_with_roughness_and_metallic_maps",
+      "separate_transparent_mesh_with_untextured_material_opacity_0_5"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.10, §7",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      9,
+      10
+    ],
+    "rule": "NPM.glass.may_mix_modes_in_project",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §8",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      10
+    ],
+    "rule": "NPM.positioning.coordinate_system",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "Moscow_local_coordinates_and_project_heights",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §8",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      10
+    ],
+    "rule": "NPM.positioning.arbitrary_coordinates",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §8",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      10
+    ],
+    "rule": "NPM.positioning.transforms_applied",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §8",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      10
+    ],
+    "rule": "NPM.positioning.object_rotation",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "project_plan_rotation_after_reset",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.max_characters",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 254,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.allowed_stem_characters",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "A-Z a-z 0-9 _",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.archive_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "{territory_code_4}_{Address}.zip",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.oks_fbx_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "{territory_code_4}_{Address}_{part_01_to_20}.fbx",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.ground_fbx_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "{territory_code_4}_{Address}_Ground.fbx",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.oks_mesh_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_{oks_001_to_020}_Main",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.oks_glass_mesh_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_{oks_001_to_020}_MainGlass",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.ground_mesh_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_Ground",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.material_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "M_{Address}_{oks_number}_{geometry_suffix}_{SlotNumber}",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.texture_pattern",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "T_{Address}_{oks_number}_{geometry_suffix}_{map_suffix}_{SlotNumber}.png",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.texture_map_suffixes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "d",
+      "n",
+      "o",
+      "m",
+      "r"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.slot_number_starts_at",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9–10",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      10,
+      11,
+      12,
+      13
+    ],
+    "rule": "NPM.naming.numbering_project_wide_without_gaps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Граница извлечения приложения 1; не отдельная норма",
+    "decision": null,
+    "method": "manual_review",
+    "pages": [
+      1,
+      19
+    ],
+    "rule": "NPM.not_in_this_standard",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Схема UCX-коллизий для НПМ не задана; отдельное ТЗ заказчика может добавить её.",
+      "GeoJSON не указан в составе ZIP НПМ. Не требовать по правилам этого приложения.",
+      "Соответствие Material ID = номеру участка атласа является внутренним решением, не нормой приложения."
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §2.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      24
+    ],
+    "rule": "VPM.units.linear",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "meter",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §2.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      24
+    ],
+    "rule": "VPM.units.scale",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "1:1",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §1.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      24
+    ],
+    "rule": "VPM.asset_format.fbx_version",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "7.4/2014",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §1.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      24
+    ],
+    "rule": "VPM.asset_format.encoding",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "binary",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.format",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "zip",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.oks_max_bytes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 500000000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.ground_max_bytes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 1000000000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.per_oks_separate_archive",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.per_ground_separate_archive",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.required",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": [
+      "fbx",
+      "geojson",
+      "png_textures"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.optional",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": [
+      "lighting_fbx"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §1",
+    "decision": "ADR-0002 §4",
+    "method": "manual_review",
+    "pages": [
+      26
+    ],
+    "rule": "VPM.archive.png_count_range",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": [
+      3,
+      2100
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.oks_triangles_per_fbx_max_excluding_collision",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1000000,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.ground_triangles_max_by_area_ha",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      {
+        "area_max": 0.05,
+        "triangles_max": 300000
+      },
+      {
+        "area_max": 0.1,
+        "triangles_max": 705000
+      },
+      {
+        "area_max": 0.25,
+        "triangles_max": 1125000
+      },
+      {
+        "area_max": 0.5,
+        "triangles_max": 1650000
+      },
+      {
+        "area_max": 0.75,
+        "triangles_max": 1950000
+      },
+      {
+        "area_max": 1.0,
+        "triangles_max": 2625000
+      },
+      {
+        "area_max": 1.5,
+        "triangles_max": 3150000
+      },
+      {
+        "area_above": 1.5,
+        "triangles_max": 4500000
+      }
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.ground_area_basis",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "территория минус пятно застройки",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.one_default_layer_or_collection",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.no_empty_unrelated_animation_or_modifier_objects",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.glazing_separate_from_facade_mesh",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.oks_perimeter_extrude_down_m_min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1.0,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.ground_perimeter_extrude_down_m_min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1.0,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.no_groups_or_mesh_hierarchy",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.duplicate_or_self_intersection_count_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 100,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.geometric_error_tolerance_m",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.002,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.near_coplanar_spacing_m.min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.005,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.near_coplanar_spacing_m.max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.02,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.interior",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "replace with solid simplified walls and floors; wall thickness >= 0.1 m",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.bake_minor_details_up_to_m",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.05,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.minor_detail_exception",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "curb_projections",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.triangulated_on_export",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §3, §7–9",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      28,
+      29,
+      32
+    ],
+    "rule": "VPM.geometry.applied_transforms_including_collision",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.allowed_shaders",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Standard_Legacy",
+      "Physical_Material",
+      "Principled_BSDF"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.external_texture_paths_removed_in_fbx",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.max_materials_per_mesh",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 7,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": "ADR-0002 §10",
+    "method": "manual_review",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.main_material_slots",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "one slot until more than 100 UDIM tiles; extra slots sequential 1..7",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.glass_slots_max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 7,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.glass_has_no_texture_maps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §4, §8",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      29,
+      30,
+      32
+    ],
+    "rule": "VPM.materials.do_not_combine_opaque_and_glass_under_one_parent_material",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.format",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "png",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.embedded_in_fbx",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": false,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.allowed_square_sizes_px",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      2048,
+      4096
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.required_maps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Diffuse",
+      "ERM",
+      "Normal"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.erm_rgb.R",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "Emissive",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.erm_rgb.G",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "Roughness",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.erm_rgb.B",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "Metallic",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.erm_red_if_no_emissive",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.normal_convention",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "DirectX",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.normal_and_erm_alpha",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.diffuse_alpha",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "optional_for_cuts_and_transparency",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.cut_alpha_thresholds.invisible",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      0,
+      127
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.cut_alpha_thresholds.visible",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      128,
+      255
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.bits_per_channel",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 8,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.diffuse_resolution_at_least_erm_and_normal",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.padding_px_min.2048",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 16,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.padding_px_min.4096",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 32,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.unused_maps",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.flat_placeholder.size_px",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 256,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.flat_placeholder.alpha",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.flat_placeholder.single_average_color",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.flat_placeholder.no_texel_density_limit",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Термины; табл.2 §5, §12, §14",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      22,
+      23,
+      30,
+      31,
+      36,
+      37
+    ],
+    "rule": "VPM.textures.flat_placeholder.prohibited_for",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "marble",
+      "brick",
+      "tile"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.facade_and_ground.method",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "UDIM",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.facade_and_ground.uv_channels",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.facade_and_ground.uv_sets",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.udim_grid",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "10 x 10; tiles 1001..1100",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.numbering",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "sequential_from_1001_without_gaps",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.mirrored_islands",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "forbidden",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.repeating_islands_may_overlap",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.tile_boundary_padding",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "required",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.glass.tile",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1001,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.glass.uv_channels",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.glass.overlap_allowed",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.diffuse_density_px_per_m.min",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 512,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.diffuse_density_px_per_m.max",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1706,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.diffuse_density_px_per_m.formula",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "texture_side_px / polygon_length_m",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2, §6; рис.1.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      23,
+      31,
+      32,
+      39
+    ],
+    "rule": "VPM.uv.density_exempt",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "ERM",
+      "Normal",
+      "flat_placeholders"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2.2, §8; приложение 3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      31,
+      32,
+      51,
+      52,
+      55
+    ],
+    "rule": "VPM.glass.all_constructions_in_one_mesh_per_model",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2.2, §8; приложение 3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      31,
+      32,
+      51,
+      52,
+      55
+    ],
+    "rule": "VPM.glass.up_to_7_distinct_untextured_materials",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2.2, §8; приложение 3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      31,
+      32,
+      51,
+      52,
+      55
+    ],
+    "rule": "VPM.glass.back_not_visible",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "planar_without_thickness",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §5.2.2, §8; приложение 3",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      31,
+      32,
+      51,
+      52,
+      55
+    ],
+    "rule": "VPM.glass.description_in_geojson",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.required_per_geometry_fbx_except_lighting_fbx",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.each_piece.mesh",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.each_piece.convex",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.each_piece.closed",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.each_piece.holes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": false,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.each_piece.material_slots",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": false,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.naming_pattern_oks",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "UCX_SM_{Address}_Main_{001..999}",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.naming_pattern_ground",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "UCX_SM_{Address}_Ground_{001..999}",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.pieces_must_not_intersect",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": "ADR-0002 §3",
+    "method": "manual_review",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.recommended_gap_cm",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": [
+      0.02,
+      1.0
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.coverage",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "ground_surface",
+      "existing_oks_on_site",
+      "all_oks_including_arches_courtyards_large_projections"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.exempt",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "small_ground_items",
+      "vegetation",
+      "fences_and_canopies_thinner_than_0_05_m"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.max_surface_offset_m.ground",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.max_surface_offset_m.pedestrian_accessible_oks",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.3,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.max_surface_offset_m.other_oks",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1.0,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.entrance_stairs_collision_shape",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "truncated_pyramid",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": "ADR-0002 §2",
+    "method": "manual_review",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.triangle_limit",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "if render triangles < 50000: 15000; otherwise ceil(render triangles * 0.05)",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §10.4.2, §13",
+    "decision": "ADR-0002 §2",
+    "method": "manual_review",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "VPM.collision.note",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "Стр. 37 также упоминает до 100000 дополнительных треугольников; применять более строгий расчёт и отправить неоднозначность на проверку.",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      32,
+      33
+    ],
+    "rule": "VPM.positioning.per_fbx_local_origin_xyz",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": [
+      0,
+      0,
+      0
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      32,
+      33
+    ],
+    "rule": "VPM.positioning.per_fbx_own_geojson_coordinates",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      32,
+      33
+    ],
+    "rule": "VPM.positioning.rotations_after_applied_transforms_degrees",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": 0,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      32,
+      33
+    ],
+    "rule": "VPM.positioning.shared_pivot_for_all_meshes_in_same_fbx",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      32,
+      33
+    ],
+    "rule": "VPM.positioning.collision_pivots",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "unconstrained",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §9",
+    "decision": "ADR-0002 §6",
+    "method": "manual_review",
+    "pages": [
+      32,
+      33
+    ],
+    "rule": "VPM.positioning.project_zero_elevation",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "required",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.max_characters",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 254,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.stem_characters",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "A-Z a-z 0-9 _",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.explicit_texture_filename_exception",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "dot between SlotNumber and UDIM before .png",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.oks_fbx_geojson_zip_stem",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.ground_fbx_geojson_zip_stem",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_Ground",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.oks_mesh",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_Main",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.oks_glass_mesh",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_MainGlass",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.ground_mesh",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "SM_{Address}_Ground",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.texture_oks",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "T_{Address}_{Diffuse|ERM|Normal}_{SlotNumber}.{UDIM}.png",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.texture_ground",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "T_{Address}_Ground_{Diffuse|ERM|Normal}_{SlotNumber}.{UDIM}.png",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.oks_material",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "M_{Address}_Main_{SlotNumber}",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.1 §3.7; табл.2 §10–11; рис.2.2",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      33,
+      34,
+      35,
+      36,
+      41
+    ],
+    "rule": "VPM.naming.glass_material",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "M_{Address}_MainGlass_{SlotNumber}",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.encoding",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "UTF-8",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.top_level.type",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "FeatureCollection",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.top_level.features_count",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 1,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.feature.type",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "ObjectFeature",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.feature.geometry_type",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "Point",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.properties_keys",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "address",
+      "okrug",
+      "rajon",
+      "name",
+      "developer",
+      "designer",
+      "cadNum",
+      "FNO_code",
+      "FNO_name",
+      "ZU_area",
+      "h_relief",
+      "h_otn",
+      "h_abs",
+      "s_obsh",
+      "s_naz",
+      "s_podz",
+      "spp_gns",
+      "act_AGR",
+      "imageBase64",
+      "other"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.coordinates.system",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "MSK-77",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.coordinates.axes",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "x",
+      "y"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.coordinates.decimal_places",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 3,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.coordinates.plan_tolerance_m",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 0.5,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.imageBase64_input.format",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "jpg",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.imageBase64_input.width_px",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 256,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.imageBase64_input.height_px",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": 256,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.Glasses",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "array: [] when absent; one object keyed by each glass material name when present",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.glass_fields.color_RGB",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Red",
+      "Green",
+      "Blue"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.glass_fields.transparency",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "0..1; 0 = fully transparent",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.glass_fields.refraction",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "1..3",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.glass_fields.roughness",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "0..1",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.glass_fields.metallicity",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "0..1",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": "ADR-0002 §1",
+    "method": "manual_review",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.missing_oks_properties",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "fail_except_other",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.ground_nullable_as_empty_string",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "FNO_name",
+      "FNO_code",
+      "h_otn",
+      "h_abs",
+      "s_obsh",
+      "s_naz",
+      "s_podz",
+      "spp_gns",
+      "other"
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": "ADR-0002 §1",
+    "method": "manual_review",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.missing_value_note",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "review",
+    "value": "Пример и таблица допускают отсутствие act_AGR/FNO_code при отсутствии информации; конфликт с общим правилом обязательности ОКС требует ручной проверки.",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.no_renamed_or_duplicate_keys",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": true,
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Табл.2 §2; приложение 3, табл.1",
+    "decision": null,
+    "method": "future_parser_or_DCC_inspection",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "VPM.geojson.nonstandard_geojson_feature_type",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": "ObjectFeature is literal source value; use exact source schema, not generic GeoJSON Feature.",
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Граница извлечения; не отдельная норма",
+    "decision": null,
+    "method": "manual_review",
+    "pages": [
+      30,
+      31
+    ],
+    "rule": "VPM.not_in_this_standard",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "source_section_reviewed",
+    "value": [
+      "Правило один Material ID на один UDIM не установлено. UDIM описывает плитку, слот материала — набор до 100 плиток.",
+      "Отдельная четвёртая карта не обязательна: alpha допускается в diffuse."
+    ],
+    "verification": "section text + page image; full machine implementation pending"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "zip_inspector",
+    "pages": [
+      6,
+      7,
+      26
+    ],
+    "rule": "V001",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "архив читается; нет битых и посторонних файлов; размер и состав по профилю",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "fbx_parser",
+    "pages": [
+      4,
+      24
+    ],
+    "rule": "V002",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "binary FBX 7.4/2014, 1 unit = 1 m, scale 1:1",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "fbx_scene_inspector",
+    "pages": [
+      6,
+      7,
+      8,
+      28,
+      29
+    ],
+    "rule": "V003",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "триангуляция, количество треугольников, типы объектов, отсутствие пустых объектов и недопустимых модификаторов",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "geometry_inspector",
+    "pages": [
+      7,
+      8,
+      29
+    ],
+    "rule": "V004",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "дубликаты, изолированные элементы, нулевые рёбра; применённые трансформации",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "shader_inspector",
+    "pages": [
+      8,
+      9,
+      29,
+      30,
+      32
+    ],
+    "rule": "V005",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "только разрешённые шейдеры; карты, слоты и прозрачность по профилю",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "atlas_inspector",
+    "pages": [
+      9,
+      11,
+      12,
+      13
+    ],
+    "rule": "V006",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "PNG встроены в FBX; допустимые размеры, <=3 МБ, без alpha, 8 px padding; наборы и имена",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "texture_inspector",
+    "pages": [
+      23,
+      30,
+      31,
+      34,
+      36
+    ],
+    "rule": "V007",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "внешние PNG; Diffuse + ERM + Normal на используемые UDIM, 8 бит/канал, размеры, DirectX normal, alpha правила, padding",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "uv_inspector",
+    "pages": [
+      31,
+      39
+    ],
+    "rule": "V008",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "один UV-канал, UDIM 1001..1100 подряд, без зеркальных островов, стекло только в 1001",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "uv_inspector",
+    "pages": [
+      31,
+      32
+    ],
+    "rule": "V009",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "плотность diffuse 512..1706 px/m кроме разрешённых исключений",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "collision_inspector",
+    "pages": [
+      34,
+      36,
+      37
+    ],
+    "rule": "V010",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "UCX для каждого основного FBX; выпуклые замкнутые непересекающиеся оболочки, без слотов, с лимитом треугольников",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "geojson_schema_inspector",
+    "pages": [
+      26,
+      27,
+      51,
+      52,
+      53,
+      54,
+      55
+    ],
+    "rule": "V011",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "UTF-8, точные ключи, типы, обязательные значения, imageBase64, массив Glasses, соответствие имени материала",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "name_inspector",
+    "pages": [
+      11,
+      12,
+      13,
+      33,
+      34,
+      35,
+      36
+    ],
+    "rule": "V012",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "имена архива/FBX/mesh/material/texture и сквозная нумерация по соответствующему профилю",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "coordinate_inspector",
+    "pages": [
+      32,
+      33,
+      55
+    ],
+    "rule": "V013",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "локальный origin 0/0/0, общий pivot, rotation 0 после reset; GeoJSON координаты МСК-77 совпадают с точкой вставки",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "coordinate_inspector",
+    "pages": [
+      10
+    ],
+    "rule": "V014",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "геометрия в московских проектных координатах и высотах; углы соответствуют плану",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "overlay_review",
+    "pages": [
+      4,
+      7,
+      8,
+      24,
+      28,
+      29
+    ],
+    "rule": "V015",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "силуэт, этажи, фасады, материалы, оконные типы, первый этаж, крыша, благоустройство совпадают с утверждённым проектом",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "collision_overlay_review",
+    "pages": [
+      36,
+      37
+    ],
+    "rule": "V016",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "проходы/арки/дворы свободны, расстояние коллизий до поверхностей соответствует высотной зоне",
+    "verification": "Not an executable delivery validator"
+  },
+  {
+    "clause": "Объединённая проверка; см. строки NPM/VPM",
+    "decision": null,
+    "method": "coord_reference_review",
+    "pages": [
+      10,
+      32,
+      33,
+      55
+    ],
+    "rule": "V017",
+    "source_sha256": "933f6b700c074d0db6b82030fc79d1dbe9db4a0067495ca716e0636acd544222",
+    "status": "specification_only",
+    "value": "сверка точки вставки, отметки 0 и геопривязки с утверждённым DWG/СПОЗУ; у ВПМ допуск 0.5 м",
+    "verification": "Not an executable delivery validator"
+  }
+]

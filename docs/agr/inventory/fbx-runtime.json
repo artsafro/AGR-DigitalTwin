@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "result": "FileVersion=FBX201400\nEmbedTextures=false\nTriangulate=true\nUpAxis=y\nConvertUnit=m\n",
+  "error": null,
+  "warnings": null,
+  "hint": null,
+  "transport": null,
+  "elapsed_ms": null
+}
