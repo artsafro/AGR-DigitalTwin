@@ -1,0 +1,17 @@
+{
+  "frame": "local = Revit - (37.17, 54.00) m; Z = 0.000 = 169.65; S3 -> Revit: X = 204.86 - y_s3, Y = x_s3 - 142.55",
+  "basis": "Outer panel faces from outputs/wall_planes_v001.json; tops/roof junctions from wall plane z-extents and outputs/heightmap_v001.npz (S3 = Revit export)",
+  "top": "parapet / wall top of the mass, m",
+  "roof": "roof junction level (recorded; faces above a lower mass start at its top, see massing_profiles.py)",
+  "excluded": "entrance portals and vestibules (x -39.47, x 58.13, y -55.82, y 3.96, x -58.13 planes): separate volumes, later",
+  "masses": [
+    {"name": "annex",          "x": [-56.45, -37.79], "y": [-54.28,  2.28], "top": 14.86, "roof": 13.56},
+    {"name": "turbine_hall",   "x": [-37.79,  56.45], "y": [-54.28, 11.72], "top": 39.98, "roof": 38.32},
+    {"name": "hall_bay",       "x": [-37.79, -25.67], "y": [ 11.72, 13.55], "top": 39.98, "roof": 38.32},
+    {"name": "insert_1",       "x": [-37.79, -25.67], "y": [ 13.55, 17.25], "top": 43.31, "roof": 43.31},
+    {"name": "insert_2",       "x": [-37.79, -25.67], "y": [ 17.25, 26.23], "top": 36.51, "roof": 36.51},
+    {"name": "insert_3",       "x": [-37.79, -25.67], "y": [ 26.23, 54.28], "top": 31.41, "roof": 31.41},
+    {"name": "boiler_house",   "x": [-25.67,  56.45], "y": [ 11.72, 54.28], "top": 63.01, "roof": 62.20},
+    {"name": "superstructure", "x": [-16.57,  44.23], "y": [ 26.72, 39.28], "top": 66.05, "roof": 66.05}
+  ]
+}

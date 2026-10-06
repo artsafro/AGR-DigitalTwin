@@ -1,11 +1,11 @@
 """Clip the PSU275 main building (S3 FBX) to the first-floor band and save a versioned .blend.
 
     blender --background --factory-startup --python-exit-code 1 \
-        --python jobs/PSU275/scripts/clip_floor1.py -- <S3.fbx> <out.blend> <report.json>
+        --python jobs/PSU275/scripts/clip_floor1.py -- <S3.fbx> <out.blend> <report.json> [z_lo z_hi]
 
 Read-only on the source. Main building = mesh objects whose XY bounds lie inside the
 building footprint box; everything else (chimney, transformer, pipes, site) is dropped.
-Band: ground -0.150 .. +13.060 (docs/sources/psu275.md).
+Default band: ground -0.150 .. +13.060 (docs/sources/psu275.md); pass z_lo z_hi to override.
 """
 import json
 import sys
@@ -17,7 +17,10 @@ import bpy
 Z_LO, Z_HI = -0.150, 13.060
 FOOT = ((136.0, 106.0), (256.0, 228.0))  # S3 main-building XY box with margin, metres
 
-src, out_blend, out_json = sys.argv[sys.argv.index("--") + 1:]
+args = sys.argv[sys.argv.index("--") + 1:]
+src, out_blend, out_json = args[:3]
+if len(args) == 5:
+    Z_LO, Z_HI = float(args[3]), float(args[4])
 for o in list(bpy.data.objects):
     bpy.data.objects.remove(o)
 bpy.ops.import_scene.fbx(filepath=src)

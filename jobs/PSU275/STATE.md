@@ -27,12 +27,27 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   `body-shell-adapter.json` → `outputs/shell-v001/BODY_SHELL.blend`, 3260 quads, min edge 40 mm.
   Checks pass: geometry, JSON readback, Blender readback (max error 1.9e-6 m). Visual review open.
 
+- Approach changed (user, 2026-10-07): no typical floor in an industrial building → whole
+  building as massing → one stitched surface with openings → one Shell. First-floor band
+  results above stay as intermediate evidence.
+- Full-height source: `outputs/psu275_full_src_v001.blend` (713 meshes, z −0.15…66.20).
+  Masses: `masses.json` (8 boxes from `wall_planes_v001.json` + `heightmap_v001`).
+- `massing-profiles-v002` (15 profiles, 23 040 m²) → `wall-masks-v001` → `massing-surface-v004`:
+  130 openings, 2537 quads, 0 T-junctions, 20 corner lines (5 iterations), edges consolidated
+  ≤ 12 mm (max move 2.3 mm), corner clearance 0.41 m (20 trims). Audit passes.
+- Shell `body-shell-full-adapter.json` → `shell-full-v001` (3701 quads; 10 coplanar overlaps at
+  junctions) → `drop_step_bottom_rims.py` → **`shell-full-v002/BODY_SHELL.blend`**: 3668 quads,
+  33 step-bottom rims removed. Checks pass: geometry, JSON readback, Blender readback (3e-6 m).
+
 ## Open
 
-- User review of BODY v002 openings against the S4 facades (manual gate).
-- Opening IDs are S3 measurement IDs, not Revit door/window IDs.
-- Plinth, portals and entrance canopies stand out of the panel plane; not in BODY.
+- Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
+- Step faces start at the lower mass top (parapet), not its roof: 1.3–1.7 m gaps between a lower
+  roof and the upper wall inside parapet wells → close in the roof/parapet stage.
+- Portals and vestibules (1.2–1.7 m out of the facade) not modelled yet.
+- Opening IDs are S3 measurement IDs, not Revit IDs. Minimum rim edge 10 mm.
+- Generalization of the massing builder → backlog P12 (Codex).
 
 ## Next
 
-Windows/doors into the 54 openings (`tools/build_shell_windows.py`), then VPM cuts/UV.
+Roofs and parapet wells (P4), portals; then windows/doors into openings, VPM cuts/UV.

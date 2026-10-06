@@ -28,6 +28,12 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
 - **P9** Ground: accept mesh shape (v008), height smoothing parameters (dubious D2).
 - **P10** MAF (GroundEl) pipeline from the 3ds Max scripts.
 - **P11** Flora: SpeedTree → FBX readback (geometry, scale, textures).
+- **P12** (Codex) Generalize BODY extraction to multi-height massing: `exterior.py` supports one
+  perimeter and one height. Working job version for PSU275: `jobs/PSU275/scripts/`
+  `massing_profiles.py` (union of rectangular masses → per-plane profiles), `sample_wall_masks.py`
+  (ray-measured openings), `massing_surface.py` (cut lines stop at holes, corner cuts exchanged,
+  T-free quads), `drop_step_bottom_rims.py` (shell post-step). Move into `src/dt_ai/geometry/`
+  with tests; keep the PSU275 outputs as regression.
 
 ## QA (default owner Codex)
 
