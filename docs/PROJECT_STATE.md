@@ -64,14 +64,15 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 ## Known limitations
 
 - Drive C is ~99% full (about 20 GB free); heavy data has no backup outside this machine (H9).
-- 28 source conflicts and 5 dubious rules are open (`docs/domain/conflicts.md`); C1, C2, C3, C6,
-  C12, C26 were decided on 2026-10-07 (VPM target 150 000 triangles, rules as SINTEZ AGR Checker).
+- 22 source conflicts and 5 dubious rules are open (`docs/domain/conflicts.md`). Decided on
+  2026-10-07, mostly as SINTEZ AGR Checker: C1, C2, C3, C5, C6, C12, C13, C14, C19, C20, C21, C26
+  (VPM target 150 000 triangles). Pending implementation: Q6 (C20), Q7 (GLB RGBA atlases, NPM placeholders).
 - `docs/agr/` and parts of `technical_library/`, `tools/`, `jobs/` are in Russian (H4).
 - Codex and Antigravity guard hooks are configured but not validated (H1).
 
 ## Next actions
 
-1. User: next conflict batch for the first VPM-OKS delivery (C13, C14, C19, C20, C5, C21 — backlog).
-2. Claude: P1 — analyze a real source read-only.
-3. Codex: H1 (Codex hook), H2 (SketchUp venv), Q3 (one validator).
+1. Claude: P1 — analyze a real source read-only; decide remaining conflicts as they block work.
+2. Codex: Q6 (encode C20), H1 (Codex hook), H2 (SketchUp venv), Q3 (one validator).
+3. Claude + Codex: Q7 — RGB + `_o_` conversion of GLB NPM atlases, 128 px NPM placeholders.
 4. Antigravity: H4 — translate `docs/agr/` core documents.
