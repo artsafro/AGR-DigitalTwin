@@ -2,10 +2,11 @@
 
 Fills the scene stages the header-only validator leaves not_run: V003 (triangulation,
 triangle limits, object types), V004 (applied transforms), V006 (NPM embedded images),
-V008 (one UV channel, mirrored islands, glass tile), V013 (shared pivot). Disputed limits
-stay review (conflict #1).
+V008 (one UV channel, mirrored islands, glass tile), V010 (UCX triangle budget only),
+V013 (shared pivot). Triangle limits follow the 2026-10-07 decisions on conflicts #1 and #3.
 """
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -16,7 +17,18 @@ from twinqa.report import Finding
 
 READBACK = Path(__file__).resolve().parents[2] / "tools" / "blender" / "fbx_readback.py"
 ANGLE_TOL_DEG, SCALE_TOL = 1e-3, 1e-4
-VPM_FIGURE_OKS_LIMIT = 800_000  # figure 2.1, reg p.40 (conflict #1)
+# Project target (user decision on conflict #1, 2026-10-07): one model serves VPM and NPM, so
+# VPM OKS aims at the NPM limit; above it, windows go to atlas textures on planes.
+PROJECT_TRIANGLE_TARGET = 150_000
+UCX_SMALL_MODEL, UCX_SMALL_LIMIT, UCX_SHARE, UCX_CAP = 50_000, 15_000, 0.05, 100_000
+
+
+def ucx_triangle_limit(model_triangles: int) -> int:
+    """UCX budget (reg p.36-37 §13.7-13.8) as SINTEZ AGR Checker v1.6.1 (conflict #3, decided):
+    < 50 000 -> 15 000; else ceil(5 %) capped at 100 000."""
+    if model_triangles < UCX_SMALL_MODEL:
+        return UCX_SMALL_LIMIT
+    return min(math.ceil(model_triangles * UCX_SHARE), UCX_CAP)
 
 
 def find_blender() -> str | None:
@@ -50,12 +62,13 @@ def _f(status, name, observed, expected, pages, evidence, conflicts=()):
 def scene_findings(rb: dict, kind: str, role: str, profile: dict) -> dict[str, list[Finding]]:
     """role: 'oks' | 'ground' | 'light'. Returns {stage_id: findings}."""
     src = Path(rb["source"]).name
-    out = {"V003": [], "V004": [], "V008": [], "V013": [], "V006": []}
+    out = {"V003": [], "V004": [], "V008": [], "V010": [], "V013": [], "V006": []}
     if not rb.get("readback_ok"):
         out["V003"].append(_f("fail", "FBX readback", rb.get("error", "no meshes"), "importable FBX with meshes", [4, 24], src))
         return out
     meshes = rb["meshes"]
-    tris = sum(m["triangles"] for m in meshes)
+    ucx = [m for m in meshes if m["name"].upper().startswith("UCX_")]
+    tris = sum(m["triangles"] for m in meshes if m not in ucx)  # collision is excluded (reg p.28 §3.9)
 
     # V003: triangulated on export, triangle limits, no foreign objects (reg p.6-8, 28-29)
     not_tri = [m["name"] for m in meshes if set(m["polygon_degrees"]) != {"3"}]
@@ -67,12 +80,14 @@ def scene_findings(rb: dict, kind: str, role: str, profile: dict) -> dict[str, l
             status, conflicts = ("fail" if tris > limit else "pass"), []
         else:
             if role == "ground":
-                status, limit, conflicts = "review", "by site area (reg p.29)", [1]
+                status, limit, conflicts = "review", "by site area (reg p.29 table)", []
             else:
-                limit = profile["geometry"]["oks_triangles_per_fbx_max_excluding_collision"]
-                status = "fail" if tris > limit else "review" if tris > VPM_FIGURE_OKS_LIMIT else "pass"
-                conflicts = [1] if status == "review" else []
-        out["V003"].append(_f(status, "triangle count", f"{src}: {tris}", f"<= {limit}", [7, 28, 29, 40], src, conflicts))
+                hard = profile["geometry"]["oks_triangles_per_fbx_max_excluding_collision"]
+                status = "fail" if tris > hard else "review" if tris > PROJECT_TRIANGLE_TARGET else "pass"
+                limit = (f"{PROJECT_TRIANGLE_TARGET} project target (reuse as NPM; else windows as atlas planes), "
+                         f"{hard} regulation limit")
+                conflicts = []
+        out["V003"].append(_f(status, "triangle count", f"{src}: {tris}", f"<= {limit}", [7, 28, 29], src, conflicts))
     foreign = [o for o in rb["other_objects"] if not (role == "light" and o["type"] in ("LIGHT", "EMPTY"))]
     if foreign:
         lights = all(o["type"] == "LIGHT" for o in foreign)
@@ -87,6 +102,13 @@ def scene_findings(rb: dict, kind: str, role: str, profile: dict) -> dict[str, l
                           "rotation 0, scale 1 after reset", [8, 29, 33], src))
 
     if kind == "vpm" and role != "light":
+        # V010: UCX triangle budget only; shape, coverage and offsets need other checks (reg p.34-37)
+        if ucx:
+            ucx_tris, budget = sum(m["triangles"] for m in ucx), ucx_triangle_limit(tris)
+            out["V010"].append(_f("fail" if ucx_tris > budget else "pass", "UCX triangle budget",
+                                  f"{src}: {ucx_tris} UCX for {tris} model triangles", f"<= {budget}", [36, 37], src))
+            out["V010"].append(_f("not_run", "UCX shape and coverage", "convex, closed, no intersections, coverage, offsets",
+                                  "reg p.34-37", [34, 36, 37], src))
         # V008: one UV channel, no mirrored islands, glass only in 1001 (reg p.31-32, 39)
         multi = [m["name"] for m in meshes if m["uv_channels"] != 1]
         mirrored = {m["name"]: m["mirrored_uv_triangles"] for m in meshes if m["mirrored_uv_triangles"]}

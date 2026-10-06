@@ -1,4 +1,4 @@
-# Ported from AGR standards/NPM_STANDARD.yaml (sha256 7fa1200635c6) on 2026-10-06; changes: added this header, inline `# conflict #N` comments and the `conflicts:` block (docs/domain/conflicts.md); no rule value changed.
+# Ported from AGR standards/NPM_STANDARD.yaml (sha256 7fa1200635c6) on 2026-10-06; changes: added this header, inline `# conflict #N` comments and the `conflicts:` block (docs/domain/conflicts.md); no rule value changed. 2026-10-07: user decisions on conflicts #1, #2, #3, #6, #12 (docs/domain/conflicts.md) changed size limits to binary units, the UCX limit text and GeoJSON empty-field rule.
 # AGR commit d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc. See standards/README.md.
 standard: NPM
 version: '0.1.0'
@@ -12,7 +12,7 @@ units: {linear: meter, scale: '1:1'}
 asset_format: {fbx_version: '7.4/2014', encoding: binary}
 archive:
   format: zip
-  max_bytes: 1000000000  # conflict #12 (review): MB/GB decimal vs binary
+  max_bytes: 1073741824  # conflict #12 (noted): 1 GB = 1024 MiB, as SINTEZ AGR Checker
   fbx_total: {min: 2, max: 21, note: '1 благоустройство + до 20 ОКС'}
   require_ground: true
   source_pages: [6, 7]
@@ -50,11 +50,11 @@ textures:
   kind: atlas
   embedded_in_fbx: true
   allowed_square_sizes_px: [256, 512, 1024, 2048]  # conflict #5 (review): 128 px placeholder
-  max_file_bytes: 3000000  # conflict #12 (review): MB decimal vs binary
+  max_file_bytes: 3145728  # conflict #12 (noted): 3 MB = 3 MiB, as SINTEZ AGR Checker
   island_padding_px_min: 8  # conflict #29 (noted)
   alpha_channel: forbidden  # conflicts #8 (noted), #21 (review)
   diffuse: required
-  optional_maps: [normal, opacity, roughness, metallic]  # conflict #6 (review): NPM normal convention not named
+  optional_maps: [normal, opacity, roughness, metallic]  # conflict #6 (noted): project ships no NPM normal map
   roughness_metallic_together: true
   opacity_only_if_transparent_elements: true
   same_size_within_set_except_flat_placeholders: true
@@ -103,14 +103,14 @@ not_in_this_standard:
 # profile or local practice -> the value is used and the conflict is reported.
 conflicts:
   source.pdf_pages: {ids: [16], status: noted, note: 'App.1 = pp.1-19; figures pp.14-19 not referenced here'}
-  archive.max_bytes: {ids: [12], status: review, note: '1 GB: decimal vs binary undefined (reg p.6)'}
+  archive.max_bytes: {ids: [12], status: noted, note: 'decided 2026-10-07: binary units as SINTEZ AGR Checker (reg p.6 undefined)'}
   geometry.near_coplanar_spacing_m: {ids: [30], status: noted, note: 'regulation 5 mm-2 cm (reg p.8); local tools used 5 mm / 2 mm / 5 um for other purposes'}
   geometry.geometric_error_tolerance_m: {ids: [30], status: noted, note: 'reg 0.002 m; local tools used other tolerances'}
   textures.allowed_square_sizes_px: {ids: [5], status: review, note: 'NPM placeholder 128x128 (reg p.3-4) is not in this list (reg p.9 §5.2)'}
-  textures.max_file_bytes: {ids: [12], status: review, note: '3 MB: decimal vs binary undefined (reg p.9)'}
+  textures.max_file_bytes: {ids: [12], status: noted, note: 'decided 2026-10-07: binary units as SINTEZ AGR Checker (reg p.9 undefined)'}
   textures.island_padding_px_min: {ids: [29], status: noted, note: 'reg 8 px; local facade work used 16/20 px'}
   textures.alpha_channel: {ids: [8, 21], status: review, note: 'reg p.9 §5.5 forbids alpha; accepted local atlases were RGBA (#21)'}
-  textures.optional_maps: {ids: [6], status: review, note: 'NPM normal Y convention (reg p.3) is not named; VPM is DirectX'}
+  textures.optional_maps: {ids: [6], status: noted, note: 'decided 2026-10-07: project ships no NPM normal map (convention on reg p.3 not named)'}
   textures.vegetation_maps: {ids: [18], status: review, note: 'opacity only "if needed" (reg p.10 §5.13)'}
   textures.ground_density_px_per_square_meter: {ids: [4], status: review, note: 'px per square metre vs example ~10 px per linear metre (reg p.10 §6.1); no auto-check until clarified'}
   textures.ground_density_exceptions: {ids: [22], status: noted, note: 'OKS exempt (reg p.10 §6.2)'}

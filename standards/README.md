@@ -37,12 +37,11 @@ that does not exist.
 
 - `status: review` — the sources disagree and nothing is decided. A check whose outcome
   depends on the disputed reading ends as `review` with the conflict number; it never
-  becomes `pass` or `fail` on that reading alone (e.g. archive size between the decimal
-  and binary readings of MB/GB, #12; empty `FNO_code`/`act_AGR`, #2; non-empty
-  `Glasses`, #13).
+  becomes `pass` or `fail` on that reading alone (e.g. non-empty `Glasses`, #13).
 - `status: noted` — this profile's own text is explicit and the conflict is with the
-  other profile or with local practice (e.g. VPM DirectX normals, #6; padding, #29). The
-  value is applied and the conflict number is reported with the finding.
+  other profile or with local practice (e.g. VPM DirectX normals, #6; padding, #29), or
+  the user decided the conflict (note starts with `decided <date>`: #1, #2, #3, #6, #12 on
+  2026-10-07, mostly "as SINTEZ AGR Checker"). The value is applied.
 
 Conflicts without a YAML field (they need a new rule, not an annotation): #7 two-sided
 alpha planes, #14 NPM light removal, #23-#28, #31-#34 (local modelling decisions).

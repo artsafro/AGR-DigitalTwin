@@ -5,11 +5,12 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
 
 ## Decisions for the user (block production)
 
-- **C1–C34** — 34 open source conflicts and 5 dubious rules. First, the ones that block a
-  first VPM-OKS delivery: C1 triangle limits, C2 GeoJSON mandatory fields, C3 UCX budget,
-  C6 NPM normal-map Y, C12 MB/GB, C26 VPM cut size 3.8 / 3.9 / 4 m. Owner: Claude prepares
-  a one-page choice per conflict; the user decides; the decision goes to `docs/domain/` and
-  the YAML `conflicts:` block (status `noted`).
+- **C1–C34** — open source conflicts and 5 dubious rules (`docs/domain/conflicts.md`).
+  Decided on 2026-10-07: C1, C2, C3, C6, C12, C26. Next candidates for a first VPM-OKS
+  delivery: C13 Glasses array vs object, C14 lights in the main FBX, C19 VPM pivot, C20 GeoJSON
+  field limits, C5 placeholder size, C21 RGBA atlases. Owner: Claude prepares a one-page choice
+  per conflict; the user decides; the decision goes to `docs/domain/` and the YAML
+  `conflicts:` block (status `noted`).
 - **G1** — GLOSSARY: expansion of "AGR", Master scene, Source album, Current album,
   Production asset. Owner: user + Claude.
 

@@ -5,10 +5,10 @@ Keys: `reg p.N` = `Rasporyajenies19012026trebovaniya(2).pdf` page N. `local:` re
 ## NPM textures (App.1)
 - Textures delivered as PNG atlases embedded in FBX. reg p.9 §5.1.
 - Allowed sizes only 256, 512, 1024, 2048 px square; max 2048. reg p.9 §5.2.
-- Max file size 3 MB per texture map. reg p.9 §5.3.
+- Max file size 3 MB per texture map. reg p.9 §5.3. 3 MB = 3 MiB (conflict #12, decided as the checker).
 - Padding >= 8 px between neighboring islands with unique images. reg p.9 §5.4.
 - Alpha channel forbidden. reg p.9 §5.5.
-- Diffuse mandatory; optional: normal, opacity, roughness, metallic; roughness + metallic only as a pair. reg p.9 §5.6, p.17 fig.6.
+- Diffuse mandatory; optional: normal, opacity, roughness, metallic; roughness + metallic only as a pair. reg p.9 §5.6, p.17 fig.6. Project: no normal map in NPM (conflict #6, decided 2026-10-07).
 - If roughness/metallic used but no variation -> use flat placeholders instead of full maps. reg p.9 §5.7.
 - Opacity map only if transparent elements exist. reg p.9 §5.8.
 - All maps in one set same size, except placeholders. reg p.9 §5.9.
