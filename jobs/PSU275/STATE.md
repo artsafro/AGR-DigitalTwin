@@ -55,6 +55,20 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   (Trying portals as masses was dropped: it removed the recessed doors.)
 - **`outputs/building-v003/PSU275_BODY_ROOF_PORTALS.blend`**: BODY 3668 + ROOF 211 + PORTALS 185 quads.
 
+- Opening merge fix: chained merges had produced three ~31 m "openings" mostly over wall;
+  merges now need ≥ 85 % void (`massing-surface-v006`: 152 openings, 2809 quads, 0 T) →
+  `shell-full-v003` → `shell-full-v004` (4048 quads, 31 step rims dropped; all checks pass;
+  re-audited with ROOF + PORTALS: 0 overlaps/crossings).
+- Opening fills (user: both variants): `scripts/sample_openings.py` (first-hit class + depth,
+  2.5 cm rays) → `opening-samples-v002` → `scripts/opening_fills.py` → `fills-v003`:
+  116 windows, 35 doors/gates (2 sectional gates 5.0 × 5.8 classed "other" → door), 1 void.
+  NPM: 152 planes at the frame depth, 10 mm reveal embed. VPM: frame/leaf minus 2446 panes,
+  glass 2–4 cm deeper with pane sides, 23 144 quads, min edge 15 mm. Window-contract audit with
+  BODY passes for both (embeds documented, 0 unapproved crossings, 0 T, 0 duplicates).
+- **`building-v004-npm/PSU275_NPM.blend`** and **`building-v004-vpm/PSU275_VPM.blend`**: BODY +
+  ROOF + PORTALS + WINDOWS_NPM / WINDOWS_VPM with preview materials (glass, frame RAL 9016,
+  door RAL 7004, louvre, void).
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
@@ -65,4 +79,4 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 
 ## Next
 
-Windows/doors/gates into the 130 openings; VPM cuts/UV; materials from the S4 finish schedule.
+VPM cuts (< 4 × 4 m), UV/atlases and final materials from the S4 schedule; NPM atlas; exterior stairs, chimney and site parts from S3; FBX export + readback.

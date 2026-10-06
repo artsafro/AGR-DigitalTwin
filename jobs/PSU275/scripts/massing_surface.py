@@ -27,6 +27,7 @@ STEP_MERGE_OVERLAP, MERGE_GAP, MIN_OPENING, SNAP, CLUSTER = 0.8, 0.3, 0.35, 0.04
 # Shell 0.4 m moves corner vertices 0.4 m along the neighbour plane: an opening edge closer
 # than this to a vertical profile edge would twist the reveal. Trim to keep the clearance.
 CORNER_CLEARANCE = 0.41
+MERGE_MIN_VOID = 0.85  # a merged strip must stay mostly void (no chaining across wall bands)
 EPS = 1e-6
 
 prof_doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
@@ -68,6 +69,12 @@ for k, p in enumerate(profiles):
             su, sz = masks[f"snapu_{k}"], masks[f"snapz_{k}"]
             rects.append([snap(us[i] - step / 2, su), snap(zs[j] - step / 2, sz),
                           snap(us[i1] + step / 2, su), snap(zs[j1] + step / 2, sz)])
+    def void_fraction(r):
+        """Share of sampled void cells inside rectangle r (u0, z0, u1, z1)."""
+        iu = (us > r[0]) & (us < r[2]); iz = (zs > r[1]) & (zs < r[3])
+        cells = void[np.ix_(iu, iz)]
+        return float(cells.mean()) if cells.size else 0.0
+
     merged = True
     while merged:
         merged = False
@@ -78,8 +85,9 @@ for k, p in enumerate(profiles):
                 ov = min(a[2], b[2]) - max(a[0], b[0])
                 width = min(a[2] - a[0], b[2] - b[0])
                 gap = max(a[1], b[1]) - min(a[3], b[3])
-                if width > 0 and ov / width >= STEP_MERGE_OVERLAP and gap <= MERGE_GAP:
-                    a[:] = [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])]
+                cand = [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])]
+                if width > 0 and ov / width >= STEP_MERGE_OVERLAP and gap <= MERGE_GAP and void_fraction(cand) >= MERGE_MIN_VOID:
+                    a[:] = cand
                     rects.remove(b)
                     merged = True
                     break
@@ -261,7 +269,7 @@ summary = {"method": "massing profiles (union of rectangular masses) minus measu
            "corner_lines": len(corners), "corner_propagation_iterations": it + 1,
            "max_cluster_move_m": max_move, "max_area_error_m2": max(r["area_error_m2"] for r in report_profiles),
            "params": {"merge_overlap": STEP_MERGE_OVERLAP, "merge_gap_m": MERGE_GAP, "min_opening_m": MIN_OPENING,
-                      "snap_m": SNAP, "cluster_m": CLUSTER, "corner_clearance_m": CORNER_CLEARANCE},
+                      "snap_m": SNAP, "cluster_m": CLUSTER, "corner_clearance_m": CORNER_CLEARANCE, "merge_min_void": MERGE_MIN_VOID},
            "scope": "Exterior BODY surface before Shell; no roofs, portals or windows", "profiles": report_profiles}
 (out / "exterior-surface.json").write_text(json.dumps(summary, indent=1), encoding="utf-8")
 print(json.dumps({k: v for k, v in summary.items() if k not in ("profiles", "params")}))

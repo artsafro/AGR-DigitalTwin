@@ -12,13 +12,15 @@ prefix = sys.argv[sys.argv.index("--") + 1]
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_WORKBENCH"
 scene.display.shading.light = "STUDIO"
-scene.display.shading.color_type = "OBJECT"
+scene.display.shading.color_type = "MATERIAL"
 scene.display.shading.show_cavity = True
 scene.render.resolution_x, scene.render.resolution_y = 1800, 1100
 scene.render.film_transparent = False
 meshes = [o for o in scene.objects if o.type == "MESH"]
+grey = bpy.data.materials.new("preview_grey"); grey.diffuse_color = (0.75, 0.78, 0.82, 1)
 for o in meshes:
-    o.color = (0.75, 0.78, 0.82, 1)
+    if not o.data.materials:
+        o.data.materials.append(grey)
 pts = [o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
 lo = Vector([min(p[i] for p in pts) for i in range(3)])
 hi = Vector([max(p[i] for p in pts) for i in range(3)])
