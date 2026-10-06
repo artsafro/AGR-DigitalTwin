@@ -3,7 +3,7 @@
 Fills the scene stages the header-only validator leaves not_run: V003 (triangulation,
 triangle limits, object types), V004 (applied transforms), V006 (NPM embedded images),
 V008 (one UV channel, mirrored islands, glass tile), V010 (UCX triangle budget only),
-V013 (shared pivot). Triangle limits follow the 2026-10-07 decisions on conflicts #1 and #3.
+V013 (origin, geometric-centre pivot, shared pivot). Triangle limits follow the 2026-10-07 decisions on conflicts #1 and #3.
 """
 import json
 import math
@@ -20,6 +20,7 @@ ANGLE_TOL_DEG, SCALE_TOL = 1e-3, 1e-4
 # Project target (user decision on conflict #1, 2026-10-07): one model serves VPM and NPM, so
 # VPM OKS aims at the NPM limit; above it, windows go to atlas textures on planes.
 PROJECT_TRIANGLE_TARGET = 150_000
+PIVOT_CENTRE_TOL_PCT, PIVOT_SHARED_TOL_M = 10, 0.001  # SINTEZ AGR Checker 2.9.4a / 2.9.5
 UCX_SMALL_MODEL, UCX_SMALL_LIMIT, UCX_SHARE, UCX_CAP = 50_000, 15_000, 0.05, 100_000
 
 
@@ -59,6 +60,34 @@ def _f(status, name, observed, expected, pages, evidence, conflicts=()):
     return Finding(name, status, observed, expected, list(pages), evidence, list(conflicts))
 
 
+def _pivot_findings(meshes: list[dict], ucx: list[dict], src: str) -> list[Finding]:
+    """Main mesh origin at FBX zero; its bbox centre within 10 % of the X/Y size from the origin;
+    every non-UCX mesh shares that origin within 1 mm (UCX origins are not regulated)."""
+    geometry = [m for m in meshes if m not in ucx]
+    main = next((m for m in geometry if m["name"].endswith("_Main")), geometry[0] if geometry else None)
+    if main is None:
+        return []
+    out = []
+    loc = main["location"]
+    at_zero = max(abs(c) for c in loc) <= PIVOT_SHARED_TOL_M
+    out.append(_f("pass" if at_zero else "fail", "origin at FBX zero", f"{src}: {main['name']} at {[round(c, 3) for c in loc]}",
+                  "local origin (0, 0, 0)", [32, 33], src))
+    if main.get("bounds_m"):
+        lo, hi = main["bounds_m"]
+        offsets = []
+        for i in (0, 1):
+            size = hi[i] - lo[i]
+            offsets.append(None if size == 0 else round(abs((lo[i] + hi[i]) / 2 - loc[i]) / size * 100, 2))
+        bad = any(o is not None and o > PIVOT_CENTRE_TOL_PCT for o in offsets)
+        out.append(_f("fail" if bad else "pass", "pivot at geometric centre", f"{src}: X/Y offset {offsets} %",
+                      f"<= {PIVOT_CENTRE_TOL_PCT} % of the size", [32, 33], src))
+    shifted = [m["name"] for m in geometry
+               if sum((a - b) ** 2 for a, b in zip(m["location"], loc)) ** 0.5 > PIVOT_SHARED_TOL_M]
+    out.append(_f("fail" if shifted else "pass", "shared pivot", f"{src}: {shifted[:5] or 'all meshes'}",
+                  "every mesh shares the Main origin within 1 mm (UCX exempt)", [32, 33], src))
+    return out
+
+
 def scene_findings(rb: dict, kind: str, role: str, profile: dict) -> dict[str, list[Finding]]:
     """role: 'oks' | 'ground' | 'light'. Returns {stage_id: findings}."""
     src = Path(rb["source"]).name
@@ -90,10 +119,9 @@ def scene_findings(rb: dict, kind: str, role: str, profile: dict) -> dict[str, l
         out["V003"].append(_f(status, "triangle count", f"{src}: {tris}", f"<= {limit}", [7, 28, 29], src, conflicts))
     foreign = [o for o in rb["other_objects"] if not (role == "light" and o["type"] in ("LIGHT", "EMPTY"))]
     if foreign:
-        lights = all(o["type"] == "LIGHT" for o in foreign)
-        out["V003"].append(_f("review" if lights and kind == "vpm" else "fail", "object types",
-                              f"{src}: {[(o['name'], o['type']) for o in foreign][:5]}",
-                              "meshes only (lights only in the Light FBX)", [4, 24, 33], src, [14] if lights else []))
+        # Any non-mesh object, lights included, fails (conflict #14 decided 2026-10-07 as the checker)
+        out["V003"].append(_f("fail", "object types", f"{src}: {[(o['name'], o['type']) for o in foreign][:5]}",
+                              "meshes only (lights only in the _Light FBX)", [4, 24, 33], src))
 
     # V004: transforms applied, rotation 0 (reg p.8, 29, 32-33)
     bad = [m["name"] for m in meshes
@@ -117,12 +145,10 @@ def scene_findings(rb: dict, kind: str, role: str, profile: dict) -> dict[str, l
         out["V008"].append(_f("fail" if mirrored else "pass", "mirrored islands", f"{src}: {mirrored or 'none'}", "no mirrored UV", [31], src))
         if glass:
             out["V008"].append(_f("fail", "glass tile", f"{src}: {glass}", "glass only in UDIM 1001", [31, 32], src))
-        # V013: all meshes of one FBX share one pivot (reg p.32-33); geometric-centre rule is conflict #19
-        pivots = {tuple(round(c, 4) for c in m["location"]) for m in meshes}
-        out["V013"].append(_f("pass" if len(pivots) == 1 else "fail", "shared pivot", f"{src}: {len(pivots)} pivot(s)",
-                              "one pivot for all meshes in the FBX", [32, 33], src))
-        out["V013"].append(_f("not_run", "pivot position and MSK-77 point", "geometric centre X/Y, Z = project zero; GeoJSON point",
-                              "reg p.32-33, p.55", [32, 33, 55], src, [19]))
+        # V013 (reg p.32-33 §9.3-9.5; conflict #19 decided 2026-10-07 as the checker)
+        out["V013"].extend(_pivot_findings(meshes, ucx, src))
+        out["V013"].append(_f("not_run", "MSK-77 point", "GeoJSON point vs survey coordinates and project zero",
+                              "reg p.32-33, p.55", [32, 33, 55], src))
 
     if kind == "npm":
         # V006: textures embedded in the FBX (reg p.9 §5.1); pixel rules need the PNG bytes

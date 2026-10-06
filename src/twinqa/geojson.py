@@ -1,7 +1,8 @@
 """VPM GeoJSON checks (V011; reg p.26-27, App.3 p.51-55; VPM_STANDARD.yaml `geojson`).
 
 Typed checks of the exact source schema. Where the regulation contradicts itself the
-result is `review`, never a silent pass/fail: a non-empty Glasses array (conflict #13).
+result is `review`, never a silent pass/fail. Glasses follow SINTEZ AGR Checker (conflict #13,
+decided 2026-10-07): `[]` without glass, else `[{material: {...}, ...}]` - one object in a list.
 Empty OKS fields follow SINTEZ AGR Checker v1.6.1 (conflict #2, decided 2026-10-07):
 FNO_code is mandatory (3/6/9 digits), act_AGR may be empty.
 """
@@ -34,15 +35,24 @@ def _decimals(value) -> int:
 
 
 def _glasses(value, glass_names) -> list[Finding]:
+    expected = "[] or [{glass material name: {...}, ...}] (one object in a list)"
     if value == []:
-        return [_f("pass", "Glasses", "[] (no glass)", "[] or object keyed by glass material", [51, 55])]
-    if isinstance(value, list):
-        return [_f("review", "Glasses", "non-empty array", "array per §22 vs object keyed by material in the example",
-                   [51, 52, 53, 55], [13])]
-    if not isinstance(value, dict) or not value:
-        return [_f("fail", "Glasses", f"{type(value).__name__}: {value!r}"[:80],
-                   "[] or object keyed by glass material name", [51, 55])]
+        if glass_names:
+            return [_f("fail", "Glasses", "[] but the FBX has glass", expected, [51, 55])]
+        return [_f("pass", "Glasses", "[] (no glass)", expected, [51, 55])]
+    if not (isinstance(value, list) and len(value) == 1 and isinstance(value[0], dict) and value[0]):
+        return [_f("fail", "Glasses structure", f"{type(value).__name__}: {value!r}"[:80], expected, [51, 52, 53, 55])]
+    value = value[0]
     out = []
+    if glass_names is not None:
+        for material in sorted(set(glass_names) - set(value)):
+            out.append(_f("fail", "Glasses material", material, "every FBX glass material described", [52, 55]))
+    signatures = {}
+    for material, props in value.items():
+        signatures.setdefault(repr(sorted(props.items())) if isinstance(props, dict) else material, []).append(material)
+    for same in signatures.values():
+        if len(same) > 1:
+            out.append(_f("fail", "Glasses duplicates", ", ".join(same), "identical glass = one material", [55]))
     for material, props in value.items():
         if glass_names is not None and material not in glass_names:
             out.append(_f("fail", "Glasses material", material, f"one of the FBX glass materials {sorted(glass_names)}", [52, 55]))

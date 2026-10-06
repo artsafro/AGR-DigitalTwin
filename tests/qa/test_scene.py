@@ -75,10 +75,29 @@ def test_glass_outside_1001_and_split_pivot_fail():
     assert statuses(found, "V013")["shared pivot"] == "fail"
 
 
-def test_light_in_main_fbx_is_review_conflict_14():
+def test_light_in_main_fbx_fails_conflict_14():
     found = scene_findings(rb(mesh(), other=[{"name": "Omni", "type": "LIGHT"}]), "vpm", "oks", PROFILES.vpm)
-    obj = next(f for f in found["V003"] if f.name == "object types")
-    assert obj.status == "review" and obj.conflicts == [14]
+    assert statuses(found, "V003")["object types"] == "fail"
+
+
+def with_bounds(m, lo, hi):
+    m["bounds_m"] = [list(lo), list(hi)]
+    return m
+
+
+@pytest.mark.parametrize("lo, hi, status", [((-10, -5, 0), (10, 5, 30), "pass"),     # centred
+                                            ((-8, -5, 0), (12, 5, 30), "pass"),      # 10 % of 20 m
+                                            ((-7, -5, 0), (13, 5, 30), "fail")])     # 15 %
+def test_pivot_at_geometric_centre_conflict_19(lo, hi, status):
+    found = scene_findings(rb(with_bounds(mesh(), lo, hi)), "vpm", "oks", PROFILES.vpm)
+    assert statuses(found, "V013")["pivot at geometric centre"] == status
+
+
+def test_origin_at_zero_and_ucx_exempt_from_shared_pivot():
+    found = scene_findings(rb(mesh(loc=(5, 0, 0)), mesh(name="SM_Test_K_1_MainGlass", loc=(5, 0, 0)),
+                              mesh(name="UCX_SM_Test_K_1_Main_001", loc=(9, 9, 0))), "vpm", "oks", PROFILES.vpm)
+    assert statuses(found, "V013")["origin at FBX zero"] == "fail"
+    assert statuses(found, "V013")["shared pivot"] == "pass"
 
 
 BLENDER = find_blender()

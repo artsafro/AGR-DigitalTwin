@@ -157,3 +157,36 @@ def test_cli_exit_codes(tmp_path, capsys):
     assert vp.main([str(tmp_path / f"{STEM}.zip"), "--json"]) == 1
     out = json.loads(capsys.readouterr().out)
     assert out["passed"] is False and out["exit_code"] == 1
+
+
+GLASS = {"color_RGB": {"Red": 200, "Green": 220, "Blue": 230}, "transparency": 0.5, "refraction": 1.5,
+         "roughness": 0.1, "metallicity": 0.84}
+
+
+@pytest.mark.parametrize("glasses, status", [
+    ([{"M_Test_K_1_MainGlass_1": GLASS}], "pass"),                                          # checker format
+    ({"M_Test_K_1_MainGlass_1": GLASS}, "fail"),                                            # object without list
+    ([{"M_Test_K_1_MainGlass_1": GLASS}, {"M_Test_K_1_MainGlass_2": GLASS}], "fail"),       # two objects
+    ([{"M_Test_K_1_MainGlass_1": GLASS, "M_Test_K_1_MainGlass_2": dict(GLASS)}], "fail"),   # identical glass
+])
+def test_glasses_follow_checker_conflict_13(glasses, status):
+    from twinqa.geojson import _glasses
+    worst = {f.status for f in _glasses(glasses, None)}
+    assert ("fail" in worst) == (status == "fail")
+
+
+def npm_png(size, colours=1, mode="RGB"):
+    img = Image.new(mode, (size, size), (90, 90, 90) if mode == "RGB" else (90, 90, 90, 255))
+    if colours > 1:
+        img.putpixel((0, 0), (10, 10, 10) if mode == "RGB" else (10, 10, 10, 255))
+    buf = BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
+
+@pytest.mark.parametrize("data, status", [(npm_png(128), "pass"), (npm_png(128, colours=2), "fail"),
+                                          (npm_png(512), "pass"), (npm_png(512, mode="RGBA"), "fail")])
+def test_npm_placeholder_128_and_no_alpha_conflicts_5_21(data, status):
+    from twinqa.png import npm_texture_findings
+    found = npm_texture_findings({"T_x.png": data}, PROFILES.npm)
+    assert ("fail" in {f.status for f in found}) == (status == "fail")

@@ -1,4 +1,4 @@
-# Ported from AGR standards/VPM_STANDARD.yaml (sha256 f31188cd3b38) on 2026-10-06; changes: added this header, inline `# conflict #N` comments and the `conflicts:` block (docs/domain/conflicts.md); no rule value changed. 2026-10-07: user decisions on conflicts #1, #2, #3, #6, #12 (docs/domain/conflicts.md) changed size limits to binary units, the UCX limit text and GeoJSON empty-field rule.
+# Ported from AGR standards/VPM_STANDARD.yaml (sha256 f31188cd3b38) on 2026-10-06; changes: added this header, inline `# conflict #N` comments and the `conflicts:` block (docs/domain/conflicts.md); no rule value changed. 2026-10-07: user decisions on conflicts #1, #2, #3, #6, #12, #13, #14, #19, #20 (docs/domain/conflicts.md) changed size limits to binary units, the UCX limit text and GeoJSON empty-field rule.
 # AGR commit d7ecdfda5f83d0c0ad672a65fc954031fca0cfbc. See standards/README.md.
 standard: VPM
 version: '0.1.0'
@@ -33,7 +33,7 @@ geometry:
     - {area_above: 1.5, triangles_max: 4500000}
   ground_area_basis: 'территория минус пятно застройки'
   one_default_layer_or_collection: true
-  no_empty_unrelated_animation_or_modifier_objects: true  # conflict #14 (review): lights
+  no_empty_unrelated_animation_or_modifier_objects: true  # conflict #14 (noted): no lights in the main FBX
   glazing_separate_from_facade_mesh: true
   oks_perimeter_extrude_down_m_min: 1.0
   ground_perimeter_extrude_down_m_min: 1.0
@@ -105,7 +105,7 @@ collision:
   note: 'Decided 2026-10-07: §13.8 "up to 100 000 additional" is a cap on the 5% share, as SINTEZ AGR Checker v1.6.1 (reg p.36-37).'
   source_pages: [34, 36, 37]
 positioning:
-  per_fbx_local_origin_xyz: [0, 0, 0]  # conflict #19 (review)
+  per_fbx_local_origin_xyz: [0, 0, 0]  # conflict #19 (noted): plus pivot at bbox centre X/Y within 10 %
   per_fbx_own_geojson_coordinates: true
   rotations_after_applied_transforms_degrees: 0
   shared_pivot_for_all_meshes_in_same_fbx: true
@@ -116,7 +116,7 @@ naming:
   max_characters: 254
   stem_characters: 'A-Z a-z 0-9 _'
   explicit_texture_filename_exception: 'dot between SlotNumber and UDIM before .png'
-  oks_fbx_geojson_zip_stem: 'SM_{Address}'  # conflict #20 (review)
+  oks_fbx_geojson_zip_stem: 'SM_{Address}'  # conflict #20 (noted): _NNN index only with more than one OKS
   ground_fbx_geojson_zip_stem: 'SM_{Address}_Ground'
   oks_mesh: 'SM_{Address}_Main'
   oks_glass_mesh: 'SM_{Address}_MainGlass'
@@ -131,10 +131,10 @@ geojson:
   encoding: UTF-8
   top_level: {type: FeatureCollection, features_count: 1}
   feature: {type: ObjectFeature, geometry_type: Point}
-  properties_keys: [address, okrug, rajon, name, developer, designer, cadNum, FNO_code, FNO_name, ZU_area, h_relief, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, act_AGR, imageBase64, other]  # conflict #20 (review): length/mask/precision limits absent
+  properties_keys: [address, okrug, rajon, name, developer, designer, cadNum, FNO_code, FNO_name, ZU_area, h_relief, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, act_AGR, imageBase64, other]  # conflict #20 (noted): limits decided, encoding pending (backlog Q6)
   coordinates: {system: MSK-77, axes: [x, y], decimal_places: 3, plan_tolerance_m: 0.5}
   imageBase64_input: {format: jpg, width_px: 256, height_px: 256}
-  Glasses: 'array: [] when absent; one object keyed by each glass material name when present'  # conflict #13 (review)
+  Glasses: '[] when absent; otherwise a list with ONE object keyed by each glass material name'  # conflict #13 (noted): as SINTEZ AGR Checker
   glass_fields: {color_RGB: [Red, Green, Blue], transparency: '0..1; 0 = fully transparent', refraction: '1..3', roughness: '0..1', metallicity: '0..1'}
   missing_oks_properties: fail_except_other_and_act_AGR  # conflict #2 (noted): as SINTEZ AGR Checker
   ground_nullable_as_empty_string: [FNO_name, FNO_code, h_otn, h_abs, s_obsh, s_naz, s_podz, spp_gns, other]
@@ -151,22 +151,22 @@ conflicts:
   archive.ground_max_bytes: {ids: [12], status: noted, note: 'decided 2026-10-07: 1024 MiB as SINTEZ AGR Checker (reg p.26 undefined)'}
   geometry.oks_triangles_per_fbx_max_excluding_collision: {ids: [1], status: noted, note: 'decided 2026-10-07: table 1 000 000 is the hard limit (as the checker); project target 150 000 so the model also serves NPM'}
   geometry.ground_triangles_max_by_area_ha: {ids: [1], status: noted, note: 'decided 2026-10-07: area table (reg p.29) is the limit'}
-  geometry.no_empty_unrelated_animation_or_modifier_objects: {ids: [14], status: review, note: 'VPM cleanup list omits lights (reg p.24); lights belong in the Light FBX (reg p.33, 37-38)'}
+  geometry.no_empty_unrelated_animation_or_modifier_objects: {ids: [14], status: noted, note: 'decided 2026-10-07 as SINTEZ AGR Checker: any non-mesh object, lights included, fails; lights only in the _Light FBX'}
   geometry.near_coplanar_spacing_m: {ids: [30], status: noted, note: 'regulation 5 mm-2 cm (reg p.29)'}
   geometry.geometric_error_tolerance_m: {ids: [30], status: noted, note: 'reg 0.002 m'}
   materials.main_material_slots: {ids: [11], status: review, note: 'exactly 100 maps undefined; maps vs tiles (reg p.30 §4.3-4.4)'}
   textures.normal_convention: {ids: [6], status: noted, note: 'explicit DirectX for VPM (reg p.23, p.30 §5.1.7); the doubt concerns NPM'}
   textures.diffuse_alpha: {ids: [8], status: noted, note: 'VPM alpha in Diffuse allowed; ERM/Normal never (reg p.30)'}
   textures.padding_px_min: {ids: [29], status: noted, note: 'reg >= 16/32 px; a local 4096 map used 20 px'}
-  textures.flat_placeholder: {ids: [5], status: noted, note: 'VPM 256x256 explicit (reg p.22, p.31); NPM says 128'}
+  textures.flat_placeholder: {ids: [5], status: noted, note: 'VPM 256x256 explicit (reg p.22, p.31); NPM 128x128 (decided 2026-10-07, #5)'}
   uv.udim_grid: {ids: [9], status: noted, note: 'text 1001-1100 sequential (reg p.23, 31) wins over figure typo (reg p.39) per local ADR'}
   uv.diffuse_density_px_per_m: {ids: [10, 27], status: noted, note: 'formula is division (reg p.32, image-verified); local targets inside 512..1706'}
   collision.recommended_gap_cm: {ids: [15], status: noted, note: 'recommendation only (reg p.36 §13.4)'}
   collision.triangle_limit: {ids: [3], status: noted, note: 'decided 2026-10-07: <50 000 -> 15 000, else min(ceil(5%), 100 000), as SINTEZ AGR Checker'}
   collision.note: {ids: [3], status: noted, note: 'see collision.triangle_limit'}
-  positioning.per_fbx_local_origin_xyz: {ids: [19], status: review, note: 'pivot at geometric centre X/Y, Z = project zero (reg p.32-33 §9.4) not encoded'}
-  naming.oks_fbx_geojson_zip_stem: {ids: [20], status: review, note: 'Address _001 index for free-standing buildings (reg p.26 §3.7) not encoded'}
-  geojson.properties_keys: {ids: [20], status: review, note: 'length/mask/precision limits (reg p.53-55) not encoded'}
-  geojson.Glasses: {ids: [13], status: review, note: '"array" (reg p.55 §22) vs object keyed by material name in the example (reg p.51-53)'}
+  positioning.per_fbx_local_origin_xyz: {ids: [19], status: noted, note: 'decided 2026-10-07 as SINTEZ AGR Checker: Main origin at 0,0,0; bbox centre X/Y within 10 % of size; meshes share the origin within 1 mm; UCX exempt; Z = project zero'}
+  naming.oks_fbx_geojson_zip_stem: {ids: [20], status: noted, note: 'decided 2026-10-07: _NNN index only when the project has more than one OKS (as the checker); encoding pending (backlog Q6)'}
+  geojson.properties_keys: {ids: [20], status: noted, note: 'decided 2026-10-07: encode checker field table + regulation length limits; pending (backlog Q6)'}
+  geojson.Glasses: {ids: [13], status: noted, note: 'decided 2026-10-07 as SINTEZ AGR Checker: [] or [{material: {...}}]; names match FBX glass materials; no identical duplicates'}
   geojson.missing_oks_properties: {ids: [2], status: noted, note: 'decided 2026-10-07: as SINTEZ AGR Checker - OKS FNO_code mandatory, act_AGR may be empty'}
   geojson.missing_value_note: {ids: [2], status: noted, note: 'see geojson.missing_oks_properties'}
