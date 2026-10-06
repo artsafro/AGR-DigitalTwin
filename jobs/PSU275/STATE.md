@@ -39,15 +39,21 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   junctions) → `drop_step_bottom_rims.py` → **`shell-full-v002/BODY_SHELL.blend`**: 3668 quads,
   33 step-bottom rims removed. Checks pass: geometry, JSON readback, Blender readback (3e-6 m).
 
+- Roofs and parapet wells: `scripts/roof_wells.py` → `outputs/roof-wells-v001` (7 regions,
+  211 quads: 127 roof, 61 parapet inner, 23 well faces closing the step-face gaps). Flat roofs
+  at the roof level (hall 38.32, annex 13.56, boiler 62.20, inserts/superstructure at top);
+  slopes not modelled. Audit alone passes; merged with BODY: 0 overlaps, 0 crossings.
+- `scripts/assemble_body_roof.py` → **`outputs/building-v002/PSU275_BODY_ROOF.blend`**
+  (BODY 3668 quads + ROOF 211 quads), Blender readback in `readback.json`.
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
-- Step faces start at the lower mass top (parapet), not its roof: 1.3–1.7 m gaps between a lower
-  roof and the upper wall inside parapet wells → close in the roof/parapet stage.
+- Roof slopes (hall 38.32…39.35), skylight lantern details, roof equipment not modelled.
 - Portals and vestibules (1.2–1.7 m out of the facade) not modelled yet.
 - Opening IDs are S3 measurement IDs, not Revit IDs. Minimum rim edge 10 mm.
 - Generalization of the massing builder → backlog P12 (Codex).
 
 ## Next
 
-Roofs and parapet wells (P4), portals; then windows/doors into openings, VPM cuts/UV.
+Portals and vestibules; then windows/doors into openings, VPM cuts/UV, materials.
