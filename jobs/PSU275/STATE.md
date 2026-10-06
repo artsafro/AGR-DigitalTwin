@@ -13,11 +13,22 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   `FBX = (Y_rvt + 142.55, 204.86 − X_rvt, Z)` (−90° rotation, no mirror).
   Outer faces: main 94.24 × 108.56 m, annex 18.66 × 56.58 m (L-shaped footprint).
 
+- BODY (exterior surface, pre-Shell) v002: `scripts/build_floor1_grid.py` → `outputs/grid-v003`
+  (54 openings ray-measured on the S3 opaque wall layer, edges snapped to S3 vertices,
+  stacked curtain strips merged, edges consolidated within 12 mm, max move 2.3 mm) →
+  `tools/run_exterior.py --config jobs/PSU275/exterior-adapter.json` → `outputs/exterior-v002`.
+  2072 quads, 6 facade runs, height 13.060, min edge 40 mm. Checks pass: geometry QA,
+  NPZ readback, Blender readback (max error 2.3e-6 m), `check_exterior_surface.py`
+  (no inward faces, no opening fill, no overlap, profiles exact). Preview `preview_*.png`.
+- Frame: local = Revit − (37.17, 54.00) m, Z = 0.000 (= 169.65). Earlier tries kept as
+  evidence: grid-v001/v002, exterior-v001 (float32 readback 8.6e-6 m at S3 coords, 2 mm faces).
+
 ## Open
 
-- BODY route: `exterior.py` needs an occupancy grid (`body-grid.npz`) + opening bounds.
+- User review of BODY v002 openings against the S4 facades (manual gate).
+- Opening IDs are S3 measurement IDs, not Revit door/window IDs.
+- Plinth, portals and entrance canopies stand out of the panel plane; not in BODY.
 
 ## Next
 
-Split S3 openings (glass, doors, gates) into per-opening bounds, rasterize the L-shaped
-footprint 0.000 … +13.060 into `body-grid.npz`, run `extract_exterior`, read back.
+Shell 0.4 m inward (`tools/run_body_shell.py`), then windows/doors into openings.
