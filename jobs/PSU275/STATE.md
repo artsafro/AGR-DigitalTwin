@@ -19,5 +19,5 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 
 ## Next
 
-Clip the S3 main building to 0.000 … +13.060 in Blender 4.4 (5.1.2 crashes on S3), check
-against Revit axes 108 × 93 m and S4 marks, then build BODY (`src/dt_ai/geometry/exterior.py`).
+Split S3 openings (glass, doors, gates) into per-opening bounds, rasterize the L-shaped
+footprint 0.000 … +13.060 into `body-grid.npz`, run `extract_exterior`, read back.
