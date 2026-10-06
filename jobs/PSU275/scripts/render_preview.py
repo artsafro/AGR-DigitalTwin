@@ -25,7 +25,7 @@ hi = Vector([max(p[i] for p in pts) for i in range(3)])
 centre, size = (lo + hi) / 2, (hi - lo).length
 cam_data = bpy.data.cameras.new("preview")
 cam_data.type = "ORTHO"
-cam_data.ortho_scale = size * 0.9
+cam_data.ortho_scale = size * 1.1
 cam = bpy.data.objects.new("preview", cam_data)
 scene.collection.objects.link(cam)
 scene.camera = cam

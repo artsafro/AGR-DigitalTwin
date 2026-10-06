@@ -23,6 +23,10 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 - Frame: local = Revit − (37.17, 54.00) m, Z = 0.000 (= 169.65). Earlier tries kept as
   evidence: grid-v001/v002, exterior-v001 (float32 readback 8.6e-6 m at S3 coords, 2 mm faces).
 
+- Shell v001 (C23 decided by the user: Shell 0.4 m inward, no inner faces):
+  `body-shell-adapter.json` → `outputs/shell-v001/BODY_SHELL.blend`, 3260 quads, min edge 40 mm.
+  Checks pass: geometry, JSON readback, Blender readback (max error 1.9e-6 m). Visual review open.
+
 ## Open
 
 - User review of BODY v002 openings against the S4 facades (manual gate).
@@ -31,4 +35,4 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 
 ## Next
 
-Shell 0.4 m inward (`tools/run_body_shell.py`), then windows/doors into openings.
+Windows/doors into the 54 openings (`tools/build_shell_windows.py`), then VPM cuts/UV.
