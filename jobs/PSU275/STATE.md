@@ -46,14 +46,23 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 - `scripts/assemble_body_roof.py` → **`outputs/building-v002/PSU275_BODY_ROOF.blend`**
   (BODY 3668 quads + ROOF 211 quads), Blender readback in `readback.json`.
 
+- Portals: S3 faces outside the masses (`scripts/outside_clusters.py` → `outside_faces_v002.npz`),
+  source check by `scripts/render_region.py`: portals are U/L frames around recessed doors or
+  floating canopies (doors stay in BODY openings). `scripts/portal_frames.py` → `portals-v003`:
+  15 portals (11 frames, 4 canopies; vestibule = 2 frames), front silhouette on the measured
+  outer plane extruded to the facade (depth 1.60–1.68 m), coords consolidated ≤ 12 mm,
+  185 quads, min edge 0.49 m. Audit alone passes; with BODY+ROOF: 0 overlaps, 0 crossings.
+  (Trying portals as masses was dropped: it removed the recessed doors.)
+- **`outputs/building-v003/PSU275_BODY_ROOF_PORTALS.blend`**: BODY 3668 + ROOF 211 + PORTALS 185 quads.
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
 - Roof slopes (hall 38.32…39.35), skylight lantern details, roof equipment not modelled.
-- Portals and vestibules (1.2–1.7 m out of the facade) not modelled yet.
+- External steel stairs/ladders (5 clusters) → exterior equipment from S3.
 - Opening IDs are S3 measurement IDs, not Revit IDs. Minimum rim edge 10 mm.
 - Generalization of the massing builder → backlog P12 (Codex).
 
 ## Next
 
-Portals and vestibules; then windows/doors into openings, VPM cuts/UV, materials.
+Windows/doors/gates into the 130 openings; VPM cuts/UV; materials from the S4 finish schedule.

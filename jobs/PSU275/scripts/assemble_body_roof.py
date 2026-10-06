@@ -9,19 +9,19 @@ from pathlib import Path
 
 import bpy
 
-body_blend, roof_json, out_blend, out_json = sys.argv[sys.argv.index("--") + 1:]
+body_blend, out_blend, out_json, *mesh_jsons = sys.argv[sys.argv.index("--") + 1:]
 bpy.ops.wm.read_homefile(use_empty=True)  # no default cube/camera/light
 with bpy.data.libraries.load(body_blend) as (src, dst):
     dst.objects = list(src.objects)
 for o in dst.objects:
     if o is not None:
         bpy.context.scene.collection.objects.link(o)
-roof = json.loads(Path(roof_json).read_text(encoding="utf-8"))["mesh"]
-me = bpy.data.meshes.new(roof["name"])
-me.from_pydata(roof["vertices"], [], roof["faces"])
-me.validate()
-ob = bpy.data.objects.new(roof["name"], me)
-bpy.context.scene.collection.objects.link(ob)
+for path in mesh_jsons:
+    mesh = json.loads(Path(path).read_text(encoding="utf-8"))["mesh"]
+    me = bpy.data.meshes.new(mesh["name"])
+    me.from_pydata(mesh["vertices"], [], mesh["faces"])
+    me.validate()
+    bpy.context.scene.collection.objects.link(bpy.data.objects.new(mesh["name"], me))
 bpy.ops.wm.save_as_mainfile(filepath=out_blend)
 bpy.ops.wm.open_mainfile(filepath=out_blend)
 rows = []
