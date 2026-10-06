@@ -6,11 +6,9 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
 ## Decisions for the user (block production)
 
 - **C1–C34** — open source conflicts and 5 dubious rules (`docs/domain/conflicts.md`).
-  Decided on 2026-10-07: C1, C2, C3, C6, C12, C26. Next candidates for a first VPM-OKS
-  delivery: C13 Glasses array vs object, C14 lights in the main FBX, C19 VPM pivot, C20 GeoJSON
-  field limits, C5 placeholder size, C21 RGBA atlases. Owner: Claude prepares a one-page choice
-  per conflict; the user decides; the decision goes to `docs/domain/` and the YAML
-  `conflicts:` block (status `noted`).
+  Decided on 2026-10-07: C1, C2, C3, C5, C6, C12, C13, C14, C19, C20, C21, C26. Owner: Claude
+  prepares a one-page choice per conflict; the user decides; the decision goes to `docs/domain/`
+  and the YAML `conflicts:` block (status `noted`).
 - **G1** — GLOSSARY: expansion of "AGR", Master scene, Source album, Current album,
   Production asset. Owner: user + Claude.
 
@@ -40,6 +38,12 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
 - **Q4** Clearance hits: classify embed vs defect automatically where possible.
 - **Q5** SINTEZ AGR Checker integration (AGR INT-001): coverage map vs the regulation,
   run in an isolated Blender 4.4, import findings.
+
+- **Q6** Encode conflict #20 (decided 2026-10-07): `_NNN` address index only with more than one
+  OKS; GeoJSON field types/required/decimals as the checker table and lengths from reg p.53-55;
+  alpha-plane offset 0.003-0.01 m; Light FBX rules (point/spot, `_Omni`/`_Spot`, numbering).
+- **Q7** Convert accepted GLB RGBA NPM atlases to RGB + `_o_` opacity (conflict #21); fix the 3ds Max
+  placeholder tool to write 128x128 for NPM (conflict #5). Owner: Claude (DCC), Codex (tool).
 
 ## Unreal and IFC
 

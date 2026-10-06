@@ -136,8 +136,8 @@ open_questions_for_project_profile:
 # Machine-readable link to docs/domain/conflicts.md (paths: stages.<id>).
 conflicts:
   stages.V001: {ids: [12], status: noted, note: 'archive size in binary units (decided 2026-10-07)'}
-  stages.V003: {ids: [1, 14], status: review, note: 'VPM triangle limit decided 2026-10-07 (#1); lights in main FBX still open (#14)'}
-  stages.V006: {ids: [5, 12, 21], status: review, note: 'NPM placeholder 128 (#5) and RGBA atlases (#21) open; 3 MB = 3 MiB decided (#12)'}
+  stages.V003: {ids: [1, 14], status: noted, note: '#1 and #14 decided 2026-10-07'}
+  stages.V006: {ids: [5, 12, 21], status: noted, note: '#5, #12, #21 decided 2026-10-07'}
   stages.V010: {ids: [3, 15], status: noted, note: 'UCX budget as SINTEZ AGR Checker (decided 2026-10-07); gap is only recommended'}
-  stages.V011: {ids: [2, 13, 20], status: review, note: 'empty fields decided 2026-10-07 (#2); Glasses array vs object (#13) and field limits (#20) open'}
-  stages.V013: {ids: [19], status: review, note: 'pivot at geometric centre not encoded'}
+  stages.V011: {ids: [2, 13, 20], status: noted, note: '#2, #13, #20 decided 2026-10-07; #20 field limits pending (backlog Q6)'}
+  stages.V013: {ids: [19], status: noted, note: '#19 decided 2026-10-07: origin, geometric-centre and shared pivot as the checker'}

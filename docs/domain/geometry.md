@@ -111,3 +111,8 @@ Keys: `reg p.N` = `Rasporyajenies19012026trebovaniya(2).pdf` page N (see npm-vpm
 - Ground NPM: <= 50 000 polys (quad FBX), ~3 m quads, finer at contours/slope breaks; ignore 10-20 cm steps, keep >= 30 cm if needed, as smooth slopes; smoothed height field (2.5 m median, 25 cm quantization, Gaussian sigma 1.6 m used). local: docs/agr/case_studies/GROUND_CONTOURS_AND_NPM.md; local: jobs/GROUND-PROJECTION/NPM_RESULT.md (project decision). Within reg p.7 §3.6 180k total.
 - Dense adaptive projection (720k quads) and exact vertical cut-in of steps (micro-strips, twisted faces) rejected; keep material contours on 1 mm lattice (<= 0.715 mm after FBX); beyond relief continue nearest slope without moving XY. local: jobs/GROUND-PROJECTION/RESULT.md, NPM_RESULT.md (lesson).
 - Ground UV: one channel, 0-1 tile, regions reused per finish; atlas from source colors only. local: jobs/GROUND-PROJECTION/NPM_RESULT.md (lesson).
+
+## Decided 2026-10-07 (as SINTEZ AGR Checker)
+
+- VPM main FBX holds meshes only; lights only in `SM_<Address>_Light.fbx` (conflict #14).
+- VPM pivot: Main origin at FBX 0,0,0; bbox centre X/Y within 10 % of the size from the origin; all meshes share the origin within 1 mm, UCX exempt; Z = project zero (conflict #19).

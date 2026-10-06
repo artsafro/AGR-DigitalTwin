@@ -15,6 +15,8 @@ from PIL import Image
 from twinqa.bundle import size_status
 from twinqa.report import Finding
 
+NPM_PLACEHOLDER_PX = 128  # Metallic/Roughness placeholders, as SINTEZ AGR Checker (conflict #5)
+
 SIGNATURE = b"\x89PNG\r\n\x1a\n"
 # T_{Address}[_Ground]_{Diffuse|ERM|Normal}_{SlotNumber}.{UDIM}.png (reg p.34-35; VPM naming.texture_*)
 VPM_NAME = re.compile(r"^T_(?P<address>[A-Za-z0-9_]+?)_(?P<map>Diffuse|ERM|Normal)_(?P<slot>[0-9]+)\.(?P<udim>[0-9]{4})\.png$")
@@ -166,18 +168,22 @@ def npm_texture_findings(images: dict[str, bytes], profile: dict):
         except ValueError as exc:
             out.append(_f("fail", "PNG readable", f"{name}: {exc}", "PNG atlas", [9], name))
             continue
-        if facts.width != facts.height or facts.width not in tex["allowed_square_sizes_px"]:
-            # 128 px placeholders (reg p.3-4) are not in the size list (reg p.9 §5.2): conflict #5
-            status = "review" if facts.width == facts.height == 128 else "fail"
-            out.append(_f(status, "atlas size", f"{name}: {facts.width}x{facts.height}",
-                          f"square {tex['allowed_square_sizes_px']}", [9], name, [5] if status == "review" else []))
+        if facts.width == facts.height == NPM_PLACEHOLDER_PX:
+            # One-colour Metallic/Roughness placeholder 128x128 (reg p.3-4; conflict #5 decided as the checker)
+            px = pixels(data)
+            if facts.has_alpha or (px != px[0, 0]).any():
+                out.append(_f("fail", "flat placeholder", f"{name}: alpha or more than one colour",
+                              "128x128, one colour, no alpha", [3, 4], name))
+        elif facts.width != facts.height or facts.width not in tex["allowed_square_sizes_px"]:
+            out.append(_f("fail", "atlas size", f"{name}: {facts.width}x{facts.height}",
+                          f"square {tex['allowed_square_sizes_px']} or {NPM_PLACEHOLDER_PX} placeholder", [9], name))
         status, observed = size_status(facts.size_bytes, tex["max_file_bytes"])
         if status != "pass":
             out.append(_f(status, "atlas file size", f"{name}: {observed}", "<= 3 MiB", [9], name))
         if facts.has_alpha:
-            # Forbidden by reg p.9 §5.5, but accepted local atlases were RGBA: conflict #21 -> review
-            out.append(_f("review", "no alpha", f"{name}: alpha channel present", "no alpha (separate opacity map)",
-                          [9], name, [8, 21]))
+            # reg p.9 §5.5; conflict #21 decided 2026-10-07 as the checker: RGB only, opacity as a separate _o_ map
+            out.append(_f("fail", "no alpha", f"{name}: alpha channel present", "RGB only; opacity as a separate _o_ map",
+                          [9], name))
         if facts.bit_depth != 8:
             out.append(_f("fail", "8-bit", f"{name}: bit depth {facts.bit_depth}", "8 bit per channel", [3, 9], name))
     if images and not out:
