@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-06
+Last updated: 2026-10-07
 
 ## Current goal
 
@@ -64,13 +64,14 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 ## Known limitations
 
 - Drive C is ~99% full (about 20 GB free); heavy data has no backup outside this machine (H9).
-- 34 source conflicts and 5 dubious rules are open (`docs/domain/conflicts.md`).
+- 28 source conflicts and 5 dubious rules are open (`docs/domain/conflicts.md`); C1, C2, C3, C6,
+  C12, C26 were decided on 2026-10-07 (VPM target 150 000 triangles, rules as SINTEZ AGR Checker).
 - `docs/agr/` and parts of `technical_library/`, `tools/`, `jobs/` are in Russian (H4).
 - Codex and Antigravity guard hooks are configured but not validated (H1).
 
 ## Next actions
 
-1. User: decide the conflicts that block the first VPM-OKS delivery (backlog, first list).
+1. User: next conflict batch for the first VPM-OKS delivery (C13, C14, C19, C20, C5, C21 — backlog).
 2. Claude: P1 — analyze a real source read-only.
 3. Codex: H1 (Codex hook), H2 (SketchUp venv), Q3 (one validator).
 4. Antigravity: H4 — translate `docs/agr/` core documents.
