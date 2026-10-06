@@ -320,7 +320,19 @@ def surround_cell(s):
 
 def openings(mb, gb, spec, decor=False):
     for f, s in spec.items():
-        for sur in s["surrounds"] + (s["features"] if decor else []):
+        cx = [v for _, r in canopy_rects() for v in r[:2]] if decor else []
+
+        def feat(x):
+            r = x["rect"]
+            edge = lambda v: abs(v - r[0]) < 1e-3 or abs(v - r[1]) < 1e-3 or any(abs(v - c) < 1e-3 for c in cx)
+            ms = []
+            for m in x["mullions"]:
+                u0 = m[0] + (INSET if edge(m[0]) else 0.0)   # step back from canopy / feature sides
+                u1 = m[1] - (INSET if edge(m[1]) else 0.0)
+                ms.append([u0, u1, m[2] - 0.01, m[3]])
+            return dict(x, mullions=ms)
+        for sur in s["surrounds"] + ([feat(x) for x in s["features"]] if decor else []):
+            # feature mullions stand on the portal canopy (top +3.30): run 10 mm into it (embed)
             rects = sur["mullions"] + [b["rect"] for b in sur["bays"]]
             for b in sur["bays"]:
                 rects += [[w[0] + WINDOW_FRAME, w[1] - WINDOW_FRAME, w[2] + WINDOW_FRAME, w[3] - WINDOW_FRAME]
@@ -539,6 +551,8 @@ def roof_items(mb):
 
 # ---------------------------------------------------------------- stage 4: decor and perimeter
 FOOT = (X0, X1, Y0, Y1)  # cassette outline = building mass for the plan column builder
+EMBED = 0.011            # parts against the facade run 11 mm into the wall (>= 10 mm embed rule)
+INSET = 0.006            # flush faces of an embedded part step back 6 mm (> 5 mm overlap tolerance)
 Z_PORCH_BASE = -0.60     # porch/step sides run below the blind-area surface (embedded)
 SMALL_CANOPY = (2.70, 3.30, 2.70, 2.94, 0.21)   # z0, z1, inner soffit, inner top, rim (Revit Kozyrek walls/slabs)
 PORTAL_CANOPY = (2.70, 3.30, 2.82, 3.08, 0.22)  # 220 frame, slab Karkas160 2.82..3.08
@@ -553,8 +567,16 @@ def columns(mb, rects, cell):
     (z0, z1, top_finish, side_finish, bottom_finish), touching intervals merge. Cells inside the
     building mass are solid with no faces, so nothing is generated against the facade."""
     mb.piece()
-    xs = cuts([v for r in rects for v in r[:2]])
-    ys = cuts([v for r in rects for v in r[2:4]])
+    # Embed: the building mass starts EMBED inside the facade plane, so faces built against it end
+    # inside the wall instead of on the facade (no shared vertices, no 3-face edges, no overlaps).
+    fx0, fx1, fy0, fy1 = FOOT[0] + EMBED, FOOT[1] - EMBED, FOOT[2] + EMBED, FOOT[3] - EMBED
+    in_mass = lambda x, y: fx0 < x < fx1 and fy0 < y < fy1
+
+    def axis(vals, f0, f1, g0, g1):
+        vs = cuts(vals + [v for v in (f0, f1) if min(vals) < v < max(vals)])
+        return [v for v in vs if not (g0 - 1e-6 <= v < f0 - 1e-6 or f1 + 1e-6 < v <= g1 + 1e-6)]
+    xs = axis([v for r in rects for v in r[:2]], fx0, fx1, FOOT[0], FOOT[1])
+    ys = axis([v for r in rects for v in r[2:4]], fy0, fy1, FOOT[2], FOOT[3])
     nx, ny = len(xs) - 1, len(ys) - 1
     MASS = [(-INF, INF, None, None, None)]
 
@@ -562,9 +584,9 @@ def columns(mb, rects, cell):
         if not (0 <= i < nx and 0 <= j < ny):
             xc = xs[0] - 1e-3 if i < 0 else xs[-1] + 1e-3 if i >= nx else (xs[i] + xs[i + 1]) / 2
             yc = ys[0] - 1e-3 if j < 0 else ys[-1] + 1e-3 if j >= ny else (ys[j] + ys[j + 1]) / 2
-            return MASS if in_foot(xc, yc) else []
+            return MASS if in_mass(xc, yc) else []
         xc, yc = (xs[i] + xs[i + 1]) / 2, (ys[j] + ys[j + 1]) / 2
-        return MASS if in_foot(xc, yc) else sorted(cell(xc, yc))
+        return MASS if in_mass(xc, yc) else sorted(cell(xc, yc))
 
     grid = {(i, j): get(i, j) for i in range(-1, nx + 1) for j in range(-1, ny + 1)}
     p = lambda x, y, z: Vector((x, y, z))
@@ -673,6 +695,20 @@ def perimeter(mb):
     pier_boxes = []
     for g in clusters([r[:4] for r in piers]):
         pier_boxes.append([min(r[0] for r in g), max(r[1] for r in g), min(r[2] for r in g), max(r[3] for r in g)])
+    porches = porch_rects()
+
+    def inset_pier(pb):
+        """Pier sides flush with a porch side step back INSET (the pier stands 10 mm deep in the porch)."""
+        x0, x1, y0, y1 = pb
+        for r in porches:
+            if r[2] - 1e-3 <= y0 and y1 <= r[3] + 1e-3:
+                if abs(x0 - r[0]) < 1e-3: x0 += INSET
+                if abs(x1 - r[1]) < 1e-3: x1 -= INSET
+            if r[0] - 1e-3 <= x0 and x1 <= r[1] + 1e-3:
+                if abs(y0 - r[2]) < 1e-3: y0 += INSET
+                if abs(y1 - r[3]) < 1e-3: y1 -= INSET
+        return [x0, x1, y0, y1]
+    pier_boxes = [inset_pier(pb) for pb in pier_boxes]
     for kind, r in canopy_rects():
         spec = PORTAL_CANOPY if kind == "portal" else SMALL_CANOPY
         cell, xi, yi = canopy_cell(r, spec)
@@ -680,7 +716,7 @@ def perimeter(mb):
         def full(xc, yc, cell=cell, mine=mine, z0=spec[0]):
             iv = list(cell(xc, yc))
             if any(pb[0] < xc < pb[1] and pb[2] < yc < pb[3] for pb in mine):
-                iv.append((-0.03, z0, None, "Cassette_RAL5015", None))
+                iv.append((-0.04, z0, None, "Cassette_RAL5015", None))   # 10 mm into the porch (top -0.03)
             return iv
         rects = [r, [xi[0], xi[1], yi[0], yi[1]]] + mine
         columns(mb, [q[:4] for q in rects], full)
@@ -691,6 +727,14 @@ def perimeter(mb):
     porches_and_blind_area(mb)
     stair_east(mb)
     alpha_planes(mb)
+
+
+def porch_rects():
+    out = []
+    for o in refs("Перекрытие ADSK_Перекрытие_Кр"):
+        b = bbox_of(o)
+        out.append([b[0], b[1], b[2], b[3], b[5]])
+    return out
 
 
 def porches_and_blind_area(mb):
@@ -761,9 +805,11 @@ def closed_box(mb, x0, x1, y0, y1, z0, z1, finish):
     mb.quad([p(x0, y0), p(x0, y1), p(x1, y1), p(x1, y0)], -UP, finish)
 
 
-def prism(mb, quads, frame, w, finish):
+def prism(mb, quads, frame, w, finish, skip_caps=(), skip_sides=()):
     """Closed prism from planar 2D quads [(u, z) x4] extruded across t = 0..w.
-    frame(u, z, t) -> world point. Quads share edges; only outline edges get side faces."""
+    frame(u, z, t) -> world point. Quads share edges; only outline edges get side faces.
+    skip_caps: {(quad_index, 0 | 1)} caps left open; skip_sides: outline edges ((u, z), (u, z)) left open
+    (faces removed where another solid is stitched on)."""
     mb.piece()
     used = {}
     for q in quads:
@@ -771,66 +817,89 @@ def prism(mb, quads, frame, w, finish):
             k = tuple(sorted((a, b)))
             used[k] = used.get(k, 0) + 1
     n_t = (frame(0, 0, 1) - frame(0, 0, 0)).normalized()
-    for q in quads:
-        mb.quad([frame(u, z, 0) for u, z in q], -n_t, finish)
-        mb.quad([frame(u, z, w) for u, z in q], n_t, finish)
+    for qi, q in enumerate(quads):
+        if (qi, 0) not in skip_caps:
+            mb.quad([frame(u, z, 0) for u, z in q], -n_t, finish)
+        if (qi, 1) not in skip_caps:
+            mb.quad([frame(u, z, w) for u, z in q], n_t, finish)
         c = sum((Vector((u, z)) for u, z in q), Vector((0.0, 0.0))) / 4
         for a, b in zip(q, q[1:] + q[:1]):
-            if used[tuple(sorted((a, b)))] != 1:
+            if used[tuple(sorted((a, b)))] != 1 or tuple(sorted((a, b))) in skip_sides:
                 continue
             m = (Vector(a) + Vector(b)) / 2
             out = frame(m.x, m.y, w / 2) - frame(c.x, c.y, w / 2)
             mb.quad([frame(*a, 0), frame(*b, 0), frame(*b, w), frame(*a, w)], out, finish)
 
 
-def stringer(mb, u_top, z_top, u_end, slope, depth, z_cut, y0, w, axis):
-    """Sloped stair stringer (80 mm plate): top edge z = z_top - slope * |u - u_top|, vertical end at
-    u_top (landing), lower end cut at grade z_cut and vertically at u_end. axis 'x' or 'y' = run axis;
-    y0 = plate start across the run (thickness w)."""
+def stair_band(mb, profile, plane, w, finish="Metal_RAL5015", skip_caps=(), skip_sides=()):
+    """Closed prism of a stair band: profile = convex quads [(u, z) x4] sharing edges (frame + stringer
+    stitched in one plane), extruded across w. plane = ('x', y0): u runs along x at y0..y0+w;
+    ('y', x0): u runs along y at x0..x0+w."""
+    axis, c0 = plane
+    frame = (lambda u, z, t: Vector((u, c0 + t, z))) if axis == "x" else (lambda u, z, t: Vector((c0 + t, u, z)))
+    prism(mb, profile, frame, w, finish, {tuple(c) for c in skip_caps}, {tuple(sorted(e)) for e in skip_sides})
+
+
+def slope_profile(u_top, z_top, u_end, slope=0.8, depth=0.3, z_cut=None):
+    """Quads of a sloped stringer: top edge z_top at u_top falling by slope towards u_end, vertical ends,
+    optional horizontal cut at z_cut (grade)."""
     sg = 1 if u_end > u_top else -1
     top = lambda u: z_top - slope * abs(u - u_top)
-    u_g = None if z_cut is None else u_top + sg * (z_top - depth - z_cut) / slope  # bottom edge meets grade
-    if u_g is None or (u_g - u_end) * sg >= 0:        # no ground cut: parallelogram
-        q = [[(u_top, z_top), (u_top, z_top - depth), (u_end, top(u_end) - depth), (u_end, top(u_end))]]
-    else:
-        q = [[(u_top, z_top), (u_top, z_top - depth), (u_g, z_cut), (u_g, top(u_g))],
-             [(u_g, top(u_g)), (u_g, z_cut), (u_end, z_cut), (u_end, top(u_end))]]
-    if axis == "x":
-        frame = lambda u, z, t: Vector((u, y0 + t, z))
-    else:
-        frame = lambda u, z, t: Vector((y0 + t, u, z))
-    prism(mb, q, frame, w, "Metal_RAL5015")
+    u_g = None if z_cut is None else u_top + sg * (z_top - depth - z_cut) / slope
+    if u_g is None or (u_g - u_end) * sg >= 0:
+        return [[(u_top, z_top), (u_top, z_top - depth), (u_end, top(u_end) - depth), (u_end, top(u_end))]]
+    return [[(u_top, z_top), (u_top, z_top - depth), (u_g, z_cut), (u_g, top(u_g))],
+            [(u_g, top(u_g)), (u_g, z_cut), (u_end, z_cut), (u_end, top(u_end))]]
 
 
 def stair_east(mb):
     """East steel stair rebuilt from Revit parameters as closed quad solids (RAL 5015, Revit material
     'Настил рифленый (RAL 5015)'; ИД facade 1-4/A-B): flight 1 = 10 treads, rise 0.2, going 0.25,
     width 1.2 (x 28.83..31.33, y 2.4..3.6) to landing +2.10; flight 2 = 8 treads (y 3.6..5.6,
-    x 27.63..28.83) to landing +3.90; treads/landings 40 mm, stringers 80 x 300 mm; treads are
-    embedded 10 mm into the stringers."""
-    E = 0.01
+    x 27.63..28.83) to landing +3.90; treads/landings 40 mm, stringers/frames 80 x 300 mm.
+    Joints (no overlapping faces at 5 mm, no shared vertices, no 3-face edges):
+    - a frame and the stringer in the same plane are one stitched prism;
+    - perpendicular joints: the incoming band runs EMBED_S (10 mm) into the receiving one, and the
+      receiving band's end steps back INSET (6 mm) so no two faces are coplanar;
+    - treads run 10 mm into the stringers; landing decks sit 6 mm below the frame tops (and below the
+      +3.90 door sill) and run 10 mm into the frames; parts at the facade run into the wall."""
+    E, I = 0.01, INSET
+    zc = -0.11  # stringers end 10 mm below grade
     for k in range(10):
         zt = 0.1 + 0.2 * k
-        closed_box(mb, 31.33 - 0.25 * (k + 1), 31.33 - 0.25 * k, 2.4 - E, 3.6 + E, zt - 0.04, zt, "Metal_RAL5015")
+        x1 = 31.33 - 0.25 * k - (I if k == 0 else 0.0)  # first tread steps back from the stringer ends
+        closed_box(mb, 31.33 - 0.25 * (k + 1), x1, 2.4 - E, 3.6 + E, zt - 0.04, zt, "Metal_RAL5015")
     for k in range(8):
         zt = 2.3 + 0.2 * k
         closed_box(mb, 27.63 - E, 28.83 + E, 3.6 + 0.25 * k, 3.6 + 0.25 * (k + 1), zt - 0.04, zt, "Metal_RAL5015")
-    closed_box(mb, 27.63 - E, 28.83, 2.4 - E, 3.6, 2.06, 2.1, "Metal_RAL5015")        # landing +2.10
-    closed_box(mb, 27.33 - 0.03, 28.83 + E, 5.6, 8.5 + E, 3.86, 3.9, "Metal_RAL5015")  # landing +3.90 (into facade)
-    # landing frames (Revit stringer pieces, 80 x 300)
-    closed_box(mb, 27.55, 27.63, 2.32, 3.4511, 1.8, 2.1, "Metal_RAL5015")
-    closed_box(mb, 27.63, 28.8342, 2.32, 2.4, 1.8, 2.1, "Metal_RAL5015")
-    closed_box(mb, 28.83, 28.91, 5.7011, 8.58, 3.6, 3.9, "Metal_RAL5015")
-    closed_box(mb, 27.33 - 0.03, 28.83, 8.5, 8.58, 3.6, 3.9, "Metal_RAL5015")
-    closed_box(mb, 27.33 - 0.03, 27.55, 5.52, 5.6, 3.6, 3.9, "Metal_RAL5015")
-    # flight stringers
-    stringer(mb, 28.7289, 2.1, 31.33, 0.8, 0.3, -0.1, 2.32, 0.08, "x")
-    stringer(mb, 28.91, 2.0393, 31.33, 0.8, 0.3, -0.1, 3.6, 0.08, "x")
-    stringer(mb, 5.52, 3.8393, 3.3459, 0.8, 0.3, None, 27.55, 0.08, "y")
-    stringer(mb, 5.7011, 3.9, 3.6, 0.8, 0.3, None, 28.83, 0.08, "y")
+    # Corners of the landing frames are stitched: the incoming band has no end cap, the receiving band
+    # has an extra edge and no face where they meet; the shared border welds edge to edge (one L solid).
+    # south band y 2.32..2.40: landing frame + flight-1 stringer, stitched to the west band at x 27.63
+    stair_band(mb, [[(27.63, 2.1), (27.63, 1.8), (28.7289, 1.8), (28.7289, 2.1)]]
+               + slope_profile(28.7289, 2.1, 31.33, z_cut=zc), ("x", 2.32), 0.08,
+               skip_sides=[((27.63, 2.1), (27.63, 1.8))])
+    # west band x 27.55..27.63: corner square + landing frame + flight-2 stringer
+    stair_band(mb, [[(2.32, 2.1), (2.32, 1.8), (2.4, 1.8), (2.4, 2.1)], [(2.4, 2.1), (2.4, 1.8), (3.3459, 1.8), (3.3459, 2.1)]]
+               + slope_profile(3.3459, 2.1, 5.52, slope=-0.8), ("y", 27.55), 0.08, skip_caps=[(0, 1)])
+    # east band x 28.83..28.91: flight-2 stringer (lower end stepped back) + upper landing frame + corner
+    y0 = 3.6 + I
+    stair_band(mb, slope_profile(5.7011, 3.9, y0) + [[(5.7011, 3.9), (5.7011, 3.6), (8.5, 3.6), (8.5, 3.9)],
+                                                     [(8.5, 3.9), (8.5, 3.6), (8.58, 3.6), (8.58, 3.9)]],
+               ("y", 28.83), 0.08, skip_caps=[(len(slope_profile(5.7011, 3.9, y0)) + 1, 0)])
+    # flight-1 north stringer y 3.60..3.68, 10 mm into the east band
+    stair_band(mb, slope_profile(28.91 - E, 2.0393 + 0.8 * E, 31.33, z_cut=zc), ("x", 3.6), 0.08)
+    # upper landing frames: north one stitched to the east band at x 28.83, both run into the wall
+    stair_band(mb, [[(27.33 - 0.01, 3.9), (27.33 - 0.01, 3.6), (28.83, 3.6), (28.83, 3.9)]], ("x", 8.5), 0.08,
+               skip_sides=[((28.83, 3.9), (28.83, 3.6))])
+    # south frame of the upper landing: steps back INSET from the west stringer's top end (no touching
+    # coplanar faces: 3ds Max xView counts those as overlapping); the deck covers the joint from above
+    closed_box(mb, 27.33 - 0.01, 27.55, 5.52 + I, 5.6, 3.6, 3.9, "Metal_RAL5015")
+    # landing decks
+    closed_box(mb, 27.63 - E, 28.83, 2.4 - E, 3.6, 2.1 - I - 0.04, 2.1 - I, "Metal_RAL5015")         # +2.10 deck
+    closed_box(mb, 27.33 - 0.03, 28.83 + E, 5.6 - E, 8.5 + E, 3.9 - I - 0.04, 3.9 - I, "Metal_RAL5015")  # +3.90
 
 
-def alpha_strip(mb, pts, height, finish, offset=0.005, v_mode="rail", u0=0.0):
+def alpha_strip(mb, pts, height, finish, offset=0.008, v_mode="rail", u0=0.0):
     """Vertical alpha-cut strip along a polyline [(x, y, z_base)], two-sided by a flipped copy offset
     5 mm along the normal (VPM reg p.36 §12.3). UVs in metres: u = run length along the polyline + u0;
     v = 0.05 + height above the base line (v_mode 'rail': sheared, bars follow the stair slope) or
@@ -869,7 +938,7 @@ def alpha_planes(mb):
     fy = lambda y: 2.319 + (y - 3.6) * 0.8             # upper flight
     south = [(31.33, 2.36, fz(31.33)), (28.83, 2.36, 2.1), (27.59, 2.36, 2.1), (27.59, 3.6, 2.1),
              (27.59, 3.6, fy(3.6)), (27.59, 5.6, fy(5.6))]
-    north = [(31.33, 3.64, fz(31.33)), (28.87, 3.64, fz(28.87)), (28.87, 3.6, fy(3.6)), (28.87, 5.6, 3.9),
+    north = [(31.33, 3.64, fz(31.33)), (28.87, 3.64, fz(28.87)), (28.87, 5.6, 3.9),
              (28.87, 8.54, 3.9), (27.33, 8.54, 3.9)]
     for line in (south, north):
         clean = [q for k, q in enumerate(line) if k == 0 or (Vector(q[:2]) - Vector(line[k - 1][:2])).length > 1e-6]
@@ -879,7 +948,7 @@ def alpha_planes(mb):
     alpha_strip(mb, [(27.53, y0, 3.9), (27.53, y1, 3.9)], 5.015, "Ladder_Alpha_RAL1021", v_mode="world", u0=0.04)
     for nz in (1, -1):  # walkway over the parapet: same rung pattern, u across the ladder, v along x
         mb.piece()
-        z = 8.915 + (0.0025 if nz > 0 else -0.0025)
+        z = 8.915 + (0.004 if nz > 0 else -0.004)
         pts = [Vector((26.63, y0, z)), Vector((27.53, y0, z)), Vector((27.53, y1, z)), Vector((26.63, y1, z))]
         mb.quad(pts, UP * nz, "Ladder_Alpha_RAL1021", [Vector((0.04 + p.y - y0, p.x)) for p in pts])
     for y in (7.39, 8.14):

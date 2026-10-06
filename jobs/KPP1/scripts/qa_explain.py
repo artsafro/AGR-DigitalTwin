@@ -7,5 +7,6 @@ for s in qa["normals_probe"]["samples_out_all"] if "samples_out_all" in qa["norm
     if s[0] != o.name: continue
     p = me.polygons[s[1]]
     n = tuple(round(c) for c in p.normal)
-    cnt[(me.materials[p.material_index].name, n)] += 1
+    fa = me.attributes.get("finish"); nm = o["finish_names"].split(",")
+    cnt[((nm[fa.data[s[1]].value] if fa else me.materials[p.material_index].name), n)] += 1
 for k, v in cnt.most_common(40): print("FLIP", v, k)

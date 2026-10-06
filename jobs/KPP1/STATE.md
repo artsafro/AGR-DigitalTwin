@@ -89,3 +89,21 @@ SINTEZ AGR Checker 1.6.1 (`sintez-v002/agr_check.json`):
   Andrew's `UDIM Viewer_V1.4.ms` (Blend: Multi/Sub per tile + MultiTile), NPM Physical d + cutout o.
 - Open: 3ds Max xView reported 128 overlapping faces on NPM (canopy tops, porches, stair landing) —
   to classify (coplanar landing/frame tops suspected).
+
+## Update v005 (2026-10-07): overlapping faces / vertices
+
+User gate: 3ds Max xView Overlapping Faces (0.005 m) = 0 and Overlapping Vertices (0.002 m) = 0;
+fix by embedding one part into another or by stitching with added edges.
+- Cause of 238 Max overlapping vertices: welds that gave edges with 3+ faces (79); Editable Poly
+  splits them on import. `seal.py` now splits/welds only open-border seams; parts that stand on or run
+  into a surface are embedded instead (`columns()` EMBED 11 mm into the wall, piers 10 mm into porches
+  and stepped back INSET 6 mm from flush porch faces, feature mullions 10 mm into the canopy).
+- Stair: frame + stringer in one plane = one stitched prism; frame corners stitched (open cap + extra
+  edge, welded edge to edge); other joints embedded with 6 mm step-back; decks 6 mm below frames.
+- Alpha two-sided planes 8 mm apart (reg 3..10 mm).
+- `scripts/qa_overlap.py` (xView rules incl. touching coplanar faces of different parts) runs in
+  `run_all.sh`; `scripts/qa_checktoolbox.py` runs CheckToolBox_v1_5 (Blender 4.4) doubles/intersections.
+- Result v005: Blender overlap 0 / non-manifold 0 / doubles 0 / leaks 0 / 100 % quads; 3ds Max 2026 xView
+  on the quad FBX: Overlapping Faces 0 and Overlapping Vertices 0 on VPM and NPM Main + Glass.
+  CheckToolBox intersections remain by design (embeds). SINTEZ VPM 64/3, NPM 38/5 (deferred items).
+- Max review file: `outputs/max-v005/KPP1_VPM_NPM_quads_v002.max`.

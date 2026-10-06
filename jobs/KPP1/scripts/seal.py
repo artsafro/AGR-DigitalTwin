@@ -95,12 +95,11 @@ def t_junctions(bm, tol=TOL, seams_only=False):
             if v in e.verts:
                 continue
             if seams_only:
-                if not v.is_boundary:
-                    continue
-                # a seam: e is open, or an open edge of v's piece runs along e (flush joint on a corner)
-                if not open_e and not any(len(x.link_faces) == 1 and
-                                          abs((x.other_vert(v).co - v.co).normalized().dot(dn)) > 0.999
-                                          for x in v.link_edges):
+                # a seam = two open borders running along each other (edge-to-edge joint). Parts that
+                # stand on or run into another surface are embedded instead, never split or welded.
+                if not open_e or not any(len(x.link_faces) == 1 and
+                                         abs((x.other_vert(v).co - v.co).normalized().dot(dn)) > 0.999
+                                         for x in v.link_edges):
                     continue
             t = (co - a).dot(ab) / L2
             if t * ab.length <= tol or (1 - t) * ab.length <= tol:
@@ -293,8 +292,10 @@ def quadify(bm, log=None):
 
 
 def weld(bm, dist=WELD):
+    """Weld open-border vertices only (seams). A vertex inside a surface is never merged with a part
+    touching it: that would give edges with 3+ faces (3ds Max splits them into overlapping vertices)."""
     n0 = len(bm.verts)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=dist)
+    bmesh.ops.remove_doubles(bm, verts=[v for v in bm.verts if v.is_boundary], dist=dist)
     return n0 - len(bm.verts)
 
 

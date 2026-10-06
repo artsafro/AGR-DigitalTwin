@@ -9,6 +9,7 @@ BL="/c/Program Files/Blender Foundation/Blender 5.1/blender.exe"
 O="$J/outputs"
 bash "$J/scripts/run_stage.sh" 6
 "$BL" --background --factory-startup "$O/build-v001/KPP1_VPM_v006_ucx.blend" --python "$J/scripts/qa_master.py" -- "$O/build-v001/qa_master_v006.json" 2>&1 | grep -E "QA-"
+"$BL" --background --factory-startup "$O/build-v001/KPP1_VPM_v006_ucx.blend" --python "$J/scripts/qa_overlap.py" -- "$O/build-v001/overlap_v006.json" SM_Kpp_1_Main SM_Kpp_1_MainGlass 2>&1 | grep -E "^OVERLAP"
 P="$O/package-vpm-$V"; rm -rf "$P"; mkdir -p "$P/SM_Kpp_1"
 "$BL" --background --factory-startup --python "$J/scripts/export_vpm.py" -- "$O/build-v001/KPP1_VPM_v006_ucx.blend" "$P/SM_Kpp_1" 2>&1 | grep -E "^EXPORT|Traceback"
 PYTHONIOENCODING=utf-8 py -3 "$J/scripts/package_vpm.py" "$P/SM_Kpp_1" "$O/textures-v001" --no-geojson > /dev/null
@@ -20,3 +21,7 @@ S="$O/sintez-$V"; rm -rf "$S"; mkdir -p "$S"
 cp "$P/SM_Kpp_1.zip" "$N/0000_Kpp_1.zip" "$S/"
 "$BL" --background --factory-startup --python "$J/scripts/run_agr_checker.py" -- "$S" "$S/agr_check.json" > "$S/checker_log.txt" 2>&1
 grep -E "AGR-SUMMARY" "$S/checker_log.txt"
+# quad (untriangulated) review exports for 3ds Max
+X="$O/max-$V"; rm -rf "$X"; mkdir -p "$X/vpm/SM_Kpp_1" "$X/npm/0000_Kpp_1"
+KEEP_QUADS=1 "$BL" --background --factory-startup --python "$J/scripts/export_vpm.py" -- "$O/build-v001/KPP1_VPM_v006_ucx.blend" "$X/vpm/SM_Kpp_1" 2>&1 | grep -c "^EXPORT"
+KEEP_QUADS=1 "$BL" --background --factory-startup --python "$J/scripts/export_npm.py" -- "$O/build-v001/KPP1_VPM_v006_ucx.blend" "$O/npm-textures-v001" "$X/npm/0000_Kpp_1" 2>&1 | grep -c "^EXPORT"
