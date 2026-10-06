@@ -1,0 +1,325 @@
+{
+ "_doc": "KPP1 VPM texture sets. One UDIM tile per finish (project rule, docs/domain/uv-textures.md). full = 4096 maps at S metres per tile (1000 px/m, reg p.32 band 512..1706); cassette joints: ИД 'ТЭЦ26 на РР.pptx' slides 25-26 (module 0.6 m; blue band 2.7-7.1 in 8 rows of 0.55 m, phase anchored at +2.70; grey bands and the top blue band are one row); placeholder = 256 single-colour maps, only for smooth finishes (reg p.31 §3). P = pattern period per axis in metres; faces are shifted by whole periods (phase kept). shift=false: UVs are explicit in metres and already inside the tile. Colours are approximate sRGB of the RAL codes named in Revit, not calibrated; roughness/metallic are proposals.",
+ "address": "Kpp_1",
+ "size_full": 4096,
+ "size_placeholder": 256,
+ "pad_m": 0.04,
+ "finishes": {
+  "Plinth_RAL7004": {
+   "udim": 1001,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.3,
+    0.3
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "rgb": [
+    150,
+    153,
+    146
+   ],
+   "rough": 0.45,
+   "metal": 0.0,
+   "pattern": "tile300"
+  },
+  "Asphalt": {
+   "udim": 1002,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    1.3,
+    1.3
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "rgb": [
+    62,
+    62,
+    64
+   ],
+   "rough": 0.9,
+   "metal": 0.0,
+   "pattern": "asphalt"
+  },
+  "Railing_Alpha": {
+   "udim": 1003,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.9,
+    4.096
+   ],
+   "shift": [
+    true,
+    false
+   ],
+   "rgb": [
+    125,
+    127,
+    130
+   ],
+   "rough": 0.45,
+   "metal": 1.0,
+   "pattern": "railing",
+   "rgb_top": [
+    238,
+    201,
+    0
+   ]
+  },
+  "Ladder_Alpha_RAL1021": {
+   "udim": 1004,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    4.096,
+    0.372
+   ],
+   "shift": [
+    false,
+    true
+   ],
+   "mirror_u": 0.44,
+   "rgb": [
+    238,
+    201,
+    0
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "ladder"
+  },
+  "Cage_Alpha_RAL1021": {
+   "udim": 1005,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.46,
+    0.833
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "rgb": [
+    238,
+    201,
+    0
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cage"
+  },
+  "Cassette_RAL7047": {
+   "udim": 1006,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.6,
+    1.0
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.27,
+    0.0
+   ],
+   "rgb": [
+    208,
+    208,
+    208
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": false
+  },
+  "Cassette_RAL5015": {
+   "udim": 1007,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.6,
+    0.55
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.27,
+    0.5
+   ],
+   "rgb": [
+    34,
+    113,
+    179
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": true
+  },
+  "Perforated_RAL9016": {
+   "udim": 1008,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.6,
+    0.6
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.27,
+    0.3
+   ],
+   "rgb": [
+    236,
+    236,
+    234
+   ],
+   "rough": 0.55,
+   "metal": 0.0,
+   "pattern": "perforated"
+  },
+  "Frame_RAL9016": {
+   "udim": 1009,
+   "kind": "placeholder",
+   "rgb": [
+    246,
+    246,
+    246
+   ],
+   "rough": 0.4,
+   "metal": 0.0
+  },
+  "Door_RAL7004": {
+   "udim": 1010,
+   "kind": "placeholder",
+   "rgb": [
+    150,
+    153,
+    146
+   ],
+   "rough": 0.45,
+   "metal": 0.0
+  },
+  "Interior": {
+   "udim": 1011,
+   "kind": "placeholder",
+   "rgb": [
+    25,
+    25,
+    28
+   ],
+   "rough": 1.0,
+   "metal": 0.0
+  },
+  "Membrane_Logicroof": {
+   "udim": 1012,
+   "kind": "placeholder",
+   "rgb": [
+    140,
+    143,
+    145
+   ],
+   "rough": 0.8,
+   "metal": 0.0
+  },
+  "Metal_RAL5015": {
+   "udim": 1013,
+   "kind": "placeholder",
+   "rgb": [
+    34,
+    113,
+    179
+   ],
+   "rough": 0.45,
+   "metal": 0.0
+  },
+  "Plastic_Black": {
+   "udim": 1014,
+   "kind": "placeholder",
+   "rgb": [
+    20,
+    20,
+    20
+   ],
+   "rough": 0.6,
+   "metal": 0.0
+  },
+  "Grille_RAL7004": {
+   "udim": 1015,
+   "kind": "placeholder",
+   "rgb": [
+    120,
+    122,
+    117
+   ],
+   "rough": 0.5,
+   "metal": 0.0
+  },
+  "Slat_RAL5015": {
+   "udim": 1016,
+   "kind": "placeholder",
+   "rgb": [
+    30,
+    104,
+    166
+   ],
+   "rough": 0.5,
+   "metal": 0.0
+  },
+  "Membrane_Solo": {
+   "udim": 1017,
+   "kind": "placeholder",
+   "rgb": [
+    45,
+    45,
+    48
+   ],
+   "rough": 0.85,
+   "metal": 0.0
+  },
+  "Cassette_RAL5015_Top": {
+   "udim": 1018,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.6,
+    0.55
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.27,
+    0.0
+   ],
+   "rgb": [
+    34,
+    113,
+    179
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": false
+  }
+ },
+ "glass": {
+  "udim": 1001
+ }
+}
