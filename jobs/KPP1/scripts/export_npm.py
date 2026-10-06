@@ -102,7 +102,8 @@ for o in (main, glass):
     me.transform(Matrix.Translation(-centre))
     b = bmesh.new()
     b.from_mesh(me)
-    bmesh.ops.triangulate(b, faces=b.faces, quad_method="BEAUTY", ngon_method="BEAUTY")
+    if not os.environ.get("KEEP_QUADS"):  # KEEP_QUADS: review copy for 3ds Max, not a delivery
+        bmesh.ops.triangulate(b, faces=b.faces, quad_method="BEAUTY", ngon_method="BEAUTY")
     b.to_mesh(me)
     b.free()
     me.shade_flat()

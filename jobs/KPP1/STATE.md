@@ -74,3 +74,18 @@ SINTEZ AGR Checker 1.6.1 (`sintez-v002/agr_check.json`):
   (placeholder `Kpp_1`), УКЭП. Ground, GroundEl, Flora are a separate job.
 - Cassette module 0.6 x 0.55 is read from the ИД drawing scale, not from a dimensioned album.
 - Manual gates V015-V017 unsigned.
+
+## Update v003 (2026-10-07)
+
+- Same-camera Revit vs model close-ups: `scripts/compare_details.sh` -> `outputs/compare-v001/pair_*.png`.
+  Revit door families carry 3D swing volumes (cylinders) — not geometry, correctly absent. Stair
+  differences (railing layout, ladder cage hoops) left as is by the user.
+- Added roof walkways (136 Logicroof tiles -> draped 25 mm strips, finish `Walkway_Logicroof`, UDIM 1019);
+  aerators rebuilt to the Revit profile (flange cone, pipe, small hat).
+- v003: 13 490 quads, 0 leaks/doubles/concave; SINTEZ VPM 64/3, NPM 38/5 (same deferred items).
+  69 inward-looking faces = membrane covered by walkway strips (hidden).
+- 3ds Max review file `outputs/max-v001/KPP1_VPM_NPM_quads_v001.max` (Max 2026): VPM at 0,0,0, NPM at
+  +40 m X, both untriangulated (`KEEP_QUADS=1` exports, not deliveries); VPM UDIM shown with
+  Andrew's `UDIM Viewer_V1.4.ms` (Blend: Multi/Sub per tile + MultiTile), NPM Physical d + cutout o.
+- Open: 3ds Max xView reported 128 overlapping faces on NPM (canopy tops, porches, stair landing) —
+  to classify (coplanar landing/frame tops suspected).

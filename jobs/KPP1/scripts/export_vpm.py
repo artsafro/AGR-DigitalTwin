@@ -78,7 +78,11 @@ for o in deliver:
     sc.collection.objects.link(o)
     for m in list(o.modifiers):
         o.modifiers.remove(m)
+QUADS = bool(os.environ.get("KEEP_QUADS"))  # review copy for 3ds Max: no triangulation (not a delivery)
 for o in (main, glass):
+    if QUADS:
+        o.data.shade_flat()
+        continue
     bm = bmesh.new()
     bm.from_mesh(o.data)
     bmesh.ops.triangulate(bm, faces=bm.faces, quad_method="BEAUTY", ngon_method="BEAUTY")

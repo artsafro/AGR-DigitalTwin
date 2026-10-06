@@ -54,6 +54,7 @@ FINISHES = {  # working finishes (internal ids); collapsed to M_<Address>_Main_1
     "Door_RAL7004": (0.38, 0.38, 0.37),
     "Interior": (0.06, 0.06, 0.07),
     "Membrane_Logicroof": (0.55, 0.56, 0.57),
+    "Walkway_Logicroof": (0.42, 0.43, 0.44),
     "Metal_RAL5015": (0.05, 0.27, 0.55),
     "Plastic_Black": (0.04, 0.04, 0.04),
     "Grille_RAL7004": (0.30, 0.30, 0.29),
@@ -410,6 +411,7 @@ def roof(mb):
     parapet_cap(mb)
     hood(mb)
     roof_items(mb)
+    walkways(mb)
 
 
 def parapet_cap(mb):
@@ -473,6 +475,50 @@ def cylinder(mb, cx, cy, z0, z1, r0, r1, finish, top=True, sides=8):
             mb.quad([b[i] for i in q], UP, finish)
 
 
+def walkways(mb):
+    """Roof walkways: Revit 'ПВХ Logicroof Walkway Puzzle 0.6 x 0.6' tiles (25 mm), merged into strips
+    along their chaining direction (the 0.76 bbox side holds the puzzle teeth), draped on the membrane:
+    top = membrane + 25 mm, sides embedded 10 mm below the membrane, cut every tile (0.6 m)."""
+    bm, _ = roof_surface()
+    bvh = BVHTree.FromBMesh(bm)
+    bm.free()
+    zm = lambda x, y: bvh.ray_cast(Vector((x, y, 20.0)), Vector((0, 0, -1)))[0].z
+    rows, cols = {}, {}
+    tiles = refs("TN_ПВХ Logicroof")
+    assert len(tiles) == 136, len(tiles)
+    for o in tiles:
+        b = bbox_of(o)
+        cx, cy = (b[0] + b[1]) / 2, (b[2] + b[3]) / 2
+        if b[1] - b[0] < b[3] - b[2]:   # 0.6 x 0.76: chains along x
+            rows.setdefault(round(cy, 2), []).append(cx)
+        else:
+            cols.setdefault(round(cx, 2), []).append(cy)
+    strips = []
+    for key, cs, along in [(k, v, "x") for k, v in rows.items()] + [(k, v, "y") for k, v in cols.items()]:
+        cs = sorted(cs)
+        run = [cs[0]]
+        for c in cs[1:]:
+            if c - run[-1] < 0.65:
+                run.append(c)
+            else:
+                strips.append((key, run, along)); run = [c]
+        strips.append((key, run, along))
+    for key, run, along in strips:
+        ts = [run[0] - 0.3] + [c + 0.3 for c in run]          # tile boundaries along the strip
+        P = (lambda t, s: Vector((t, key + s, 0))) if along == "x" else (lambda t, s: Vector((key + s, t, 0)))
+        mb.piece()
+        top = lambda t, s: (lambda p: Vector((p.x, p.y, zm(p.x, p.y) + 0.025)))(P(t, s))
+        bot = lambda t, s: (lambda p: Vector((p.x, p.y, zm(p.x, p.y) - 0.01)))(P(t, s))
+        side = Vector((0, 1, 0)) if along == "x" else Vector((1, 0, 0))
+        dirv = Vector((1, 0, 0)) if along == "x" else Vector((0, 1, 0))
+        for a, b in zip(ts, ts[1:]):
+            mb.quad([top(a, -0.3), top(b, -0.3), top(b, 0.3), top(a, 0.3)], UP, "Walkway_Logicroof")
+            mb.quad([bot(a, -0.3), bot(b, -0.3), top(b, -0.3), top(a, -0.3)], -side, "Walkway_Logicroof")
+            mb.quad([bot(a, 0.3), bot(b, 0.3), top(b, 0.3), top(a, 0.3)], side, "Walkway_Logicroof")
+        for t, n in ((ts[0], -dirv), (ts[-1], dirv)):
+            mb.quad([bot(t, -0.3), bot(t, 0.3), top(t, 0.3), top(t, -0.3)], n, "Walkway_Logicroof")
+
+
 def roof_items(mb):
     """Aerators (pipe 110 mm + hat 390 mm) and roof funnel grates; sizes from the Revit bounding boxes."""
     for o in list(bpy.data.objects):
@@ -483,8 +529,10 @@ def roof_items(mb):
         hi = Vector([max(w[i] for w in ws) for i in range(3)])
         cx, cy = (lo.x + hi.x) / 2, (lo.y + hi.y) / 2
         if o.name.startswith("TN_Аэратор"):
-            cylinder(mb, cx, cy, lo.z - 0.01, hi.z - 0.10, 0.055, 0.055, "Plastic_Black", top=False)
-            cylinder(mb, cx, cy, hi.z - 0.12, hi.z, 0.195, 0.195, "Plastic_Black")
+            # Revit profile: flange cone r 0.065 -> 0.195 (+0.06), pipe r 0.05, hat r 0.09 (top 0.155..0.035 below hi)
+            cylinder(mb, cx, cy, lo.z - 0.01, lo.z + 0.064, 0.195, 0.195, "Plastic_Black")
+            cylinder(mb, cx, cy, lo.z + 0.054, hi.z - 0.145, 0.05, 0.05, "Plastic_Black", top=False)
+            cylinder(mb, cx, cy, hi.z - 0.155, hi.z - 0.005, 0.09, 0.09, "Plastic_Black")
         elif o.name.startswith("TN_Воронка с обжимным"):
             cylinder(mb, cx, cy, 7.835, hi.z, 0.19, 0.10, "Plastic_Black")
 

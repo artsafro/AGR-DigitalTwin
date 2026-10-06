@@ -317,6 +317,17 @@
    "metal": 0.0,
    "pattern": "cassette",
    "h_joints": false
+  },
+  "Walkway_Logicroof": {
+   "udim": 1019,
+   "kind": "placeholder",
+   "rgb": [
+    108,
+    110,
+    113
+   ],
+   "rough": 0.85,
+   "metal": 0.0
   }
  },
  "glass": {
