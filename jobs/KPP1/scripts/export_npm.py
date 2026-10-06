@@ -18,14 +18,19 @@ Same model as VPM (project decision, conflict #1); NPM-specific changes on an ex
 import bpy, bmesh, sys, os, json, math
 from mathutils import Vector, Matrix
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from export_safety import require_udim_regions, validate_atlas
+
 args = sys.argv[sys.argv.index("--") + 1:]
 master, atlas_dir, out = args[:3]
 prefix = args[3] if len(args) > 3 else "0000"
+atlas = json.load(open(os.path.join(atlas_dir, "npm_atlas.json"), encoding="utf-8"))
+texture_spec = json.load(open(os.path.join(HERE, "vpm_textures.json"), encoding="utf-8"))
+by_udim = validate_atlas(atlas, texture_spec)
 os.makedirs(out, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=master)
 sc = bpy.context.scene
-atlas = json.load(open(os.path.join(atlas_dir, "npm_atlas.json"), encoding="utf-8"))
-by_udim = {r["udim"]: r for r in atlas["finishes"].values()}
 
 for o in list(bpy.data.objects):
     if o.name.startswith("UCX_") or any(c.name.startswith("REF_") for c in o.users_collection) or o.type != "MESH":
@@ -73,20 +78,26 @@ for f in alpha_faces:
             break
 bmesh.ops.delete(bm, geom=list(drop), context="FACES_ONLY")
 bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
-miss = 0
+# Check every retained face BEFORE remapping or saving the export copy.
+face_tiles = []
 for f in bm.faces:
     c = sum((l[uv].uv for l in f.loops), Vector((0, 0))) / len(f.loops)
     tu, tv = math.floor(c.x), math.floor(c.y)
-    r = by_udim.get(1001 + tu + 10 * tv)
-    if r is None:
-        miss += 1
-        continue
+    face_tiles.append((f, tu, tv))
+try:
+    require_udim_regions((1001 + tu + 10 * tv for _, tu, tv in face_tiles), by_udim)
+except ValueError:
+    bm.free()
+    raise
+for f, tu, tv in face_tiles:
+    r = by_udim[1001 + tu + 10 * tv]
+
     for l in f.loops:
         loc = l[uv].uv - Vector((tu, tv))
         l[uv].uv = Vector((r["u0"], r["v0"])) + loc * r["size"]
 bm.to_mesh(main.data)
 bm.free()
-report.update({"alpha_back_copies_removed": len(drop), "faces_without_region": miss})
+report.update({"alpha_back_copies_removed": len(drop), "faces_without_region": 0})
 
 # ---- clean layers / attributes not meant for delivery, apply transforms, pivot, triangulate
 for o in (main, glass):
