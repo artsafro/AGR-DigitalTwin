@@ -1,7 +1,7 @@
 # KPP1 (Центральная проходная) — VPM + NPM model, 2026-10-07
 
-Status: **model and textures built, technical QA run; not passed for hand-over** (deferred items below).
-User acceptance pending.
+Status: **v005 accepted by the user as ~90 % ready (2026-10-07); not passed for hand-over** (deferred items below).
+
 
 ## Scope (user, 2026-10-07)
 
@@ -107,3 +107,9 @@ fix by embedding one part into another or by stitching with added edges.
   on the quad FBX: Overlapping Faces 0 and Overlapping Vertices 0 on VPM and NPM Main + Glass.
   CheckToolBox intersections remain by design (embeds). SINTEZ VPM 64/3, NPM 38/5 (deferred items).
 - Max review file: `outputs/max-v005/KPP1_VPM_NPM_quads_v002.max`.
+
+## Acceptance (2026-10-07)
+
+User: «отлично ты справился с задачей в принципе модели уже готовы на 90 процентов» — production cycle and
+models v005 accepted as reviewed. Not a delivery: deferred items and manual gates above stay open.
+Full report: `REPORT.md`; case: `docs/agr/case_studies/KPP1_VPM_NPM_V005.md`, row in `docs/cases.md`.

@@ -18,6 +18,7 @@ evidence in `jobs/<JOB>/`. Template for new cases: `docs/agr/case_studies/TEMPLA
 | Facades atlas | tile v003 | brick (rejected in v003); v004/v005 need new acceptance | `FACADES_ATLAS_PARTIAL_ACCEPTANCE.md`, `jobs/FACADES-ATLAS/` |
 | Ground contours → NPM | contours, 18 material IDs, materials (v003) | v003 mesh rejected; v008 shape acceptance | `GROUND_CONTOURS_AND_NPM.md`, `jobs/GROUND-PROJECTION/` |
 | MASHI-LP scene audit | scene organization and audit | new master is a trial; intersections, visual acceptance | `MASHI_LP_SCENE_AUDIT.md`, `jobs/MASHI-LP/` |
+| KPP1 VPM + NPM v005 (Revit → Blender) | full modelling cycle and models v005 as reviewed ("90 % ready", 2026-10-07): quads ≤ 4 m, no leaks, xView overlaps 0/0, SINTEZ only deferred fails | GeoJSON, MSK-77, district code, address, УКЭП, Ground; manual SINTEZ items, V015–V017 | `KPP1_VPM_NPM_V005.md`, `jobs/KPP1/` (`REPORT.md`) |
 | SOSH1150 openings (REVIT-OPENINGS) | — (pilot) | approximate types/placements not accepted | `jobs/REVIT-OPENINGS/STATE.md` |
 
 Rules distilled from these cases are already in `docs/domain/` with `local:` citations.
