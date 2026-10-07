@@ -113,3 +113,29 @@ fix by embedding one part into another or by stitching with added edges.
 User: «отлично ты справился с задачей в принципе модели уже готовы на 90 процентов» — production cycle and
 models v005 accepted as reviewed. Not a delivery: deferred items and manual gates above stay open.
 Full report: `REPORT.md`; case: `docs/agr/case_studies/KPP1_VPM_NPM_V005.md`, row in `docs/cases.md`.
+
+## Codex export safety trial (2026-10-07)
+
+User authorized fixes in a new local branch, fix/export-safety, with KPP1 41669a3
+and PSU275 6d67e8b as frozen dependencies. run_all now refuses reused version tags,
+reserves fresh build/atlas/package/checker directories, never deletes prior output,
+generates a fresh atlas and rejects KEEP_QUADS for deliveries. Direct KEEP_QUADS
+review exports and incremental run_stage behavior are retained. Export validates
+the atlas against current finishes and all used UDIMs; missing regions fail closed.
+
+349 project tests passed, including 28 KPP1 guard/runner regression cases.
+Real KPP1 NPM export with a fresh 19-region atlas had zero missing regions.
+The old and fixed exporters were run on the same current read-only master/atlas;
+both FBXs were imported in clean Blender 5.1.2 scenes. Geometry, UV, materials,
+transforms and shader snapshots match; Main 24876 triangles, MainGlass 76.
+These counts describe the tested current master, not a revalidation of historical
+v003 counts above. Full real build/package/SINTEZ pipeline and visual acceptance
+were not rerun. Compact evidence: ../PSU275/export-safety-evidence.json.
+No push/merge to main or production asset changes. Next: production owner visual
+review and separately authorized publication. Failed/new task files retained.
+
+### Merge note (Claude, 2026-10-07)
+
+Merged v005 runner into the export-safety runner: `run_all.sh` keeps version reservation
+and the fresh atlas, adds the overlap QA, and writes quad review exports to a new
+`outputs/max-<V>/` (refused if it exists). Synthetic runner tests pass; no real run.
