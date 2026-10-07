@@ -1,0 +1,84 @@
+{
+  "date": "2026-10-07",
+  "task": "Export safety trial",
+  "branch": "fix/export-safety",
+  "verified_remote_main": "ffa67e38cab825edd78d00bced6027a876398c9b",
+  "dependency_merge": "ebf6270d8a185f6f57dfd2a1734515ef7a341f8b",
+  "frozen_job_commits": {
+    "PSU275": "6d67e8b8577ef6f0a09b09ec876c29008bc01b6c",
+    "KPP1": "41669a387b6db1386a685de1f18369567aab811f"
+  },
+  "scope": "Safety guards and provenance retention; production geometry algorithms unchanged",
+  "checks": {
+    "pytest": {
+      "passed": 349,
+      "failed": 0,
+      "warning": "Duplicate ZIP member in an intentional negative test"
+    },
+    "profiles": "3 profiles OK; source hash and traceability pages",
+    "schemas": "8 schemas OK",
+    "diff_check": "OK",
+    "bash_syntax": "run_all.sh/run_stage.sh OK",
+    "independent_review": "No blocking P1/P2 findings in scoped diff"
+  },
+  "native": {
+    "blender": "5.1.2",
+    "PSU275": {
+      "body_faces": 3668,
+      "roof_faces": 211,
+      "source_sha256": {
+        "BODY_SHELL.blend": "2a5ecfd3710867d941052c31eeb14eabba653d1ca4b02ad5dee2dfb964254364",
+        "roof-wells.json": "846b0ec0712df11b22ecd6b1901af473e2d658115d86660005ac31d492f7d17b"
+      },
+      "baseline_sha256": "22e4df4b7830962545b04744ff2fc0e6363b9a74b34e34950842c323dd178944",
+      "variant_sha256": "9b3568929f5f0ad539dc8a8a7b3b36e2d786f55aea1e701b0f727ce313489cad",
+      "body_and_roof_provenance_preserved": true,
+      "geometry_uv_materials_transforms_properties_equal": true,
+      "inputs_unchanged": true
+    },
+    "KPP1": {
+      "fresh_atlas_includes_udim": 1019,
+      "faces_without_region": 0,
+      "main_tris": 24876,
+      "glass_tris": 76,
+      "fbx_baseline_sha256": "011797441e1321513218e75dc484607217e05eefdfa7b2b9f39b2d032a6fd747",
+      "fbx_variant_sha256": "7ea01589636443a7924954e572cc50b203a8c85520619752fb51b974a1cfe36d",
+      "fbx_geometry_uv_materials_transforms_shaders_equal": true,
+      "triangulated": true
+    }
+  },
+  "attempts": [
+    {
+      "id": "psu-real-v001",
+      "outcome": "failed",
+      "cause": "Loaded Text without fake user disappeared on save",
+      "resolution": "Preserve all imported Text data with fake users; exact text readback and native regression test"
+    },
+    {
+      "id": "pytest-project",
+      "outcome": "failed",
+      "cause": "Stage-failure test fixture still stubbed stage launcher",
+      "resolution": "Use real stage launcher; finalized targeted tests and full 349-test suite passed"
+    },
+    {
+      "id": "kpp-real-v001",
+      "outcome": "failed export; atlas produced",
+      "cause": "Relative atlas path was interpreted from opened Blender source",
+      "resolution": "Use absolute atlas/output arguments as run_all already does; failed outputs retained"
+    }
+  ],
+  "limits": [
+    "Full real KPP1 build/package/SINTEZ run_all cycle not rerun; runner verified with synthetic process doubles",
+    "Direct run_stage retains previous incremental overwrite behavior in explicitly selected build directory",
+    "Visual/user delivery acceptance remains pending; this is a technical safety trial",
+    "No push, merge to main, remote mutations, machine settings changes or cleanup"
+  ],
+  "local_evidence": [
+    "tmp/export-safety/pytest-final.log",
+    "tmp/export-safety/psu-real-v002/readback.json",
+    "tmp/export-safety/psu-real-v002/comparison.json",
+    "tmp/export-safety/kpp-real-v002/export.log",
+    "tmp/export-safety/kpp-real-v002/fbx-comparison.json"
+  ],
+  "delivery_passed": false
+}

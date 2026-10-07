@@ -80,3 +80,51 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 ## Next
 
 VPM cuts (< 4 × 4 m), UV/atlases and final materials from the S4 schedule; NPM atlas; exterior stairs, chimney and site parts from S3; FBX export + readback.
+
+
+## Export safety trial (Codex, 2026-10-07)
+
+User authorized trying fixes in a new branch; no push or merge to main. Task branch:
+fix/export-safety. Base main ffa67e38, with frozen PSU275 6d67e8b and KPP1 41669a3
+as local dependencies. Lead owns assembly and contract; bounded KPP1 executor owns
+its runner/export safety; independent verifier reviews actual diff and evidence.
+
+Acceptance: new output paths only; repeated runs preserve existing files; changed
+finish specifications cannot reuse an obsolete NPM atlas; missing atlas regions
+stop export; BODY and ROOF provenance survives save/reopen with unchanged geometry,
+UV, materials and transforms. Real object comparison and visual/user acceptance
+remain separate gates. Inputs and accepted outputs remain read-only; test outputs
+live only under task-owned tmp/export-safety. Stop on provenance ambiguity, failed
+required checks or source/output aliases; never weaken a check to pass.
+
+Plan: preflight guards and scoped fixes, negative/happy-path regression checks,
+isolated Blender save/reopen and object comparison where inputs exist, project
+checks, independent review, task-owned commit and local handoff. No production
+geometry redesign, standards changes or source asset cleanup is included.
+
+Status: technical safety trial verified; visual/user delivery gates remain open. PROJECT_STATE on main is not
+edited by this task. Evidence and remaining gates will be recorded below.
+
+### Safety trial verification
+
+Implementation and technical safety checks passed in the task branch. Compact
+cross-job evidence: `export-safety-evidence.json`. All 349 project tests passed;
+profiles (3) and schemas (8) passed. Real PSU275 assembly saved/reopened with BODY
+and ROOF provenance preserved; mesh/UV/material/transform/property snapshots match
+the prior building-v002. Inputs were rehashed unchanged. Imported standalone
+Blender Text requires fake users; the initial failed attempt is retained locally.
+
+No production geometry changed. Task-owned native files and detailed logs remain
+under tmp/export-safety; previous production outputs and failed attempts retained.
+Visual/user acceptance remains open. No push or merge to main. Next action:
+review the local changes and, if requested, have the production owner inspect the
+new versions before publication. Direct KPP1 stage-launcher overwrite compatibility
+is retained; the new-version guarantee applies to run_all.
+
+### Merge note (Claude, 2026-10-07)
+
+Merged with the later portals/fills work: `assemble_body_roof.py` now takes
+`<BODY.blend> <out.blend> <readback.json> <mesh.json>...` (several meshes, preview
+materials from `material_names`) and keeps every export-safety check per mesh; each added
+mesh stores `<name>_PROVENANCE.json`. Synthetic Blender save/reopen test passed; the real
+v003/v004 assemblies were not rerun with the merged script.
