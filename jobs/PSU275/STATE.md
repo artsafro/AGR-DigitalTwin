@@ -86,6 +86,20 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   overlaps 3, non-manifold 16, T 4, leaks 77 (32 at ground z=0), back faces seen from outside 40.
   Not clean yet: junction corners (bay/insert_1, hall/boiler east, annex portal) need work.
 
+- **VPM + NPM v002** (`scripts/run_all.sh v002 …`, 3.5 min): inputs shell-vpm-v010 (surface v009 + 3.9 m
+  connect, wells in BODY, junction caps fixed), roof-wells-v002 (no wells), portals-v009 (11 mm wall embed,
+  6 mm clearances from facade planes / door jambs / ground), fills-v004, textures-v002 (address `Psu_1`,
+  8 UDIM: Grille dropped — no louvre faces). Master `build-v002/PSU275_VPM_stage6_ucx.blend`:
+  Main 64 984 quads = 129 968 tris, Glass 5 440 tris, 23 UCX; KPP1 QA: leaks 0, T 0, xView overlaps 0,
+  non-manifold 0, doubles 0, oversize 0; 4 back-face probe hits (pane head faces / one superstructure
+  face, ray artefacts of the open shell — known, not slits). Readback of the VPM FBX: 25 objects, tris equal.
+- Packages: `package-vpm-v002/SM_Psu_1.zip` (FBX + 24 PNG), `package-npm-v002/0000_Psu_1.zip`
+  (atlas 2048 `_d_` + `_o_`). SINTEZ AGR Checker (`sintez-v002`): VPM 64 passed / 3 failed, NPM 38 / 5 —
+  same as accepted KPP1 v005; all failures deferred by the user (УКЭП, GeoJSON, Ground, district code,
+  height/coordinates). Manual items: VPM 53, NPM 29.
+- Fixed along the way: SINTEZ index (address must end with _1), MainGlass isolated vertices (15 566),
+  empty UDIM.
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
@@ -96,52 +110,4 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 
 ## Next
 
-VPM cuts (< 4 × 4 m), UV/atlases and final materials from the S4 schedule; NPM atlas; exterior stairs, chimney and site parts from S3; FBX export + readback.
-
-
-## Export safety trial (Codex, 2026-10-07)
-
-User authorized trying fixes in a new branch; no push or merge to main. Task branch:
-fix/export-safety. Base main ffa67e38, with frozen PSU275 6d67e8b and KPP1 41669a3
-as local dependencies. Lead owns assembly and contract; bounded KPP1 executor owns
-its runner/export safety; independent verifier reviews actual diff and evidence.
-
-Acceptance: new output paths only; repeated runs preserve existing files; changed
-finish specifications cannot reuse an obsolete NPM atlas; missing atlas regions
-stop export; BODY and ROOF provenance survives save/reopen with unchanged geometry,
-UV, materials and transforms. Real object comparison and visual/user acceptance
-remain separate gates. Inputs and accepted outputs remain read-only; test outputs
-live only under task-owned tmp/export-safety. Stop on provenance ambiguity, failed
-required checks or source/output aliases; never weaken a check to pass.
-
-Plan: preflight guards and scoped fixes, negative/happy-path regression checks,
-isolated Blender save/reopen and object comparison where inputs exist, project
-checks, independent review, task-owned commit and local handoff. No production
-geometry redesign, standards changes or source asset cleanup is included.
-
-Status: technical safety trial verified; visual/user delivery gates remain open. PROJECT_STATE on main is not
-edited by this task. Evidence and remaining gates will be recorded below.
-
-### Safety trial verification
-
-Implementation and technical safety checks passed in the task branch. Compact
-cross-job evidence: `export-safety-evidence.json`. All 349 project tests passed;
-profiles (3) and schemas (8) passed. Real PSU275 assembly saved/reopened with BODY
-and ROOF provenance preserved; mesh/UV/material/transform/property snapshots match
-the prior building-v002. Inputs were rehashed unchanged. Imported standalone
-Blender Text requires fake users; the initial failed attempt is retained locally.
-
-No production geometry changed. Task-owned native files and detailed logs remain
-under tmp/export-safety; previous production outputs and failed attempts retained.
-Visual/user acceptance remains open. No push or merge to main. Next action:
-review the local changes and, if requested, have the production owner inspect the
-new versions before publication. Direct KPP1 stage-launcher overwrite compatibility
-is retained; the new-version guarantee applies to run_all.
-
-### Merge note (Claude, 2026-10-07)
-
-Merged with the later portals/fills work: `assemble_body_roof.py` now takes
-`<BODY.blend> <out.blend> <readback.json> <mesh.json>...` (several meshes, preview
-materials from `material_names`) and keeps every export-safety check per mesh; each added
-mesh stores `<name>_PROVENANCE.json`. Synthetic Blender save/reopen test passed; the real
-v003/v004 assemblies were not rerun with the merged script.
+User review of build-v002 (renders, 3ds Max xView like KPP1); exterior steel stairs, chimney, transformer and racks from S3; GeoJSON/MSK-77/Ground when the user un-defers them.

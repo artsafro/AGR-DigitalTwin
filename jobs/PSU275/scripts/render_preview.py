@@ -8,15 +8,20 @@ import sys
 import bpy
 from mathutils import Vector
 
-prefix = sys.argv[sys.argv.index("--") + 1]
+args = sys.argv[sys.argv.index("--") + 1:]
+prefix = args[0]
+COLOR = args[1] if len(args) > 1 else "MATERIAL"  # TEXTURE shows the UDIM images
 scene = bpy.context.scene
 scene.render.engine = "BLENDER_WORKBENCH"
 scene.display.shading.light = "STUDIO"
-scene.display.shading.color_type = "MATERIAL"
+scene.display.shading.color_type = COLOR
 scene.display.shading.show_cavity = True
 scene.render.resolution_x, scene.render.resolution_y = 1800, 1100
 scene.render.film_transparent = False
-meshes = [o for o in scene.objects if o.type == "MESH"]
+meshes = [o for o in scene.objects if o.type == "MESH" and not o.name.startswith("UCX_")]
+for o in scene.objects:
+    if o.name.startswith("UCX_"):
+        o.hide_render = True
 grey = bpy.data.materials.new("preview_grey"); grey.diffuse_color = (0.75, 0.78, 0.82, 1)
 for o in meshes:
     if not o.data.materials:

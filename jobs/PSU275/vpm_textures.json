@@ -1,6 +1,6 @@
 {
- "_doc": "PSU275 VPM texture sets, format of jobs/KPP1/scripts/vpm_textures.json (accepted case KPP1 v005). One UDIM per finish; full = 4096 maps at 4.096 m per tile (1000 px/m). Sandwich panels: vertical joints every 1.19 m measured on S3 (76/87 repeats), no horizontal joints; joint phase not matched per facade (approximation). Colours: S4 finish schedule RAL codes, approximate sRGB; roughness/metallic proposals.",
- "address": "Psu_275",
+ "_doc": "PSU275 VPM texture sets, format of jobs/KPP1/scripts/vpm_textures.json (accepted case KPP1 v005). One UDIM per finish; full = 4096 maps at 4.096 m per tile (1000 px/m). Sandwich panels: vertical joints every 1.19 m measured on S3 (76/87 repeats), no horizontal joints; joint phase not matched per facade (approximation). Colours: S4 finish schedule RAL codes, approximate sRGB; roughness/metallic proposals. Address placeholder 'Psu_1' (SINTEZ reads SM_<Address>_<index>; index must start at 1). Grille finish removed: no louvre faces in VPM (empty UDIM fails SINTEZ).",
+ "address": "Psu_1",
  "size_full": 4096,
  "size_placeholder": 256,
  "pad_m": 0.04,
@@ -140,19 +140,8 @@
    "rough": 0.8,
    "metal": 0.0
   },
-  "Grille_RAL7004": {
-   "udim": 1008,
-   "kind": "placeholder",
-   "rgb": [
-    120,
-    122,
-    117
-   ],
-   "rough": 0.5,
-   "metal": 0.0
-  },
   "Interior": {
-   "udim": 1009,
+   "udim": 1008,
    "kind": "placeholder",
    "rgb": [
     25,

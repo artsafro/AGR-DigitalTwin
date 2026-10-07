@@ -29,6 +29,8 @@ FI = {n: i for i, n in enumerate(NAMES)}
 SURFACE_FINISH = {1: "Sandwich_RAL5015", 2: "Sandwich_RAL7047", 3: "Plinth_RAL7004"}  # massing_surface ids
 ROOF_FINISH = {"roof": "Membrane_Logicroof", "parapet_inner": "Sandwich_RAL5015", "well": "Sandwich_RAL7047"}
 WINDOW_FINISH = {1: "Frame_RAL9016", 2: "Door_RAL7004", 3: "Grille_RAL7004", 4: "Interior"}  # 0 = glass
+if "Grille_RAL7004" not in spec["finishes"]:
+    WINDOW_FINISH[3] = "Door_RAL7004"  # no louvre faces measured; the spec has no grille tile
 
 
 class Builder:
@@ -38,13 +40,16 @@ class Builder:
         self.lookup = {}
 
     def add(self, vertices, faces, finishes):
-        vs = []
-        for co in vertices:
-            key = tuple(round(c, 6) for c in co)
-            v = self.lookup.get(key)
-            if v is None:
-                v = self.lookup[key] = self.bm.verts.new(co)
-            vs.append(v)
+        vs = {}
+        for f in faces:  # only vertices used by the given faces (no isolated vertices)
+            for i in f:
+                if i not in vs:
+                    co = vertices[i]
+                    key = tuple(round(c, 6) for c in co)
+                    v = self.lookup.get(key)
+                    if v is None:
+                        v = self.lookup[key] = self.bm.verts.new(co)
+                    vs[i] = v
         self.degenerate = getattr(self, "degenerate", 0)
         for f, fin in zip(faces, finishes):
             ring = []
