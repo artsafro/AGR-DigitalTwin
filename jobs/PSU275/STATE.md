@@ -125,6 +125,7 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   `_02.._05` (objects `SM_Psu_1_<NNN>_Main`, shared frame of the main pivot, object origin at each OKS
   centre — SINTEZ «точка отсчёта»), VPM `SM_Psu_1..5.zip`. SINTEZ: «2-21 FBX» now passes; failures are the
   deferred items only (УКЭП, GeoJSON ×2, Ground, district code, height mark).
+- **Checkpoint 2026-10-07 (user review in 3ds Max 2026, HP = VPM / LP = NPM quad copies, `outputs/delivery-v002/max_review/import_hp_lp.ms`):** accepted as a checkpoint — main volume and mesh OK. Next: remove loops/rings that support no opening or corner (thin strips), keeping texel limits; reference logic `Desktop/zavod/scripts/mesh/clean_opening_grid.ms` (keep borders, creases, U/V lines of island corners; RemoveLoop the rest).
 
 ## Open
 
