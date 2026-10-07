@@ -1,5 +1,6 @@
 """PSU275 copy of jobs/KPP1/scripts/export_vpm.py (accepted case KPP1 v005); change: MainGlass optional
-(extra OKS Psu_2.. have no glazing; GeoJSON Glasses = [] then). Original description:
+(extra OKS Psu_2.. have no glazing; GeoJSON Glasses = [] then). Review only: env PSU275_VPM_PIVOT "x,y"
+places the OKS in the main building frame (object location = OKS centre); with KEEP_QUADS for 3ds Max checks. Original description:
 Export the KPP1 VPM FBX from the stage-6 master (headless Blender).
 
 Usage: blender --background --factory-startup --python export_vpm.py -- <master.blend> <package_dir>
@@ -74,6 +75,9 @@ for o in deliver:
     o.data.transform(o.matrix_world)
     o.matrix_world = Matrix.Identity(4)
     o.data.transform(Matrix.Translation(-centre))
+    if os.environ.get("PSU275_VPM_PIVOT"):  # review copy: shared frame of the main building, origin at this OKS centre
+        sh = Vector([float(c) for c in os.environ["PSU275_VPM_PIVOT"].split(",")] + [0.0])
+        o.location = centre - sh
     o.parent = None
     for c in list(o.users_collection):
         c.objects.unlink(o)
