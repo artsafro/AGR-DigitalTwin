@@ -26,6 +26,7 @@ collisions, plus the interactive Unreal experience. Priorities, in order:
 | Unsolved work | `docs/backlog.md` |
 | Accepted cases and lessons | `docs/cases.md` |
 | Terms | `GLOSSARY.md` |
+| Names for scripts, tools, jobs, outputs, branches and tags; object ids | `docs/agents/NAMING.md`, `jobs/REGISTRY.md` |
 | Machine-readable rules | `standards/` (locked; change procedure in `standards/README.md`) |
 | AGR knowledge base (Russian originals, read-only) | `docs/agr/` |
 
@@ -48,8 +49,8 @@ Checks: `uv run pytest -q`, `uv run dt profiles check`, `uv run dt schemas --che
 
 ## Rules for every task
 
-- One task = one branch = one worktree = one writing agent. Prefixes: `feature/`, `fix/`,
-  `experiment/`, `research/`, `harness/`. `main` stays clean; work reaches it by reviewed merge.
+- One task = one branch = one worktree = one writing agent. Branch names, prefixes and tags:
+  `docs/agents/NAMING.md`. `main` stays clean; work reaches it by reviewed merge.
   A second agent in someone else's worktree only reads, researches or reviews.
 - One owner per DCC scene, MCP port and export folder at a time; worktrees do not isolate them.
 - Before any DCC call confirm the application, document, units and version; start read-only.

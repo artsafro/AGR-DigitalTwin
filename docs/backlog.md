@@ -71,8 +71,13 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
 - **H5** CI: GitHub Actions failed with `startup_failure` (billing) in the old AGR repo.
   Decide hosted CI vs a local pre-push check.
 - **H6** Herdr: re-point the Herdr workspace and plugin to this repo; verify the HUD.
-- **H7** Tidy `tools/`: separate one-off job scripts (move into `jobs/<JOB>/`) from shared
-  tools; delete nothing that an accepted case cites.
+- **H7** Tidy `tools/` by `docs/agents/NAMING.md`: stage subfolders, `<verb>_<subject>` names
+  without versions or object codes (`git mv`, update `CAPABILITIES.md`, skills, tests); move
+  one-off job scripts into `jobs/<JOB>/`; delete nothing that an accepted case cites.
+- **H10** Shared VPM/NPM pipeline from `jobs/KPP1/scripts` and `jobs/PSU275/scripts` (duplicated
+  `export_npm`, `make_npm_atlas`, `package_vpm`, `vpm_ucx`, `qa_master*`, `run_all`) into
+  `tools/<stage>/`, parameters in `jobs/<id>/object.json`; regression: both objects give the same
+  outputs and QA. Then rename job folders to object ids and tag `pipeline/vpm-npm-v1`.
 - **H8** Machine-specific MCP paths in `.codex/config.toml` / `.agents/mcp_config.json`:
   document the install steps so another machine can reproduce them.
 - **H9** Git LFS budget of the GitHub account is exhausted (push rejected 2026-10-06):
