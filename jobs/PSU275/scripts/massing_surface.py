@@ -1,6 +1,6 @@
 """Full-height exterior surface with openings from massing profiles + sampled wall masks.
 
-    uv run python jobs/PSU275/scripts/massing_surface.py <profiles.json> <wall-masks.npz> <out_dir>
+    uv run python jobs/PSU275/scripts/massing_surface.py <profiles.json> <wall-masks.npz> <out_dir> [<finish-masks.npz>]
 
 1. Openings per profile: voids of the sampled opaque layer inside the profile, as greedy
    rectangles, edges snapped to source vertices, stacked strips merged, slivers dropped.
@@ -11,6 +11,10 @@
    run only until a hole or the profile boundary. Corner lines shared by two profiles pass
    their cut heights to each other until stable. Faces of the resulting rectangular
    partition become quads (T-junction-free by construction; verified below).
+4. Optional finish zoning: per profile, horizontal finish bands from the row-majority of the
+   sampled finish (runs shorter than MIN_BAND merged), band edges snapped to panel vertices and
+   consolidated with opening edges; each band edge cuts the whole facade (all pieces, not only
+   from sources). Every quad gets the finish of its band (npz `finish`).
 Output follows the exterior-surface contract read by tools/run_body_shell.py.
 """
 import json
@@ -33,6 +37,9 @@ EPS = 1e-6
 prof_doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 masks = np.load(sys.argv[2])
 out = Path(sys.argv[3])
+fin = np.load(sys.argv[4]) if len(sys.argv) > 4 else None
+FINISH_NAMES = ["none", "sandwich_RAL5015", "sandwich_RAL7047", "plinth_tile_RAL7004", "other"]
+MIN_BAND = 0.3
 profiles = prof_doc["profiles"]
 step = float(masks["step"])
 
@@ -114,8 +121,56 @@ for k, p in enumerate(profiles):
         else:
             p["openings"].append(r)
 
+# ---------- 1b. finish bands
+for k, p in enumerate(profiles):
+    p["_bands"] = []
+    if fin is None:
+        continue
+    f, fu, fz = fin[f"finish_{k}"], fin[f"us_{k}"], fin[f"zs_{k}"]
+    U, Z = np.meshgrid(fu, fz, indexing="ij")
+    ok = shapely.contains_xy(p["_poly"], U, Z) & (f >= 1) & (f <= 3)
+    for r in p["openings"]:
+        ok &= ~((U > r[0]) & (U < r[2]) & (Z > r[1]) & (Z < r[3]))
+    rows = np.full(len(fz), -1)
+    for j in range(len(fz)):
+        vals = f[ok[:, j], j]
+        if vals.size:
+            rows[j] = np.bincount(vals, minlength=4)[1:].argmax() + 1
+    known = np.nonzero(rows > 0)[0]
+    if not known.size:
+        continue
+    rows = rows[known[np.abs(np.arange(len(fz))[:, None] - known[None, :]).argmin(1)]]
+    runs = []
+    for j, c in enumerate(rows):
+        if runs and runs[-1][2] == c:
+            runs[-1][1] = j
+        else:
+            runs.append([j, j, int(c)])
+    stepz = float(fz[1] - fz[0]) if len(fz) > 1 else 0.05
+    changed = True
+    while changed and len(runs) > 1:
+        changed = False
+        for i, r in enumerate(runs):
+            if (r[1] - r[0] + 1) * stepz < MIN_BAND:
+                j = i - 1 if i > 0 else i + 1
+                runs[j][0], runs[j][1] = min(runs[j][0], r[0]), max(runs[j][1], r[1])
+                runs.pop(i); changed = True
+                break
+        merged = []
+        for r in runs:
+            if merged and merged[-1][2] == r[2]:
+                merged[-1][1] = r[1]
+            else:
+                merged.append(r)
+        runs = merged
+    sz = masks[f"snapz_{k}"]
+    for r in runs:
+        z_lo = float(fz[r[0]] - stepz / 2)
+        p["_bands"].append([snap(z_lo, sz) if r is not runs[0] else -1e9, r[2]])
+
 # ---------- 2. consolidation
 zvals = [z for p in profiles for r in p["openings"] for z in (r[1], r[3])]
+zvals += [b[0] for p in profiles for b in p["_bands"] if b[0] > -1e8]
 zanchor = {z for p in profiles for x, z in p["_poly"].exterior.coords}
 
 
@@ -145,6 +200,9 @@ for p in profiles:
         max_move = max(max_move, *(abs(a - b) for a, b in zip(r, q)))
         new.append(q)
     p["openings"] = new
+    lo_z, hi_z = p["_poly"].bounds[1], p["_poly"].bounds[3]
+    p["_band_z"] = sorted({zmap[b[0]] for b in p["_bands"] if b[0] > -1e8 and lo_z + EPS < zmap[b[0]] < hi_z - EPS})
+    p["_band_cls"] = [(zmap[b[0]] if b[0] > -1e8 else -1e9, b[1]) for b in p["_bands"]]
     holes = unary_union([box(*r) for r in new]) if new else Polygon()
     final = p["_poly"].difference(holes)
     if final.geom_type != "Polygon":
@@ -196,7 +254,18 @@ def segments(k):
                 if any(piece.distance(shapely.Point(pt)) < EPS for pt in pts
                        if abs(pt[1 - axis] - c) < EPS):
                     segs.append(piece)
+    for c in p["_band_z"]:  # finish band edges cut the whole facade
+        pieces = LineString([(u0 - 1, c), (u1 + 1, c)]).intersection(f)
+        segs.extend(g for g in getattr(pieces, "geoms", [pieces]) if g.geom_type == "LineString" and g.length > EPS)
     return segs
+
+
+def finish_at(p, z):
+    cls = 0
+    for z_lo, c in p["_band_cls"]:
+        if z >= z_lo - EPS:
+            cls = c
+    return cls
 
 
 for it in range(50):
@@ -215,7 +284,7 @@ for it in range(50):
 else:
     raise RuntimeError("corner cut propagation did not converge")
 
-vertices, faces, labels, lookup = [], [], [], {}
+vertices, faces, labels, lookup, finishes = [], [], [], {}, []
 t_junctions, non_rect, bad_cells = 0, 0, []
 report_profiles = []
 for k, p in enumerate(profiles):
@@ -248,19 +317,20 @@ for k, p in enumerate(profiles):
             if key not in lookup:
                 lookup[key] = len(vertices); vertices.append(xyz)
             idx.append(lookup[key])
-        faces.append(idx); labels.append(k + 1)
+        faces.append(idx); labels.append(k + 1); finishes.append(finish_at(p, (zz[0] + zz[1]) / 2))
     area_err = abs(sum(c.area for c in cells) - f.area)
     report_profiles.append({"axis": p["axis"], "along_axis": p["along_axis"], "plane": p["plane"],
                             "outward": p["outward"], "profile_geojson": shapely.to_geojson(f),
-                            "openings": [{"bounds_uz": r} for r in p["openings"]],
+                            "openings": [{"bounds_uz": r} for r in p["openings"]], "finish_bands": p["_band_cls"],
                             "edge_voids": p["edge_voids"], "dropped_slivers": p["dropped_slivers"], "corner_trims": p["corner_trims"],
                             "cells": len(cells), "area_error_m2": area_err})
 
 out.mkdir(parents=True, exist_ok=False)
 np.savez_compressed(out / "exterior-surface.npz", vertices=np.array(vertices), faces=np.array(faces, dtype=np.int32),
-                    facade_indices=np.array(labels, dtype=np.int32))
+                    facade_indices=np.array(labels, dtype=np.int32), finish=np.array(finishes, dtype=np.int32))
 summary = {"method": "massing profiles (union of rectangular masses) minus measured openings; cut lines stop at holes/boundary; corner cuts exchanged",
-           "angle_rad": 0.0, "vertices": len(vertices), "quads": len(faces), "profiles_count": len(profiles),
+           "angle_rad": 0.0, "finish_names": FINISH_NAMES,
+           "finish_quads": {n: finishes.count(i) for i, n in enumerate(FINISH_NAMES)}, "vertices": len(vertices), "quads": len(faces), "profiles_count": len(profiles),
            "openings": sum(len(p["openings"]) for p in profiles),
            "edge_voids": sum(len(p["edge_voids"]) for p in profiles),
            "dropped_slivers": sum(len(p["dropped_slivers"]) for p in profiles),
