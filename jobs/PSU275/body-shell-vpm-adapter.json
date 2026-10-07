@@ -1,7 +1,7 @@
 {
   "units": "m",
-  "surface_npz": "outputs/massing-surface-v007-c39/exterior-surface.npz",
-  "profiles_json": "outputs/massing-surface-v007-c39/exterior-surface.json",
+  "surface_npz": "outputs/massing-surface-v009-c39/exterior-surface.npz",
+  "profiles_json": "outputs/massing-surface-v009-c39/exterior-surface.json",
   "angle_rad": 0.0,
   "thickness_m": 0.4,
   "tolerance_m": 1e-07,

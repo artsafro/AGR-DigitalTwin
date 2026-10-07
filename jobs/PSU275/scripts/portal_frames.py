@@ -7,7 +7,7 @@ stays in the facade (BODY opening). Per seed region (facade plane f, outward sig
   p          outer face plane (largest outward-facing area, outermost)
   silhouette union of the (u, z) bounds of the outward faces lying on p (1 mm precision)
 Mesh: the silhouette on p as a T-free vertex-grid of quads, plus side faces along every
-silhouette edge from p back to f, split at the same grid lines. No back face (facade side).
+silhouette edge from p back to f (11 mm into the wall), split at the same grid lines. No back face.
 """
 import json
 import sys
@@ -20,8 +20,14 @@ from shapely.geometry import Point, box
 from shapely.ops import unary_union
 
 faces_npz, out = sys.argv[1], Path(sys.argv[2])
+MASS_PLANES = None  # facade planes per axis from argv[3] (masses.json)
+if len(sys.argv) > 3:
+    _m = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))["masses"]
+    MASS_PLANES = ({v for m in _m for v in m["x"]}, {v for m in _m for v in m["y"]})
 OPAQUE = ("Сэндвич", "Синий (RAL 5015)", "Алюкобонд")
 CLUSTER = 0.012
+WALL_EMBED = 0.011  # frames go 11 mm into the facade, not touching it (KPP1 v005 lesson: xView overlaps)
+PLANE_CLEAR = 0.006  # portal faces closer than xView 5 mm to a facade plane move 6 mm away (KPP1 v005)
 # name, region box (x0, x1, y0, y1), facade normal axis, facade plane, outward sign
 SEEDS = [
     ("annex_west",  (-58.3, -56.4, -50.7, -43.9), 0, -56.45, -1),
@@ -92,10 +98,26 @@ for name, (x0, x1, y0, y1), n_ax, f, s in SEEDS:
     rects = [box(maps[0][round(float(a), 4)], maps[1][round(float(b), 4)], maps[0][round(float(cc), 4)], maps[1][round(float(dd), 4)])
              for a, b, cc, dd in raw]
     rects = [r for r in rects if r.area > 0]
+    if MASS_PLANES:
+        # silhouette u-edges near a perpendicular facade plane: pull 6 mm into the silhouette
+        planes_u = MASS_PLANES[u_ax]
+        fixed = []
+        for r in rects:
+            a0, b0, a1, b1 = r.bounds
+            for pl in planes_u:
+                if abs(a0 - pl) < PLANE_CLEAR:
+                    a0 = pl + PLANE_CLEAR
+                if abs(a1 - pl) < PLANE_CLEAR:
+                    a1 = pl - PLANE_CLEAR
+            if a1 > a0:
+                fixed.append(box(a0, b0, a1, b1))
+        rects = fixed
     sil = shapely.set_precision(unary_union(rects), 0.001).simplify(0.001)
     parts = [g for g in getattr(sil, "geoms", [sil]) if g.area > 0.05]
 
     def P(u, z, n):
+        if n == f:
+            n = f - s * WALL_EMBED
         q = [0.0, 0.0, 0.0 if z < 0.05 else z]; q[u_ax] = u; q[n_ax] = n
         return q
 

@@ -69,6 +69,23 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   ROOF + PORTALS + WINDOWS_NPM / WINDOWS_VPM with preview materials (glass, frame RAL 9016,
   door RAL 7004, louvre, void).
 
+- 2026-10-07 merged origin/main (KPP1 v005 accepted case, export-safety). VPM continues on the KPP1
+  pipeline (experience-transfer): `vpm_textures.json` (9 UDIM: plinth tile300, sandwich RAL7047/5015
+  with 1.19 m joints measured on S3, portal cassettes, 5 placeholders), `make_textures_psu275.py`
+  (KPP1 generator) → `textures-v001`; `vpm_stage5.py` (Main + MainGlass, KPP1 seal/texel_cut/pack_uv/
+  materials), `vpm_ucx.py` (23 boxes, 2 mm gaps, 0 intersections), `qa_master_psu275.py` (KPP1 QA copy,
+  leak rays never start inside the masses: the shell is open inside by project rule).
+- Finish zoning: `sample_finish_masks.py` → `massing_surface.py` bands (plinth 0–0.46, grey to 13.215,
+  blue to 40.545, grey to 60.62, blue top; cuts across the whole facade); `connect_surface.py` 3.9 m.
+- Wells moved into BODY (`massing_profiles.py --wells`, trimmed only at lower-parapet ends),
+  `roof_wells.py --no-wells`, `fix_junction_caps.py --roofs` (drops roof-level step rims and well-band
+  end rims, un-mitres overlapping parapet caps) replaces `drop_step_bottom_rims.py` (whose index-space
+  bug and dropped rims left 0.4 m slots). Portals embed 11 mm and keep 6 mm from facade planes.
+- Current: `vpm-stage5-v006/PSU275_VPM_stage6_ucx.blend`: Main 64 394 quads (128 788 tris) + Glass
+  5 440 tris (< 150 000), max edge 3.54 m, UV overflow 0, density 1000 px/m. QA (KPP1 suite):
+  overlaps 3, non-manifold 16, T 4, leaks 77 (32 at ground z=0), back faces seen from outside 40.
+  Not clean yet: junction corners (bay/insert_1, hall/boiler east, annex portal) need work.
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
