@@ -4,9 +4,9 @@ Last updated: 2026-10-07
 
 ## Current goal
 
-NPM and VPM deliveries (later IFC) and an Unreal experience. The repository was just
-assembled from the two former projects; the next step is the first real object through
-the pipeline (`docs/pipeline.md`) and the conflict decisions that block it (`docs/backlog.md`).
+NPM and VPM deliveries (later IFC) and an Unreal experience. Two real objects are in
+production: KPP1 (models v005 accepted as reviewed) and PSU275 (building v004 assembled).
+Next: close their delivery gates (`docs/pipeline.md`, `docs/backlog.md`).
 
 ## Repository
 
@@ -36,6 +36,8 @@ verifier, the KPP1-VPM task (cancelled by the user), Codex `agent_monitor` panel
 
 Roles: `docs/agents/ROLES.md` (Claude — 3D/DCC production; Codex — code and organization;
 Antigravity — research, docs, review). Tools and MCP: `docs/agents/CAPABILITIES.md`.
+Fallback since 2026-10-07: while Codex is out of limits, Claude also owns git/GitHub work
+(branches, push, PRs, merges to `main`, this file).
 
 ## Available applications
 
@@ -47,9 +49,9 @@ uv, Node/npx, Git LFS, GitHub CLI, poppler. DCC executables are not on PATH.
 
 | Source | Path | Format | Status |
 |---|---|---|---|
-| PSU275 AR/MEP | `data/sources/revit/26_ПСУ275_АР_МЭП_RVT22.rvt` | Revit 2022, 282 MB | not analyzed |
+| PSU275 AR/MEP | `data/sources/revit/26_ПСУ275_АР_МЭП_RVT22.rvt` | Revit 2022, 282 MB | analyzed with PDF/FBX/PPTX (`docs/sources/psu275.md`) |
 | PSU275 MEP layout | `data/sources/revit/26_ПСУ275_Разбивочный файл_МЭП_RVT22.rvt` | Revit 2022 | not analyzed |
-| KPP1 AR/MEP | `data/sources/revit/26_КПП1_АР_МЭП_RVT22.rvt` | Revit 2022, 110 MB | not analyzed (KPP1 task cancelled) |
+| KPP1 AR/MEP | `data/sources/revit/26_КПП1_АР_МЭП_RVT22.rvt` | Revit 2022, 110 MB | used for KPP1 v005 (Revit 2025 copy, `jobs/KPP1/STATE.md`) |
 
 Legacy job outputs (Obr22, GLB, SOSH1150, Ground, MASHI, facades…) are in
 `jobs/<JOB>/outputs/` and other untracked job files, about 4.9 GB, local only.
@@ -58,6 +60,8 @@ Legacy job outputs (Obr22, GLB, SOSH1150, Ground, MASHI, facades…) are in
 
 | Deliverable | Path | Status | Last validation |
 |---|---|---|---|
+| KPP1 VPM + NPM v005 | `jobs/KPP1/` (`REPORT.md`) | accepted by the user as reviewed (~90 %); not a delivery — GeoJSON, MSK-77, district code, manual SINTEZ items open | 2026-10-07: xView overlaps 0/0, SINTEZ VPM 64/3, NPM 38/5 (deferred) |
+| PSU275 building v004 (NPM, VPM) | `jobs/PSU275/` | in work: BODY + ROOF + PORTALS + opening fills; visual review, roof slopes, stairs, VPM cuts/UV/atlases open | 2026-10-07: geometry/readback checks per stage |
 
 No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
@@ -69,10 +73,17 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
   (VPM target 150 000 triangles). Pending implementation: Q6 (C20), Q7 (GLB RGBA atlases, NPM placeholders).
 - `docs/agr/` and parts of `technical_library/`, `tools/`, `jobs/` are in Russian (H4).
 - Codex and Antigravity guard hooks are configured but not validated (H1).
+- `fix/export-safety` (merged 2026-10-07): KPP1 `run_all.sh` refuses reused versions and
+  writes quad review exports to a new `max-<V>`; PSU275 `assemble_body_roof.py` takes
+  `<BODY> <out> <readback> <mesh.json>...` with provenance checks. Synthetic tests pass; real
+  KPP1 full run and PSU275 v003/v004 re-assembly with the merged scripts not yet rerun.
 
 ## Next actions
 
-1. Claude: P1 — analyze a real source read-only; decide remaining conflicts as they block work.
-2. Codex: Q6 (encode C20), H1 (Codex hook), H2 (SketchUp venv), Q3 (one validator).
-3. Claude + Codex: Q7 — RGB + `_o_` conversion of GLB NPM atlases, 128 px NPM placeholders.
-4. Antigravity: H4 — translate `docs/agr/` core documents.
+1. Claude: PSU275 — visual review of v004, then VPM cuts, UV/atlases, materials, NPM atlas,
+   exterior stairs/chimney, FBX export + readback; rerun real assemblies with the merged script.
+2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
+   deferred delivery items when the user unblocks them.
+3. Codex (when back): Q6 (encode C20), H1 (Codex hook), H2 (SketchUp venv), Q3 (one validator).
+4. Claude + Codex: Q7 — RGB + `_o_` conversion of GLB NPM atlases, 128 px NPM placeholders.
+5. Antigravity: H4 — translate `docs/agr/` core documents.
