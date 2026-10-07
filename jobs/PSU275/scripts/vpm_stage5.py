@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "jobs" / "KPP1" / "scripts"))
 import seal  # noqa: E402
 import vpm_uv  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import clean_loops  # noqa: E402
 
 _args = sys.argv[sys.argv.index("--") + 1:]
 shell_dir, surface_dir, roof_json, portals_json, windows_json, tex_dir, out_blend = _args[:7]
@@ -88,7 +90,69 @@ bm_ = body["meshes"][0]
 main.add(bm_["vertices"], bm_["faces"],
          [SURFACE_FINISH.get(int(surf_finish[s["source_face"]]), "Sandwich_RAL7047") for s in body["face_sources"]])
 roof = json.loads(Path(roof_json).read_text(encoding="utf-8"))
-main.add(roof["mesh"]["vertices"], roof["mesh"]["faces"], [ROOF_FINISH[r["role"]] for r in roof["face_roles"]])
+roof_fin = [ROOF_FINISH[r["role"]] for r in roof["face_roles"]]
+if os.environ.get("PSU275_ROOF_EMBED"):
+    # Roof membrane as its own piece, border pushed 11 mm under the parapets / into the walls (KPP1 embed rule):
+    # no welded roof-parapet seam, so seal cuts do not run from one facade across the roof to the other.
+    rv, rf = roof["mesh"]["vertices"], roof["mesh"]["faces"]
+    mem = [f for f, r in zip(rf, roof["face_roles"]) if r["role"] == "roof"]
+    cnt = {}
+    for f in mem:
+        for a_, b_ in zip(f, f[1:] + f[:1]):
+            k = (min(a_, b_), max(a_, b_)); cnt[k] = cnt.get(k, 0) + 1
+    par_segs = []
+    for f, r in zip(rf, roof["face_roles"]):
+        if r["role"] != "roof":
+            par_segs += [(rv[a_], rv[b_]) for a_, b_ in zip(f, f[1:] + f[:1])]
+
+    def on_seg(q, a, b, tol=1e-3):
+        d = [b[k] - a[k] for k in range(3)]; L2 = sum(c * c for c in d)
+        if L2 < 1e-12:
+            return False
+        t = sum((q[k] - a[k]) * d[k] for k in range(3)) / L2
+        return -1e-6 <= t <= 1 + 1e-6 and sum((a[k] + d[k] * t - q[k]) ** 2 for k in range(3)) < tol * tol
+
+    def under_parapet(qa_, qb_):
+        m = [(qa_[k] + qb_[k]) / 2 for k in range(3)]
+        return any(on_seg(m, a, b) for a, b in par_segs)
+
+    push = {}
+    border = []
+    fixed = set()  # ends of welded border edges: never moved (a moved corner would slide along a wall)
+    for f in mem:
+        cx = sum(rv[i][0] for i in f) / len(f); cy = sum(rv[i][1] for i in f) / len(f)
+        for a_, b_ in zip(f, f[1:] + f[:1]):
+            k = (min(a_, b_), max(a_, b_))
+            if cnt[k] != 1:
+                continue
+            border.append((rv[a_], rv[b_]))
+            if not under_parapet(rv[a_], rv[b_]):  # coplanar wall caps / walls without parapet stay welded
+                fixed.update((a_, b_))
+                continue
+            dx, dy = rv[b_][0] - rv[a_][0], rv[b_][1] - rv[a_][1]
+            L = (dx * dx + dy * dy) ** 0.5
+            nx, ny = dy / L, -dx / L
+            mx, my = (rv[a_][0] + rv[b_][0]) / 2, (rv[a_][1] + rv[b_][1]) / 2
+            if nx * (mx - cx) + ny * (my - cy) < 0:
+                nx, ny = -nx, -ny
+            for i in (a_, b_):
+                push.setdefault(i, set()).add((round(nx, 6), round(ny, 6)))
+    EMB = 0.011
+    for i in fixed:
+        push.pop(i, None)
+    rv2 = [list(v) for v in rv]
+    for i, ns in push.items():
+        rv2[i][0] += sum(n[0] for n in ns) * EMB; rv2[i][1] += sum(n[1] for n in ns) * EMB
+    main.add(rv2, mem, ["Membrane_Logicroof"] * len(mem))
+    par = [k for k, r in enumerate(roof["face_roles"]) if r["role"] != "roof"]
+    rv3 = [list(v) for v in rv]
+    low = {i for k in par for i in rf[k] if i not in fixed and any(on_seg(rv[i], a, b) for a, b in border)}
+    for i in low:  # parapet bottom goes 11 mm under the membrane (no vertex on a roof edge)
+        rv3[i][2] -= EMB
+    main.add(rv3, [rf[k] for k in par], [roof_fin[k] for k in par])
+    qa["roof_embed"] = {"membrane_faces": len(mem), "pushed_vertices": len(push), "lowered_parapet_vertices": len(low)}
+else:
+    main.add(roof["mesh"]["vertices"], roof["mesh"]["faces"], roof_fin)
 portals = json.loads(Path(portals_json).read_text(encoding="utf-8"))
 main.add(portals["mesh"]["vertices"], portals["mesh"]["faces"], ["Cassette_RAL5015"] * len(portals["mesh"]["faces"]))
 win = json.loads(Path(windows_json).read_text(encoding="utf-8"))["mesh"]
@@ -106,9 +170,11 @@ qa["faces_in"] = {"main": len(main.bm.faces), "glass": len(glass.bm.faces),
 def finish_main(bm):
     log = []
     bm = seal.seal(bm, log=log)
+    if os.environ.get("PSU275_CLEAN_LOOPS"):  # drop loops that support no opening/corner/finish change
+        qa["clean_loops"] = clean_loops.clean(bm)
     bm = vpm_uv.texel_cut(bm, NAMES, spec)
     bm = seal.seal(bm, log=log)
-    qa["seal_main"] = log[-5:] if log else []
+    qa["seal_main"] = log
     qa["uv_main"] = vpm_uv.pack_uv(bm, NAMES, spec)
     qa["density_px_per_m"] = vpm_uv.density_qa(bm, NAMES, spec)
     return bm

@@ -126,6 +126,17 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   centre — SINTEZ «точка отсчёта»), VPM `SM_Psu_1..5.zip`. SINTEZ: «2-21 FBX» now passes; failures are the
   deferred items only (УКЭП, GeoJSON ×2, Ground, district code, height mark).
 - **Checkpoint 2026-10-07 (user review in 3ds Max 2026, HP = VPM / LP = NPM quad copies, `outputs/delivery-v002/max_review/import_hp_lp.ms`):** accepted as a checkpoint — main volume and mesh OK. Next: remove loops/rings that support no opening or corner (thin strips), keeping texel limits; reference logic `Desktop/zavod/scripts/mesh/clean_opening_grid.ms` (keep borders, creases, U/V lines of island corners; RemoveLoop the rest).
+- **Mesh clean-up v009** (`PSU275_ROOF_EMBED=1 PSU275_CLEAN_LOOPS=1 EXTRAS=… run_all.sh v009 …`): cause of the dense
+  grid was seal's T-junction cascade across the welded roof-parapet seam (29k -> 60k faces, cuts from one facade
+  ran across the roof to the opposite facade). Fix 1 (stage5): roof membrane as its own piece, border pushed 11 mm
+  under parapets (ends of welded edges never move), parapet bottoms lowered 11 mm under it. Fix 2
+  (`scripts/clean_loops.py`, port of zavod `clean_opening_grid.ms`): per plane keep borders, creases, finish
+  changes, uvx and non-rectangular quads and U/V lines of island corners; dissolve all-junk edge loops before
+  texel_cut. Main 66 282 -> 36 556 quads (-45 %; membrane 20 227 -> ~2 700 faces); QA T 0, leaks 0, overlaps 0,
+  doubles 0, UV overflow 0; SINTEZ VPM 64/3 (deferred only). v007/v008 = failed intermediates (overlaps / UV
+  overflow on skewed caps). Combined `delivery-v003` (main v009 + OKS v004), quad review copies in
+  `delivery-v003/max_review`. Remaining density: opening-corner lines across whole facades (needed for T-free
+  quads) and window frames (Frame_RAL9016 ~20k faces).
 
 ## Open
 
