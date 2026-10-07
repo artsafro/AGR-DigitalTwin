@@ -5,7 +5,7 @@ Last updated: 2026-10-07
 ## Current goal
 
 NPM and VPM deliveries (later IFC) and an Unreal experience. Two real objects are in
-production: KPP1 (models v005 accepted as reviewed) and PSU275 (building v004 assembled).
+production: KPP1 (models v005 accepted as reviewed) and PSU275 (delivery-v003 accepted as reviewed).
 Next: close their delivery gates (`docs/pipeline.md`, `docs/backlog.md`).
 
 ## Repository
@@ -61,7 +61,7 @@ Legacy job outputs (Obr22, GLB, SOSH1150, Ground, MASHI, facades…) are in
 | Deliverable | Path | Status | Last validation |
 |---|---|---|---|
 | KPP1 VPM + NPM v005 | `jobs/KPP1/` (`REPORT.md`) | accepted by the user as reviewed (~90 %); not a delivery — GeoJSON, MSK-77, district code, manual SINTEZ items open | 2026-10-07: xView overlaps 0/0, SINTEZ VPM 64/3, NPM 38/5 (deferred) |
-| PSU275 building v004 (NPM, VPM) | `jobs/PSU275/` | in work: BODY + ROOF + PORTALS + opening fills; visual review, roof slopes, stairs, VPM cuts/UV/atlases open | 2026-10-07: geometry/readback checks per stage |
+| PSU275 VPM + NPM delivery-v003 (main SM_Psu_1 v009 + OKS SM_Psu_2..5) | `jobs/PSU275/` (`REPORT.md`) | accepted by the user as reviewed (3ds Max + Blender); not a delivery — GeoJSON, MSK-77, district code, address, УКЭП, Ground, racks, manual SINTEZ items open | 2026-10-07: T/leaks/overlaps/non-manifold/doubles 0, UV overflow 0, SINTEZ VPM 64/3 (deferred only) |
 
 No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
@@ -71,6 +71,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 - 22 source conflicts and 5 dubious rules are open (`docs/domain/conflicts.md`). Decided on
   2026-10-07, mostly as SINTEZ AGR Checker: C1, C2, C3, C5, C6, C12, C13, C14, C19, C20, C21, C26
   (VPM target 150 000 triangles). Pending implementation: Q6 (C20), Q7 (GLB RGBA atlases, NPM placeholders).
+- Not merged on purpose (user, 2026-10-07): `claude/npm-models-school-kpp-ec9ced`
+  (BUTOVSKAYA-NPM, work in progress), `claude/modest-ptolemy-684fb7` and `feature/kpp1-ground`
+  (TEC26 ground, adds `ezdxf`).
 - `docs/agr/` and parts of `technical_library/`, `tools/`, `jobs/` are in Russian (H4).
 - Codex and Antigravity guard hooks are configured but not validated (H1).
 - `fix/export-safety` (merged 2026-10-07): KPP1 `run_all.sh` refuses reused versions and
@@ -80,8 +83,8 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-1. Claude: PSU275 — visual review of v004, then VPM cuts, UV/atlases, materials, NPM atlas,
-   exterior stairs/chimney, FBX export + readback; rerun real assemblies with the merged script.
+1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
+   and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
    deferred delivery items when the user unblocks them.
 3. Codex (when back): Q6 (encode C20), H1 (Codex hook), H2 (SketchUp venv), Q3 (one validator).
