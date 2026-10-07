@@ -26,6 +26,9 @@ v = np.array(mesh["vertices"])
 inputs = json.loads((src / "inputs.json").read_text(encoding="utf-8"))
 profiles_path = next(k for k in inputs["sha256"] if k.endswith("exterior-surface.json"))
 profiles = json.loads(Path(profiles_path).read_text(encoding="utf-8"))["profiles"]
+# source_edge indices refer to the INPUT surface vertices, not to the shell mesh vertex order
+surface_path = next(k for k in inputs["sha256"] if k.endswith("exterior-surface.npz"))
+v_in = np.load(surface_path)["vertices"]
 
 
 polys = [shape(json.loads(p["profile_geojson"])) for p in profiles]
@@ -45,8 +48,8 @@ keep, dropped = [], []
 for k, (face, s) in enumerate(zip(mesh["faces"], sources)):
     if s["role"] == "rim":
         i, j = s["source_edge"]
-        z = v[[i, j]][:, 2]
-        if abs(z[0] - z[1]) < 1e-9 and z[0] > 1e-6 and is_step_bottom(s["source_ref"], v[i], v[j]):
+        z = v_in[[i, j]][:, 2]
+        if abs(z[0] - z[1]) < 1e-9 and z[0] > 1e-6 and is_step_bottom(s["source_ref"], v_in[i], v_in[j]):
             dropped.append(k)
             continue
     keep.append(k)

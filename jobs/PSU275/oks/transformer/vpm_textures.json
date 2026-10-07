@@ -1,0 +1,23 @@
+{
+ "_doc": "PSU275 extra OKS 'transformer': Transformer (S3 Layer:0_трансформатор, voxel massing). Format of jobs/KPP1/scripts/vpm_textures.json (KPP1 v005). Separate OKS by user decision 2026-10-07; address placeholder continues Psu_1. Colours: chimney RAL 9016/3020 from the S4 schedule; all other colours are proposals (no source colour). Railing = KPP1/PSU275 Psu_1 definition.",
+ "address": "Psu_4",
+ "size_full": 4096,
+ "size_placeholder": 256,
+ "pad_m": 0.04,
+ "glass": {
+  "udim": 1001
+ },
+ "finishes": {
+  "Equipment_RAL7035": {
+   "kind": "placeholder",
+   "rgb": [
+    203,
+    208,
+    204
+   ],
+   "rough": 0.5,
+   "metal": 0.3,
+   "udim": 1001
+  }
+ }
+}

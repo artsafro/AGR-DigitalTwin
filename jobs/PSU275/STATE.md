@@ -69,62 +69,85 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   ROOF + PORTALS + WINDOWS_NPM / WINDOWS_VPM with preview materials (glass, frame RAL 9016,
   door RAL 7004, louvre, void).
 
+- 2026-10-07 merged origin/main (KPP1 v005 accepted case, export-safety). VPM continues on the KPP1
+  pipeline (experience-transfer): `vpm_textures.json` (9 UDIM: plinth tile300, sandwich RAL7047/5015
+  with 1.19 m joints measured on S3, portal cassettes, 5 placeholders), `make_textures_psu275.py`
+  (KPP1 generator) → `textures-v001`; `vpm_stage5.py` (Main + MainGlass, KPP1 seal/texel_cut/pack_uv/
+  materials), `vpm_ucx.py` (23 boxes, 2 mm gaps, 0 intersections), `qa_master_psu275.py` (KPP1 QA copy,
+  leak rays never start inside the masses: the shell is open inside by project rule).
+- Finish zoning: `sample_finish_masks.py` → `massing_surface.py` bands (plinth 0–0.46, grey to 13.215,
+  blue to 40.545, grey to 60.62, blue top; cuts across the whole facade); `connect_surface.py` 3.9 m.
+- Wells moved into BODY (`massing_profiles.py --wells`, trimmed only at lower-parapet ends),
+  `roof_wells.py --no-wells`, `fix_junction_caps.py --roofs` (drops roof-level step rims and well-band
+  end rims, un-mitres overlapping parapet caps) replaces `drop_step_bottom_rims.py` (whose index-space
+  bug and dropped rims left 0.4 m slots). Portals embed 11 mm and keep 6 mm from facade planes.
+- Current: `vpm-stage5-v006/PSU275_VPM_stage6_ucx.blend`: Main 64 394 quads (128 788 tris) + Glass
+  5 440 tris (< 150 000), max edge 3.54 m, UV overflow 0, density 1000 px/m. QA (KPP1 suite):
+  overlaps 3, non-manifold 16, T 4, leaks 77 (32 at ground z=0), back faces seen from outside 40.
+  Not clean yet: junction corners (bay/insert_1, hall/boiler east, annex portal) need work.
+
+- **VPM + NPM v002** (`scripts/run_all.sh v002 …`, 3.5 min): inputs shell-vpm-v010 (surface v009 + 3.9 m
+  connect, wells in BODY, junction caps fixed), roof-wells-v002 (no wells), portals-v009 (11 mm wall embed,
+  6 mm clearances from facade planes / door jambs / ground), fills-v004, textures-v002 (address `Psu_1`,
+  8 UDIM: Grille dropped — no louvre faces). Master `build-v002/PSU275_VPM_stage6_ucx.blend`:
+  Main 64 984 quads = 129 968 tris, Glass 5 440 tris, 23 UCX; KPP1 QA: leaks 0, T 0, xView overlaps 0,
+  non-manifold 0, doubles 0, oversize 0; 4 back-face probe hits (pane head faces / one superstructure
+  face, ray artefacts of the open shell — known, not slits). Readback of the VPM FBX: 25 objects, tris equal.
+- Packages: `package-vpm-v002/SM_Psu_1.zip` (FBX + 24 PNG), `package-npm-v002/0000_Psu_1.zip`
+  (atlas 2048 `_d_` + `_o_`). SINTEZ AGR Checker (`sintez-v002`): VPM 64 passed / 3 failed, NPM 38 / 5 —
+  same as accepted KPP1 v005; all failures deferred by the user (УКЭП, GeoJSON, Ground, district code,
+  height/coordinates). Manual items: VPM 53, NPM 29.
+- Fixed along the way: SINTEZ index (address must end with _1), MainGlass isolated vertices (15 566),
+  empty UDIM.
+
+- Extras (user 2026-10-07): chimney/ducts/transformer/tanks = separate OKS FBX (SM_Psu_2…); racks skipped
+  (absent in S3); tanks rebuilt as full cylinders. Inventory: `scripts/inventory_extras.py` →
+  `extras_inventory_v001.json`; S3 site renders `s3_site_*.png`. S3 has an odd underground element
+  (RAL 1022/5015, z −52…−11) — excluded.
+- External stairs rebuilt by parameters (KPP1 practice): `scripts/measure_stairs.py` (decking landings with
+  vertex bounds, flights) → `stairs_v002.json`; `scripts/build_stairs.py` → `stairs-mesh-v007`: 5 switchback
+  towers, platform +3.01 with flight, 3 ladders; 1 248 quads; joints: flights embed 11 mm into landings,
+  12 mm split between halves, 6 mm clearances (walls, ground/roof lift), guards 10 mm out, no guards against
+  walls; double alpha guard planes 8 mm apart (Railing_Alpha RAL 1021, explicit metre UVs), ladders split
+  ≤ 3.5 m (Ladder_Alpha RAL 1021); steel Metal_RAL5015. Spec + 3 finishes (11 UDIM), textures-v003.
+- **VPM + NPM v006** (`EXTRAS=stairs.json run_all.sh v006 …`): Main 66 282 quads = 132 564 tris + Glass
+  5 440; QA: leaks 0, T 0, overlaps 0, non-manifold 0; back-face probe 236 (230 = alpha strip ends, as
+  KPP1). SINTEZ VPM 64/3, NPM 38/5 (deferred items only).
+- **Separate OKS v004** (`scripts/build_oks_extras.py` → `outputs/oks-extras-v004`; `run_oks.sh <key> v004`;
+  specs `oks/<key>/vpm_textures.json`): chimney Psu_2 (R 6.70/6.00, 120 m, RAL 3020 bands from S3,
+  platform +105.883 with railing ring, 2 944 tris), ducts Psu_3 (Ø4 tubes on measured centrelines, cone
+  Ø8→Ø4 from the main north wall, U duct into the chimney with the two S3 halves joined, 2 duct buildings,
+  4 supports; 2 360 tris, 35 UCX), transformer Psu_4 (S3 voxelised 0.25 m, well-composed, 43 628 tris,
+  114 UCX boxes), tanks Psu_5 (3 cylinders to the ground, railing rings; 1 728 tris). Each: T 0, leaks 0,
+  overlaps 0, non-manifold 0, doubles 0; open edges only on alpha railing strips. Colours other than the
+  chimney are proposals. VPM: own package and pivot each, no MainGlass (`export_vpm_psu275.py`).
+- **Combined delivery v002** (`run_npm_combined.sh v002 …`): NPM `0000_Psu_1.zip` = main `_01` + OKS
+  `_02.._05` (objects `SM_Psu_1_<NNN>_Main`, shared frame of the main pivot, object origin at each OKS
+  centre — SINTEZ «точка отсчёта»), VPM `SM_Psu_1..5.zip`. SINTEZ: «2-21 FBX» now passes; failures are the
+  deferred items only (УКЭП, GeoJSON ×2, Ground, district code, height mark).
+- **Checkpoint 2026-10-07 (user review in 3ds Max 2026, HP = VPM / LP = NPM quad copies, `outputs/delivery-v002/max_review/import_hp_lp.ms`):** accepted as a checkpoint — main volume and mesh OK. Next: remove loops/rings that support no opening or corner (thin strips), keeping texel limits; reference logic `Desktop/zavod/scripts/mesh/clean_opening_grid.ms` (keep borders, creases, U/V lines of island corners; RemoveLoop the rest).
+- **Mesh clean-up v009** (`PSU275_ROOF_EMBED=1 PSU275_CLEAN_LOOPS=1 EXTRAS=… run_all.sh v009 …`): cause of the dense
+  grid was seal's T-junction cascade across the welded roof-parapet seam (29k -> 60k faces, cuts from one facade
+  ran across the roof to the opposite facade). Fix 1 (stage5): roof membrane as its own piece, border pushed 11 mm
+  under parapets (ends of welded edges never move), parapet bottoms lowered 11 mm under it. Fix 2
+  (`scripts/clean_loops.py`, port of zavod `clean_opening_grid.ms`): per plane keep borders, creases, finish
+  changes, uvx and non-rectangular quads and U/V lines of island corners; dissolve all-junk edge loops before
+  texel_cut. Main 66 282 -> 36 556 quads (-45 %; membrane 20 227 -> ~2 700 faces); QA T 0, leaks 0, overlaps 0,
+  doubles 0, UV overflow 0; SINTEZ VPM 64/3 (deferred only). v007/v008 = failed intermediates (overlaps / UV
+  overflow on skewed caps). Combined `delivery-v003` (main v009 + OKS v004), quad review copies in
+  `delivery-v003/max_review`. Remaining density: opening-corner lines across whole facades (needed for T-free
+  quads) and window frames (Frame_RAL9016 ~20k faces).
+- **Accepted 2026-10-07** (user, Blender review of the quad masters): mesh clean-up v009 = success; delivery-v003 fixed as the result of this stage. Report `REPORT.md`, case `docs/agr/case_studies/PSU275_VPM_NPM_DELIVERY_V003.md`.
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
 - Roof slopes (hall 38.32…39.35), skylight lantern details, roof equipment not modelled.
-- External steel stairs/ladders (5 clusters) → exterior equipment from S3.
+- Transformer is a voxel massing (0.25 m); parametric parts (tank, bushings, conservator) if needed.
+- Racks (эстакады) absent in S3 — skipped until a source exists.
 - Opening IDs are S3 measurement IDs, not Revit IDs. Minimum rim edge 10 mm.
 - Generalization of the massing builder → backlog P12 (Codex).
 
 ## Next
 
-VPM cuts (< 4 × 4 m), UV/atlases and final materials from the S4 schedule; NPM atlas; exterior stairs, chimney and site parts from S3; FBX export + readback.
-
-
-## Export safety trial (Codex, 2026-10-07)
-
-User authorized trying fixes in a new branch; no push or merge to main. Task branch:
-fix/export-safety. Base main ffa67e38, with frozen PSU275 6d67e8b and KPP1 41669a3
-as local dependencies. Lead owns assembly and contract; bounded KPP1 executor owns
-its runner/export safety; independent verifier reviews actual diff and evidence.
-
-Acceptance: new output paths only; repeated runs preserve existing files; changed
-finish specifications cannot reuse an obsolete NPM atlas; missing atlas regions
-stop export; BODY and ROOF provenance survives save/reopen with unchanged geometry,
-UV, materials and transforms. Real object comparison and visual/user acceptance
-remain separate gates. Inputs and accepted outputs remain read-only; test outputs
-live only under task-owned tmp/export-safety. Stop on provenance ambiguity, failed
-required checks or source/output aliases; never weaken a check to pass.
-
-Plan: preflight guards and scoped fixes, negative/happy-path regression checks,
-isolated Blender save/reopen and object comparison where inputs exist, project
-checks, independent review, task-owned commit and local handoff. No production
-geometry redesign, standards changes or source asset cleanup is included.
-
-Status: technical safety trial verified; visual/user delivery gates remain open. PROJECT_STATE on main is not
-edited by this task. Evidence and remaining gates will be recorded below.
-
-### Safety trial verification
-
-Implementation and technical safety checks passed in the task branch. Compact
-cross-job evidence: `export-safety-evidence.json`. All 349 project tests passed;
-profiles (3) and schemas (8) passed. Real PSU275 assembly saved/reopened with BODY
-and ROOF provenance preserved; mesh/UV/material/transform/property snapshots match
-the prior building-v002. Inputs were rehashed unchanged. Imported standalone
-Blender Text requires fake users; the initial failed attempt is retained locally.
-
-No production geometry changed. Task-owned native files and detailed logs remain
-under tmp/export-safety; previous production outputs and failed attempts retained.
-Visual/user acceptance remains open. No push or merge to main. Next action:
-review the local changes and, if requested, have the production owner inspect the
-new versions before publication. Direct KPP1 stage-launcher overwrite compatibility
-is retained; the new-version guarantee applies to run_all.
-
-### Merge note (Claude, 2026-10-07)
-
-Merged with the later portals/fills work: `assemble_body_roof.py` now takes
-`<BODY.blend> <out.blend> <readback.json> <mesh.json>...` (several meshes, preview
-materials from `material_names`) and keeps every export-safety check per mesh; each added
-mesh stores `<name>_PROVENANCE.json`. Synthetic Blender save/reopen test passed; the real
-v003/v004 assemblies were not rerun with the merged script.
+Optional: window-frame simplification, parametric transformer, 3ds Max xView check (like KPP1); GeoJSON/MSK-77/Ground when the user un-defers them; racks when a source appears; generalisation candidates to Codex (P12, clean_loops + unwelded roof).

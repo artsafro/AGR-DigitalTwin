@@ -136,6 +136,8 @@ for ri, r in enumerate(regions):
                     probe = (a + b) / 2 - n_in * 1e-3
                     if neighbour_top(*probe) <= r["top"]:
                         continue  # parapet sides are inset, so an on-R edge here is the well side only
+                    if "--no-wells" in sys.argv:
+                        continue  # wells are part of BODY (massing_profiles.py --wells)
                     role, z1 = "well", zt
                 else:
                     role, z1 = "parapet_inner", zt

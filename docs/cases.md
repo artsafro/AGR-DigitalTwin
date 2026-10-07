@@ -19,6 +19,7 @@ evidence in `jobs/<JOB>/`. Template for new cases: `docs/agr/case_studies/TEMPLA
 | Ground contours → NPM | contours, 18 material IDs, materials (v003) | v003 mesh rejected; v008 shape acceptance | `GROUND_CONTOURS_AND_NPM.md`, `jobs/GROUND-PROJECTION/` |
 | MASHI-LP scene audit | scene organization and audit | new master is a trial; intersections, visual acceptance | `MASHI_LP_SCENE_AUDIT.md`, `jobs/MASHI-LP/` |
 | KPP1 VPM + NPM v005 (Revit → Blender) | full modelling cycle and models v005 as reviewed ("90 % ready", 2026-10-07): quads ≤ 4 m, no leaks, xView overlaps 0/0, SINTEZ only deferred fails | GeoJSON, MSK-77, district code, address, УКЭП, Ground; manual SINTEZ items, V015–V017 | `KPP1_VPM_NPM_V005.md`, `jobs/KPP1/` (`REPORT.md`) |
+| PSU275 VPM + NPM delivery-v003 (massing → one Shell; main + 4 separate OKS) | models as reviewed in 3ds Max and Blender (2026-10-07): checkpoint v002, then mesh clean-up v009 "успех… глобально справились": Main 66k → 36.5k quads, QA T/leaks/overlaps/non-manifold/doubles 0, SINTEZ only deferred fails, one NPM ZIP with 5 FBX | GeoJSON, MSK-77, district code, address, УКЭП, Ground; racks; transformer voxel massing; window frames density; manual SINTEZ items | `PSU275_VPM_NPM_DELIVERY_V003.md`, `jobs/PSU275/` (`REPORT.md`) |
 | SOSH1150 openings (REVIT-OPENINGS) | — (pilot) | approximate types/placements not accepted | `jobs/REVIT-OPENINGS/STATE.md` |
 
 Rules distilled from these cases are already in `docs/domain/` with `local:` citations.

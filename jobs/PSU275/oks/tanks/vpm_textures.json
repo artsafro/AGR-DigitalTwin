@@ -1,0 +1,49 @@
+{
+ "_doc": "PSU275 extra OKS 'tanks': Tanks x3 (S3 Cylinder001-003, rebuilt to the ground). Format of jobs/KPP1/scripts/vpm_textures.json (KPP1 v005). Separate OKS by user decision 2026-10-07; address placeholder continues Psu_1. Colours: chimney RAL 9016/3020 from the S4 schedule; all other colours are proposals (no source colour). Railing = KPP1/PSU275 Psu_1 definition.",
+ "address": "Psu_5",
+ "size_full": 4096,
+ "size_placeholder": 256,
+ "pad_m": 0.04,
+ "glass": {
+  "udim": 1001
+ },
+ "finishes": {
+  "Tank_RAL9016": {
+   "kind": "placeholder",
+   "rgb": [
+    246,
+    246,
+    246
+   ],
+   "rough": 0.5,
+   "metal": 0.2,
+   "udim": 1001
+  },
+  "Railing_Alpha_RAL1021": {
+   "udim": 1002,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.9,
+    4.096
+   ],
+   "shift": [
+    true,
+    false
+   ],
+   "rgb": [
+    238,
+    201,
+    0
+   ],
+   "rough": 0.45,
+   "metal": 1.0,
+   "pattern": "railing",
+   "rgb_top": [
+    238,
+    201,
+    0
+   ]
+  }
+ }
+}

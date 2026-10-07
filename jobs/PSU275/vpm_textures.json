@@ -1,0 +1,214 @@
+{
+ "_doc": "PSU275 VPM texture sets, format of jobs/KPP1/scripts/vpm_textures.json (accepted case KPP1 v005). One UDIM per finish; full = 4096 maps at 4.096 m per tile (1000 px/m). Sandwich panels: vertical joints every 1.19 m measured on S3 (76/87 repeats), no horizontal joints; joint phase not matched per facade (approximation). Colours: S4 finish schedule RAL codes, approximate sRGB; roughness/metallic proposals. Address placeholder 'Psu_1' (SINTEZ reads SM_<Address>_<index>; index must start at 1). Grille finish removed: no louvre faces in VPM (empty UDIM fails SINTEZ). Stairs (S3 rebuild): guards Railing_Alpha (whole guard RAL 1021 per S4 schedule), ladders Ladder_Alpha_RAL1021, stair steel Metal_RAL5015 placeholder (KPP1 definitions).",
+ "address": "Psu_1",
+ "size_full": 4096,
+ "size_placeholder": 256,
+ "pad_m": 0.04,
+ "glass": {
+  "udim": 1001
+ },
+ "finishes": {
+  "Plinth_RAL7004": {
+   "udim": 1001,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.3,
+    0.3
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "rgb": [
+    150,
+    153,
+    146
+   ],
+   "rough": 0.45,
+   "metal": 0.0,
+   "pattern": "tile300"
+  },
+  "Sandwich_RAL7047": {
+   "udim": 1002,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    1.19,
+    1.0
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.0,
+    0.0
+   ],
+   "rgb": [
+    208,
+    208,
+    208
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": false
+  },
+  "Sandwich_RAL5015": {
+   "udim": 1003,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    1.19,
+    1.0
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.0,
+    0.0
+   ],
+   "rgb": [
+    34,
+    113,
+    179
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": false
+  },
+  "Cassette_RAL5015": {
+   "udim": 1004,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.6,
+    0.55
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.27,
+    0.5
+   ],
+   "rgb": [
+    34,
+    113,
+    179
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": true
+  },
+  "Frame_RAL9016": {
+   "udim": 1005,
+   "kind": "placeholder",
+   "rgb": [
+    246,
+    246,
+    246
+   ],
+   "rough": 0.4,
+   "metal": 0.0
+  },
+  "Door_RAL7004": {
+   "udim": 1006,
+   "kind": "placeholder",
+   "rgb": [
+    150,
+    153,
+    146
+   ],
+   "rough": 0.45,
+   "metal": 0.0
+  },
+  "Membrane_Logicroof": {
+   "udim": 1007,
+   "kind": "placeholder",
+   "rgb": [
+    140,
+    143,
+    145
+   ],
+   "rough": 0.8,
+   "metal": 0.0
+  },
+  "Interior": {
+   "udim": 1008,
+   "kind": "placeholder",
+   "rgb": [
+    25,
+    25,
+    28
+   ],
+   "rough": 1.0,
+   "metal": 0.0
+  },
+  "Railing_Alpha_RAL1021": {
+   "udim": 1009,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    0.9,
+    4.096
+   ],
+   "shift": [
+    true,
+    false
+   ],
+   "rgb": [
+    238,
+    201,
+    0
+   ],
+   "rough": 0.45,
+   "metal": 1.0,
+   "pattern": "railing",
+   "rgb_top": [
+    238,
+    201,
+    0
+   ]
+  },
+  "Ladder_Alpha_RAL1021": {
+   "udim": 1010,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    4.096,
+    0.372
+   ],
+   "shift": [
+    false,
+    true
+   ],
+   "mirror_u": 0.44,
+   "rgb": [
+    238,
+    201,
+    0
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "ladder"
+  },
+  "Metal_RAL5015": {
+   "udim": 1011,
+   "kind": "placeholder",
+   "rgb": [
+    34,
+    113,
+    179
+   ],
+   "rough": 0.45,
+   "metal": 0.0
+  }
+ }
+}
