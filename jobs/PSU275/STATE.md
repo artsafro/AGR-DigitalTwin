@@ -137,6 +137,7 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
   overflow on skewed caps). Combined `delivery-v003` (main v009 + OKS v004), quad review copies in
   `delivery-v003/max_review`. Remaining density: opening-corner lines across whole facades (needed for T-free
   quads) and window frames (Frame_RAL9016 ~20k faces).
+- **Accepted 2026-10-07** (user, Blender review of the quad masters): mesh clean-up v009 = success; delivery-v003 fixed as the result of this stage. Report `REPORT.md`, case `docs/agr/case_studies/PSU275_VPM_NPM_DELIVERY_V003.md`.
 
 ## Open
 
@@ -149,4 +150,4 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 
 ## Next
 
-User review of delivery-v002 (renders `outputs/delivery-v002/preview`, 3ds Max xView like KPP1); GeoJSON/MSK-77/Ground when the user un-defers them; racks when a source appears.
+Optional: window-frame simplification, parametric transformer, 3ds Max xView check (like KPP1); GeoJSON/MSK-77/Ground when the user un-defers them; racks when a source appears; generalisation candidates to Codex (P12, clean_loops + unwelded roof).
