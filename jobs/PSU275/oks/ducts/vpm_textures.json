@@ -1,0 +1,71 @@
+{
+ "_doc": "PSU275 extra OKS 'ducts': Gas ducts, duct buildings and supports (S3 Layer:0_трубы, здание с трубами). Format of jobs/KPP1/scripts/vpm_textures.json (KPP1 v005). Separate OKS by user decision 2026-10-07; address placeholder continues Psu_1. Colours: chimney RAL 9016/3020 from the S4 schedule; all other colours are proposals (no source colour). Railing = KPP1/PSU275 Psu_1 definition.",
+ "address": "Psu_3",
+ "size_full": 4096,
+ "size_placeholder": 256,
+ "pad_m": 0.04,
+ "glass": {
+  "udim": 1001
+ },
+ "finishes": {
+  "Duct_RAL9006": {
+   "kind": "placeholder",
+   "rgb": [
+    161,
+    161,
+    160
+   ],
+   "rough": 0.5,
+   "metal": 0.6,
+   "udim": 1001
+  },
+  "Sandwich_RAL7047": {
+   "udim": 1002,
+   "kind": "full",
+   "S": 4.096,
+   "P": [
+    1.19,
+    1.0
+   ],
+   "shift": [
+    true,
+    true
+   ],
+   "phase": [
+    0.0,
+    0.0
+   ],
+   "rgb": [
+    208,
+    208,
+    208
+   ],
+   "rough": 0.5,
+   "metal": 0.0,
+   "pattern": "cassette",
+   "h_joints": false
+  },
+  "Roof_RAL7004": {
+   "kind": "placeholder",
+   "rgb": [
+    150,
+    153,
+    146
+   ],
+   "rough": 0.7,
+   "metal": 0.0,
+   "udim": 1003
+  },
+  "Concrete_Grey": {
+   "kind": "placeholder",
+   "rgb": [
+    160,
+    160,
+    155
+   ],
+   "rough": 0.9,
+   "metal": 0.0,
+   "udim": 1004
+  }
+ }
+}

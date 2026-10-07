@@ -17,7 +17,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 pkg, tex = sys.argv[1:3]
 NO_GEOJSON = "--no-geojson" in sys.argv
 meta = json.load(open(os.path.join(pkg, "..", "export_meta.json")))
-spec = json.load(open(os.path.join(HERE, "..", "vpm_textures.json"), encoding="utf-8"))
+spec = json.load(open(os.environ.get("PSU275_SPEC") or os.path.join(HERE, "..", "vpm_textures.json"), encoding="utf-8"))
 A = meta["address"]
 stem = f"SM_{A}"
 

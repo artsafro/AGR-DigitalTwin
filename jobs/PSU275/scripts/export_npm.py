@@ -1,5 +1,6 @@
 """PSU275 copy of jobs/KPP1/scripts/export_npm.py (accepted case KPP1 v005); change: spec = jobs/PSU275/vpm_textures.json,
 KPP1 modules imported from jobs/KPP1/scripts.
+Extra OKS (env): PSU275_SPEC, PSU275_NPM_ADDRESS, PSU275_NPM_INDEX (NNN/NN), PSU275_NPM_PIVOT "x,y"; MainGlass optional.
 """
 """Export the KPP1 NPM OKS FBX from the stage-6 master (headless Blender).
 
@@ -29,7 +30,7 @@ args = sys.argv[sys.argv.index("--") + 1:]
 master, atlas_dir, out = args[:3]
 prefix = args[3] if len(args) > 3 else "0000"
 atlas = json.load(open(os.path.join(atlas_dir, "npm_atlas.json"), encoding="utf-8"))
-texture_spec = json.load(open(os.path.join(HERE, "..", "vpm_textures.json"), encoding="utf-8"))
+texture_spec = json.load(open(os.environ.get("PSU275_SPEC") or os.path.join(HERE, "..", "vpm_textures.json"), encoding="utf-8"))
 by_udim = validate_atlas(atlas, texture_spec)
 os.makedirs(out, exist_ok=True)
 bpy.ops.wm.open_mainfile(filepath=master)
@@ -43,15 +44,21 @@ for c in list(bpy.data.collections):
         bpy.data.collections.remove(c)
 
 main = next(o for o in sc.objects if o.name.endswith("_Main"))
-glass = next(o for o in sc.objects if o.name.endswith("_MainGlass"))
-A = main.name[3:-5]
+glass = next((o for o in sc.objects if o.name.endswith("_MainGlass")), None)  # extra OKS (PSU275 Psu_2..) have no glass
+parts = [o for o in (main, glass) if o]
+A = os.environ.get("PSU275_NPM_ADDRESS") or main.name[3:-5]  # extra OKS share the Psu_1 NPM address
+IDX = int(os.environ.get("PSU275_NPM_INDEX", "1"))  # OKS index inside the NPM package (reg p.11-12 §3.3)
+NNN, NN = f"{IDX:03d}", f"{IDX:02d}"
 names = main["finish_names"].split(",")
 alpha_ids = {i for i, n in enumerate(names) if "Alpha" in n}
 
-pts = [o.matrix_world @ v.co for o in (main, glass) for v in o.data.vertices]
+pts = [o.matrix_world @ v.co for o in parts for v in o.data.vertices]
 lo = Vector([min(p[i] for p in pts) for i in range(3)])
 hi = Vector([max(p[i] for p in pts) for i in range(3)])
 centre = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, 0.0))
+own_centre = centre.copy()  # alpha back copies: keep the one facing away from this OKS plan centre
+if os.environ.get("PSU275_NPM_PIVOT"):  # one origin for every FBX of the NPM package (main building pivot)
+    centre = Vector([float(c) for c in os.environ["PSU275_NPM_PIVOT"].split(",")] + [0.0])
 
 report = {"address": A, "prefix": prefix, "pivot_revit_internal_m": [round(centre.x, 4), round(centre.y, 4), 0.0]}
 
@@ -60,7 +67,7 @@ bm = bmesh.new()
 bm.from_mesh(main.data)
 fl = bm.faces.layers.int["finish"]
 uv = bm.loops.layers.uv["UVMap"]
-plan_c = Vector((centre.x, centre.y, 0))
+plan_c = Vector((own_centre.x, own_centre.y, 0))
 alpha_faces = [f for f in bm.faces if f[fl] in alpha_ids]
 drop = set()
 for f in alpha_faces:
@@ -103,7 +110,7 @@ bm.free()
 report.update({"alpha_back_copies_removed": len(drop), "faces_without_region": 0})
 
 # ---- clean layers / attributes not meant for delivery, apply transforms, pivot, triangulate
-for o in (main, glass):
+for o in parts:
     me = o.data
     for uvl in [u for u in me.uv_layers if u.name != "UVMap"]:
         me.uv_layers.remove(uvl)
@@ -114,6 +121,10 @@ for o in (main, glass):
     me.transform(o.matrix_world)
     o.matrix_world = Matrix.Identity(4)
     me.transform(Matrix.Translation(-centre))
+    if os.environ.get("PSU275_NPM_PIVOT"):  # shared frame, origin at this OKS plan centre (SINTEZ 'точка отсчёта')
+        off = Vector((own_centre.x - centre.x, own_centre.y - centre.y, 0.0))
+        me.transform(Matrix.Translation(-off))
+        o.location = off
     b = bmesh.new()
     b.from_mesh(me)
     if not os.environ.get("KEEP_QUADS"):  # KEEP_QUADS: review copy for 3ds Max, not a delivery
@@ -125,8 +136,9 @@ for o in (main, glass):
         c.objects.unlink(o)
     sc.collection.objects.link(o)
 
-main.name = main.data.name = f"SM_{A}_001_Main"
-glass.name = glass.data.name = f"SM_{A}_001_MainGlass"
+main.name = main.data.name = f"SM_{A}_{NNN}_Main"
+if glass:
+    glass.name = glass.data.name = f"SM_{A}_{NNN}_MainGlass"
 
 # ---- materials
 def image(path):
@@ -135,15 +147,15 @@ def image(path):
     img.pack()
     return img
 
-mm = bpy.data.materials.new(f"M_{A}_001_Main_1")
+mm = bpy.data.materials.new(f"M_{A}_{NNN}_Main_1")
 mm.use_nodes = True
 nt = mm.node_tree
 for n in list(nt.nodes):
     if n.type not in {"BSDF_PRINCIPLED", "OUTPUT_MATERIAL"}:
         nt.nodes.remove(n)
 bsdf = next(n for n in nt.nodes if n.type == "BSDF_PRINCIPLED")
-td = nt.nodes.new("ShaderNodeTexImage"); td.image = image(os.path.join(atlas_dir, f"T_{A}_001_Main_d_1.png"))
-to = nt.nodes.new("ShaderNodeTexImage"); to.image = image(os.path.join(atlas_dir, f"T_{A}_001_Main_o_1.png"))
+td = nt.nodes.new("ShaderNodeTexImage"); td.image = image(os.path.join(atlas_dir, f"T_{A}_{NNN}_Main_d_1.png"))
+to = nt.nodes.new("ShaderNodeTexImage"); to.image = image(os.path.join(atlas_dir, f"T_{A}_{NNN}_Main_o_1.png"))
 to.image.colorspace_settings.name = "Non-Color"
 nt.links.new(td.outputs["Color"], bsdf.inputs["Base Color"])
 nt.links.new(to.outputs["Color"], bsdf.inputs["Alpha"])
@@ -158,28 +170,29 @@ gb = next(n for n in mg.node_tree.nodes if n.type == "BSDF_PRINCIPLED")
 gb.inputs["Base Color"].default_value = (0.75, 0.82, 0.82, 1.0)
 gb.inputs["Alpha"].default_value = 0.5
 gb.inputs["Roughness"].default_value = 0.05
-glass.data.materials.clear()
-glass.data.materials.append(mg)
+if glass:
+    glass.data.materials.clear()
+    glass.data.materials.append(mg)
 for p in main.data.polygons:
     p.material_index = 0
-for p in glass.data.polygons:
+for p in (glass.data.polygons if glass else []):
     p.material_index = 0
 
 for m in list(bpy.data.materials):
     if m.users == 0:
         bpy.data.materials.remove(m)
 
-deliver = [main, glass]
+deliver = parts
 for o in sc.objects:
     o.select_set(o in deliver)
-fbx = os.path.join(out, f"{prefix}_{A}_01.fbx")
+fbx = os.path.join(out, f"{prefix}_{A}_{NN}.fbx")
 bpy.ops.export_scene.fbx(filepath=fbx, use_selection=True, object_types={"MESH"},
                          axis_forward="Y", axis_up="Z", apply_unit_scale=True, apply_scale_options="FBX_SCALE_UNITS",
                          global_scale=1.0, bake_space_transform=False, use_mesh_modifiers=False,
                          mesh_smooth_type="FACE", use_triangles=False, use_custom_props=False,
                          add_leaf_bones=False, bake_anim=False, path_mode="COPY", embed_textures=True)
 tri = lambda o: sum(len(p.vertices) - 2 for p in o.data.polygons)
-report.update({"fbx": fbx, "main_tris": tri(main), "glass_tris": tri(glass)})
+report.update({"fbx": fbx, "main_tris": tri(main), "glass_tris": tri(glass) if glass else 0})
 json.dump(report, open(os.path.join(out, "..", "export_npm_meta.json"), "w"), indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(out, "..", "PSU275_NPM_export_tri.blend"))
 print("EXPORT-NPM", json.dumps(report))

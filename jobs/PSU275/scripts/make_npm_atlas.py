@@ -29,8 +29,9 @@ NPM_JOINT_HALF_MM = 8  # 16 mm on the atlas ~ 1.5 px at 97 px/m
 
 
 def main(out):
-    spec = json.load(open(os.path.join(HERE, "..", "vpm_textures.json"), encoding="utf-8"))
-    a = spec["address"]
+    spec = json.load(open(os.environ.get("PSU275_SPEC") or os.path.join(HERE, "..", "vpm_textures.json"), encoding="utf-8"))
+    a = os.environ.get("PSU275_NPM_ADDRESS") or spec["address"]
+    nnn = f'{int(os.environ.get("PSU275_NPM_INDEX", "1")):03d}'
     os.makedirs(out, exist_ok=True)
     dif = np.zeros((ATLAS, ATLAS, 3), np.uint8)
     opa = np.full((ATLAS, ATLAS, 3), 255, np.uint8)
@@ -57,8 +58,8 @@ def main(out):
                      "size": REGION / ATLAS, "px_per_m": round(REGION / t.get("S", 4.096), 1)
                      if t["kind"] == "full" else None}
         print(f, t["udim"], t["kind"], (cx, cy))
-    dn = os.path.join(out, f"T_{a}_001_Main_d_1.png")
-    on = os.path.join(out, f"T_{a}_001_Main_o_1.png")
+    dn = os.path.join(out, f"T_{a}_{nnn}_Main_d_1.png")
+    on = os.path.join(out, f"T_{a}_{nnn}_Main_o_1.png")
     Image.fromarray(dif, "RGB").save(dn, optimize=True)
     Image.fromarray(opa, "RGB").save(on, optimize=True)
     json.dump({"atlas": ATLAS, "cell": CELL, "pad": PAD, "region": REGION, "finishes": layout},

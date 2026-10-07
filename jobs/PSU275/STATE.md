@@ -113,15 +113,28 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 - **VPM + NPM v006** (`EXTRAS=stairs.json run_all.sh v006 …`): Main 66 282 quads = 132 564 tris + Glass
   5 440; QA: leaks 0, T 0, overlaps 0, non-manifold 0; back-face probe 236 (230 = alpha strip ends, as
   KPP1). SINTEZ VPM 64/3, NPM 38/5 (deferred items only).
+- **Separate OKS v004** (`scripts/build_oks_extras.py` → `outputs/oks-extras-v004`; `run_oks.sh <key> v004`;
+  specs `oks/<key>/vpm_textures.json`): chimney Psu_2 (R 6.70/6.00, 120 m, RAL 3020 bands from S3,
+  platform +105.883 with railing ring, 2 944 tris), ducts Psu_3 (Ø4 tubes on measured centrelines, cone
+  Ø8→Ø4 from the main north wall, U duct into the chimney with the two S3 halves joined, 2 duct buildings,
+  4 supports; 2 360 tris, 35 UCX), transformer Psu_4 (S3 voxelised 0.25 m, well-composed, 43 628 tris,
+  114 UCX boxes), tanks Psu_5 (3 cylinders to the ground, railing rings; 1 728 tris). Each: T 0, leaks 0,
+  overlaps 0, non-manifold 0, doubles 0; open edges only on alpha railing strips. Colours other than the
+  chimney are proposals. VPM: own package and pivot each, no MainGlass (`export_vpm_psu275.py`).
+- **Combined delivery v002** (`run_npm_combined.sh v002 …`): NPM `0000_Psu_1.zip` = main `_01` + OKS
+  `_02.._05` (objects `SM_Psu_1_<NNN>_Main`, shared frame of the main pivot, object origin at each OKS
+  centre — SINTEZ «точка отсчёта»), VPM `SM_Psu_1..5.zip`. SINTEZ: «2-21 FBX» now passes; failures are the
+  deferred items only (УКЭП, GeoJSON ×2, Ground, district code, height mark).
 
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.
 - Roof slopes (hall 38.32…39.35), skylight lantern details, roof equipment not modelled.
-- External steel stairs/ladders (5 clusters) → exterior equipment from S3.
+- Transformer is a voxel massing (0.25 m); parametric parts (tank, bushings, conservator) if needed.
+- Racks (эстакады) absent in S3 — skipped until a source exists.
 - Opening IDs are S3 measurement IDs, not Revit IDs. Minimum rim edge 10 mm.
 - Generalization of the massing builder → backlog P12 (Codex).
 
 ## Next
 
-User review of build-v002 (renders, 3ds Max xView like KPP1); exterior steel stairs, chimney, transformer and racks from S3; GeoJSON/MSK-77/Ground when the user un-defers them.
+User review of delivery-v002 (renders `outputs/delivery-v002/preview`, 3ds Max xView like KPP1); GeoJSON/MSK-77/Ground when the user un-defers them; racks when a source appears.
