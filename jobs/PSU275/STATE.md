@@ -100,6 +100,20 @@ Sources, decisions and derived values: `docs/sources/psu275.md`. Profile: NPM + 
 - Fixed along the way: SINTEZ index (address must end with _1), MainGlass isolated vertices (15 566),
   empty UDIM.
 
+- Extras (user 2026-10-07): chimney/ducts/transformer/tanks = separate OKS FBX (SM_Psu_2…); racks skipped
+  (absent in S3); tanks rebuilt as full cylinders. Inventory: `scripts/inventory_extras.py` →
+  `extras_inventory_v001.json`; S3 site renders `s3_site_*.png`. S3 has an odd underground element
+  (RAL 1022/5015, z −52…−11) — excluded.
+- External stairs rebuilt by parameters (KPP1 practice): `scripts/measure_stairs.py` (decking landings with
+  vertex bounds, flights) → `stairs_v002.json`; `scripts/build_stairs.py` → `stairs-mesh-v007`: 5 switchback
+  towers, platform +3.01 with flight, 3 ladders; 1 248 quads; joints: flights embed 11 mm into landings,
+  12 mm split between halves, 6 mm clearances (walls, ground/roof lift), guards 10 mm out, no guards against
+  walls; double alpha guard planes 8 mm apart (Railing_Alpha RAL 1021, explicit metre UVs), ladders split
+  ≤ 3.5 m (Ladder_Alpha RAL 1021); steel Metal_RAL5015. Spec + 3 finishes (11 UDIM), textures-v003.
+- **VPM + NPM v006** (`EXTRAS=stairs.json run_all.sh v006 …`): Main 66 282 quads = 132 564 tris + Glass
+  5 440; QA: leaks 0, T 0, overlaps 0, non-manifold 0; back-face probe 236 (230 = alpha strip ends, as
+  KPP1). SINTEZ VPM 64/3, NPM 38/5 (deferred items only).
+
 ## Open
 
 - Visual/user review of `shell-full-v002` against S4 facades; louvres counted as openings.

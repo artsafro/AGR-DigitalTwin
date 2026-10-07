@@ -8,12 +8,14 @@ import sys
 import bpy
 from mathutils import Vector
 
-out, cx, cy, cz, size, az, el = sys.argv[sys.argv.index("--") + 1:]
+_a = sys.argv[sys.argv.index("--") + 1:]
+out, cx, cy, cz, size, az, el = _a[:7]
+COLOR = _a[7] if len(_a) > 7 else "MATERIAL"
 cx, cy, cz, size, az, el = map(float, (cx, cy, cz, size, az, el))
 sc = bpy.context.scene
 sc.render.engine = "BLENDER_WORKBENCH"
 sc.display.shading.light = "STUDIO"
-sc.display.shading.color_type = "MATERIAL"
+sc.display.shading.color_type = COLOR
 sc.display.shading.show_backface_culling = True
 sc.render.resolution_x, sc.render.resolution_y = 1400, 1000
 for o in sc.objects:

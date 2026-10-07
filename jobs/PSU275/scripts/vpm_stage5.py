@@ -22,7 +22,9 @@ sys.path.insert(0, str(ROOT / "jobs" / "KPP1" / "scripts"))
 import seal  # noqa: E402
 import vpm_uv  # noqa: E402
 
-shell_dir, surface_dir, roof_json, portals_json, windows_json, tex_dir, out_blend = sys.argv[sys.argv.index("--") + 1:]
+_args = sys.argv[sys.argv.index("--") + 1:]
+shell_dir, surface_dir, roof_json, portals_json, windows_json, tex_dir, out_blend = _args[:7]
+extra_jsons = _args[7:]  # optional pieces with per-face "finishes" and optional "uvm" (explicit metre UVs)
 spec = vpm_uv.load_spec(str(ROOT / "jobs" / "PSU275" / "vpm_textures.json"))
 NAMES = list(spec["finishes"])  # finish index -> name (face int layer `finish`)
 FI = {n: i for i, n in enumerate(NAMES)}
@@ -37,9 +39,11 @@ class Builder:
     def __init__(self):
         self.bm = bmesh.new()
         self.fl = self.bm.faces.layers.int.new("finish")
+        self.ux = self.bm.faces.layers.int.new("uvx")  # 1 = explicit UVs in UVM (KPP1 vpm_uv/seal contract)
+        self.uvm = self.bm.loops.layers.uv.new("UVM")
         self.lookup = {}
 
-    def add(self, vertices, faces, finishes):
+    def add(self, vertices, faces, finishes, uvms=None):
         vs = {}
         for f in faces:  # only vertices used by the given faces (no isolated vertices)
             for i in f:
@@ -51,7 +55,7 @@ class Builder:
                         v = self.lookup[key] = self.bm.verts.new(co)
                     vs[i] = v
         self.degenerate = getattr(self, "degenerate", 0)
-        for f, fin in zip(faces, finishes):
+        for fi_, (f, fin) in enumerate(zip(faces, finishes)):
             ring = []
             for i in f:  # a shell rim on an edge exactly one thickness from a corner collapses one vertex
                 if not ring or vs[i] is not ring[-1]:
@@ -67,6 +71,11 @@ class Builder:
             except ValueError:  # same face already present (exact duplicate) -> keep one
                 continue
             face[self.fl] = FI[fin]
+            uv = uvms[fi_] if uvms else None
+            if uv is not None and len(uv) == len(face.loops):
+                face[self.ux] = 1
+                for loop, (u, v) in zip(face.loops, uv):
+                    loop[self.uvm].uv = (u, v)
 
 
 bpy.ops.wm.read_homefile(use_empty=True)
@@ -83,6 +92,9 @@ main.add(roof["mesh"]["vertices"], roof["mesh"]["faces"], [ROOF_FINISH[r["role"]
 portals = json.loads(Path(portals_json).read_text(encoding="utf-8"))
 main.add(portals["mesh"]["vertices"], portals["mesh"]["faces"], ["Cassette_RAL5015"] * len(portals["mesh"]["faces"]))
 win = json.loads(Path(windows_json).read_text(encoding="utf-8"))["mesh"]
+for path in extra_jsons:
+    ex = json.loads(Path(path).read_text(encoding="utf-8"))
+    main.add(ex["mesh"]["vertices"], ex["mesh"]["faces"], ex["finishes"], ex.get("uvm"))
 opaque = [k for k, m in enumerate(win["materials"]) if m != 0]
 panes = [k for k, m in enumerate(win["materials"]) if m == 0]
 main.add(win["vertices"], [win["faces"][k] for k in opaque], [WINDOW_FINISH[win["materials"][k]] for k in opaque])
