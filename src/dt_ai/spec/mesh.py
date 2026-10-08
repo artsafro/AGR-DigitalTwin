@@ -85,15 +85,24 @@ class _Sets:
 
 def _weld(v):
     """Representative vertex index per vertex. Eight half-shifted grids guarantee that points
-    within WELD_M / 2 on every axis share a cell in at least one grid."""
+    within WELD_M / 2 on every axis share a cell in at least one grid. A cluster that chains wider
+    than WELD_M (dense vertices) falls back to one plain grid, so no vertex moves more than WELD_M."""
     sets = _Sets(len(v))
+    grids = []
     for shift in product((0.0, 0.5), repeat=3):
         keys = np.floor(v / WELD_M + np.asarray(shift)).astype(np.int64)
         _, first, inverse = np.unique(keys, axis=0, return_index=True, return_inverse=True)
-        for i, j in zip(range(len(v)), first[inverse.ravel()]):
+        grids.append(first[inverse.ravel()])
+        for i, j in enumerate(grids[-1]):
             if i != j:
                 sets.union(int(j), i)
-    return np.array([sets.find(i) for i in range(len(v))])
+    rep = np.array([sets.find(i) for i in range(len(v))])
+    lo, hi = np.full_like(v, np.inf), np.full_like(v, -np.inf)
+    np.minimum.at(lo, rep, v)
+    np.maximum.at(hi, rep, v)
+    wide = (hi[rep] - lo[rep]).max(axis=1) > WELD_M
+    rep[wide] = grids[0][wide]
+    return rep
 
 
 def _mesh(dump, m):
@@ -201,21 +210,24 @@ def _level_contour(v, tris, z0, z1, name):
 
 
 def _roof(v, tris, top_level, top_contour):
-    """Roof plane: horizontal body area nearest to the top input level; parapet top: highest body
+    """Roof plane: the horizontal body surface nearest to the top input level that covers the
+    inside of the top floor contour (a parapet cap ring does not); parapet top: highest body
     point on the outer wall line of the top floor. Missing roof geometry is an error."""
     p = v[tris]
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
     length = np.linalg.norm(n, axis=1)
     flat = (length > 0) & (np.abs(n[:, 2]) > 0.999 * length)
-    z_flat = p[flat, 0, 2]
-    near = np.abs(z_flat - top_level["elev_m"]) <= ROOF_SEARCH_M
-    if not near.any():
+    near = flat & (np.abs(p[:, 0, 2] - top_level["elev_m"]) <= ROOF_SEARCH_M)
+    planes = defaultdict(list)
+    for tri in p[near]:
+        planes[round(float(tri[0, 2]), 3)].append(Polygon(tri[:, :2]))
+    inside = top_contour.point_on_surface()
+    covering = [z for z, faces in planes.items()
+                if shapely.unary_union([f for f in faces if f.area > 0]).buffer(1e-6).contains(inside)]
+    if not covering:
         raise SpecError(f"no horizontal roof surface within {ROOF_SEARCH_M} m of level "
-                        f"{top_level['name']} ({top_level['elev_m']} m)")
-    weight = defaultdict(float)
-    for z, a in zip(np.round(z_flat[near], 3), length[flat][near] / 2):
-        weight[float(z)] += float(a)
-    roof_z = max(weight, key=weight.get)
+                        f"{top_level['name']} ({top_level['elev_m']} m) covers the top floor")
+    roof_z = min(covering, key=lambda z: abs(z - top_level["elev_m"]))
     edge = top_contour.exterior
     pts = v[np.unique(tris)]
     on_edge = [z for (x, y, z) in pts if edge.distance(shapely.Point(x, y)) <= PARAPET_EDGE_M]
