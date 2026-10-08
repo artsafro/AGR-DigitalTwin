@@ -36,7 +36,7 @@ def reveal(mesh, x0, x1, z0, z1, depth):
 
 
 def openings(spec, level=0):
-    return [(o.wall, o.x_m, o.sill_m, o.w_m, o.h_m, o.depth_m, o.source) for o in spec.floors[level].openings]
+    return [(o.wall, o.x_m, o.sill_m, o.w_m, o.h_m, o.depth_m, o.source) for o in spec.expanded_floors()[level].openings]
 
 
 def test_hole_with_glass_is_one_opening():
@@ -66,14 +66,14 @@ def test_hole_with_a_reveal_is_an_opening_not_a_recess_question():
     flat(b, Polygon(SQUARE10), 6.6, up=True)
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
-    assert close(spec.floors[0].contour, SQUARE10)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
     assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, 0.25, "hole")]
     assert report["questions"] == []
 
 
 def test_door_from_the_floor_does_not_open_the_storey_end():
     spec, report = extract_spec(building(boxes=[(0, 4.0, 5.0, 0.0, 2.1, 0.0)]), OBJECT)
-    assert close(spec.floors[0].contour, SQUARE10)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
     assert openings(spec) == [(0, 4.0, 0.0, 1.0, 2.1, 0.0, "hole")]
     assert report["floors"]["L0"]["contour_rule"] == "single shape"
 
@@ -93,7 +93,7 @@ def test_opening_on_a_non_90_wall_is_measured_along_that_wall():
     contour = [[0, 0], [12, 0], [12, 6], [9, 9], [0, 9]]
     diag = math.dist([12, 6], [9, 9])
     spec, _ = extract_spec(building(contour, boxes=[(2, 1.0, 2.5, 1.0, 2.2, 0.0)]), OBJECT)
-    (o,) = spec.floors[0].openings
+    (o,) = spec.expanded_floors()[0].openings
     assert (o.wall, o.x_m, o.w_m, o.h_m) == (2, 1.0, 1.5, 1.2) and diag > 4
 
 
@@ -122,7 +122,7 @@ def test_widest_bridged_gap_is_8_m(width, found):
     # a wider break is not bridged: no opening is invented, those cuts stay open and decide nothing
     contour = [[0, 0], [20, 0], [20, 10], [0, 10]]
     spec, report = extract_spec(building(contour, boxes=[(0, 1.0, 1.0 + width, 1.0, 2.0, 0.0)]), OBJECT)
-    assert close(spec.floors[0].contour, contour)
+    assert close(spec.expanded_floors()[0].contour, contour)
     assert [o[3] for o in openings(spec)] == ([pytest.approx(width)] if found else [])
     assert (report["floors"]["L0"]["closed_sections"] < report["floors"]["L0"]["sections"]) != found
 
@@ -217,7 +217,7 @@ def test_opening_plane_keeps_the_hole_anchor_and_gives_its_material_id():
     d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane])
     d["meshes"][-1]["material_ids"] = [12, 12]
     spec, _ = extract_spec(d, OBJECT)
-    (o,) = spec.floors[0].openings
+    (o,) = spec.expanded_floors()[0].openings
     assert (o.source, o.material_id, o.window_type, o.w_m) == ("hole", 12, None, 1.5)
 
 
@@ -257,7 +257,7 @@ def test_hole_on_a_rounded_corner_is_an_opening(n):
     facet = 2 + n // 2                                  # a facet in the middle of the arc
     chord = math.dist(contour[facet], contour[facet + 1])
     spec, report = extract_spec(building(contour, boxes=[(facet, 0.0, chord, 0.9, 2.4, 0.0)]), OBJECT)
-    (o,) = spec.floors[0].openings
+    (o,) = spec.expanded_floors()[0].openings
     assert (o.w_m, o.h_m, o.source) == (pytest.approx(chord, abs=0.01), 1.5, "hole")
     assert report["questions"] == []
 
@@ -279,7 +279,7 @@ def test_plane_with_mixed_ids_gets_no_id():
     d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane])
     d["meshes"][-1]["material_ids"] = [12, 13]
     spec, report = extract_spec(d, OBJECT)
-    assert spec.floors[0].openings[0].material_id is None and report["openings"]["opening_planes_mixed_ids"] == 1
+    assert spec.expanded_floors()[0].openings[0].material_id is None and report["openings"]["opening_planes_mixed_ids"] == 1
 
 
 def test_plane_without_material_ids_is_a_question():
@@ -333,7 +333,7 @@ def test_conflicting_opening_planes_give_no_material_id():
         d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=planes)
         d["meshes"][-2]["material_ids"], d["meshes"][-1]["material_ids"] = [ids[0]] * 2, [ids[1]] * 2
         spec, report = extract_spec(d, OBJECT)
-        (o,) = spec.floors[0].openings
+        (o,) = spec.expanded_floors()[0].openings
         assert (o.material_id, o.plane_conflict) == (None, True)
         assert report["openings"]["openings_with_conflicting_planes"] == 1
 

@@ -92,4 +92,17 @@ class Spec(SpecPart):
             for ref in (f.level, f.typical_of, f.repeat_to):
                 if ref is not None and ref not in names:
                     raise ValueError(f"floor refers to unknown level {ref}")
+        full = {f.level for f in self.floors if f.contour is not None}
+        for f in self.floors:
+            if f.typical_of is not None:
+                if f.typical_of not in full or names.index(f.typical_of) >= names.index(f.level):
+                    raise ValueError(f"floor {f.level}: typical_of must be a full floor below it")
+                if f.repeat_to is not None and names.index(f.repeat_to) < names.index(f.level):
+                    raise ValueError(f"floor {f.level}: repeat_to is below the floor")
         return self
+
+    def expanded_floors(self):
+        """Every floor in full, typical runs copied from their template (round trip of #8)."""
+        from dt_ai.spec.floors import expand
+        names = [lv.name for lv in self.levels]
+        return [Floor.model_validate(f) for f in expand([f.model_dump() for f in self.floors], names)]

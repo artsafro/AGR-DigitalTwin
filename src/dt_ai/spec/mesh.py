@@ -15,6 +15,7 @@ import shapely
 from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.geometry.polygon import orient
 
+from dt_ai.spec import floors as fl
 from dt_ai.spec import openings as op
 from dt_ai.spec.model import Spec
 
@@ -661,7 +662,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],
                       "plane_vs_top_level_m": round(roof_z - levels[-1]["elev_m"], 3)}
+    written, report["floor_classes"] = fl.collapse(levels, floors)
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
-                levels=levels, floors=floors, roof={"parapet_h_m": round(max(top_z - roof_z, 0.0), 3)})
+                levels=levels, floors=written, roof={"parapet_h_m": round(max(top_z - roof_z, 0.0), 3)})
     return spec, report
