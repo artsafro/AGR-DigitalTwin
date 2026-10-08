@@ -37,6 +37,10 @@ class Opening(SpecPart):
     h_m: Positive
     depth_m: NonNegative
     window_type: int | None = None
+    # door: a recess from the floor >= 1.9 m high, 0.7-3 m wide (user decision 2026-10-08, #31)
+    kind: Literal["window", "door"] | None = None
+    # panes of one frame (gap <= 0.15 m) grouped into this opening: a curtain wall is one opening (#31)
+    panes: int | None = Field(default=None, ge=1)
     # anchor that found it (user decision 2026-10-08, #7): a hole in the body, a glass pane, or both
     source: Literal["hole", "glass", "hole+glass"] | None = None
     # material id of an opening plane in it (group `opening`, ADR 0001); not the window type

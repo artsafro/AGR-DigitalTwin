@@ -15,7 +15,7 @@ import numpy as np
 
 SAME_M = 0.01   # contours, openings and storey heights equal within 1 cm
 FIELDS = ("x_m", "sill_m", "w_m", "h_m", "depth_m")
-META = ("source", "material_id", "window_type", "plane_conflict")
+META = ("source", "material_id", "window_type", "plane_conflict", "kind", "panes")
 
 
 def _shift(a, b):

@@ -13,7 +13,9 @@ whose mouth is not found is a question, never an invented facade opening. Glass 
 named *glass*) parallel to a contour wall project onto it. Faces with an opening material id
 (group `opening` of standards/material_id_ranges.yaml, ADR 0001) are opening planes: they are
 left out of the body, so the hole stays the anchor, and the plane gives the opening its
-material id. window_type stays null until the window library (#4).
+material id. window_type stays null until the window library (#4). A door recess of the contour
+(mesh._door_recesses, #31) is an opening of kind door; an opening with glass is a window with the
+number of its panes (a curtain wall is one opening, the unit of the window library).
 """
 from collections import defaultdict
 
@@ -28,8 +30,8 @@ ALONG_DEG = 10.0         # a chain runs along the gap within this angle
 BRIDGE_DEG = 3.0         # the mouth-to-mouth bridge runs along the gap within this angle
 MOUTH_KEY_M = 0.005      # bridges at different heights are one opening when each end moves under 5 mm
 ON_WALL_M = 0.05         # an opening mouth lies within this of its contour wall line
-PANE_JOIN_M = 0.25       # glass panes closer than this along a wall (mullions) are one opening ...
-PANE_BAND_M = 0.05       # ... when their sills and heads agree within this
+PANE_JOIN_M = 0.15       # glass panes of one frame (gap <= 0.15 m, user decision 2026-10-08, #31) are one opening ...
+PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within the other's; stacked, one's width within
 PANE_WALL_M = 1.0        # a pane further than this from its contour wall is not an opening
 MATCH_M = 0.05           # hole and glass, or recess and opening, within 5 cm are one place
 
@@ -246,19 +248,42 @@ def _project(parts, levels, floors, polys, kind):
     return out, skipped
 
 
+def _within(a, b, axis):
+    """One range inside the other along axis (x or z), within PANE_BAND_M."""
+    lo, hi = axis + "0", axis + "1"
+    return any(p[lo] >= q[lo] - PANE_BAND_M and p[hi] <= q[hi] + PANE_BAND_M for p, q in ((a, b), (b, a)))
+
+
 def _merge_panes(items):
-    """Panes of one window: same wall, gap under PANE_JOIN_M, sills and heads within PANE_BAND_M."""
-    merged = []
-    for o in sorted(items, key=lambda o: (o["level"], o["wall"], o["x0"])):
-        m = next((m for m in merged if m["level"] == o["level"] and m["wall"] == o["wall"]
-                  and -MATCH_M <= o["x0"] - m["x1"] <= PANE_JOIN_M and abs(o["z0"] - m["z0"]) <= PANE_BAND_M
-                  and abs(o["z1"] - m["z1"]) <= PANE_BAND_M), None)
-        if m:
-            m.update(x1=max(m["x1"], o["x1"]), z0=min(m["z0"], o["z0"]), z1=max(m["z1"], o["z1"]),
-                     depth=max(m["depth"], o["depth"]), parts=m["parts"] + 1)
-        else:
-            merged.append(dict(o))
-    return merged
+    """Panes of one frame are one opening (user decision 2026-10-08, #31): panes on the same wall
+    whose boxes come within PANE_JOIN_M of each other and are aligned in one frame — side by side
+    with one's heights inside the other's, or one above the other (a transom) with one's width
+    inside the other's, within PANE_BAND_M — joined transitively. Staggered panes stay apart, so
+    no rectangle covers wall without glass (PR #20 F5). The opening counts its panes."""
+    items = sorted(items, key=lambda o: (o["level"], o["wall"], o["x0"], o["z0"]))
+    parent = list(range(len(items)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    for i, o in enumerate(items):
+        for j in range(i):
+            m = items[j]
+            gap_x = max(0.0, o["x0"] - m["x1"], m["x0"] - o["x1"])
+            gap_z = max(0.0, o["z0"] - m["z1"], m["z0"] - o["z1"])
+            if m["level"] != o["level"] or m["wall"] != o["wall"] or max(gap_x, gap_z) > PANE_JOIN_M + 1e-9:
+                continue
+            if (gap_z == 0 and _within(o, m, "z")) or (gap_x == 0 and _within(o, m, "x")):
+                parent[find(i)] = find(j)
+    groups = {}
+    for i, o in enumerate(items):
+        g = groups.setdefault(find(i), dict(o, parts=0))
+        g.update(x0=min(g["x0"], o["x0"]), x1=max(g["x1"], o["x1"]), z0=min(g["z0"], o["z0"]),
+                 z1=max(g["z1"], o["z1"]), depth=max(g["depth"], o["depth"]), parts=g["parts"] + o["parts"])
+    return list(groups.values())
 
 
 def _overlap(a, b, tol=MATCH_M):
@@ -266,9 +291,23 @@ def _overlap(a, b, tol=MATCH_M):
             and a["z0"] < b["z1"] + tol and b["z0"] < a["z1"] + tol)
 
 
-def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
+def _door_items(doors, li, contour):
+    """Door recesses of one level as opening items on their contour wall."""
+    out = []
+    for d in doors:
+        pts = np.array(d["geom"].exterior.coords)[:-1]
+        w, a, u, _ = _wall_frame(contour, np.array(d["geom"].centroid.coords[0]))
+        along = (pts - a) @ u
+        n = np.array([u[1], -u[0]])
+        out.append({"level": li, "wall": w, "x0": float(along.min()), "x1": float(along.max()), "z0": d["z0"],
+                    "z1": d["z1"], "depth": max(0.0, float(-((pts - a) @ n).min())), "source": "hole", "kind": "door"})
+    return out
+
+
+def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None):
     """Openings per floor, the plan footprints that clear recess questions, break questions, report.
-    planes: vertical opening-plane parts as (points, normal, material id or None when mixed)."""
+    planes: vertical opening-plane parts as (points, normal, material id or None when mixed);
+    doors: door recesses per level (mesh._door_recesses)."""
     glass, glass_skipped = _project(panes, levels, floors, polys, "glass")
     glass = _merge_panes(glass)
     plane_items, planes_skipped = [], 0
@@ -279,11 +318,13 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
     per_floor, footprints, breaks = [], [], []
     for li, floor in enumerate(floors):
         holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"], polys[li])
+        holes += _door_items((doors or [[]] * len(floors))[li], li, floor["contour"])
         breaks.extend({**b, "level": li} for b in off)
         for g in [g for g in glass if g["level"] == li]:
             matches = [h for h in holes if _overlap(h, g)]
             for h in matches:
                 h["source"], h["depth"] = "hole+glass", max(h["depth"], g["depth"])
+                h["parts"] = h.get("parts", 0) + g["parts"]
             if not matches:
                 holes.append(g)
         for h in holes:
@@ -298,7 +339,9 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
             items.append({"wall": o["wall"], "x_m": round(max(o["x0"], 0.0), 3), "sill_m": round(o["z0"] - elev, 3),
                           "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
                           "depth_m": round(o["depth"], 3), "window_type": None, "source": o["source"],
-                          "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False)})
+                          "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False),
+                          "kind": o.get("kind") or ("window" if "glass" in o["source"] else None),
+                          "panes": o.get("parts") if "glass" in o["source"] else None})
             a = pts[o["wall"]]
             u = _unit(pts[(o["wall"] + 1) % len(pts)] - a)
             n = np.array([u[1], -u[0]])
@@ -308,6 +351,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
                                "geom": Polygon([p0 + n * out_, p1 + n * out_, p1 - n * in_, p0 - n * in_])})
         per_floor.append(items)
     report = {"glass_openings": len(glass), "glass_parts_skipped": glass_skipped,
+              "door_openings": sum(1 for f in per_floor for o in f if o["kind"] == "door"),
               "opening_planes": len(plane_items), "opening_planes_skipped": planes_skipped,
               "opening_planes_mixed_ids": sum(1 for _, _, mid in planes if mid is None),
               "openings_with_conflicting_planes": sum(1 for f in per_floor for o in f if o.get("plane_conflict")),

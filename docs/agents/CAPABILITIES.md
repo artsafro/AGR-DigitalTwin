@@ -137,7 +137,7 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   triangles and `LEVEL_<name>` helpers; `dt spec extract --dump --object --output` writes spec v0.1
   (`schemas/Spec.schema.json`), a report and `<spec>.questions.md`. Levels are input; roof confirmed at
   the top input level; strict full-height level contour (`contour_at_m` in object.json when it asks);
-  kinks, rounded corners; typical floors written once (`typical_of` / `repeat_to`, `Spec.expanded_floors()`); openings from holes in the body or glass panes (`source`).
+  kinks, rounded corners; typical floors written once (`typical_of` / `repeat_to`, `Spec.expanded_floors()`); openings from holes in the body or glass panes (`source`); door recesses from the floor are `kind: door` openings, relief <= 10 cm is no kink, panes of one frame are one opening with `panes` (#31).
   `dt spec merge-questions --report --version --into jobs/<object>/questions.md` keeps one questions
   list per object with stable ids and kept answers.
 - Limits: `window_type` is always null (no material ids in the dump; window library #4); no

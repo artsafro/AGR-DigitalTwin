@@ -143,6 +143,22 @@
           "title": "H M",
           "type": "number"
         },
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "window",
+                "door"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kind"
+        },
         "material_id": {
           "anyOf": [
             {
@@ -154,6 +170,19 @@
           ],
           "default": null,
           "title": "Material Id"
+        },
+        "panes": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Panes"
         },
         "plane_conflict": {
           "default": false,
