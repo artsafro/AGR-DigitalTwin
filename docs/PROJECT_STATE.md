@@ -1,12 +1,19 @@
 # Project state
 
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
 ## Current goal
 
 NPM and VPM deliveries (later IFC) and an Unreal experience. Two real objects are in
 production: KPP1 (models v005 accepted as reviewed) and PSU275 (delivery-v003 accepted as reviewed).
 Next: close their delivery gates (`docs/pipeline.md`, `docs/backlog.md`).
+
+Harness rebuild (2026-10-08): `docs/HARNESS_PLAN.md` rev 3 (grilled §11/§12) — every modelling
+run starts from an extracted `spec.json`, checked against hand-made etalons (`benchmark/`).
+Week-1 work is tracked as GitHub issues #1–#14 (labels `extractor`, `benchmark`, `pattern`;
+native blocked-by links). Order with one writing agent: #1 scaffolding → #3 material ID
+ranges → #5 spec extractor on a synthetic box. Human tickets: #2 (move `Unreal/`),
+#4 (window library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`).
 
 ## Repository
 
@@ -38,6 +45,8 @@ Roles: `docs/agents/ROLES.md` (Claude — 3D/DCC production; Codex — code and 
 Antigravity — research, docs, review). Tools and MCP: `docs/agents/CAPABILITIES.md`.
 Fallback since 2026-10-07: while Codex is out of limits, Claude also owns git/GitHub work
 (branches, push, PRs, merges to `main`, this file).
+Claude has the `mattpocock-skills` plugin (user scope, 2026-10-08); its repo configuration
+(issue tracker, triage labels, glossary = `GLOSSARY.md`) is in `AGENTS.md` → `## Agent skills`.
 
 ## Available applications
 
@@ -83,6 +92,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
+0. Claude: harness week 1 — #1 → #3 → #5 (one writing agent, one branch per ticket).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
