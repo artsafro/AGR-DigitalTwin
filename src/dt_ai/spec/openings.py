@@ -32,6 +32,8 @@ MOUTH_KEY_M = 0.005      # bridges at different heights are one opening when eac
 ON_WALL_M = 0.05         # an opening mouth lies within this of its contour wall line
 PANE_JOIN_M = 0.15       # glass panes of one frame (gap <= 0.15 m, user decision 2026-10-08, #31) are one opening ...
 PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within the other's; stacked, one's width within
+DEPTH_EXCEPTION_M = 0.10  # a measured depth further than this from the spec default is written (#36)
+EVENT_M = 0.001           # heights closer than this are one height
 GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
 LEVEL_JOINT_M = 0.15     # an opening reaching less than this past a level line does not cross it (a frame joint)
 # a door opening: from the storey floor, high and wide enough (user decisions 2026-10-08, #31;
@@ -391,6 +393,8 @@ def _across_levels(by_level, levels, floors):
                 low.update(x0=low["x0"] + box[0], x1=low["x0"] + box[1], z1=box[3], depth=max(low["depth"], up["depth"]),
                            parts=low.get("parts", 0) + up.get("parts", 0),
                            glass_z=low.get("glass_z", []) + up.get("glass_z", []),
+                           glass_world=low.get("glass_world", []) + up.get("glass_world", []),
+                           kind_fixed=low.get("kind_fixed") or up.get("kind_fixed"),
                            door=low.get("door") or up.get("door"), level_to=up.get("level_to", li + 1),
                            source=low["source"] if low["source"] == up["source"] else "hole+glass")
                 by_level[li + 1].remove(up)
@@ -420,14 +424,105 @@ def _owners(by_level, levels, floors):
                 o.pop("level_to", None)
 
 
-def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None):
+def _span_world(contour, wall, x0, x1):
+    pts = np.array([q[:2] for q in contour], dtype=float)
+    a = pts[wall]
+    u = _unit(pts[(wall + 1) % len(pts)] - a)
+    return a + u * x0, a + u * x1, u
+
+
+def _inward(contour, u):
+    """Unit normal of a contour wall pointing into the building."""
+    side = 1.0 if Polygon([q[:2] for q in contour]).exterior.is_ccw else -1.0
+    return side * np.array([-u[1], u[0]])
+
+
+def _reveal(o, recesses, contour):
+    """The rough opening around a glass group from the reveal of the body (spec v0.3, #36): the
+    recess pieces of its level that touch the glass footprint, in the height run that overlaps the
+    glass. Returns (x0, x1, z0, z1, depth) on the glass's wall, or None; whether the glass fills it
+    up to a frame is checked for all glass of one reveal (_fills)."""
+    p0, p1, u = _span_world(contour, o["wall"], o["x0"], o["x1"])
+    n = _inward(contour, u)
+    foot = Polygon([p0 - u * MATCH_M - n * MATCH_M, p1 + u * MATCH_M - n * MATCH_M,
+                    p1 + u * MATCH_M + n * (o["depth"] + MATCH_M), p0 - u * MATCH_M + n * (o["depth"] + MATCH_M)])
+    near = [r for r in recesses if r["geom"].intersects(foot) and r["geom"].intersection(foot).area > 1e-6]
+    spans = sorted((a, b, r) for r in near for a, b in r["spans"])
+    runs = []
+    for a, b, r in spans:
+        if runs and a <= runs[-1]["z1"] + 1e-6:
+            runs[-1]["z1"] = max(runs[-1]["z1"], b)
+            runs[-1]["pieces"].append(r)
+        else:
+            runs.append({"z0": a, "z1": b, "pieces": [r]})
+    run = next((r for r in runs if r["z0"] < o["z1"] and r["z1"] > o["z0"]), None)
+    if run is None:
+        return None
+    pts = np.array([xy for r in run["pieces"] for g in shapely.get_parts(r["geom"]) for xy in g.exterior.coords])
+    a, _, _ = _span_world(contour, o["wall"], 0.0, 0.0)
+    along = (pts - a) @ u
+    x0, x1 = float(along.min()), float(along.max())
+    if x0 > o["x0"] + MATCH_M or x1 < o["x1"] - MATCH_M:
+        return None                              # the recess does not hold the glass
+    depth = float(max(((pts - a) @ n).max(), o["depth"]))
+    return x0, x1, min(run["z0"], o["z0"]), max(run["z1"], o["z1"]), depth
+
+
+def _fills(rough, rects, storey=None):
+    """The glass of one reveal fills it up to a frame: no stretch without glass longer than
+    GLASS_FRAME_M across or along it (PR #20 F6: a tall recess with a short window is no frame).
+    A reveal cut by its storey's floor or top goes on in the next storey: that end is not checked."""
+    x0, x1, z0, z1 = rough[:4]
+    s0, s1 = storey if storey else (None, None)
+    for lo, hi, ranges, axis in ((x0, x1, [(a, b) for a, b, _, _ in rects], "x"), (z0, z1, [(c, d) for _, _, c, d in rects], "z")):
+        open_lo = axis == "z" and s0 is not None and lo <= s0 + EVENT_M
+        open_hi = axis == "z" and s1 is not None and hi >= s1 - EVENT_M
+        top = lo
+        for a, b in sorted(ranges):
+            if a - top > GLASS_FRAME_M and not (open_lo and top == lo):
+                return False
+            top = max(top, b)
+        if hi - top > GLASS_FRAME_M and not open_hi:
+            return False
+    return True
+
+
+def _source_items(items, li, contour):
+    """Openings a source gives explicitly (Revit, #36): rough opening, kind, glass, on their wall."""
+    out = []
+    for d in items:
+        q0, q1 = np.asarray(d["p0"], float), np.asarray(d["p1"], float)
+        w, a, u, _ = _wall_frame(contour, (q0 + q1) / 2, float(np.linalg.norm(q1 - q0)) / 2)
+        x0, x1 = sorted(float((q - a) @ u) for q in (q0, q1))
+        out.append({"level": li, "wall": w, "x0": x0, "x1": x1, "z0": d["z0"], "z1": d["z1"], "depth": d["depth"],
+                    "source": "hole+glass" if d.get("glass") else "hole", "kind_fixed": d["kind"],
+                    "parts": d.get("panes") or 0, "glass_world": [tuple(g) for g in d.get("glass", [])],
+                    "glass_z": [(g[2], g[3]) for g in d.get("glass", [])], "door": d["kind"] == "door"})
+    return out
+
+
+def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None, recesses=None, sources=None,
+             depth_default=0.2):
     """Openings per floor, the plan footprints that clear recess questions, break questions, report.
     planes: vertical opening-plane parts as (points, normal, material id or None when mixed);
-    doors: door recesses per level (mesh._door_recesses)."""
+    doors: door recesses per level (mesh._door_recesses); recesses: recess pieces per level (the
+    reveals that give a glass opening its rough size, #36); sources: openings a source gives
+    explicitly, per level (Revit)."""
     glass, glass_skipped = _project(panes, levels, floors, polys, "glass")
     glass = _merge_panes(glass)
+    rough_from_reveal = 0
     for g in glass:
         g["glass_z"] = [(z0, z1) for _, _, z0, z1 in g["rects"]]
+        contour = floors[g["level"]]["contour"]
+        g["glass_world"] = [(*_span_world(contour, g["wall"], x0, x1)[0], *_span_world(contour, g["wall"], x0, x1)[1], z0, z1)
+                            for x0, x1, z0, z1 in g["rects"]]
+        g["rough"] = _reveal(g, (recesses or [[]] * len(floors))[g["level"]], contour)
+    glass = _join_same_reveal(glass)
+    for g in glass:                              # the opening is the hole with its frame, not the glass
+        storey = (levels[g["level"]]["elev_m"], levels[g["level"] + 1]["elev_m"])
+        if g.get("rough") is not None and _fills(g["rough"], g["rects"], storey):
+            g["x0"], g["x1"], g["z0"], g["z1"], g["depth"] = g["rough"]
+            rough_from_reveal += 1
     plane_items, planes_skipped = [], 0
     for pts, normal, mid in planes:
         items, skipped = _project([(pts, normal)], levels, floors, polys, "plane")
@@ -438,8 +533,9 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"], polys[li])
         for h in holes:                          # a through hole of a door's size is a door (#31)
             h["door"] = _door_size(h, levels[li]["elev_m"])
-        for d in _door_items((doors or [[]] * len(floors))[li], li, floor["contour"]):
-            same = next((h for h in holes if h.get("door") and _overlap(h, d)), None)
+        for d in (_source_items((sources or [[]] * len(floors))[li], li, floor["contour"])
+                  + _door_items((doors or [[]] * len(floors))[li], li, floor["contour"])):
+            same = next((h for h in holes if d.get("door") and h.get("door") and _overlap(h, d)), None)
             if same is None:                     # a door family and its wall opening are one door (Revit, #29)
                 holes.append(d)
             else:
@@ -452,6 +548,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                 h["source"], h["depth"] = "hole+glass", max(h["depth"], g["depth"])
                 h["parts"] = h.get("parts", 0) + g["parts"]
                 h["glass_z"] = h.get("glass_z", []) + g["glass_z"]
+                h["glass_world"] = h.get("glass_world", []) + g["glass_world"]
                 if h.get("door"):                    # the frame's glass may reach past the recess
                     h["z0"], h["z1"] = min(h["z0"], g["z0"]), max(h["z1"], g["z1"])
             if not matches:
@@ -472,9 +569,12 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         for o in sorted(holes, key=lambda o: (o["wall"], o["x0"])):
             item = {"wall": o["wall"], "x_m": round(max(o["x0"], 0.0), 3), "sill_m": round(o["z0"] - elev, 3),
                     "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
-                    "depth_m": round(o["depth"], 3), "window_type": None, "source": o["source"],
+                    "window_type": None, "source": o["source"],
                     "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False),
-                    "kind": _kind(o), "panes": o.get("parts") if o.get("glass_z") else None}
+                    "kind": o.get("kind_fixed") or _kind(o), "panes": (o.get("parts") or None) if o.get("glass_z") else None,
+                    **_glass_size(o, floor["contour"])}
+            if "kind_fixed" not in o and abs(o["depth"] - depth_default) > DEPTH_EXCEPTION_M:
+                item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
             items.append(item)
@@ -488,6 +588,8 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                 footprints.append({"level": lj, "z0": o["z0"], "z1": o["z1"], "geom": geom})
         per_floor.append(items)
     report = {"glass_openings": len(glass), "glass_parts_skipped": glass_skipped,
+              "rough_from_reveal": rough_from_reveal,
+              "source_openings": sum(len(x) for x in (sources or [])),
               "door_openings": sum(1 for f in per_floor for o in f if o["kind"] == "door"),
               "openings_across_levels": sum(1 for f in per_floor for o in f if o.get("level_to")),
               "opening_planes": len(plane_items), "opening_planes_skipped": planes_skipped,
@@ -496,6 +598,34 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
               "breaks_off_contour": sum(b["kind"] == "wall-break-off-contour" for b in breaks),
               "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks)}
     return per_floor, footprints, breaks, report
+
+
+def _glass_size(o, contour):
+    """glass_w / glass_h: the extent of the opening's glass along its wall and in height (#36)."""
+    gw = o.get("glass_world")
+    if not gw:
+        return {}
+    _, _, u = _span_world(contour, o["wall"], 0.0, 1.0)
+    along = [float(np.dot(np.array(p[:2]), u)) for g in gw for p in ((g[0], g[1]), (g[2], g[3]))]
+    w, h = max(along) - min(along), max(g[5] for g in gw) - min(g[4] for g in gw)
+    return {"glass_w": round(w, 3), "glass_h": round(h, 3)} if w > 1e-3 and h > 1e-3 else {}
+
+
+def _join_same_reveal(glass):
+    """Glass groups in one reveal are one opening: the hole with its frame holds all its panes."""
+    out = []
+    for g in glass:
+        r = g.get("rough")
+        same = next((o for o in out if r is not None and o.get("rough") is not None and o["level"] == g["level"]
+                     and o["wall"] == g["wall"] and all(abs(u - w) <= MATCH_M for u, w in zip(o["rough"][:4], r[:4]))), None)
+        if same is None:
+            out.append(g)
+        else:
+            same.update(x0=min(same["x0"], g["x0"]), x1=max(same["x1"], g["x1"]), z0=min(same["z0"], g["z0"]),
+                        z1=max(same["z1"], g["z1"]), parts=same["parts"] + g["parts"], rects=same["rects"] + g["rects"],
+                        glass_z=same["glass_z"] + g["glass_z"], glass_world=same["glass_world"] + g["glass_world"],
+                        depth=max(same["depth"], g["depth"]))
+    return out
 
 
 def is_opening_recess(piece, level, footprints):

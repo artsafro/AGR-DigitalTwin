@@ -90,7 +90,7 @@ def test_inner_door_is_no_facade_opening():
     d = door(32, 3.0, 4.0, 6)
     d["point"], d["hand"] = [5.0, 3.5, 0.0], [0, 1, 0]
     spec, report = spec_of(walls + [inner], [d])
-    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_doors_skipped"] == 1
+    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_openings_skipped"] == 1
 
 
 def test_entrance_frame_outside_the_building_is_an_attachment_question():
@@ -183,7 +183,7 @@ def test_inner_door_parallel_to_the_facade_is_no_facade_opening():
     d = door(34, 4.0, 5.0, 61)
     d["point"] = [4.5, 0.6, 0.0]
     spec, report = spec_of(walls + [inner], [d])
-    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_doors_skipped"] == 1
+    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_openings_skipped"] == 1
 
 
 def test_detached_lining_never_makes_a_roof_hole_a_shaft():
@@ -254,7 +254,7 @@ def test_inner_door_whose_host_reaches_the_facade_elsewhere_is_no_facade_opening
     d = door(35, 4.0, 5.0, 62)
     d["point"] = [4.5, 0.6, 0.0]
     spec, report = spec_of(walls + [inner], [d])
-    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_doors_skipped"] == 1
+    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_openings_skipped"] == 1
 
 
 def test_cli_reads_a_twin_index(tmp_path):

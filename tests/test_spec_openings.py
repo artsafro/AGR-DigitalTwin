@@ -49,7 +49,7 @@ def test_hole_with_glass_is_one_opening():
 def test_glass_in_a_closed_wall_is_an_opening():
     # KPP1 v005: the body is closed over the window, the glass is a separate object set 0.15 m in
     spec, report = extract_spec(building(extra=[pane("SM_Main_Glass", 2.0, 3.5, 1.32, 2.7, y=0.15)]), OBJECT)
-    assert openings(spec) == [(0, 2.0, 1.32, 1.5, 1.38, 0.15, "glass")]
+    assert openings(spec) == [(0, 2.0, 1.32, 1.5, 1.38, None, "glass")]
     assert report["openings"]["glass_openings"] == 1
 
 
@@ -67,7 +67,7 @@ def test_hole_with_a_reveal_is_an_opening_not_a_recess_question():
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
     assert close(spec.expanded_floors()[0].contour, SQUARE10)
-    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, 0.25, "hole")]
+    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, None, "hole")]
     assert report["questions"] == []
 
 
@@ -85,7 +85,7 @@ def test_door_with_a_reveal_from_the_floor_needs_no_contour_height():
     flat(b, Polygon(SQUARE10), 6.6, up=True)
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
-    assert openings(spec) == [(0, 4.0, 0.0, 1.0, 2.1, 0.3, "hole")]
+    assert openings(spec) == [(0, 4.0, 0.0, 1.0, 2.1, None, "hole")]
     assert report["questions"] == []
 
 
@@ -101,7 +101,7 @@ def test_recess_with_glass_at_its_back_is_an_opening():
     # a closed recess (back face present) with glass in it: the opening clears the recess question
     spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, -0.2)],
                                          extra=[pane("Glass", 2.0, 3.5, 0.9, 2.4, y=0.2)]), at(L0=0.5))
-    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, 0.2, "glass")]
+    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, None, "glass")]
     assert report["questions"] == [] and report["openings"]["recesses_cleared_as_openings"] == 1
 
 
@@ -173,7 +173,7 @@ def chamfered(depth_leg):
     return dump_of(b)
 
 
-@pytest.mark.parametrize("leg, depth", [(0.2, 0.3), (1.1, 1.2)])
+@pytest.mark.parametrize("leg, depth", [(0.2, None), (1.1, 1.2)])   # 0.3 m is within 0.1 m of the default (#36)
 def test_chamfered_and_deep_reveals_are_openings(leg, depth):
     # F2: 0.1 m 45 degree chamfer, then a straight leg; also a 1.2 m deep reveal
     spec, report = extract_spec(chamfered(leg), OBJECT)

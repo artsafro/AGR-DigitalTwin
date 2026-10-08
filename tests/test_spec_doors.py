@@ -20,7 +20,7 @@ def test_recess_from_the_floor_is_a_door_and_leaves_the_contour():
     # KPP1: door recesses 0.23 m deep, 2.1 m high, cut by the contour height 0.5 m
     spec, report = extract_spec(building(boxes=[(0, 4.0, 5.0, 0.0, 2.1, -0.23)]), at(L0=0.5))
     assert close(spec.expanded_floors()[0].contour, SQUARE10)
-    assert doors(spec) == [(0, 4.0, 0.0, 1.0, 2.1, 0.23, "hole")]
+    assert doors(spec) == [(0, 4.0, 0.0, 1.0, 2.1, None, "hole")]
     assert report["floors"]["L0"]["door_recesses"] == 1 and report["questions"] == []
 
 
@@ -121,7 +121,7 @@ def test_one_frame_across_a_level_is_one_record():
     spec, report = extract_spec(building(extra=[pane("glass", 2.0, 3.0, 1.3, 3.2), pane("glass2", 2.0, 3.0, 3.32, 5.0)]), at())
     floors = spec.expanded_floors()
     assert [(x.sill_m, x.h_m, x.panes, x.level_from, x.level_to) for x in floors[0].openings] == [(1.3, 3.7, 2, "L0", "L1")]
-    assert floors[1].openings == [] and spec.spec_version == "0.2"
+    assert floors[1].openings == [] and spec.spec_version == "0.3"
     assert report["openings"]["openings_across_levels"] == 1
 
 

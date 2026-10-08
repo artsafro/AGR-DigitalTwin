@@ -28,16 +28,17 @@ def _ring(contour):
     return [(float(p[0]), float(p[1])) for p in contour]
 
 
-def _opening_boxes(floor, z0):
+def _opening_boxes(floor, z0, default_depth=0.2):
     """3D bounds (min xyz, max xyz) of each opening in the object system: along its contour wall
-    from x_m over w_m, inward by depth_m (left of a CCW contour, right of a CW one), sill to top."""
+    from x_m over w_m, inward by depth_m or the spec default (v0.3, #36; left of a CCW contour, right of
+    a CW one), sill to top."""
     pts = np.array(_ring(floor.contour))
     side = 1.0 if Polygon(pts).exterior.is_ccw else -1.0
     out = []
     for o in floor.openings:
         a, b = pts[o.wall], pts[(o.wall + 1) % len(pts)]
         u = (b - a) / np.linalg.norm(b - a)
-        inward = side * np.array([-u[1], u[0]]) * o.depth_m
+        inward = side * np.array([-u[1], u[0]]) * (o.depth_m if o.depth_m is not None else default_depth)
         p0, p1 = a + u * o.x_m, a + u * (o.x_m + o.w_m)
         xy = np.array([p0, p1, p0 + inward, p1 + inward])
         out.append((np.array([*xy.min(axis=0), z0 + o.sill_m]), np.array([*xy.max(axis=0), z0 + o.sill_m + o.h_m])))
@@ -144,7 +145,8 @@ def compare_specs(spec_a, spec_b, report_a, report_b, tolerances, names=("a", "b
                     regions.append({"level": lv, "side": side, "area_m2": round(g.area, 4),
                                     "reach_m": round(reach, 3), "bounds": [round(c, 3) for c in g.bounds]})
         rows.append(_row("opening count", len(fa.openings), len(fb.openings), None, "equal", ref.get("openings"), lv))
-        ba, bb = _opening_boxes(fa, elev_a[lv]), _opening_boxes(fb, elev_b[lv])
+        ba = _opening_boxes(fa, elev_a[lv], sa.opening_depth_default_m)
+        bb = _opening_boxes(fb, elev_b[lv], sb.opening_depth_default_m)
         match = _match(ba, bb, t["opening_bbox_m"])
         worst = max((_box_diff(ba[i], bb[j]) for i, j in match.items()), default=0.0)
         r = _row("opening pairs within bbox tolerance, m (worst pair)", None, worst, t["opening_bbox_m"], "abs",
