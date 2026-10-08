@@ -141,8 +141,9 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   `dt spec merge-questions --report --version --into jobs/<object>/questions.md` keeps one questions
   list per object with stable ids and kept answers.
 - Limits: `window_type` is always null (no material ids in the dump; window library #4); no
-  attachments; a building whose roof is a separate part from the walls stops at
-  the roof check (KPP1 v005 trial, #9). Pattern: `docs/domain/patterns/wall-from-contour.md`.
+  attachments; roofs: drainage slopes up to 10° are one roof
+  (area-weighted height, ±10 cm), separate roof parts and caps are read (#9); steeper roofs are a question.
+  First real run: KPP1 v005 spec v001 (`jobs/KPP1/STATE.md`). `object.json` may give `frames` per source. Pattern: `docs/domain/patterns/wall-from-contour.md`.
 
 ### Operation library — `technical_library/`
 - Status: WORKING per package README (Russian): `glb_atlas`, `uv_continuous` (UV v006),

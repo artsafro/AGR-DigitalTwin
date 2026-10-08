@@ -10,11 +10,14 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4; issues #16, #9; user de
 
 ## How the extractor reads the roof
 
-- The roof level is input; geometry only confirms it: an up-facing horizontal surface inside the
-  top floor contour within ±3 cm of that level, covering at least 25 % of the floor itself and,
-  with the cap and shaft tops above it, at least 90 %. Otherwise the extractor stops and asks.
+- The roof level is input; geometry only confirms it: up-facing surfaces inside the top floor
+  contour within ±10 cm of that level, covering at least 25 % of the floor themselves and, with
+  the cap and shaft tops above them, at least 90 %. Otherwise the extractor stops and asks.
+- **Drainage slopes are the norm of a flat roof.** Roof surfaces sloped up to 10° are one roof;
+  its height is their area-weighted mean, reported with the height range and the slope (max,
+  mean). Roof parts steeper than 10° are a question, not a guess (user decision 2026-10-08, #9).
 - **A roof modelled as a separate object is normal, not a defect.** The body is the walls plus the
-  parts that lie inside the contour of the top floor at the roof level ±3 cm; such parts join the
+  parts that lie inside the contour of the top floor at the roof level ±10 cm; such parts join the
   body for the roof check. Anything else that is not connected stays an attachment. If a separate
   part at the roof level cannot be placed this way (partly outside the contour, another height),
   the extractor asks instead of choosing (user decision for #9, option (a)).
@@ -32,7 +35,7 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4; issues #16, #9; user de
 
 ## Check
 
-- Roof plane height ±3 cm of the input level; parapet height ±3 cm (HARNESS_PLAN §5).
+- Roof height (area-weighted) ±10 cm of the input level; parapet height ±3 cm (HARNESS_PLAN §5).
 
 ## Traps
 

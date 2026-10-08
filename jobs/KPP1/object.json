@@ -1,0 +1,22 @@
+{
+  "id": "tec26-kpp1",
+  "object_system": "Revit project coordinates of 26_КПП1_АР_МЭП (Project Base Point = internal origin, angle to true north 0), metres, Z up, 0.000 = level 'отм. 0,000' = absolute 171.050 m",
+  "frames": {
+    "SM_Kpp_1.fbx": {
+      "to_object": [[1, 0, 0, 14.655], [0, 1, 0, 5.355], [0, 0, 1, 0], [0, 0, 0, 1]],
+      "derived_from": "package-vpm-v005/export_meta.json pivot_revit_internal_m [14.655, 5.355, 0]; checked 2026-10-08 on Revit 2025 (read only): 4 outer facade corners at 0.000 (-0.330/27.330 x -0.330/11.330 m) land on v005 mesh vertices within 0.0 mm; facade bottom 0.900 m matches a vertex row"
+    },
+    "revit": {
+      "to_object": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+      "derived_from": "Revit data is already in project coordinates (issue #10)"
+    }
+  },
+  "levels": [
+    {"name": "L0", "elev_m": 0.0},
+    {"name": "L1", "elev_m": 3.9},
+    {"name": "roof", "elev_m": 7.909}
+  ],
+  "levels_derived_from": "Revit levels отм. 0,000 and +3,900; roof = top of the roof covering on average: level +7,700 plus mean covering thickness 0.209 m (volume 60.36 m3 / plan 289.4 m2 of 'Покрытие_ТН-КРОВЛЯ Классик', drainage slopes, top 7.700-7.965 m). Revit levels +7,700 (structural) and +8,650 (parapet) are not floors.",
+  "contour_at_m": {"L0": 0.5, "L1": 4.5},
+  "contour_at_m_note": "Proposed by the agent per pattern wall-from-contour: L0 has a plinth and facade bands at the storey ends; 0.5 m and 4.5 m are plain wall bands below the windows. Confirm or change."
+}

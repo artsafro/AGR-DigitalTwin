@@ -139,3 +139,28 @@ review and separately authorized publication. Failed/new task files retained.
 Merged v005 runner into the export-safety runner: `run_all.sh` keeps version reservation
 and the fresh atlas, adds the overlap QA, and writes quad review exports to a new
 `outputs/max-<V>/` (refused if it exists). Synthetic runner tests pass; no real run.
+
+## Spec v001 (issue #9, 2026-10-08)
+
+Mesh extractor (`tools/source/measure_spec_blender.py` + `dt spec extract`) on the v005 VPM FBX
+(`package-vpm-v005/SM_Kpp_1/SM_Kpp_1.fbx`, sha256 20f64ed4d5dc5d34…, unchanged by the run).
+Outputs (local): `outputs/spec-v001/` — `dump.json`, `spec-v001.json`, `.report.json`, `.questions.md`.
+
+- Frame (`object.json`, `frames["SM_Kpp_1.fbx"]`): shift +14.655 / +5.355 / 0 into Revit project
+  coordinates (Project Base Point = internal origin, 0° to true north; 0.000 = absolute 171.050 m).
+  Checked on Revit 2025, read only, document not modified: the 4 outer facade corners at 0.000
+  (-0.330/27.330 × -0.330/11.330 m) hit v005 vertices within 0.0 mm; facade bottom 0.900 matches.
+- Levels L0 0.000, L1 3.900, roof 7.909 (covering top on average: +7,700 + 0.209 m mean thickness).
+- Without `contour_at_m` the extractor stops at L0 (14+ section shapes: plinth, facade bands) —
+  expected (pattern `wall-from-contour`). Agent's proposal in `object.json`: L0 0.5 m, L1 4.5 m
+  (plain wall bands below the windows) — **to be confirmed by the user**.
+- Contours: L0 48 points, 319.48 m²; L1 64 points, 322.00 m² (outer facade 27.66 × 11.66 m = 322.5).
+  0 rounded corners. Floors unique (L0 ≠ L1), no typical run.
+- Roof (decision (a) + drainage slopes): 21 separate roof parts joined; covering at 7.911 m
+  (area-weighted, input 7.909, +0.002), surface 7.857–7.985 m, slope max 2.06°, mean 1.16°;
+  closed 100 % with the separate parapet cap; parapet top 8.650, parapet 0.739 m.
+- Openings: 23, all from glass (`MainGlass`: 24 panes, one pair merged by a mullion); 0 hole
+  anchors (the v005 body is closed over the windows), 0 off-contour or unresolved breaks.
+  2 openings report `x_m = 0` (stair-tower glass across the level line) — to check (#22).
+- Questions: 58 in `questions.md` (projection 32, recess 26; 49 high): facade relief of cassettes,
+  bands and entrance groups, not over the full storey height. To review with the user.
