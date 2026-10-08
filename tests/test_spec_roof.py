@@ -82,6 +82,7 @@ def test_separate_parapet_cap_closes_the_floor_from_above():
     for w in range(4):
         a, c = w, (w + 1) % 4
         cap.quad((*outer[a], 7.25), (*outer[c], 7.25), (*inner[c], 7.25), (*inner[a], 7.25))
+        cap.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 7.25), (*inner[c], 7.25))   # parapet inner face
     d["meshes"].append(cap.dump())
     spec, report = extract_spec(d, OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.6) and report["roof"]["closed_share"] >= 0.99
@@ -213,3 +214,63 @@ def test_slightly_or_mostly_outside_part_is_a_question(x0, x1):
     d["meshes"] += [roof_part(6.6, 6.6).dump(), roof_part(6.69, 6.69, x0, x1, name="Edge").dump()]
     with pytest.raises(SpecError, match="outside and .* inside the top floor contour"):
         extract_spec(d, OBJECT)
+
+
+# --- regressions from Codex review 3 of PR #27 -------------------------------------------------
+
+@pytest.mark.parametrize("narrow", [False, True])
+def test_equipment_at_the_parapet_height_never_closes_a_missing_roof(narrow):
+    # R3-1 (P1): a detached box 7.0-7.2 m (the parapet height) over the part without roof
+    outline = [[0, 0], [10, 0], [10, 1.5], [0, 1.5]] if narrow else SQUARE10
+    y1 = 1.5 if narrow else 10.0
+    b = Mesh("Body")
+    walls(b, outline, 0.0, 7.2)
+    flat(b, Polygon(outline), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(roof_part(6.6, 6.6, 0.0, 4.0, 0.0, y1).dump())
+    box = Mesh("Equipment")
+    box.box((4.0001, 0.0001, 7.0), (9.9999, y1 - 0.0001, 7.2))
+    d["meshes"].append(box.dump())
+    with pytest.raises(SpecError, match="close only 40%"):
+        extract_spec(d, OBJECT)
+
+
+def test_deck_below_a_sloped_roof_never_closes_it():
+    # R3-2 (P1): roof over 40 % sloping 6.25 -> 6.95 (mean 6.60), a wall-connected deck at 6.30 elsewhere
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 7.2, extra_u={0: [4.0], 2: [6.0]}, extra_z=[6.3])
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    b.quad((4, 0, 6.3), (10, 0, 6.3), (10, 10, 6.3), (4, 10, 6.3))
+    d = dump_of(b)
+    d["meshes"].append(roof_part(6.25, 6.95, 0.0, 4.0).dump())
+    with pytest.raises(SpecError, match="close only 40%"):
+        extract_spec(d, OBJECT)
+
+
+def test_cap_is_known_by_its_parapet_not_by_the_highest_edge_point():
+    # R3-3: real cap 6.68 over inner parapet faces around a 6.60 roof; a thin upstand reaches 7.20
+    b = Mesh("Body")
+    inner = [[2.0, 2.0], [8.0, 2.0], [8.0, 8.0], [2.0, 8.0]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], 6.68), (*SQUARE10[a], 6.68))
+        b.quad((*SQUARE10[a], 6.68), (*SQUARE10[c], 6.68), (*inner[c], 6.68), (*inner[a], 6.68))
+        b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 6.68), (*inner[c], 6.68))
+    b.quad((2, 2, 6.6), (8, 2, 6.6), (8, 8, 6.6), (2, 8, 6.6))
+    b.quad((0, 0, 6.68), (0.1, 0, 6.68), (0.1, 0, 7.2), (0, 0, 7.2))          # thin vertical upstand
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    _, report = extract_spec(dump_of(b), OBJECT)
+    assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.001)
+
+
+def test_roof_without_a_parapet_keeps_its_edge_ring():
+    # R3-4: walls end at 6.60, roof ring 6.60 at the edge and centre 6.65: both are roof
+    d = dump_of(walls_only(6.6))
+    ring = Mesh("Ring")
+    inner = [[2, 2], [8, 2], [8, 8], [2, 8]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        ring.quad((*SQUARE10[a], 6.6), (*SQUARE10[c], 6.6), (*inner[c], 6.6), (*inner[a], 6.6))
+    d["meshes"] += [ring.dump(), roof_part(6.65, 6.65, 2.0, 8.0, 2.0, 8.0).dump()]
+    _, report = extract_spec(d, OBJECT)
+    assert report["roof"]["plane_m"] == pytest.approx(6.618, abs=0.001) and report["roof"]["closed_share"] == 1.0

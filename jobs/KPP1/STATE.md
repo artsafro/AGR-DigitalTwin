@@ -145,7 +145,7 @@ and the fresh atlas, adds the overlap QA, and writes quad review exports to a ne
 Mesh extractor (`tools/source/measure_spec_blender.py` + `dt spec extract`) on the v005 VPM FBX
 (`package-vpm-v005/SM_Kpp_1/SM_Kpp_1.fbx`, sha256 20f64ed4d5dc5d34…, unchanged by the run).
 Outputs (local): `outputs/spec-v001/` — `dump.json`, `spec-v001.json`, `.report.json`, `.questions.md`;
-`outputs/spec-v003/` — the same dump after the PR #27 review fixes, same numbers (roof range by vertices).
+`outputs/spec-v003/`…`spec-v005/` — the same dump after each PR #27 review round, same numbers (roof range by vertices).
 
 - Frame (`object.json`, `frames["SM_Kpp_1.fbx"]`): shift +14.655 / +5.355 / 0 into Revit project
   coordinates (Project Base Point = internal origin, 0° to true north; 0.000 = absolute 171.050 m).
