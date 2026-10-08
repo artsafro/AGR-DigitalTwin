@@ -144,20 +144,13 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   attachments; roofs: drainage slopes up to 10° are one roof
   (area-weighted height, ±10 cm), separate roof parts and caps are read (#9); steeper roofs are a question.
   First real run: KPP1 v005 spec v001 (`jobs/KPP1/STATE.md`). `object.json` may give `frames` per source. Pattern: `docs/domain/patterns/wall-from-contour.md`.
-- Revit path (Claude, 2026-10-08, #10): `node tools/source/measure_spec_revit.mjs <revit-data.json>` reads the
-  active document through `revit-http-2025` (read only; records `modified_before/after`), and
-  `dt spec extract --dump <revit-data.json>` runs the same spec logic. Geometry from bounding boxes:
-  walls and roofs are body boxes (roof top = mean covering height from volume), windows, doors and
-  curtain walls (system family Витраж / Curtain Wall) are glass panes. A wall whose box is not its width (type) across stops
-  with a question (no location lines on either route). Limits: boxes are solid (wall openings and
-  attachments such as porches join the body); `window_type` null until #4. KPP1: `jobs/KPP1/outputs/spec-revit-v003/`.
-- Revit path, wall lines (Claude, 2026-10-08, #29) — supersedes the box route above:
+- Revit path, wall lines (Claude, 2026-10-08, #29; the bounding-box route of #10 was removed after it):
   `node tools/source/measure_spec_revit_twin.mjs <new-folder>` calls the TwinPack commands of the
   revit-http add-in (`twin_floor_manifest`, `twin_export_floor` with every wall function; not in the MCP
   tool list, called through `revitClient.callRevit`), writes `floor.json` + `reference.obj` per band and
   `twin-data.json`; `dt spec extract --dump <twin-data.json>` reads it (`dt_ai.spec.revit_twin`): walls as
   prisms on their location lines (any angle; curved walls from their real geometry), glass by material
-  transparency, doors from records, attachments by the stack rule (user decision 2026-10-08). The
+  transparency, doors from records, attachments by the main-walls hull rule (user decision 2026-10-08). The
   document is not modified (flag checked before and after); files go only to the new folder.
   KPP1: contours equal to the mesh path (0.0 mm), `jobs/KPP1/spec-compare-v002.md`.
 - Spec comparison (Claude, 2026-10-08, #11): `dt spec compare --a <spec> --b <spec> --tolerances

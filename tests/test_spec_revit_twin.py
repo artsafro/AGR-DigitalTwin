@@ -269,3 +269,9 @@ def test_cli_reads_a_twin_index(tmp_path):
     assert main(["spec", "extract", "--dump", str(tmp_path / "twin-data.json"), "--object", str(tmp_path / "object.json"),
                  "--output", str(out)]) == 0
     assert json.loads(out.read_text(encoding="utf-8"))["frame"]["source"] == "revit"
+
+
+def test_box_route_data_is_refused_with_the_new_route():
+    # revit-data of #10 (bounding boxes) is no longer read
+    with pytest.raises(SpecError, match="measure_spec_revit_twin"):
+        extract_spec({"kind": "revit-data", "source": "revit", "elements": []}, OBJ)
