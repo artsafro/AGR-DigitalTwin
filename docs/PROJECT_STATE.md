@@ -21,7 +21,12 @@ findings left open by that limit are extractor issues #21-#24. #8 typical floors
 (PR #27): `jobs/KPP1/object.json` frame checked on Revit within 0.0 mm, roof 7.909 and contour
 heights confirmed by the user, roof 7.911 (drainage slopes <= 2 deg), 23 glass openings, 58
 questions in `jobs/KPP1/questions.md` for the user. Roof rules (drainage <= 10 deg, caps and
-closure by structure) are in `docs/domain/patterns/parapet.md`. Next: #10 Revit extractor. Human tickets: #2 (move `Unreal/`), #4 (window
+closure by structure) are in `docs/domain/patterns/parapet.md`. #10 Revit path merged (PR #30):
+`measure_spec_revit.mjs` reads the document read only through `revit-http-2025`; walls and roofs as
+bounding boxes, a wall proven along X/Y by its type width, curtain walls as glazing hosted by proven
+walls, anything else a question. KPP1 Revit vs mesh: L0 324.20 / 319.48 m2 (Hausdorff 0.70 m), L1
+322.52 / 322.00 m2 (0.26 m); `window_type` waits for #4, wall location lines #29. Next: #11
+comparison. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -102,7 +107,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #10 Revit extractor, then #11 comparison; extractor follow-ups #21-#24 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 — #11 comparison of the two KPP1 specs; extractor follow-ups #21-#24, #29 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
