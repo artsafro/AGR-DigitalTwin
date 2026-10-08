@@ -197,7 +197,7 @@ def test_terrace_is_not_the_roof():
 
 
 def test_missing_roof_is_an_error_not_a_zero_parapet():
-    with pytest.raises(SpecError, match="no horizontal roof surface"):
+    with pytest.raises(SpecError, match="no up-facing roof surface"):
         extract_spec(box_building(roof=False), OBJECT)
 
 
@@ -227,30 +227,135 @@ def test_weld_does_not_depend_on_the_rounding_grid():
     assert rep[0] == rep[1] != rep[2]
 
 
-def wide_cap_building(roof=True):
-    """10 x 10 m walls to 6.8, a 2 m wide parapet cap (64 m2) at 6.8 around a 6 x 6 m roof (36 m2)
-    at 6.6 (Codex review 2 P1): the larger cap near the roof level must not become the roof."""
+def wide_cap_building(roof=True, inner_x=8.0):
+    """10 x 10 m walls to 6.8, a wide parapet cap at 6.8 around a roof at 6.6 spanning x 2..inner_x,
+    y 2..8 (Codex reviews 2 and 3 P1): the larger cap near the roof level must not become the roof.
+    inner_x=8 is symmetric (cap 64 m2, roof 36 m2); inner_x=4 is asymmetric (cap 88 m2 covers the
+    contour's interior point, roof 12 m2)."""
     b = Mesh("Body")
-    inner = [[2.0, 2.0], [8.0, 2.0], [8.0, 8.0], [2.0, 8.0]]
+    inner = [[2.0, 2.0], [inner_x, 2.0], [inner_x, 8.0], [2.0, 8.0]]
     for w in range(4):
         a, c = w, (w + 1) % 4
         b.quad((*SQUARE[a], 0), (*SQUARE[c], 0), (*SQUARE[c], 6.8), (*SQUARE[a], 6.8))
         b.quad((*SQUARE[a], 6.8), (*SQUARE[c], 6.8), (*inner[c], 6.8), (*inner[a], 6.8))
         b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 6.8), (*inner[c], 6.8))
     if roof:
-        b.quad((2, 2, 6.6), (8, 2, 6.6), (8, 8, 6.6), (2, 8, 6.6))
+        b.quad((2, 2, 6.6), (inner_x, 2, 6.6), (inner_x, 8, 6.6), (2, 8, 6.6))
     b.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))
     return {"source": "synthetic-wide-cap", "meshes": [b.dump()],
             "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]}
                         for n, z in (("L0", 0.0), ("L1", 3.3), ("roof", 6.6))]}
 
 
-def test_parapet_cap_near_the_roof_level_is_not_the_roof():
-    spec, report = extract_spec(wide_cap_building(), OBJECT)
+@pytest.mark.parametrize("inner_x", [8.0, 4.0])
+def test_wide_cap_never_becomes_the_roof(inner_x):
+    # symmetric: roof 36 % under a cap at 6.8 -> 6.6 / 0.2; asymmetric: roof 12 % -> "roof or cap?"
+    # question (ROOF_OWN 25 %, user decision 2026-10-08); never 6.8 / 0 (issue #16)
+    if inner_x == 8.0:
+        spec, report = extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
+        assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.2)
+    else:
+        with pytest.raises(SpecError, match="covers only .* roof or cap"):
+            extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
+    with pytest.raises(SpecError, match="no up-facing roof surface"):
+        extract_spec(wide_cap_building(roof=False, inner_x=inner_x), OBJECT)
+
+
+def test_roof_hole_without_walls_below_is_a_missing_roof():
+    # cap ring at 6.62 over 99.4 % of the floor, no roof: the 0.6 m2 hole has 2 cm walls, no shaft
+    # (Codex review 3 of PR #18, P1); an open shaft through the building stays a roof with an opening
+    with pytest.raises(SpecError, match="not a shaft"):
+        extract_spec(ring_building(SMALL, edge_z=6.62, roof=False)[1], OBJECT)
+
+
+def test_mirroring_frame_keeps_the_roof_facing_up():
+    mirror = {"id": "bench-synth-box", "frame": {"to_object": [[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    spec, report = extract_spec(box_building(canopy=False), mirror)
+    assert close(spec.floors[0].contour, [[-10, 0], [0, 0], [0, 10], [-10, 10]])
+    assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.6)
+
+
+def test_flat_roof_without_parapet_is_the_roof():
+    b = Mesh("Body")
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE[a], 0), (*SQUARE[c], 0), (*SQUARE[c], 6.6), (*SQUARE[a], 6.6))
+    b.quad((0, 0, 6.6), (10, 0, 6.6), (10, 10, 6.6), (0, 10, 6.6))
+    b.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))
+    dump = {"source": "synthetic-flat", "meshes": [b.dump()],
+            "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]}
+                        for n, z in (("L0", 0.0), ("L1", 3.3), ("roof", 6.6))]}
+    spec, report = extract_spec(dump, OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.001)
-    assert spec.roof.parapet_h_m == pytest.approx(0.2, abs=0.01)
-    with pytest.raises(SpecError, match="no horizontal roof surface"):
-        extract_spec(wide_cap_building(roof=False), OBJECT)
+    assert spec.roof.parapet_h_m == 0
+
+
+def ring_building(inner, roof_z=6.6, edge_z=6.8, roof=True, shaft=False, roof_level=6.6):
+    """Counterexamples of Codex review of PR #18: 10 x 10 m walls to edge_z, a cap ring at edge_z
+    around `inner`, a roof at roof_z inside it (optional), or an open shaft through the building."""
+    b = Mesh("Body")
+    for a in range(4):
+        c = (a + 1) % 4
+        b.quad((*SQUARE[a], 0), (*SQUARE[c], 0), (*SQUARE[c], edge_z), (*SQUARE[a], edge_z))
+        b.quad((*SQUARE[a], edge_z), (*SQUARE[c], edge_z), (*inner[c], edge_z), (*inner[a], edge_z))
+        b.quad((*inner[c], roof_z), (*inner[a], roof_z), (*inner[a], edge_z), (*inner[c], edge_z))
+        if shaft:
+            b.quad((*inner[a], 0), (*inner[c], 0), (*inner[c], edge_z), (*inner[a], edge_z))
+    if roof:
+        b.quad(*[(*q, roof_z) for q in inner])
+    b.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))
+    return b, {"source": "synthetic-ring", "meshes": [b.dump()],
+               "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]}
+                           for n, z in (("L0", 0.0), ("L1", 3.3), ("roof", roof_level))]}
+
+
+SMALL = [[2, 2], [3, 2], [3, 2.6], [2, 2.6]]
+
+
+def test_roof_is_confirmed_at_the_input_level_not_guessed():
+    # cap covering 99.4 % of the floor around a 0.6 m2 patch, or around a 0.1 m2 ledge only:
+    # the patch is not confirmed as the roof (Codex review 2 of PR #18)
+    for ledge in (False, True):
+        b, d = ring_building(SMALL, roof=not ledge)
+        if ledge:
+            b.quad((2, 2, 6.6), (3, 2, 6.6), (3, 2.1, 6.6), (2, 2.1, 6.6))
+            d["meshes"] = [b.dump()]
+        with pytest.raises(SpecError, match="covers only"):
+            extract_spec(d, OBJECT)
+    # same cap, no roof: the cap is not taken for a roof 0.2 m off the level
+    with pytest.raises(SpecError, match="no up-facing roof surface .* \\[6.8\\]"):
+        extract_spec(ring_building(SMALL, roof=False)[1], OBJECT)
+    # roof truly at 6.4 while the input says 6.6: a question about the level, not a silent pick
+    b, d = ring_building([[2, 2], [4, 2], [4, 8], [2, 8]], roof_z=6.4)
+    b.quad((0, 0, 6.8), (10, 0, 6.8), (10, 0, 6.5), (0, 0, 6.5))
+    b.quad((0, 0, 6.5), (10, 0, 6.5), (10, -2, 6.5), (0, -2, 6.5))   # outside terrace at 6.5
+    d["meshes"] = [b.dump()]
+    with pytest.raises(SpecError, match="check the roof level"):
+        extract_spec(d, OBJECT)
+
+
+def test_flat_roof_with_a_small_open_shaft_is_the_roof():
+    _, d = ring_building([[2, 2], [4, 2], [4, 4], [2, 4]], roof_z=6.4, edge_z=6.6, roof=False, shaft=True)
+    spec, report = extract_spec(d, OBJECT)
+    assert (report["roof"]["plane_m"], spec.roof.parapet_h_m, report["roof"]["closed_share"]) == (6.6, 0.0, 0.96)
+
+
+@pytest.mark.parametrize("filler", ["ledge", "underside"])
+def test_roof_that_does_not_close_the_floor_is_missing(filler):
+    # wide asymmetric cap, no roof, but some up-facing surface at the roof level
+    d = wide_cap_building(roof=False, inner_x=4)
+    b = Mesh("Body")
+    b.vertices, b.triangles = d["meshes"][0]["vertices"], d["meshes"][0]["triangles"]
+    if filler == "ledge":
+        b.quad((2, 2, 6.6), (3, 2, 6.6), (3, 2.1, 6.6), (2, 2.1, 6.6))
+    else:
+        inner = [[2, 2], [4, 2], [4, 8], [2, 8]]
+        for a in range(4):
+            c = (a + 1) % 4
+            b.quad((*SQUARE[a], 6.6), (*SQUARE[c], 6.6), (*inner[c], 6.6), (*inner[a], 6.6))
+    d["meshes"] = [b.dump()]
+    with pytest.raises(SpecError, match="covers only 0%" if filler == "ledge" else "close only 88%"):
+        extract_spec(d, OBJECT)
 
 
 def test_weld_never_moves_a_vertex_more_than_the_weld_distance():
