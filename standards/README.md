@@ -13,6 +13,7 @@ folder must be fixed.
 | `VPM_STANDARD.yaml` | App.2 high-poly models + App.3 GeoJSON (reg pp.20-39, 51-55): archive, geometry, materials, UDIM textures, UV and texel density, UCX collision, positioning, naming, GeoJSON schema. |
 | `DELIVERY_VALIDATOR.yaml` | Validator spec V001-V017: scope, gate (blocking / manual_review), engine, regulation pages, pass policy. |
 | `traceability.json` | One row per profile rule and per stage: regulation pages, clause, status (`source_section_reviewed` / `review` / `specification_only`), decision reference. Byte-identical to AGR. |
+| `material_id_ranges.yaml` | Project decision, not regulation: material ID group ranges of the working model (ADR 0001). Not hash-locked. |
 | `source/source-lock.json` | SHA-256 lock: regulation PDF, the three YAML files (annotated project copies), `traceability.json`; plus AGR origin hashes. |
 
 The regulation PDF (`Rasporyajenies19012026trebovaniya(2).pdf`, 56 pp., SHA-256

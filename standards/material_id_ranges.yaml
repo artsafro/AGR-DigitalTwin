@@ -1,0 +1,19 @@
+# Material ID group ranges of the working model (project decision, not a regulation rule).
+# Decided 2026-10-08: docs/HARNESS_PLAN.md §6, docs/adr/0001-material-ids-are-a-reading-scheme.md.
+# Not in source/source-lock.json: that lock covers the regulation profiles only.
+#
+# IDs are a reading scheme for agents and people. Export renumbers them into dense UDIM tiles /
+# atlas regions and slots by the regulation (V008: 1001..1100 without gaps); glass always 1001.
+# An unused group leaves its range empty; later groups never shift. Concrete IDs per object come
+# from jobs/<object>/materials.json. ID = 3ds Max material ID = Blender slot index + 1.
+version: 1
+status: test   # group boundaries are a hypothesis (HARNESS_PLAN §11.3)
+unassigned: 0  # ambiguous faces stay 0 until the user decides (docs/domain/materials.md)
+groups:
+  facade:      {first: 1,  last: 5,  what: facade finishes (brick, plaster, panels)}
+  reveal:      {first: 6,  last: 10, what: reveals, one per facade finish}
+  opening:     {first: 11, last: 15, what: window and door types (opening planes)}
+  metal:       {first: 16, last: 20, what: metal (frames, grilles)}
+  roof:        {first: 21, last: 25, what: roof (inner parapet walls, roof plane, vent shafts)}
+  attachment:  {first: 26, last: 30, what: attachments (AC, signs, lights)}
+  interior:    {first: 31, last: 35, what: interior capsules (mid profile)}
