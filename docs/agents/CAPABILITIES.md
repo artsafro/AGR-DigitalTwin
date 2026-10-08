@@ -132,13 +132,17 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   proven on Obr22 (`docs/cases.md`). RunRecord inspection: `tools/harness_status.py`
   (skill `run-evidence`).
 
-### Spec extractor — `tools/source/measure_spec_blender.py` + `dt spec extract`
-- Status: WORKING on synthetic data only (Claude, 2026-10-08, branch `feature/extract-spec-mesh-v1`,
-  issue #5): Blender 5.1 dumps triangles and `LEVEL_<name>` helpers; `dt spec extract --dump
-  --object --output` writes spec v0.1 (`schemas/Spec.schema.json`) and a report. Gives levels,
-  level contours (body = largest part, modal section), roof plane and parapet height.
-- Limits: no openings (#7), kinks/projections rule (#6), floor classification (#8) or
-  attachments yet; object.json must carry `frame.to_object`; not run on a real object (#9).
+### Spec extractor — `tools/source/measure_spec_blender.py` + `dt spec extract` / `dt spec merge-questions`
+- Status: WORKING on synthetic data (Claude, 2026-10-08; issues #5, #16, #6, #7): Blender 5.1 dumps
+  triangles and `LEVEL_<name>` helpers; `dt spec extract --dump --object --output` writes spec v0.1
+  (`schemas/Spec.schema.json`), a report and `<spec>.questions.md`. Levels are input; roof confirmed at
+  the top input level; strict full-height level contour (`contour_at_m` in object.json when it asks);
+  kinks, rounded corners; openings from holes in the body or glass panes (`source`).
+  `dt spec merge-questions --report --version --into jobs/<object>/questions.md` keeps one questions
+  list per object with stable ids and kept answers.
+- Limits: `window_type` is always null (no material ids in the dump; window library #4); no floor
+  classification (#8) or attachments; a building whose roof is a separate part from the walls stops at
+  the roof check (KPP1 v005 trial, #9). Pattern: `docs/domain/patterns/wall-from-contour.md`.
 
 ### Operation library — `technical_library/`
 - Status: WORKING per package README (Russian): `glb_atlas`, `uv_continuous` (UV v006),

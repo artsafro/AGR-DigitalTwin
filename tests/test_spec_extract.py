@@ -104,8 +104,11 @@ def test_box_levels_contours_and_roof():
         assert close(f.contour, SQUARE), f.contour
     assert abs(spec.roof.parapet_h_m - 0.6) <= 0.01
     assert abs(report["roof"]["plane_m"] - 6.6) <= 0.01 and report["roof"]["plane_vs_top_level_m"] == 0
-    # sections through the window holes stay open; the closed ones decide the contour
-    assert report["floors"]["L0"]["closed_sections"] < report["floors"]["L0"]["sections"]
+    # the window holes are bridged along the wall: every section closes and each hole is an opening
+    assert report["floors"]["L0"]["closed_sections"] == report["floors"]["L0"]["sections"]
+    for f in spec.floors:
+        (o,) = f.openings
+        assert (o.wall, o.x_m, o.sill_m, o.w_m, o.h_m, o.depth_m, o.source) == (0, 2.0, 0.9, 1.5, 1.5, 0.0, "hole")
     assert spec.frame.object == "bench-synth-box"
 
 
@@ -202,9 +205,17 @@ def test_missing_roof_is_an_error_not_a_zero_parapet():
 
 
 def test_storey_without_a_closed_section_is_an_error():
-    # a slot through the whole ground storey: no cut closes, and no contour is invented
+    # the whole south wall missing over the ground storey (10 m > the widest opening): nothing
+    # closes, and no contour is invented
     with pytest.raises(SpecError, match="level L0: none of"):
-        extract_spec(box_building(holes={(1, 0), (1, 1), (1, 2)}), OBJECT)
+        extract_spec(box_building(holes={(i, k) for i in range(3) for k in range(3)}), OBJECT)
+
+
+def test_full_storey_slot_is_an_opening():
+    # a 1.5 m slot over the whole ground storey is an opening (a door), not an open storey (#7)
+    spec, _ = extract_spec(box_building(holes={(1, 0), (1, 1), (1, 2), (1, 4)}), OBJECT)
+    (o,) = spec.floors[0].openings
+    assert (o.x_m, o.sill_m, o.w_m, o.h_m, o.source) == (2.0, 0.0, 1.5, 3.3, "hole")
 
 
 def test_cuts_on_vertex_rows_still_section():

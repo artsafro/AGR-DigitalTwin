@@ -143,9 +143,43 @@
           "title": "H M",
           "type": "number"
         },
+        "material_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material Id"
+        },
+        "plane_conflict": {
+          "default": false,
+          "title": "Plane Conflict",
+          "type": "boolean"
+        },
         "sill_m": {
           "title": "Sill M",
           "type": "number"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "enum": [
+                "hole",
+                "glass",
+                "hole+glass"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
         },
         "w_m": {
           "exclusiveMinimum": 0,

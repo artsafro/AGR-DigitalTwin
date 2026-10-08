@@ -37,6 +37,12 @@ class Opening(SpecPart):
     h_m: Positive
     depth_m: NonNegative
     window_type: int | None = None
+    # anchor that found it (user decision 2026-10-08, #7): a hole in the body, a glass pane, or both
+    source: Literal["hole", "glass", "hole+glass"] | None = None
+    # material id of an opening plane in it (group `opening`, ADR 0001); not the window type
+    material_id: int | None = None
+    # two overlapping opening planes with different ids: material_id is left null
+    plane_conflict: bool = False
 
 
 class Floor(SpecPart):
