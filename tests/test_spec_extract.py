@@ -99,14 +99,14 @@ def close(a, b, tol=0.01):
 def test_box_levels_contours_and_roof():
     spec, report = extract_spec(box_building(), OBJECT)
     assert [(lv.name, lv.elev_m) for lv in spec.levels] == [("L0", 0.0), ("L1", 3.3), ("roof", 6.6)]
-    assert [f.level for f in spec.floors] == ["L0", "L1"]
-    for f in spec.floors:
+    assert [f.level for f in spec.expanded_floors()] == ["L0", "L1"]
+    for f in spec.expanded_floors():
         assert close(f.contour, SQUARE), f.contour
     assert abs(spec.roof.parapet_h_m - 0.6) <= 0.01
     assert abs(report["roof"]["plane_m"] - 6.6) <= 0.01 and report["roof"]["plane_vs_top_level_m"] == 0
     # the window holes are bridged along the wall: every section closes and each hole is an opening
     assert report["floors"]["L0"]["closed_sections"] == report["floors"]["L0"]["sections"]
-    for f in spec.floors:
+    for f in spec.expanded_floors():
         (o,) = f.openings
         assert (o.wall, o.x_m, o.sill_m, o.w_m, o.h_m, o.depth_m, o.source) == (0, 2.0, 0.9, 1.5, 1.5, 0.0, "hole")
     assert spec.frame.object == "bench-synth-box"
@@ -125,7 +125,7 @@ def test_frame_moves_source_into_object_system():
     shifted = box_building(shift=(100.0, -50.0, 2.0))
     obj = {"id": "bench-synth-box", "frame": {"to_object": [[1, 0, 0, -100], [0, 1, 0, 50], [0, 0, 1, -2], [0, 0, 0, 1]]}}
     spec, _ = extract_spec(shifted, obj)
-    assert close(spec.floors[0].contour, SQUARE)
+    assert close(spec.expanded_floors()[0].contour, SQUARE)
     assert spec.levels[1].elev_m == pytest.approx(3.3)
 
 
@@ -193,8 +193,8 @@ def stepped_building():
 
 def test_terrace_is_not_the_roof():
     spec, report = extract_spec(stepped_building(), OBJECT)
-    assert close(spec.floors[0].contour, SQUARE)
-    assert close(spec.floors[1].contour, [[3, 3], [7, 3], [7, 7], [3, 7]])
+    assert close(spec.expanded_floors()[0].contour, SQUARE)
+    assert close(spec.expanded_floors()[1].contour, [[3, 3], [7, 3], [7, 7], [3, 7]])
     assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.01)
     assert spec.roof.parapet_h_m == pytest.approx(0.6, abs=0.01)
 
@@ -214,7 +214,7 @@ def test_storey_without_a_closed_section_is_an_error():
 def test_full_storey_slot_is_an_opening():
     # a 1.5 m slot over the whole ground storey is an opening (a door), not an open storey (#7)
     spec, _ = extract_spec(box_building(holes={(1, 0), (1, 1), (1, 2), (1, 4)}), OBJECT)
-    (o,) = spec.floors[0].openings
+    (o,) = spec.expanded_floors()[0].openings
     assert (o.x_m, o.sill_m, o.w_m, o.h_m, o.source) == (2.0, 0.0, 1.5, 3.3, "hole")
 
 
@@ -223,13 +223,13 @@ def test_cuts_on_vertex_rows_still_section():
     zs = sorted({0, 3.3, 6.6, 7.2, *[z for z in rows if z < 6.6]})
     spec, report = extract_spec(box_building(zs=zs, holes=set()), OBJECT)
     assert report["floors"]["L0"]["closed_sections"] == report["floors"]["L0"]["sections"]
-    assert close(spec.floors[0].contour, SQUARE)
+    assert close(spec.expanded_floors()[0].contour, SQUARE)
 
 
 def test_body_is_the_largest_area_not_the_most_triangles():
     spec, report = extract_spec(box_building(dense_canopy=True), OBJECT)
     assert report["attachment_parts_ignored"] == 2
-    assert close(spec.floors[0].contour, SQUARE)
+    assert close(spec.expanded_floors()[0].contour, SQUARE)
 
 
 def test_weld_does_not_depend_on_the_rounding_grid():
@@ -282,7 +282,7 @@ def test_roof_hole_without_walls_below_is_a_missing_roof():
 def test_mirroring_frame_keeps_the_roof_facing_up():
     mirror = {"id": "bench-synth-box", "frame": {"to_object": [[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
     spec, report = extract_spec(box_building(canopy=False), mirror)
-    assert close(spec.floors[0].contour, [[-10, 0], [0, 0], [0, 10], [-10, 10]])
+    assert close(spec.expanded_floors()[0].contour, [[-10, 0], [0, 0], [0, 10], [-10, 10]])
     assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.6)
 
 
@@ -416,7 +416,7 @@ def test_blender_dump_to_spec(tmp_path):
                    check=True, capture_output=True)
     spec, report = extract_spec(json.loads(dump.read_text(encoding="utf-8")), OBJECT)
     assert [lv.name for lv in spec.levels] == ["L0", "L1", "roof"]
-    assert close(spec.floors[0].contour, SQUARE) and close(spec.floors[1].contour, SQUARE)
+    assert close(spec.expanded_floors()[0].contour, SQUARE) and close(spec.expanded_floors()[1].contour, SQUARE)
     assert [lv.elev_m for lv in spec.levels] == pytest.approx([0.0, 3.3, 6.6], abs=1e-4)
     assert spec.roof.parapet_h_m == pytest.approx(0.6, abs=0.01)
     assert report["attachment_parts_ignored"] == 1

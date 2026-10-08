@@ -63,6 +63,9 @@ class Floor(SpecPart):
                 raise ValueError(f"floor {self.level}: contour point must be [x, y] or [x, y, {{'r': r}}]")
         if self.contour is not None and len(self.contour) < 3:
             raise ValueError(f"floor {self.level}: contour needs at least 3 points")
+        for o in self.openings:
+            if self.contour is not None and o.wall >= len(self.contour):
+                raise ValueError(f"floor {self.level}: opening on wall {o.wall}, the contour has {len(self.contour)}")
         return self
 
 
@@ -92,4 +95,28 @@ class Spec(SpecPart):
             for ref in (f.level, f.typical_of, f.repeat_to):
                 if ref is not None and ref not in names:
                     raise ValueError(f"floor refers to unknown level {ref}")
+        full = {f.level for f in self.floors if f.contour is not None}
+        owner = {}
+        for f in self.floors:
+            first = last = names.index(f.level)
+            if f.typical_of is not None:
+                if f.typical_of not in full or names.index(f.typical_of) >= first:
+                    raise ValueError(f"floor {f.level}: typical_of must be a full floor below it")
+                if f.openings:
+                    raise ValueError(f"floor {f.level}: a typical entry carries no openings of its own")
+                last = names.index(f.repeat_to) if f.repeat_to is not None else first
+                if last < first:
+                    raise ValueError(f"floor {f.level}: repeat_to is below the floor")
+            if last >= len(names) - 1:
+                raise ValueError(f"floor {f.level}: floors stop below the top level {names[-1]}")
+            for i in range(first, last + 1):
+                if i in owner:
+                    raise ValueError(f"level {names[i]} is given twice ({owner[i]} and {f.level})")
+                owner[i] = f.level
         return self
+
+    def expanded_floors(self):
+        """Every floor in full, typical runs copied from their template (round trip of #8)."""
+        from dt_ai.spec.floors import expand
+        names = [lv.name for lv in self.levels]
+        return [Floor.model_validate(f) for f in expand([f.model_dump() for f in self.floors], names)]

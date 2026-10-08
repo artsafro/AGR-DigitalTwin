@@ -86,8 +86,8 @@ def test_b02_like_non_90_corner_niche_and_two_roof_levels():
     flat(b, Polygon(upper), 6.6, up=True)
     flat(b, Polygon(lower), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
-    assert close(spec.floors[0].contour, lower)
-    assert close(spec.floors[1].contour, upper)
+    assert close(spec.expanded_floors()[0].contour, lower)
+    assert close(spec.expanded_floors()[1].contour, upper)
     assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.0)
     assert report["questions"] == []
 
@@ -97,7 +97,7 @@ def test_rounded_corner_is_one_point_with_radius():
     arc = [[10 - r + r * math.cos(a), 10 - r + r * math.sin(a)] for a in np.linspace(0, math.pi / 2, n + 1)]
     contour = [[0, 0], [10, 0], *arc, [0, 10]]
     spec, _ = extract_spec(prism(contour), OBJECT)
-    pts = spec.floors[0].contour
+    pts = spec.expanded_floors()[0].contour
     assert len(pts) == 4
     corner = [p for p in pts if len(p) == 3]
     assert len(corner) == 1 and math.dist(corner[0][:2], [10, 10]) <= 0.02
@@ -109,7 +109,7 @@ def test_kinks_over_5_degrees_are_kept(deg, kept):
     y = 10 * math.tan(math.radians(deg))
     contour = [[0, 0], [10, 0], [20, y], [20, 10], [0, 10]]
     spec, _ = extract_spec(prism(contour), OBJECT)
-    pts = spec.floors[0].contour
+    pts = spec.expanded_floors()[0].contour
     assert (any(math.dist(p[:2], [10, 0]) < 0.01 for p in pts)) == kept
     assert len(pts) == (5 if kept else 4)
 
@@ -121,7 +121,7 @@ def at(**heights):
 
 def only_question(dump, obj=OBJECT):
     spec, report = extract_spec(dump, obj)
-    assert close(spec.floors[0].contour, SQUARE10) and close(spec.floors[1].contour, SQUARE10)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10) and close(spec.expanded_floors()[1].contour, SQUARE10)
     assert len(report["questions"]) == 1, report["questions"]
     return report["questions"][0]
 
@@ -152,10 +152,10 @@ def test_two_levels_threshold_sets_priority_not_route(z1, levels, priority):
 
 def test_full_height_pilaster_is_in_the_contour_without_a_question():
     spec, report = extract_spec(prism(SQUARE10, boxes=[(0, 2.0, 2.5, 0.0, 3.3, 0.2)]), OBJECT)
-    assert close(spec.floors[0].contour, [[0, 0], [2, 0], [2, -0.2], [2.5, -0.2], [2.5, 0], [10, 0], [10, 10], [0, 10]],
-                 tol=0.01) or close(spec.floors[0].contour,
+    assert close(spec.expanded_floors()[0].contour, [[0, 0], [2, 0], [2, -0.2], [2.5, -0.2], [2.5, 0], [10, 0], [10, 10], [0, 10]],
+                 tol=0.01) or close(spec.expanded_floors()[0].contour,
                                     [[2, -0.2], [2.5, -0.2], [2.5, 0], [10, 0], [10, 10], [0, 10], [0, 0], [2, 0]])
-    assert close(spec.floors[1].contour, SQUARE10)
+    assert close(spec.expanded_floors()[1].contour, SQUARE10)
     assert report["questions"] == []
 
 
@@ -185,7 +185,7 @@ def test_faceted_corner_is_not_turned_into_an_arc():
     # F2: five real kinks (11-25 degrees) are facets, not a fillet
     contour = [[0, 0], [10, 0], [10, 8], [9.9, 8.5], [9.5, 9.2], [8.8, 9.7], [8, 10], [0, 10]]
     spec, _ = extract_spec(prism(contour), OBJECT)
-    assert close(spec.floors[0].contour, contour) and all(len(p) == 2 for p in spec.floors[0].contour)
+    assert close(spec.expanded_floors()[0].contour, contour) and all(len(p) == 2 for p in spec.expanded_floors()[0].contour)
 
 
 def test_seven_degree_kink_next_to_a_small_one_is_kept():
@@ -194,7 +194,7 @@ def test_seven_degree_kink_next_to_a_small_one_is_kept():
     p2 = [p1[0] + 10 * math.cos(math.radians(-2.5)), p1[1] + 10 * math.sin(math.radians(-2.5))]
     contour = [[0, 0], [10, 0], p1, p2, [p2[0], 10], [0, 10]]
     spec, _ = extract_spec(prism(contour), OBJECT)
-    pts = spec.floors[0].contour
+    pts = spec.expanded_floors()[0].contour
     assert any(math.dist(p[:2], p1) < 0.01 for p in pts)
     assert not any(math.dist(p[:2], [10, 0]) < 0.01 for p in pts)
 
@@ -205,7 +205,7 @@ def test_large_radius_does_not_depend_on_tessellation(n):
     r = 10.0
     arc = [[30 - r + r * math.cos(a), 30 - r + r * math.sin(a)] for a in np.linspace(0, math.pi / 2, n + 1)]
     spec, _ = extract_spec(prism([[0, 0], [30, 0], *arc, [0, 30]]), OBJECT)
-    pts = spec.floors[0].contour
+    pts = spec.expanded_floors()[0].contour
     assert len(pts) == 4
     corner = [p for p in pts if len(p) == 3][0]
     assert math.dist(corner[:2], [30, 30]) <= 0.05 and corner[2]["r"] == pytest.approx(10, abs=0.05)
@@ -273,7 +273,7 @@ def test_plinth_and_cornice_at_both_ends_are_not_the_wall(cornice_depth):
     with pytest.raises(SpecError, match="no section shape is both at the two storey ends and the tallest"):
         extract_spec(dump, OBJECT)
     spec, report = extract_spec(dump, at(L0=1.5))
-    assert close(spec.floors[0].contour, SQUARE10)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
     kinds = sorted((q["kind"], q["depth_m"], q["heights_m"][0]) for q in report["questions"])
     assert kinds == [("projection", 0.1, 0.0), ("projection", cornice_depth, 3.0)]
 
@@ -298,7 +298,7 @@ def test_holes_at_the_storey_ends_are_openings_and_the_contour_stays_strict():
     with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
         extract_spec(dump_of(b), OBJECT)
     spec, report = extract_spec(dump_of(b), at(L0=0.2))
-    got = [(o.x_m, o.sill_m, o.w_m, o.h_m) for o in spec.floors[0].openings]
+    got = [(o.x_m, o.sill_m, o.w_m, o.h_m) for o in spec.expanded_floors()[0].openings]
     assert got == [(5.0, 0.0, 1.0, 0.5), (5.0, 2.8, 1.0, 0.5)]
 
 
@@ -319,7 +319,7 @@ def test_dense_wall_rows_keep_the_contour():
     flat(b, Polygon(SQUARE10), 6.6, up=True)
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
-    assert close(spec.floors[0].contour, SQUARE10) and close(spec.floors[1].contour, SQUARE10)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10) and close(spec.expanded_floors()[1].contour, SQUARE10)
     assert report["questions"] == []
 
 
@@ -340,7 +340,7 @@ def test_projection_on_a_dropped_small_kink_is_measured_on_its_facet():
     y = 10 * math.tan(math.radians(4.5))
     contour = [[0, 0], [10, 0], [20, y], [20, 10], [0, 10]]
     spec, report = extract_spec(prism(contour, boxes=[(0, 2.0, 3.0, 1.0, 1.5, 0.2)]), OBJECT)
-    assert len(spec.floors[0].contour) == 4                     # the 4.5 degree kink is not in the contour
+    assert len(spec.expanded_floors()[0].contour) == 4                     # the 4.5 degree kink is not in the contour
     (q,) = report["questions"]
     assert (q["wall"], q["depth_m"], q["length_m"]) == (0, 0.2, 1.0)
 
@@ -351,7 +351,7 @@ def test_coarse_true_arcs_are_rounded_corners(n):
     r = 1.5
     arc = [[10 - r + r * math.cos(a), 10 - r + r * math.sin(a)] for a in np.linspace(0, math.pi / 2, n + 1)]
     spec, _ = extract_spec(prism([[0, 0], [10, 0], *arc, [0, 10]]), OBJECT)
-    pts = spec.floors[0].contour
+    pts = spec.expanded_floors()[0].contour
     assert len(pts) == 4 and [p for p in pts if len(p) == 3][0][2]["r"] == pytest.approx(1.5, abs=0.02)
 
 
