@@ -17,7 +17,6 @@ from shapely.geometry.polygon import orient
 
 from dt_ai.spec import floors as fl
 from dt_ai.spec import openings as op
-from dt_ai.spec import revit as rv
 from dt_ai.spec.model import Spec
 
 LEVEL_PREFIX = "LEVEL_"
@@ -866,11 +865,9 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json."""
     m = _matrix(obj_cfg, dump.get("source"))
     levels = _levels(dump, obj_cfg, m)
-    if dump.get("kind") == "revit-data":                 # Revit data path (issue #10): boxes and panes
-        try:
-            dump = rv.to_dump(dump)
-        except rv.RevitDataError as exc:
-            raise SpecError(str(exc)) from None
+    if dump.get("kind") == "revit-data":                 # the box route of #10, removed after #29
+        raise SpecError("revit-data (bounding boxes, #10) is no longer read; export with "
+                        "tools/source/measure_spec_revit_twin.mjs and pass its twin-data.json (#29)")
     v, tris, mats, owners = _mesh(dump, m, with_materials=True)
     plane = np.isin(mats, list(_opening_ids()))        # opening planes are not body: the hole stays the anchor
     plane_tris = np.column_stack([tris[plane], mats[plane]])
