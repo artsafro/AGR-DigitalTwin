@@ -149,7 +149,7 @@ def test_inner_wall_break_is_a_question_not_a_facade_opening():
 
 def test_courtyard_opening_is_not_moved_to_the_facade(monkeypatch):
     # F1: a hole in a courtyard wall cannot be a facade opening of the outer contour
-    monkeypatch.setattr(spec_mesh, "_roof", lambda *a, **k: (6.6, 6.6, 1.0))
+    monkeypatch.setattr(spec_mesh, "_roof", lambda *a, **k: (6.6, 6.6, 1.0, {}))
     outer, inner = [(0, 0), (20, 0), (20, 20), (0, 20)], [(5, 5), (15, 5), (15, 15), (5, 15)]
     b = Mesh("Body")
     walls(b, outer, 0, 6.6)

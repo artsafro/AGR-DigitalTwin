@@ -21,7 +21,7 @@ import numpy as np
 import shapely
 from shapely.geometry import LineString, MultiLineString, Polygon
 
-SNAP_M = 1e-5            # section points closer than this are one point (KPP1: 1 um gaps at window jambs)
+SNAP_M = 1e-5            # section points closer than this are one point (real meshes left 1 um gaps at window jambs)
 OPENING_MAX_M = 8.0      # widest gap in a wall that is bridged as an opening
 REVEAL_PATH_MAX_M = 2.0  # longest way back from a dangling end to its mouth (reveal, chamfer)
 ALONG_DEG = 10.0         # a chain runs along the gap within this angle
