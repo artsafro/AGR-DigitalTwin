@@ -27,6 +27,7 @@ collisions, plus the interactive Unreal experience. Priorities, in order:
 | Accepted cases and lessons | `docs/cases.md` |
 | Terms | `GLOSSARY.md` |
 | Names for scripts, tools, jobs, outputs, branches and tags; object ids | `docs/agents/NAMING.md`, `jobs/REGISTRY.md` |
+| Harness plan, benchmark etalons, pattern registry | `docs/HARNESS_PLAN.md`, `benchmark/`, `docs/domain/patterns/INDEX.md` |
 | Machine-readable rules | `standards/` (locked; change procedure in `standards/README.md`) |
 | AGR knowledge base (Russian originals, read-only) | `docs/agr/` |
 

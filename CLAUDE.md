@@ -16,3 +16,4 @@ delivery packages. Full split with Codex and Antigravity: `docs/agents/ROLES.md`
 - While Codex is unavailable, Claude also owns git/GitHub work (branches, push, PRs,
   merges to `main`, state updates after merges) — fallback in `docs/agents/ROLES.md`.
 - Herdr workspace rules: `docs/HERDR.md`.
+- `technical_library/`: read it only when the task names a package from it.

@@ -10,7 +10,7 @@ from pathlib import Path, PurePosixPath
 
 
 PROMOTE_ROOTS = {
-    ".cursor", "adapters", "docs", "schemas", "src", "standards",
+    ".cursor", "adapters", "benchmark", "docs", "schemas", "src", "standards",
     "technical_library", "tests", "tools",
 }
 TEXT_EXTENSIONS = {
