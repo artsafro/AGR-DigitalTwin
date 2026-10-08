@@ -185,3 +185,6 @@ SCHEMAS = {c.__name__: c for c in [ProjectManifest, MaterialRegistry, WindowType
 from dt_ai.core.adapter_report import AdapterReport
 SCHEMAS["AdapterReport"] = AdapterReport
 
+from dt_ai.spec.model import Spec
+SCHEMAS["Spec"] = Spec
+

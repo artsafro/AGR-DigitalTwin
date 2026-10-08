@@ -1,0 +1,281 @@
+{
+  "$defs": {
+    "Floor": {
+      "additionalProperties": false,
+      "properties": {
+        "contour": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "additionalProperties": {
+                        "exclusiveMinimum": 0,
+                        "type": "number"
+                      },
+                      "type": "object"
+                    }
+                  ]
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contour"
+        },
+        "level": {
+          "title": "Level",
+          "type": "string"
+        },
+        "openings": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Opening"
+          },
+          "title": "Openings",
+          "type": "array"
+        },
+        "repeat_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Repeat To"
+        },
+        "typical_of": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Typical Of"
+        }
+      },
+      "required": [
+        "level"
+      ],
+      "title": "Floor",
+      "type": "object"
+    },
+    "Frame": {
+      "additionalProperties": false,
+      "description": "Mandatory: source and the 4x4 matrix from source coordinates to the object system.",
+      "properties": {
+        "object": {
+          "minLength": 1,
+          "title": "Object",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "to_object": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "title": "To Object",
+          "type": "array"
+        }
+      },
+      "required": [
+        "object",
+        "source",
+        "to_object"
+      ],
+      "title": "Frame",
+      "type": "object"
+    },
+    "Level": {
+      "additionalProperties": false,
+      "properties": {
+        "elev_m": {
+          "title": "Elev M",
+          "type": "number"
+        },
+        "name": {
+          "pattern": "^[A-Za-z0-9_]+$",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "elev_m"
+      ],
+      "title": "Level",
+      "type": "object"
+    },
+    "Opening": {
+      "additionalProperties": false,
+      "properties": {
+        "depth_m": {
+          "minimum": 0,
+          "title": "Depth M",
+          "type": "number"
+        },
+        "h_m": {
+          "exclusiveMinimum": 0,
+          "title": "H M",
+          "type": "number"
+        },
+        "sill_m": {
+          "title": "Sill M",
+          "type": "number"
+        },
+        "w_m": {
+          "exclusiveMinimum": 0,
+          "title": "W M",
+          "type": "number"
+        },
+        "wall": {
+          "minimum": 0,
+          "title": "Wall",
+          "type": "integer"
+        },
+        "window_type": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Window Type"
+        },
+        "x_m": {
+          "minimum": 0,
+          "title": "X M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "wall",
+        "x_m",
+        "sill_m",
+        "w_m",
+        "h_m",
+        "depth_m"
+      ],
+      "title": "Opening",
+      "type": "object"
+    },
+    "Roof": {
+      "additionalProperties": false,
+      "properties": {
+        "parapet_h_m": {
+          "minimum": 0,
+          "title": "Parapet H M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "parapet_h_m"
+      ],
+      "title": "Roof",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "attachments": {
+      "default": [],
+      "items": {
+        "additionalProperties": true,
+        "type": "object"
+      },
+      "title": "Attachments",
+      "type": "array"
+    },
+    "floors": {
+      "items": {
+        "$ref": "#/$defs/Floor"
+      },
+      "minItems": 1,
+      "title": "Floors",
+      "type": "array"
+    },
+    "frame": {
+      "$ref": "#/$defs/Frame"
+    },
+    "id": {
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)+$",
+      "title": "Id",
+      "type": "string"
+    },
+    "levels": {
+      "items": {
+        "$ref": "#/$defs/Level"
+      },
+      "minItems": 2,
+      "title": "Levels",
+      "type": "array"
+    },
+    "opening_depth_default_m": {
+      "default": 0.2,
+      "minimum": 0,
+      "title": "Opening Depth Default M",
+      "type": "number"
+    },
+    "profile": {
+      "enum": [
+        "npm_min",
+        "mid"
+      ],
+      "title": "Profile",
+      "type": "string"
+    },
+    "roof": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Roof"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "spec_version": {
+      "const": "0.1",
+      "default": "0.1",
+      "title": "Spec Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "profile",
+    "frame",
+    "levels",
+    "floors"
+  ],
+  "title": "Spec",
+  "type": "object"
+}

@@ -132,6 +132,14 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   proven on Obr22 (`docs/cases.md`). RunRecord inspection: `tools/harness_status.py`
   (skill `run-evidence`).
 
+### Spec extractor — `tools/source/measure_spec_blender.py` + `dt spec extract`
+- Status: WORKING on synthetic data only (Claude, 2026-10-08, branch `feature/extract-spec-mesh-v1`,
+  issue #5): Blender 5.1 dumps triangles and `LEVEL_<name>` helpers; `dt spec extract --dump
+  --object --output` writes spec v0.1 (`schemas/Spec.schema.json`) and a report. Gives levels,
+  level contours (body = largest part, modal section), roof plane and parapet height.
+- Limits: no openings (#7), kinks/projections rule (#6), floor classification (#8) or
+  attachments yet; object.json must carry `frame.to_object`; not run on a real object (#9).
+
 ### Operation library — `technical_library/`
 - Status: WORKING per package README (Russian): `glb_atlas`, `uv_continuous` (UV v006),
   `window_atlas`, `texture_tiles`, `mesh_audit`. Scope of each = its accepted case.
