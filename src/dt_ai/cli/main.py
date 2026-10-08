@@ -11,6 +11,7 @@ from dt_ai.drawing.index import index_pdf
 from dt_ai.materials.registry import merge_proposals
 from dt_ai.spec import extract_spec
 from dt_ai.spec.compare import compare_specs, markdown as spec_compare_markdown
+from dt_ai.spec import revit_twin
 from dt_ai.spec.mesh import questions_markdown
 from dt_ai.spec.questions_file import merge as merge_questions
 from dt_ai.validate.bundle import validate
@@ -112,8 +113,10 @@ def main(argv=None):
             for path in [args.output] + outputs[1:]:
                 if path.exists():
                     raise ValueError(f"{path} exists; write a new versioned spec")
-            result, report = extract_spec(read_json(args.dump.read_bytes()), read_json(args.object.read_bytes()),
-                                          args.profile)
+            dump = read_json(args.dump.read_bytes())
+            if dump.get("kind") == "revit-twin":         # band folders beside the index (#29)
+                dump = revit_twin.load(args.dump)
+            result, report = extract_spec(dump, read_json(args.object.read_bytes()), args.profile)
             write_json(args.output, result.model_dump(exclude_none=True))
             write_json(outputs[1], report)
             if report["questions"]:

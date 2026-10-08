@@ -592,6 +592,17 @@ def _questions(levels, floors, polys, pieces_by_level):
     return out
 
 
+def _source_questions(dump, levels):
+    """Questions a source converter already found (Revit attachments, #29), placed on the storeys
+    their heights touch."""
+    out = []
+    for q in dump.get("questions", []):
+        z0, z1 = q["heights_m"]
+        names = [a["name"] for a, b in zip(levels, levels[1:]) if z0 < b["elev_m"] and z1 > a["elev_m"]]
+        out.append({**q, "levels": names or [levels[0]["name"]]})
+    return out
+
+
 def questions_markdown(spec_id, questions):
     """The object's questions file: everything not over the full storey height (HARNESS_PLAN §4)."""
     lines = [f"# Questions — {spec_id}", "",
@@ -745,8 +756,10 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
                         f"floor (< {ROOF_CLOSED:.0%}): roof missing or open; ask the user")
     holes = [h for h in shapely.get_parts(top_contour.difference(cover)) if h.area >= HOLE_MIN_M2]
     if holes:
-        z_mid = _clear_height(v, tris, (below_level["elev_m"] + roof_z) / 2)
-        walls = shapely.unary_union(_section(v, tris, z_mid) or [LineString()])
+        # walls of the body or separate parts (a Revit source gives inner walls as parts, #29), cut
+        # inside the top storey, where nothing standing on the roof reaches
+        z_mid = _clear_height(v, every_part, (below_level["elev_m"] + roof_z) / 2)
+        walls = shapely.unary_union(_section(v, every_part, z_mid) or [LineString()])
         for hole in holes:
             lined = walls.intersection(hole.buffer(PARAPET_EDGE_M)).length / hole.exterior.length
             if lined < SHAFT_WALL_SHARE:
@@ -882,6 +895,22 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         polys.append(poly)
         pieces.append(dev)
     panes, flat_glass = _glass(dump, m)
+    source_doors_skipped = 0
+    for d in dump.get("doors", []):                      # door records of a source (Revit, #29)
+        q0, q1 = _apply(m, [[*d["p0"], d["z0"]], [*d["p1"], d["z1"]]])
+        li = next((i for i in range(len(floors)) if levels[i]["elev_m"] - op.LEVEL_JOINT_M <= q0[2]
+                   < levels[i + 1]["elev_m"] - op.LEVEL_JOINT_M), None)
+        run = q1[:2] - q0[:2]
+        if li is None or np.linalg.norm(run) < 1e-6:
+            source_doors_skipped += 1
+            continue
+        _, _, u, _ = op._wall_frame(floors[li]["contour"], (q0[:2] + q1[:2]) / 2)
+        off = polys[li].exterior.distance(shapely.Point(*((q0[:2] + q1[:2]) / 2)))
+        if abs(float(u @ run)) / float(np.linalg.norm(run)) < np.cos(np.radians(op.ALONG_DEG)) or off > op.PANE_WALL_M:
+            source_doors_skipped += 1                    # across the facade or inside: no facade opening
+            continue
+        span = LineString([q0[:2], q1[:2]]).buffer(max(d["depth"], 0.01) / 2, cap_style="flat")
+        doors[li].append({"geom": span, "z0": float(q0[2]), "z1": float(q1[2])})
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
                                                               _planes(v, plane_tris), doors)
     cleared = 0
@@ -891,10 +920,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         cleared += len(pieces[li]) - len(kept)
         pieces[li] = kept
     report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
+                          "source_doors_skipped": source_doors_skipped,
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
     suspects = _plane_suspects(dump, m, levels, polys)
     report["openings"]["planes_without_material_id"] = len(suspects)
-    questions = _questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
+    questions = (_questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
+                 + _source_questions(dump, levels))
     names = [lv["name"] for lv in levels]
     questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
     for n, q in enumerate(questions, 1):

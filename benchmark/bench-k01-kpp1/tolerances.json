@@ -12,12 +12,12 @@
     "levels": "revit",
     "roof": "revit",
     "parapet": "revit",
-    "contours": null,
+    "contours": "revit",
     "openings": null
   },
-  "reference_note": "User decision 2026-10-08: levels, roof and parapet from Revit are the reference now; contours only after Revit walls come from location lines (#29); openings are not ranked",
+  "reference_note": "User decisions 2026-10-08: levels, roof and parapet from Revit are the reference; contours too since Revit walls come from location lines (#29); openings are not ranked",
   "verdict": {
-    "enabled": false,
-    "reason": "no match / Rhino verdict until #29: the Revit path reads walls as bounding boxes (user decision 2026-10-08)"
+    "enabled": true,
+    "reason": "#29 merged: Revit walls from location lines (user decision 2026-10-08: the match / Rhino criterion applies after #29)"
   }
 }

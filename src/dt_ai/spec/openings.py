@@ -438,7 +438,13 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"], polys[li])
         for h in holes:                          # a through hole of a door's size is a door (#31)
             h["door"] = _door_size(h, levels[li]["elev_m"])
-        holes += _door_items((doors or [[]] * len(floors))[li], li, floor["contour"])
+        for d in _door_items((doors or [[]] * len(floors))[li], li, floor["contour"]):
+            same = next((h for h in holes if h.get("door") and _overlap(h, d)), None)
+            if same is None:                     # a door family and its wall opening are one door (Revit, #29)
+                holes.append(d)
+            else:
+                same.update(x0=min(same["x0"], d["x0"]), x1=max(same["x1"], d["x1"]), z0=min(same["z0"], d["z0"]),
+                            z1=max(same["z1"], d["z1"]), depth=max(same["depth"], d["depth"]))
         breaks.extend({**b, "level": li} for b in off)
         for g in [g for g in glass if g["level"] == li]:
             matches = [h for h in holes if _overlap(h, g)]
