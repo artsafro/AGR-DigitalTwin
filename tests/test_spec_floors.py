@@ -75,3 +75,74 @@ def test_typical_of_must_point_to_a_full_floor_below():
     bad["floors"][1]["typical_of"] = "roof"
     with pytest.raises(ValueError, match="typical_of must be a full floor below"):
         Spec.model_validate(bad)
+
+
+# --- regressions from Codex review 1 of the #8 PR -------------------------------------------------
+
+from dt_ai.spec.floors import collapse, same_floor  # noqa: E402
+
+LV = [{"name": f"L{i}", "elev_m": H * i} for i in range(11)]
+OPEN = {"wall": 0, "x_m": 2.0, "sill_m": 1.0, "w_m": 1.0, "h_m": 1.0, "depth_m": 0.2, "source": "hole"}
+
+
+def floor(name, dx=0.0, openings=(OPEN,)):
+    return {"level": name, "contour": [[0 + dx, 0], [10 + dx, 0], [10 + dx, 10], [0 + dx, 10]],
+            "openings": [dict(o) for o in openings]}
+
+
+def test_small_drift_does_not_add_up_along_a_run():
+    # F1: 6 mm per floor passes every neighbour, but not the template after two floors
+    floors = [floor(f"L{i}", dx=0.006 * i) for i in range(10)]
+    out, classes = collapse(LV, floors)
+    for c in classes:
+        if c["class"] == "typical":
+            i0, i1 = int(c["levels"][0][1:]), int(c["levels"][-1][1:])
+            assert 0.006 * (i1 - i0) <= 0.01
+
+
+def test_contour_match_moves_radii_and_walls_with_the_vertices():
+    # F2: the same square started at another corner; opening wall indices follow the match
+    a = {"level": "L0", "contour": [[0, 0], [10, 0], [10, 10, {"r": 1.0}], [0, 10]], "openings": [dict(OPEN)]}
+    b = {"level": "L1", "contour": [[10, 0], [10, 10, {"r": 1.0}], [0, 10], [0, 0]],
+         "openings": [{**OPEN, "wall": 3}]}                       # south wall is wall 3 in b's numbering
+    assert same_floor(a, b, H, H)
+    moved_radius = {**b, "contour": [[10, 0, {"r": 1.0}], [10, 10], [0, 10], [0, 0]]}
+    assert not same_floor(a, moved_radius, H, H)
+    other_wall = {**b, "contour": [[10, -0.006], [10, 10], [0, 10], [0, 0]], "openings": [dict(OPEN)]}
+    assert not same_floor(a, other_wall, H, H)                   # wall 0 of b is the east wall
+
+
+def test_plane_conflict_is_part_of_the_opening():
+    # F3
+    assert not same_floor(floor("L0"), floor("L1", openings=({**OPEN, "plane_conflict": True},)), H, H)
+
+
+def test_typical_entries_are_validated():
+    # F4/F5: overlap with a full floor, repeat to the roof level, openings on a typical entry
+    spec, _ = extract_spec(tower(), OBJECT)
+    base = spec.model_dump()
+    overlap = {**base, "floors": base["floors"] + [{**base["floors"][1], "level": "L3"}]}
+    to_roof = {**base, "floors": [dict(f) for f in base["floors"]]}
+    to_roof["floors"][2] = {**to_roof["floors"][2], "repeat_to": "roof"}
+    own = {**base, "floors": [dict(f) for f in base["floors"]]}
+    own["floors"][2] = {**own["floors"][2], "openings": [OPEN]}
+    for bad, msg in ((overlap, "given twice"), (to_roof, "stop below the top level"), (own, "no openings of its own")):
+        with pytest.raises(ValueError, match=msg):
+            Spec.model_validate(bad)
+
+
+def test_opening_order_does_not_matter():
+    # F6: two openings with the same wall, x and sill
+    o1, o2 = OPEN, {**OPEN, "w_m": 2.0}
+    assert same_floor(floor("L0", openings=(o1, o2)), floor("L1", openings=(o2, o1)), H, H)
+
+
+def test_cli_counts_floors_not_entries(tmp_path, capsys):
+    # F7
+    import json
+    from dt_ai.cli.main import main
+    dump, obj, out = tmp_path / "dump.json", tmp_path / "object.json", tmp_path / "spec-v001.json"
+    dump.write_text(json.dumps(tower()), encoding="utf-8")
+    obj.write_text(json.dumps(OBJECT), encoding="utf-8")
+    assert main(["spec", "extract", "--dump", str(dump), "--object", str(obj), "--output", str(out)]) == 0
+    assert "5 floors (4 written)" in capsys.readouterr().out

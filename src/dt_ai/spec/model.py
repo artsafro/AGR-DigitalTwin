@@ -93,12 +93,23 @@ class Spec(SpecPart):
                 if ref is not None and ref not in names:
                     raise ValueError(f"floor refers to unknown level {ref}")
         full = {f.level for f in self.floors if f.contour is not None}
+        owner = {}
         for f in self.floors:
+            first = last = names.index(f.level)
             if f.typical_of is not None:
-                if f.typical_of not in full or names.index(f.typical_of) >= names.index(f.level):
+                if f.typical_of not in full or names.index(f.typical_of) >= first:
                     raise ValueError(f"floor {f.level}: typical_of must be a full floor below it")
-                if f.repeat_to is not None and names.index(f.repeat_to) < names.index(f.level):
+                if f.openings:
+                    raise ValueError(f"floor {f.level}: a typical entry carries no openings of its own")
+                last = names.index(f.repeat_to) if f.repeat_to is not None else first
+                if last < first:
                     raise ValueError(f"floor {f.level}: repeat_to is below the floor")
+            if last >= len(names) - 1:
+                raise ValueError(f"floor {f.level}: floors stop below the top level {names[-1]}")
+            for i in range(first, last + 1):
+                if i in owner:
+                    raise ValueError(f"level {names[i]} is given twice ({owner[i]} and {f.level})")
+                owner[i] = f.level
         return self
 
     def expanded_floors(self):

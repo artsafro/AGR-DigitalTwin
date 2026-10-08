@@ -98,7 +98,8 @@ def main(argv=None):
             write_json(outputs[1], report)
             if report["questions"]:
                 outputs[2].write_text(questions_markdown(result.id, report["questions"]), encoding="utf-8")
-            print(f"Spec: {args.output}; {len(result.floors)} floors, {report['parts']} parts "
+            print(f"Spec: {args.output}; {len(result.expanded_floors())} floors ({len(result.floors)} written), "
+                  f"{report['parts']} parts "
                   f"({report['attachment_parts_ignored']} attachments ignored), {len(report['questions'])} questions")
         elif args.command == "registry":
             current = MaterialRegistry.model_validate(read_json(args.current.read_bytes()))
