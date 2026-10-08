@@ -71,3 +71,20 @@ Checks: `uv run pytest -q`, `uv run dt profiles check`, `uv run dt schemas --che
 Canonical project skills live in `.agents/skills/*/SKILL.md` (Codex, Antigravity);
 `.claude/skills/` is a generated copy (`py -3 tools/sync_skills.py`; a test checks parity).
 Follow the matching skill step by step.
+
+## Agent skills
+
+Matt Pocock's engineering skills (`mattpocock-skills` plugin) read this configuration.
+
+### Issue tracker
+
+GitHub Issues of `artsafro/AGR-DigitalTwin` via `gh`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels plus area labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context; the glossary is `GLOSSARY.md` (not `CONTEXT.md`), ADRs in `docs/adr/`.
+See `docs/agents/domain.md`.
