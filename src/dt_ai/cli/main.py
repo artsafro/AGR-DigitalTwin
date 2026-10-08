@@ -9,6 +9,7 @@ from dt_ai.core.models import BuildJob, MaterialRegistry, SCHEMAS
 from dt_ai.core.profiles import load_profiles
 from dt_ai.drawing.index import index_pdf
 from dt_ai.materials.registry import merge_proposals
+from dt_ai.spec import extract_spec
 from dt_ai.validate.bundle import validate
 
 
@@ -29,6 +30,12 @@ def parser():
     reg.add_argument("--current", type=Path, required=True)
     reg.add_argument("--proposal", type=Path, required=True)
     reg.add_argument("--output", type=Path, required=True)
+    spec = sub.add_parser("spec", help="Extract spec.json from a mesh dump (tools/source/measure_spec_blender.py)")
+    spec.add_argument("action", choices=["extract"])
+    spec.add_argument("--dump", type=Path, required=True)
+    spec.add_argument("--object", type=Path, required=True, help="object.json with id and frame")
+    spec.add_argument("--output", type=Path, required=True, help="new spec.json; a report is written beside it")
+    spec.add_argument("--profile", choices=["npm_min", "mid"], default="npm_min")
     for name in ("build", "validate"):
         item = sub.add_parser(name, help="Build/check a labelled development bundle; never certify delivery")
         item.add_argument("--job" if name == "build" else "--archive", type=Path, required=True)
@@ -61,6 +68,15 @@ def main(argv=None):
         elif args.command == "index-pdf":
             result = index_pdf(args.source, args.output)
             print(f"Indexed {len(result['pages'])} pages: {args.output / 'index.json'}")
+        elif args.command == "spec":
+            if args.output.exists():
+                raise ValueError(f"{args.output} exists; write a new versioned spec")
+            result, report = extract_spec(read_json(args.dump.read_bytes()), read_json(args.object.read_bytes()),
+                                          args.profile)
+            write_json(args.output, result.model_dump(exclude_none=True))
+            write_json(args.output.with_suffix(".report.json"), report)
+            print(f"Spec: {args.output}; {len(result.floors)} floors, {report['parts']} parts "
+                  f"({report['attachment_parts_ignored']} attachments ignored)")
         elif args.command == "registry":
             current = MaterialRegistry.model_validate(read_json(args.current.read_bytes()))
             proposal = MaterialRegistry.model_validate(read_json(args.proposal.read_bytes()))
