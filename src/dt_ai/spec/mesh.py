@@ -43,6 +43,7 @@ ROOF_PART_SLIVER_M2 = 0.05  # a separate roof part with more than this both insi
 ROOF_SEARCH_M = 0.3       # only to name nearby surfaces in the error message
 ROOF_OWN = 0.25           # share of the top floor the roof plane itself must cover (else roof or cap?)
 HOLE_MIN_M2 = 0.01        # uncovered pieces of the top floor smaller than this are numeric slivers
+SHAFT_UPPER = 0.85        # ... and again at this share of the top storey's height
 SHAFT_WALL_SHARE = 0.9    # a roof hole is a shaft when body walls line this share of its edge at mid top storey
 ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
@@ -757,10 +758,14 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
                         f"floor (< {ROOF_CLOSED:.0%}): roof missing or open; ask the user")
     holes = [h for h in shapely.get_parts(top_contour.difference(cover)) if h.area >= HOLE_MIN_M2]
     if holes:
-        z_mid = _clear_height(v, tris, (below_level["elev_m"] + roof_z) / 2)
-        walls = shapely.unary_union(_section(v, tris, z_mid) or [LineString()])
+        # lined at mid storey and in the storey's upper part: walls that stop well below the roof
+        # line nothing (PR #35 review 2, P1)
+        cuts = [_clear_height(v, tris, below_level["elev_m"] + share * (roof_z - below_level["elev_m"]))
+                for share in (0.5, SHAFT_UPPER)]
+        sections = [shapely.unary_union(_section(v, tris, z) or [LineString()]) for z in cuts]
         for hole in holes:
-            lined = walls.intersection(hole.buffer(PARAPET_EDGE_M)).length / hole.exterior.length
+            lined = min(w.intersection(hole.buffer(PARAPET_EDGE_M)).length for w in sections) / hole.exterior.length
+            z_mid = cuts[0]
             if lined < SHAFT_WALL_SHARE:
                 c = hole.centroid
                 raise SpecError(f"roof at {roof_z:.3f} m has an opening of {hole.area:.2f} m2 at ({c.x:.2f}, {c.y:.2f}) "
@@ -904,13 +909,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
             source_doors_skipped += 1
             continue
         _, _, u, _ = op._wall_frame(floors[li]["contour"], (q0[:2] + q1[:2]) / 2)
-        host = None
-        if d.get("host_line"):
-            h0, h1 = _apply(m, [[*d["host_line"][0], 0.0], [*d["host_line"][-1], 0.0]])
-            host = LineString([h0[:2], h1[:2]]).buffer(d["host_thickness"] / 2, cap_style="flat")
+        # the door itself on the facade: its line (on its host's location line) within half the host's
+        # thickness of the contour, at the door, not anywhere along the host (PR #35 review 2)
+        reach = (d.get("host_thickness") or 0.0) / 2 + DOOR_HOST_M
         if (abs(float(u @ run)) / float(np.linalg.norm(run)) < np.cos(np.radians(op.ALONG_DEG))
-                or host is None or host.distance(polys[li].exterior) > DOOR_HOST_M):
-            source_doors_skipped += 1                    # its wall is not on the facade (PR #35 review 1)
+                or max(polys[li].exterior.distance(shapely.Point(*q[:2])) for q in (q0, q1)) > reach):
+            source_doors_skipped += 1                    # not on the facade
             continue
         span = LineString([q0[:2], q1[:2]]).buffer(max(d["depth"], 0.01) / 2, cap_style="flat")
         doors[li].append({"geom": span, "z0": float(q0[2]), "z1": float(q1[2])})

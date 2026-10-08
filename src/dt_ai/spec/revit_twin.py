@@ -35,7 +35,7 @@ import json
 import math
 from pathlib import Path
 
-from shapely.geometry import LineString, MultiPoint, Point
+from shapely.geometry import LineString, Point, Polygon
 from shapely.ops import unary_union
 
 TOP_TOL_M = 0.05          # a stack ends below the band top by more than this; walls stand on each other within it
@@ -77,13 +77,26 @@ def _footprint(w, cap="flat"):
     return LineString([p[:2] for p in w["locationLine"]]).buffer(w["thickness"] / 2, cap_style=cap, join_style="mitre")
 
 
-def attachments(bands, curved=()):
+def _occupied(parts):
+    """The plan a wall's real geometry occupies: the union of its triangles seen from above."""
+    polys = []
+    for m in parts:
+        v = m["vertices"]
+        for a, b, c in m["triangles"]:
+            t = Polygon([v[a][:2], v[b][:2], v[c][:2]])
+            if t.area > 1e-9:
+                polys.append(t)
+    return unary_union(polys).buffer(0) if polys else Polygon()
+
+
+def attachments(bands, native=None):
     """Ids of walls and curtain walls that are attachments (module docstring): mostly outside the
     convex hull of the main walls — walls whose stack reaches their band's top — and with a stack
     that ends below the band top. Walls of every function: a model may mark facade layers as inner
     walls (KPP1 plinth cladding)."""
-    walls = [(b["band"]["top"], w) for b in bands for w in b["walls"] if w["id"] not in curved]
-    foot = {w["id"]: _footprint(w) for _, w in walls}
+    native = native or {}                        # curved walls: their occupied plan (PR #35 review 2)
+    walls = [(b["band"]["top"], w) for b in bands for w in b["walls"]]
+    foot = {w["id"]: native[w["id"]] if w["id"] in native else _footprint(w) for _, w in walls}
     on = {w["id"]: [o for _, o in walls if o["id"] != w["id"] and abs(o["bboxMin"][2] - w["bboxMax"][2]) <= TOP_TOL_M
                     and foot[o["id"]].intersection(foot[w["id"]]).area >= STACK_SHARE * foot[w["id"]].area]
           for _, w in walls}
@@ -193,12 +206,12 @@ def to_dump(bands, objs, document=None):
     missing = sorted(curved - set(native))
     if missing:
         raise TwinDataError(f"{len(missing)} curved walls without geometry in reference.obj (ids {missing[:10]}); ask the user")
-    attached = set(attachments([b for b in bands], curved))
+    occupied = {i: _occupied(parts) for i, parts in native.items()}
+    attached = set(attachments(bands, occupied))
     meshes, body, doors = [], [], {}
     outer = [_footprint(w, "square").buffer(0.01) for w in walls.values() if w.get("function") != "curtain"]
     plans = {i: _footprint(w) for i, w in walls.items() if w.get("function") != "curtain" and i not in curved}
-    for i, parts in native.items():               # a curved wall's plan for the joins of its neighbours
-        plans[i] = MultiPoint([v[:2] for m in parts for v in m["vertices"]]).convex_hull
+    plans.update(occupied)                        # a curved wall's occupied plan for the joins of its neighbours
     for i, w in walls.items():
         if w.get("function") == "curtain":       # glazing: its panels are glass; its host carries the facade
             if i in attached:

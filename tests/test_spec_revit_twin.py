@@ -187,14 +187,74 @@ def test_inner_door_parallel_to_the_facade_is_no_facade_opening():
 
 
 def test_detached_lining_never_makes_a_roof_hole_a_shaft():
-    # a 1 m2 hole in the roof with lining faces floating 1.55 m below it in a separate part (PR #35 review 1, P1)
+    # a 1 m2 hole in the roof, lined by Revit walls only at 4.85-5.05 m, 1.55 m below it: all walls are
+    # body, so the lining must reach the upper part of the top storey (PR #35 reviews 1-2, P1)
     walls, t = ring()
+    lining = [wall(70 + k, a, b, t=0.1, z0=4.85, z1=5.05) for k, (a, b) in enumerate(
+        [((4.45, 4.45), (5.55, 4.45)), ((5.55, 4.45), (5.55, 5.55)), ((5.55, 5.55), (4.45, 5.55)), ((4.45, 5.55), (4.45, 4.45))])]
     outer, hole = [(0, 0), (10, 0), (10, 10), (0, 10)], [(4.5, 4.5), (5.5, 4.5), (5.5, 5.5), (4.5, 5.5)]
     roof = ["o roof_20"] + [f"v {x} {y} 6.6" for x, y in outer + hole]
     roof += [f"f {a + 1} {(a + 1) % 4 + 1} {(a + 1) % 4 + 5} {a + 5}" for a in range(4)]   # one surface around the hole
-    lining = box_obj("panel_70", 4.5, 4.5, 5.5, 5.5, 4.85, 5.05, offset=8)
+    dump = to_dump([band(walls + lining)], ["\n".join(roof) + "\n"])
+    assert all(f"wall_{70 + k}" in dump["body"] for k in range(4))
     with pytest.raises(SpecError, match="not a shaft"):
-        extract_spec(to_dump([band(walls)], ["\n".join(roof) + "\n" + lining]), OBJ)
+        extract_spec(dump, OBJ)
+    for w in lining:                                 # the same lining up to the roof is a shaft
+        w["bboxMin"][2], w["bboxMax"][2] = 3.3, 6.6
+    spec, report = extract_spec(to_dump([band(walls + lining)], ["\n".join(roof) + "\n"]), OBJ)
+    assert report["roof"]["closed_share"] >= 0.99
+
+
+def arc_obj(name, cx, cy, r, t, z0, z1, a0, a1, n=32, offset=0):
+    """A curved wall: a closed ring sector between radii r -+ t/2 from angle a0 to a1 (degrees)."""
+    ang = [math.radians(a0 + (a1 - a0) * k / n) for k in range(n + 1)]
+    ring_ = [(cx + (r + t / 2) * math.cos(a), cy + (r + t / 2) * math.sin(a)) for a in ang]
+    ring_ += [(cx + (r - t / 2) * math.cos(a), cy + (r - t / 2) * math.sin(a)) for a in reversed(ang)]
+    m = len(ring_)
+    lines = [f"o {name}"] + [f"v {x} {y} {z}" for z in (z0, z1) for x, y in ring_]
+    faces = [f"f {k + 1 + offset} {(k + 1) % m + 1 + offset} {(k + 1) % m + 1 + m + offset} {k + 1 + m + offset}" for k in range(m)]
+    for k in range(n):                               # caps as strips (no triangle over the hollow side)
+        o0, o1, i0, i1 = k, k + 1, m - 1 - k, m - 2 - k
+        faces += [f"f {o0 + 1 + offset} {i0 + 1 + offset} {i1 + 1 + offset} {o1 + 1 + offset}",
+                  f"f {o0 + 1 + m + offset} {o1 + 1 + m + offset} {i1 + 1 + m + offset} {i0 + 1 + m + offset}"]
+    return "\n".join(lines + faces) + "\n"
+
+
+def curved(i, cx, cy, r, t, a0, a1, z1):
+    a, b = [(cx + r * math.cos(math.radians(x)), cy + r * math.sin(math.radians(x))) for x in (a0, a1)]
+    w = wall(i, a, b, t=t, z1=z1)
+    w["curved"] = True
+    return w
+
+
+def test_curved_attachment_outside_the_building_is_a_question():
+    # a semicircular 0.14 m wall, 2.7 m high, in front of the south facade (PR #35 review 2)
+    walls, t = ring()
+    arc = curved(80, 5.0, 0.0, 1.0, 0.14, 180, 360, 2.7)
+    b = band(walls + [arc], band_={**BAND, "top": 3.299})
+    dump = to_dump([b], [roof_obj(t) + arc_obj("wall_80", 5.0, 0.0, 1.0, 0.14, 0.0, 2.7, 180, 360, offset=8)])
+    assert "wall_80_b1" not in dump["body"] and [q["revit_ids"] for q in dump["questions"]] == [[80]]
+
+
+def test_wall_end_near_a_curved_wall_is_not_extended_by_its_hull():
+    # a stub ending inside the hull of a semicircle but 0.75 m from its strip (PR #35 review 2)
+    walls, t = ring()
+    arc = curved(81, 5.0, 5.0, 1.0, 0.14, 180, 360, 7.2)
+    stub = wall(82, (5.0, 2.0), (5.0, 4.8), t=0.2)
+    obj = roof_obj(t) + arc_obj("wall_81", 5.0, 5.0, 1.0, 0.14, 0.0, 7.2, 180, 360, offset=8)
+    dump = to_dump([band(walls + [arc, stub])], [obj])
+    ys = [v[1] for m in dump["meshes"] if m["name"] == "wall_82" for v in m["vertices"]]
+    assert max(ys) == pytest.approx(4.8)
+
+
+def test_inner_door_whose_host_reaches_the_facade_elsewhere_is_no_facade_opening():
+    # the inner wall 0.6 m behind the south facade runs to the west facade; its door is not on the facade
+    walls, _ = ring()
+    inner = wall(62, (0.0, 0.6), (9.7, 0.6), t=0.12, z1=3.3)
+    d = door(35, 4.0, 5.0, 62)
+    d["point"] = [4.5, 0.6, 0.0]
+    spec, report = spec_of(walls + [inner], [d])
+    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_doors_skipped"] == 1
 
 
 def test_cli_reads_a_twin_index(tmp_path):
