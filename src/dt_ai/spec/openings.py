@@ -394,6 +394,7 @@ def _across_levels(by_level, levels, floors):
                            glass_z=low.get("glass_z", []) + up.get("glass_z", []),
                            glass_world=low.get("glass_world", []) + up.get("glass_world", []),
                            kind_fixed=low.get("kind_fixed") or up.get("kind_fixed"),
+                           no_reveal=low.get("no_reveal") or up.get("no_reveal"),   # uncertainty of either part (PR #39 r2)
                            door=low.get("door") or up.get("door"), level_to=up.get("level_to", li + 1),
                            source=low["source"] if low["source"] == up["source"] else "hole+glass")
                 by_level[li + 1].remove(up)
@@ -575,7 +576,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
     _owners(by_level, levels, floors)
     for li, holes in enumerate(by_level):        # a glass opening without a reveal: its size is a question
         for o in holes:
-            if o.get("no_reveal") and o["source"] == "glass":
+            if o.get("no_reveal"):
                 p0, p1, _ = _world(o, floors[li]["contour"])
                 breaks.append({"kind": "opening-size-unknown", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
     per_floor, footprints = [], []

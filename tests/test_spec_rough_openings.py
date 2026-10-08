@@ -70,7 +70,7 @@ def test_reveal_to_the_storey_top_without_glass_above_is_no_frame():
 def test_equal_height_reveals_do_not_crash():
     # PR #39 review 1: two recesses with the same heights, panes 0.15 m apart
     spec, _ = extract_spec(building(boxes=[(0, 2.0, 2.8, 1.0, 2.5, -0.26), (0, 2.9, 3.7, 1.0, 2.5, -0.26)],
-                                    extra=[pane("glass", 2.05, 2.75, 1.05, 2.45, y=0.2), pane("glass2", 2.95, 3.65, 1.05, 2.45, y=0.2)]),
+                                    extra=[pane("glass", 2.025, 2.775, 1.05, 2.45, y=0.2), pane("glass2", 2.925, 3.675, 1.05, 2.45, y=0.2)]),
                            at(L0=0.5))
     assert len(spec.expanded_floors()[0].openings) >= 1
 
@@ -157,3 +157,15 @@ def test_revit_window_in_a_wall_is_glazed_with_unknown_glass():
     spec, _ = extract_spec(dump, OBJ)
     (o,) = spec.expanded_floors()[0].openings
     assert (o.kind, o.source, o.panes, o.glass_w, o.w_m) == ("window", "hole+glass", 1, None, 1.2)
+
+
+
+@pytest.mark.parametrize("upper_reveal", [False, True])
+def test_frame_across_a_level_keeps_the_size_question_of_either_part(upper_reveal):
+    # PR #39 review 2: a reveal below and glass above against a closed wall (or the reverse): one record,
+    # and its size stays a question
+    boxes = [(0, 2.0, 3.2, 3.3, 4.6, -0.26)] if upper_reveal else [(0, 2.0, 3.2, 1.2, 3.3, -0.26)]
+    spec, report = extract_spec(building(boxes=boxes, extra=[pane("glass", 2.13, 3.07, 1.32, 3.2, y=0.2),
+                                                             pane("glass2", 2.13, 3.07, 3.32, 4.48, y=0.2)]),
+                                at(L0=0.5, L1=5.0))
+    assert "opening-size-unknown" in [q["kind"] for q in report["questions"]]
