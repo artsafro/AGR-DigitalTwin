@@ -144,6 +144,13 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   attachments; roofs: drainage slopes up to 10° are one roof
   (area-weighted height, ±10 cm), separate roof parts and caps are read (#9); steeper roofs are a question.
   First real run: KPP1 v005 spec v001 (`jobs/KPP1/STATE.md`). `object.json` may give `frames` per source. Pattern: `docs/domain/patterns/wall-from-contour.md`.
+- Revit path (Claude, 2026-10-08, #10): `node tools/source/measure_spec_revit.mjs <revit-data.json>` reads the
+  active document through `revit-http-2025` (read only; records `modified_before/after`), and
+  `dt spec extract --dump <revit-data.json>` runs the same spec logic. Geometry from bounding boxes:
+  walls and roofs are body boxes (roof top = mean covering height from volume), windows, doors and
+  curtain walls (system family Витраж / Curtain Wall) are glass panes. A wall not along X or Y stops
+  with a question (no location lines on either route). Limits: boxes are solid (wall openings and
+  attachments such as porches join the body); `window_type` null until #4. KPP1: `jobs/KPP1/outputs/spec-revit-v002/`.
 
 ### Operation library — `technical_library/`
 - Status: WORKING per package README (Russian): `glb_atlas`, `uv_continuous` (UV v006),
