@@ -146,3 +146,35 @@ def test_cli_counts_floors_not_entries(tmp_path, capsys):
     obj.write_text(json.dumps(OBJECT), encoding="utf-8")
     assert main(["spec", "extract", "--dump", str(dump), "--object", str(obj), "--output", str(out)]) == 0
     assert "5 floors (4 written)" in capsys.readouterr().out
+
+
+# --- regressions from Codex review 2 of the #8 PR -------------------------------------------------
+
+@pytest.mark.parametrize("start", range(4))
+def test_reversed_contour_is_the_same_floor(start):
+    # R2-F1: same square, other direction, any start; the opening moves to the matching wall and end
+    a = floor("L0")
+    rev = [[0, 0], [0, 10], [10, 10], [10, 0]]                # wall 3 of rev is the south wall, x from x=10
+    rev = rev[start:] + rev[:start]
+    b = {"level": "L1", "contour": rev, "openings": [{**OPEN, "wall": (3 - start) % 4, "x_m": 7.0}]}
+    assert same_floor(a, b, H, H)
+    mirrored = {**b, "openings": [{**OPEN, "wall": (3 - start) % 4, "x_m": 2.0}]}   # 7 m along: another place
+    assert not same_floor(a, mirrored, H, H)
+
+
+def test_opening_match_is_a_complete_pairing():
+    # R2-F2: 2.007 -> 2.015 and 1.993 -> 2.000 is a valid pairing; first-fit would miss it
+    lo = floor("L0", openings=({**OPEN, "x_m": 2.000}, {**OPEN, "x_m": 2.015}))
+    for up in (({**OPEN, "x_m": 2.007}, {**OPEN, "x_m": 1.993}), ({**OPEN, "x_m": 1.993}, {**OPEN, "x_m": 2.007})):
+        hi = floor("L1", openings=up)
+        assert same_floor(lo, hi, H, H) and same_floor(hi, lo, H, H)
+
+
+def test_wall_outside_the_contour_is_rejected():
+    # R2-F3
+    assert not same_floor(floor("L0"), floor("L1", openings=({**OPEN, "wall": 4},)), H, H)
+    spec, _ = extract_spec(box_building(), OBJECT)
+    bad = spec.model_dump()
+    bad["floors"][0]["openings"][0]["wall"] = 4
+    with pytest.raises(ValueError, match="opening on wall 4, the contour has 4"):
+        Spec.model_validate(bad)

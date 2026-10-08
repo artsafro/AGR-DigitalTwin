@@ -63,6 +63,9 @@ class Floor(SpecPart):
                 raise ValueError(f"floor {self.level}: contour point must be [x, y] or [x, y, {{'r': r}}]")
         if self.contour is not None and len(self.contour) < 3:
             raise ValueError(f"floor {self.level}: contour needs at least 3 points")
+        for o in self.openings:
+            if self.contour is not None and o.wall >= len(self.contour):
+                raise ValueError(f"floor {self.level}: opening on wall {o.wall}, the contour has {len(self.contour)}")
         return self
 
 

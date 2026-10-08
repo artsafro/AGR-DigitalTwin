@@ -34,30 +34,63 @@ def _shift(a, b):
     return None
 
 
+def _fits(x, y, wall):
+    return (x["wall"] == wall
+            and all(x.get(k, False if k == "plane_conflict" else None) ==
+                    y.get(k, False if k == "plane_conflict" else None) for k in META)
+            and all(abs(x[k] - y[k]) <= SAME_M for k in FIELDS))
+
+
 def _same_openings(a, b, shift, n):
-    """Same opening multiset: every opening of b, its wall mapped into a's numbering, has a
-    partner in a with equal metadata and fields within SAME_M (order does not matter)."""
-    if len(a) != len(b):
+    """Same opening multiset: a complete one-to-one matching (augmenting paths) where every
+    opening of b, its wall mapped into a's numbering, has a partner in a with equal metadata and
+    fields within SAME_M. Order does not matter; a wall outside the contour never matches."""
+    if len(a) != len(b) or any(not 0 <= o["wall"] < n for o in list(a) + list(b)):
         return False
-    free = list(range(len(a)))
-    for y in b:
-        wall = (y["wall"] - shift) % n
-        hit = next((i for i in free if a[i]["wall"] == wall
-                    and all(a[i].get(k, False if k == "plane_conflict" else None) ==
-                            y.get(k, False if k == "plane_conflict" else None) for k in META)
-                    and all(abs(a[i][k] - y[k]) <= SAME_M for k in FIELDS)), None)
-        if hit is None:
-            return False
-        free.remove(hit)
-    return True
+    edges = [[i for i, x in enumerate(a) if _fits(x, y, (y["wall"] - shift) % n)] for y in b]
+    owner = {}
+
+    def augment(j, seen):
+        for i in edges[j]:
+            if i not in seen:
+                seen.add(i)
+                if i not in owner or augment(owner[i], seen):
+                    owner[i] = j
+                    return True
+        return False
+
+    return all(augment(j, set()) for j in range(len(b)))
+
+
+def _reversed(floor):
+    """The same floor with its contour in the other direction: wall k becomes n - 2 - k and an
+    opening's x is measured from the other end of its wall."""
+    pts = floor["contour"]
+    n = len(pts)
+    rev = list(reversed(pts))
+    out = []
+    for o in floor["openings"]:
+        k = o["wall"]
+        if not 0 <= k < n:
+            return None
+        a, b = np.array(pts[k][:2], float), np.array(pts[(k + 1) % n][:2], float)
+        length = float(np.linalg.norm(b - a))
+        out.append({**o, "wall": (n - 2 - k) % n, "x_m": length - o["x_m"] - o["w_m"]})
+    return {**floor, "contour": rev, "openings": out}
 
 
 def same_floor(lower, upper, lower_h, upper_h):
     """True when `upper` repeats `lower`: storey height, contour and openings within 1 cm."""
     if abs(lower_h - upper_h) > SAME_M:
         return False
-    s = _shift(lower["contour"], upper["contour"])
-    return s is not None and _same_openings(lower["openings"], upper["openings"], s, len(lower["contour"]))
+    n = len(lower["contour"])
+    for candidate in (upper, _reversed(upper)):          # the same ring in either direction
+        if candidate is None:
+            continue
+        s = _shift(lower["contour"], candidate["contour"])
+        if s is not None and _same_openings(lower["openings"], candidate["openings"], s, n):
+            return True
+    return False
 
 
 def collapse(levels, floors):
