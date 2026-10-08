@@ -4,6 +4,7 @@ import math
 import subprocess
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from dt_ai.cli.main import main
@@ -38,14 +39,15 @@ class Mesh:
         return {"name": self.name, "vertices": self.vertices, "triangles": self.triangles}
 
 
-def box_building(canopy=True, helpers=True, shift=(0.0, 0.0, 0.0)):
+def box_building(canopy=True, helpers=True, shift=(0.0, 0.0, 0.0), zs=None, holes=None, roof=True,
+                 dense_canopy=False):
     """B01-like box: 10 x 10 m, levels 0 / 3.3 / 6.6, parapet to 7.2, one window hole per storey
     on the south wall (exterior faces only, holes left open), optional detached canopy."""
     body = Mesh("Body")
     corners = SQUARE
     us = [0, 2, 3.5, 10]
-    zs = [0, 0.9, 2.4, 3.3, 4.2, 5.7, 6.6, 7.2]
-    holes = {(1, 1), (1, 4)}  # (u cell, z cell) on wall 0
+    zs = zs or [0, 0.9, 2.4, 3.3, 4.2, 5.7, 6.6, 7.2]
+    holes = {(1, 1), (1, 4)} if holes is None else holes  # (u cell, z cell) on wall 0
     for w in range(4):
         (ax, ay), (bx, by) = corners[w], corners[(w + 1) % 4]
         for i in range(3):
@@ -56,17 +58,25 @@ def box_building(canopy=True, helpers=True, shift=(0.0, 0.0, 0.0)):
                 p0 = (ax + (bx - ax) * t0, ay + (by - ay) * t0)
                 p1 = (ax + (bx - ax) * t1, ay + (by - ay) * t1)
                 body.quad((*p0, zs[k]), (*p1, zs[k]), (*p1, zs[k + 1]), (*p0, zs[k + 1]))
-    inner = [[0.2, 0.2], [9.8, 0.2], [9.8, 9.8], [0.2, 9.8]]
-    for w in range(4):
-        o0, o1, i0, i1 = corners[w], corners[(w + 1) % 4], inner[w], inner[(w + 1) % 4]
-        body.quad((*o0, 7.2), (*o1, 7.2), (*i1, 7.2), (*i0, 7.2))   # parapet cap
-        body.quad((*i1, 6.6), (*i0, 6.6), (*i0, 7.2), (*i1, 7.2))   # parapet inner face
-    body.quad((0.2, 0.2, 6.6), (9.8, 0.2, 6.6), (9.8, 9.8, 6.6), (0.2, 9.8, 6.6))  # roof plane
+    if roof:
+        inner = [[0.2, 0.2], [9.8, 0.2], [9.8, 9.8], [0.2, 9.8]]
+        for w in range(4):
+            o0, o1, i0, i1 = corners[w], corners[(w + 1) % 4], inner[w], inner[(w + 1) % 4]
+            body.quad((*o0, 7.2), (*o1, 7.2), (*i1, 7.2), (*i0, 7.2))   # parapet cap
+            body.quad((*i1, 6.6), (*i0, 6.6), (*i0, 7.2), (*i1, 7.2))   # parapet inner face
+        body.quad((0.2, 0.2, 6.6), (9.8, 0.2, 6.6), (9.8, 9.8, 6.6), (0.2, 9.8, 6.6))  # roof plane
     body.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))                      # bottom
     meshes = [body]
     if canopy:
         c = Mesh("Canopy")
         c.box((1.5, -1.0, 2.5), (4.0, -0.05, 2.7))
+        meshes.append(c)
+    if dense_canopy:  # small area, many triangles: must not win the body by triangle count
+        c = Mesh("DenseCanopy")
+        for i in range(25):
+            for j in range(25):
+                x, y = 1.5 + i * 0.1, -1.0 - j * 0.04
+                c.quad((x, y, 2.6), (x + 0.1, y, 2.6), (x + 0.1, y - 0.04, 2.6), (x, y - 0.04, 2.6))
         meshes.append(c)
     ucx = Mesh("UCX_Body_001")
     ucx.box((-5, -5, 0), (15, 15, 7.2))
@@ -152,6 +162,78 @@ def test_cli_writes_spec_and_report_and_refuses_overwrite(tmp_path, capsys):
     assert json.loads(out.with_suffix(".report.json").read_text(encoding="utf-8"))["parts"] == 2
     assert main(args) == 1
     assert "exists" in capsys.readouterr().err
+    out2 = tmp_path / "spec-v002.json"
+    out2.with_suffix(".report.json").write_text("{}", encoding="utf-8")   # evidence of an earlier run
+    assert main(args[:-1] + [str(out2)]) == 1 and not out2.exists()
+    assert out2.with_suffix(".report.json").read_text(encoding="utf-8") == "{}"
+
+
+def stepped_building():
+    """Lower block 10 x 10 m to 3.3 with an 84 m2 outside terrace, upper block 4 x 4 m to 6.6,
+    parapet to 7.2: the terrace must not be taken for the roof (Codex review P1)."""
+    b = Mesh("Body")
+    lo, hi = SQUARE, [[3.0, 3.0], [7.0, 3.0], [7.0, 7.0], [3.0, 7.0]]
+    inner = [[3.2, 3.2], [6.8, 3.2], [6.8, 6.8], [3.2, 6.8]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*lo[a], 0), (*lo[c], 0), (*lo[c], 3.3), (*lo[a], 3.3))            # lower walls
+        b.quad((*lo[a], 3.3), (*lo[c], 3.3), (*hi[c], 3.3), (*hi[a], 3.3))        # terrace
+        b.quad((*hi[a], 3.3), (*hi[c], 3.3), (*hi[c], 7.2), (*hi[a], 7.2))        # upper walls
+        b.quad((*hi[a], 7.2), (*hi[c], 7.2), (*inner[c], 7.2), (*inner[a], 7.2))  # parapet cap
+        b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 7.2), (*inner[c], 7.2))
+    b.quad((3.2, 3.2, 6.6), (6.8, 3.2, 6.6), (6.8, 6.8, 6.6), (3.2, 6.8, 6.6))
+    b.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))
+    return {"source": "synthetic-stepped", "meshes": [b.dump()],
+            "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]}
+                        for n, z in (("L0", 0.0), ("L1", 3.3), ("roof", 6.6))]}
+
+
+def test_terrace_is_not_the_roof():
+    spec, report = extract_spec(stepped_building(), OBJECT)
+    assert close(spec.floors[0].contour, SQUARE)
+    assert close(spec.floors[1].contour, [[3, 3], [7, 3], [7, 7], [3, 7]])
+    assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.01)
+    assert spec.roof.parapet_h_m == pytest.approx(0.6, abs=0.01)
+
+
+def test_missing_roof_is_an_error_not_a_zero_parapet():
+    with pytest.raises(SpecError, match="no horizontal roof surface"):
+        extract_spec(box_building(roof=False), OBJECT)
+
+
+def test_storey_without_a_closed_section_is_an_error():
+    # a slot through the whole ground storey: no cut closes, and no contour is invented
+    with pytest.raises(SpecError, match="level L0: none of"):
+        extract_spec(box_building(holes={(1, 0), (1, 1), (1, 2)}), OBJECT)
+
+
+def test_cuts_on_vertex_rows_still_section():
+    rows = [round(0.137 + 0.25 * k, 3) for k in range(27)]
+    zs = sorted({0, 3.3, 6.6, 7.2, *[z for z in rows if z < 6.6]})
+    spec, report = extract_spec(box_building(zs=zs, holes=set()), OBJECT)
+    assert report["floors"]["L0"]["closed_sections"] == report["floors"]["L0"]["sections"]
+    assert close(spec.floors[0].contour, SQUARE)
+
+
+def test_body_is_the_largest_area_not_the_most_triangles():
+    spec, report = extract_spec(box_building(dense_canopy=True), OBJECT)
+    assert report["attachment_parts_ignored"] == 2
+    assert close(spec.floors[0].contour, SQUARE)
+
+
+def test_weld_does_not_depend_on_the_rounding_grid():
+    from dt_ai.spec.mesh import _weld
+    rep = _weld(np.array([[0.000049, 0.0, 0.0], [0.000051, 0.0, 0.0], [0.5, 0.0, 0.0]]))
+    assert rep[0] == rep[1] != rep[2]
+
+
+def test_object_levels_give_the_same_spec_as_helpers():
+    revit_levels = {**OBJECT, "levels": [{"name": "L0", "elev_m": 0}, {"name": "L1", "elev_m": 3.3},
+                                         {"name": "roof", "elev_m": 6.6}]}
+    from_object, _ = extract_spec(box_building(helpers=False), revit_levels)
+    from_helpers, _ = extract_spec(box_building(), OBJECT)
+    assert from_object.levels == from_helpers.levels and from_object.floors == from_helpers.floors
+    assert from_object.roof == from_helpers.roof
 
 
 BLENDER = find_blender()
@@ -185,4 +267,6 @@ def test_blender_dump_to_spec(tmp_path):
     spec, report = extract_spec(json.loads(dump.read_text(encoding="utf-8")), OBJECT)
     assert [lv.name for lv in spec.levels] == ["L0", "L1", "roof"]
     assert close(spec.floors[0].contour, SQUARE) and close(spec.floors[1].contour, SQUARE)
+    assert [lv.elev_m for lv in spec.levels] == pytest.approx([0.0, 3.3, 6.6], abs=1e-4)
+    assert spec.roof.parapet_h_m == pytest.approx(0.6, abs=0.01)
     assert report["attachment_parts_ignored"] == 1

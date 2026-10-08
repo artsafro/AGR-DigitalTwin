@@ -69,8 +69,9 @@ def main(argv=None):
             result = index_pdf(args.source, args.output)
             print(f"Indexed {len(result['pages'])} pages: {args.output / 'index.json'}")
         elif args.command == "spec":
-            if args.output.exists():
-                raise ValueError(f"{args.output} exists; write a new versioned spec")
+            for path in (args.output, args.output.with_suffix(".report.json")):
+                if path.exists():
+                    raise ValueError(f"{path} exists; write a new versioned spec")
             result, report = extract_spec(read_json(args.dump.read_bytes()), read_json(args.object.read_bytes()),
                                           args.profile)
             write_json(args.output, result.model_dump(exclude_none=True))
