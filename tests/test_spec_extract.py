@@ -248,12 +248,24 @@ def wide_cap_building(roof=True, inner_x=8.0):
 
 
 @pytest.mark.parametrize("inner_x", [8.0, 4.0])
-def test_wide_cap_around_a_small_roof_is_a_question_never_6_8(inner_x):
-    # roof 36 % / 12 % of the floor under a cap at 6.8: "roof or cap?" goes to the user (issue #16)
-    with pytest.raises(SpecError, match="covers only .* roof or cap"):
-        extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
+def test_wide_cap_never_becomes_the_roof(inner_x):
+    # symmetric: roof 36 % under a cap at 6.8 -> 6.6 / 0.2; asymmetric: roof 12 % -> "roof or cap?"
+    # question (ROOF_OWN 25 %, user decision 2026-10-08); never 6.8 / 0 (issue #16)
+    if inner_x == 8.0:
+        spec, report = extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
+        assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.2)
+    else:
+        with pytest.raises(SpecError, match="covers only .* roof or cap"):
+            extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
     with pytest.raises(SpecError, match="no up-facing roof surface"):
         extract_spec(wide_cap_building(roof=False, inner_x=inner_x), OBJECT)
+
+
+def test_roof_hole_without_walls_below_is_a_missing_roof():
+    # cap ring at 6.62 over 99.4 % of the floor, no roof: the 0.6 m2 hole has 2 cm walls, no shaft
+    # (Codex review 3 of PR #18, P1); an open shaft through the building stays a roof with an opening
+    with pytest.raises(SpecError, match="not a shaft"):
+        extract_spec(ring_building(SMALL, edge_z=6.62, roof=False)[1], OBJECT)
 
 
 def test_mirroring_frame_keeps_the_roof_facing_up():
