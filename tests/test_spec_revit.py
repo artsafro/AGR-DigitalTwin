@@ -108,7 +108,27 @@ def test_curtain_wall_is_glazing_not_a_wall_box():
 def test_joined_wall_box_longer_than_its_location_line_is_along_x():
     # KPP1: joins extend a wall box past its location line by up to its width and more (3 mm finish walls)
     finish = wall(40, 2.0, 0.3, 6.0, 0.303, length=3.92)
+    assert "wall_40" in to_dump(revit_box([finish]))["body"]
+
+
+def test_short_curtain_wall_pane_runs_along_its_length_not_its_depth():
+    # 0.75 m along X in the south wall, 1 m deep frames: the pane runs along X (PR #30 review 2)
     curtain = {"id": 41, "category": "OST_Walls", "type": "Curtain", "family": "Curtain Wall",
-               "bbox_ft": bbox(7.0, -0.5, 0.0, 7.75, 0.5, 2.5), "length_ft": 0.75 / FT}   # 0.75 m long, 1 m deep
-    dump = to_dump(revit_box([finish, curtain]))
-    assert "wall_40" in dump["body"] and any(m["name"] == "glass_curtain_41" for m in dump["meshes"])
+               "bbox_ft": bbox(7.0, -0.35, 0.0, 7.75, 0.65, 2.5), "length_ft": 0.75 / FT}
+    pane = next(m for m in to_dump(revit_box([curtain]))["meshes"] if m["name"] == "glass_curtain_41")
+    xs, ys = {round(v[0], 6) for v in pane["vertices"]}, {round(v[1], 6) for v in pane["vertices"]}
+    assert xs == {7.0, 7.75} and ys == {0.15}
+
+
+def test_curtain_wall_with_frame_depth_at_45_degrees_stops_with_a_question():
+    # 2.414 m long, 1 m deep at 45 degrees: both box sides equal its length (PR #30 review 2)
+    curtain = {**rotated(96, 1 + math.sqrt(2), 1.0, 45), "family": "Curtain Wall"}
+    with pytest.raises(RevitDataError, match=r"ids \[96\]"):
+        to_dump(revit_box([curtain]))
+
+
+def test_curtain_wall_outside_any_wall_stops_with_a_question():
+    curtain = {"id": 95, "category": "OST_Walls", "type": "Curtain", "family": "Curtain Wall",
+               "bbox_ft": bbox(3.0, 4.5, 0.0, 6.0, 5.5, 2.5), "length_ft": 3.0 / FT}
+    with pytest.raises(RevitDataError, match=r"ids \[95\]"):
+        to_dump(revit_box([curtain]))
