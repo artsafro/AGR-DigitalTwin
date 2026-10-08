@@ -37,6 +37,8 @@ class Opening(SpecPart):
     h_m: Positive
     depth_m: NonNegative
     window_type: int | None = None
+    # anchor that found it (user decision 2026-10-08, #7): a hole in the body, a glass pane, or both
+    source: Literal["hole", "glass", "hole+glass"] | None = None
 
 
 class Floor(SpecPart):

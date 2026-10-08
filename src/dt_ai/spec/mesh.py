@@ -15,6 +15,7 @@ import shapely
 from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.geometry.polygon import orient
 
+from dt_ai.spec import openings as op
 from dt_ai.spec.model import Spec
 
 LEVEL_PREFIX = "LEVEL_"
@@ -185,18 +186,6 @@ def _section(v, tris, z, p=None):
     return segments
 
 
-def _outer(segments):
-    """Outer boundary of the closed rings formed by the segments, or None if nothing closes."""
-    if not segments:
-        return None
-    noded = shapely.unary_union(MultiLineString(segments))
-    polys = list(shapely.get_parts(shapely.polygonize(shapely.get_parts(noded))))
-    if not polys:
-        return None
-    biggest = max(shapely.get_parts(shapely.unary_union(polys)), key=lambda g: g.area)
-    return Polygon(biggest.exterior)
-
-
 def _turns(pts):
     """Signed turn in degrees (left positive) at every vertex of a closed ring."""
     d1 = pts - np.roll(pts, 1, axis=0)
@@ -358,8 +347,12 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
     for i, (l, h) in enumerate(zip(lo, hi)):
         for k in range(l, h + 1):
             bins[k].append(i)
-    closed = [(a, b, poly) for a, b, z in spans
-              if (poly := _outer(_section(None, None, z, p[bins[int(np.floor(z / BIN_M))]]))) is not None]
+    closed, mouth_spans = [], []
+    for a, b, z in spans:          # wall breaks are bridged as openings, so they do not open the section
+        poly, mouths = op.close_section(_section(None, None, z, p[bins[int(np.floor(z / BIN_M))]]))
+        if poly is not None:
+            closed.append((a, b, poly))
+            mouth_spans.append((a, b, mouths))
     if not closed:
         raise SpecError(f"level {name}: none of {len(spans)} body sections between {z0} and {z1} m "
                         "closes; the contour is not invented (ask the user, HARNESS_PLAN §7 gray zone)")
@@ -395,7 +388,8 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
     # every other shape is not over the full height -> questions
-    return base["poly"], report, _deviations([g for g in groups if g is not base], base["poly"])
+    report["bridged_sections"] = sum(1 for _, _, m in mouth_spans if m)
+    return base["poly"], report, _deviations([g for g in groups if g is not base], base["poly"]), mouth_spans
 
 
 def _measure(piece, section, contour_pts):
@@ -547,6 +541,16 @@ def _roof(v, tris, below_level, top_level, top_contour):
     return roof_z, max(on_edge) if on_edge else roof_z, round(closed, 3)
 
 
+def _glass(dump, m):
+    """Vertical glass panes of meshes named *glass* (any case), each a connected part."""
+    glass = {**dump, "meshes": [x for x in dump["meshes"] if "glass" in x["name"].lower()
+                                and not x["name"].upper().startswith("UCX_") and x["triangles"]]}
+    if not glass["meshes"]:
+        return [], 0
+    v, t = _mesh(glass, m)
+    return op.glass_panes(v, t, _parts(v, t))
+
+
 def extract_spec(dump, obj_cfg, profile="npm_min"):
     """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json."""
     m = _matrix(obj_cfg)
@@ -557,15 +561,26 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
               "attachment_parts_ignored": len(parts) - 1, "floors": {}}
-    floors, polys, pieces = [], [], []
+    floors, polys, pieces, mouths = [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]))
+        poly, rep, dev, ms = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]))
+        mouths.append(ms)
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
         polys.append(poly)
         pieces.append(dev)
+    panes, flat_glass = _glass(dump, m)
+    per_floor, footprints, glass_report = op.assemble(levels, floors, polys, mouths, panes)
+    cleared = 0
+    for li, floor in enumerate(floors):
+        floor["openings"] = per_floor[li]
+        kept = [pc for pc in pieces[li] if not (pc["kind"] == "recess" and op.is_opening_recess(pc, li, footprints))]
+        cleared += len(pieces[li]) - len(kept)
+        pieces[li] = kept
+    report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
+                          "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
     report["questions"] = _questions(levels, floors, polys, pieces)
     roof_z, top_z, closed = _roof(v, body, levels[-2], levels[-1], polys[-1])
     report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,

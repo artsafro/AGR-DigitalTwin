@@ -287,15 +287,19 @@ def test_majority_plinth_is_a_question_not_the_contour():
     assert (q["kind"], q["depth_m"], q["heights_m"]) == ("projection", 0.1, [0.0, 2.0])
 
 
-def test_open_storey_ends_are_not_taken_as_full_height():
-    # R2-F1: wall missing at x 5-6 near both storey ends, a projection between: ends are not seen
+def test_holes_at_the_storey_ends_are_openings_and_the_contour_stays_strict():
+    # R2-F1 / #7: wall missing at x 5-6 near both storey ends: two openings, the ends close by the
+    # bridges; the projection between (70 % of the storey) still makes the extractor ask
     b = Mesh("Body")
     walls(b, SQUARE10, 0.0, 6.6, boxes=[(0, 5.0, 6.0, 0.0, 0.5, 0.0), (0, 5.0, 6.0, 2.8, 3.3, 0.0),
                                         (0, 2.0, 3.0, 0.5, 2.8, 0.2)])
     flat(b, Polygon(SQUARE10), 6.6, up=True)
     flat(b, Polygon(SQUARE10), 0.0, up=False)
-    with pytest.raises(SpecError, match="storey ends are not closed sections"):
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
         extract_spec(dump_of(b), OBJECT)
+    spec, report = extract_spec(dump_of(b), at(L0=0.2))
+    got = [(o.x_m, o.sill_m, o.w_m, o.h_m) for o in spec.floors[0].openings]
+    assert got == [(5.0, 0.0, 1.0, 0.5), (5.0, 2.8, 1.0, 0.5)]
 
 
 def test_contour_at_a_height_off_the_closed_sections_is_an_error():

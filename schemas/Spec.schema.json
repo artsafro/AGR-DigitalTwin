@@ -147,6 +147,23 @@
           "title": "Sill M",
           "type": "number"
         },
+        "source": {
+          "anyOf": [
+            {
+              "enum": [
+                "hole",
+                "glass",
+                "hole+glass"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source"
+        },
         "w_m": {
           "exclusiveMinimum": 0,
           "title": "W M",
