@@ -184,7 +184,7 @@ benchmark/
 
 **Факт:** ID сидит в material ID на геометрии (Max); на экспорт — один слот / один атлас; лимит 7 слотов на меш — только требование сдачи. ID → номер UDIM или область атласа.
 
-**Правило — диапазоны по группам, не фиксированные номера** (`standards/MATERIAL_ID_RANGES.md`):
+**Правило — диапазоны по группам, не фиксированные номера** (`standards/material_id_ranges.yaml`):
 
 | Диапазон | Группа |
 |---|---|
@@ -295,7 +295,7 @@ benchmark/
 ## 12. Первая неделя — конкретно
 
 1. Строка в `CLAUDE.md` про `technical_library/` (без переименования). `Unreal/` — вынести только если на него нет ссылок в тестах (проверить `grep -rn Unreal tests/`).
-2. Создать `benchmark/`, `docs/domain/patterns/INDEX.md` (6 строк), `standards/MATERIAL_ID_RANGES.md`, `library/windows/window_types.json` (из твоей библиотеки).
+2. Создать `benchmark/`, `docs/domain/patterns/INDEX.md` (6 строк), `standards/material_id_ranges.yaml`, `library/windows/window_types.json` (из твоей библиотеки).
 3. Mesh-экстрактор (`tools/source/measure_spec_blender.py` + `src/dt_ai/spec/`, §4): сечения по уровням, контур уровня, изломы > 5°, классификация этажей, проёмы по дыркам в корпусе. Сначала на синтетических мешах с тестами.
 4. Последовательно, четыре задачи = четыре ветки (один пишущий агент): (а) mesh-экстрактор с синтетическими тестами; (б) прогон на KPP1 FBX v005; (в) Revit-экстрактор данных через `revit-http-2025`; (г) сравнение двух spec по критериям §4.
 5. Ты моделируешь B01 в Max (хелперы `LEVEL_L0`, `LEVEL_L1`, `LEVEL_roof`); экстрактор снимает spec; ты проверяешь глазами.
