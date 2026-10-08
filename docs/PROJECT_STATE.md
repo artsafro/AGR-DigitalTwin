@@ -43,7 +43,13 @@ attachments by the main-walls hull rule (user decision 2026-10-08). KPP1 compari
 0.0 mm — Rhino not needed for contours (HARNESS_PLAN §11, closed test); openings differ by
 definition (frame vs glass): user decision — the spec opening is the hole with its frame, glass as
 attributes (#36). Review-3 leftovers: #37. The box route of #10 (`revit.py`) was removed (PR #38).
-Next: #36. Human tickets: #2 (move `Unreal/`), #4 (window
+#36 merged (PR #39, spec v0.3): opening = hole with frame (mesh: the reveal the glass fills up to a
+0.20 m frame; Revit: frame or curtain wall, else the family box), glass as `glass_w` / `glass_h`,
+`depth_m` only as an exception (> 0.10 m off the default); glass without a reveal is a size question.
+KPP1 comparison v003 (`jobs/KPP1/spec-compare-v003.md`): **match** on every criterion (openings 21 + 11
+pairs within 5 mm) — first case "two paths match" in `docs/cases.md` (a comparison result, not a
+model acceptance). Open for the user: the 0.20 / 0.10 m thresholds (author's) and vent grilles.
+Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -124,7 +130,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #36 (opening = hole with frame, glass as attributes); extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 done for KPP1 (two paths match); next per the user: B01 etalon (#12), window library (#4), vent grilles; extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
