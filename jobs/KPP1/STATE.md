@@ -172,4 +172,5 @@ Outputs (local): `outputs/spec-v001/` — `dump.json`, `spec-v001.json`, `.repor
 Revit path vs mesh path: `spec-compare-v001.md`. Levels, roof (7.909 / 7.911) and parapet
 (8.650 / 0.741 vs 0.739) match the Revit reference within 2 mm. Contours: L0 Hausdorff 0.70 m
 from Revit-path bounding boxes (entrance frames, #29); door recesses read as contour notches on
-the mesh path (#31). No Rhino verdict until #29 (user decision).
+the mesh path (#31); 13 frame profiles 7.5 x 9 cm on the mesh L1 contour (relief, #31). No Rhino verdict
+until #29 (user decision).

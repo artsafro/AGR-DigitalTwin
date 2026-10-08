@@ -32,7 +32,7 @@ def test_contour_offset_fails_hausdorff_and_lists_the_region():
     out = compare_specs(spec("revit"), moved, REPORT, REPORT, TOL, ("revit", "mesh"))
     assert out["verdict"] == "no match" and "contour Hausdorff, m L0" in out["failing"]
     assert "contour area, m2 (relative) L0" not in out["failing"]          # 1 % < 2 %
-    assert out["contour_differences"] == [{"level": "L0", "side": "mesh only", "area_m2": 1.0,
+    assert out["contour_differences"] == [{"level": "L0", "side": "mesh only", "area_m2": 1.0, "reach_m": 0.1,
                                            "bounds": [0.0, -0.1, 10.0, 0.0]}]
 
 
@@ -63,7 +63,7 @@ def test_thresholds_come_from_tolerances():
     moved = spec("mesh", contour=((0, -0.1), (10, -0.1), (10, 10), (0, 10)))
     out = compare_specs(spec("revit"), moved, REPORT, REPORT, tol, ("revit", "mesh"))
     assert "contour Hausdorff, m L0" not in out["failing"]
-    assert out["failing"] == ["opening pair bbox, m (worst) L0"]       # the window moved 0.1 m with its wall
+    assert out["failing"] == ["opening pairs within bbox tolerance, m (worst pair) L0"]       # the window moved 0.1 m with its wall
 
 
 def test_different_objects_are_refused():
@@ -83,3 +83,64 @@ def test_cli_writes_json_and_markdown(tmp_path):
     assert json.loads(out.read_text(encoding="utf-8"))["verdict"] == "match"
     assert "| L0 | contour Hausdorff, m |" in out.with_suffix(".md").read_text(encoding="utf-8")
     assert main(args) != 0                                   # never overwrites a comparison
+
+
+# PR #32 review 1 regressions
+
+def test_small_outward_bump_is_listed_with_its_reach():
+    # a 0.075 x 0.09 m frame profile out of the north wall (0.007 m2): listed, not filtered away
+    bump = spec("mesh", contour=((0, 0), (10, 0), (10, 10), (5.075, 10), (5.075, 10.09), (5, 10.09), (5, 10), (0, 10)))
+    out = compare_specs(spec("revit"), bump, REPORT, REPORT, TOL, ("revit", "mesh"))
+    assert out["contour_differences"] == [{"level": "L0", "side": "mesh only", "area_m2": 0.0068, "reach_m": 0.09,
+                                           "bounds": [5.0, 10.0, 5.075, 10.09]}]
+
+
+def test_each_side_uses_its_own_level_elevation():
+    # level 2 cm higher and sill 4 cm higher on b: the window moves 6 cm (> 5 cm)
+    b = spec("mesh", openings=[{"wall": 0, "x_m": 2.0, "sill_m": 0.94, "w_m": 1.5, "h_m": 1.5, "depth_m": 0.2}])
+    b["levels"][0]["elev_m"] = 0.02
+    out = compare_specs(spec("revit"), b, REPORT, REPORT, TOL, ("revit", "mesh"))
+    row = next(r for r in out["rows"] if r["criterion"].startswith("opening pairs"))
+    assert not row["within"] and out["verdict"] == "no match"
+
+
+def test_opening_depth_is_part_of_its_box():
+    deep = spec("mesh", openings=[{"wall": 0, "x_m": 2.0, "sill_m": 0.9, "w_m": 1.5, "h_m": 1.5, "depth_m": 0.8}])
+    out = compare_specs(spec("revit"), deep, REPORT, REPORT, TOL, ("revit", "mesh"))
+    assert "opening pairs within bbox tolerance, m (worst pair) L0" in out["failing"]
+
+
+def test_a_missing_floor_is_not_skipped():
+    a = spec("revit", levels=[{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": 6.6}])
+    b = json.loads(json.dumps(a))
+    b["floors"].append({"level": "L1", "contour": [[0, 0], [10, 0], [10, 10], [0, 10]], "openings": []})
+    a["floors"][0]["repeat_to"] = None
+    out = compare_specs(a, {**b, "frame": {**FRAME, "source": "mesh"}}, REPORT, REPORT, TOL, ("revit", "mesh"))
+    assert "floors" in out["failing"] and out["verdict"] == "no match"
+
+
+def test_pairing_finds_the_correspondence_a_greedy_order_misses():
+    def ops(*xs):
+        return [{"wall": 0, "x_m": x, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "depth_m": 0.2} for x in xs]
+    out = compare_specs(spec("revit", openings=ops(2.00, 2.06)), spec("mesh", openings=ops(2.04, 2.10)),
+                        REPORT, REPORT, TOL, ("revit", "mesh"))
+    row = next(r for r in out["rows"] if r["criterion"].startswith("opening pairs"))
+    assert row["within"] and row["pairs"] == 2 and row["b"] == pytest.approx(0.04)
+
+
+def test_threshold_is_applied_to_the_raw_value():
+    moved = spec("mesh", contour=((0, -0.05004), (10, -0.05004), (10, 10), (0, 10)), openings=[])
+    out = compare_specs(spec("revit", openings=[]), moved, REPORT, REPORT, TOL, ("revit", "mesh"))
+    assert "contour Hausdorff, m L0" in out["failing"]
+
+
+def test_two_specs_without_openings_match():
+    out = compare_specs(spec("revit", openings=[]), spec("mesh", openings=[]), REPORT, REPORT, TOL, ("revit", "mesh"))
+    assert out["verdict"] == "match"
+
+
+def test_notch_reach_is_its_depth_not_zero():
+    # the region of a 0.23 m notch has all its corners on the other contour; its reach is 0.23
+    notch = spec("mesh", contour=((0, 0), (4, 0), (4, 0.23), (5, 0.23), (5, 0), (10, 0), (10, 10), (0, 10)))
+    out = compare_specs(spec("revit"), notch, REPORT, REPORT, TOL, ("revit", "mesh"))
+    assert [(g["side"], g["reach_m"]) for g in out["contour_differences"]] == [("revit only", 0.23)]
