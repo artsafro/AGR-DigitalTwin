@@ -11,9 +11,13 @@ Next: close their delivery gates (`docs/pipeline.md`, `docs/backlog.md`).
 Harness rebuild (2026-10-08): `docs/HARNESS_PLAN.md` rev 3 (grilled §11/§12) — every modelling
 run starts from an extracted `spec.json`, checked against hand-made etalons (`benchmark/`).
 Week-1 work is tracked as GitHub issues #1–#14 (labels `extractor`, `benchmark`, `pattern`;
-native blocked-by links). Order with one writing agent: #1 scaffolding → #3 material ID
-ranges → #5 spec extractor on a synthetic box. Human tickets: #2 (move `Unreal/`),
-#4 (window library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`).
+native blocked-by links). Done and merged: #1 scaffolding, #3 material ID ranges, #5 spec
+extractor (`dt spec extract`, PR #15), #16 roof confirmed at the input level (PR #18), #6 kinks,
+rounded corners, strict full-height contour and questions file (PR #19). Each PR had up to three
+Codex review rounds that ran the tests (`docs/agents/REVIEW_CHECKLIST.md`). Next: #7 openings,
+then #8 floor classification, #9 KPP1 run. Human tickets: #2 (move `Unreal/`), #4 (window
+library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
+of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
 ## Repository
 
@@ -92,7 +96,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #1 → #3 → #5 (one writing agent, one branch per ticket).
+0. Claude: harness week 1 — #7 openings → #8 floor classification → #9 KPP1 run (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
