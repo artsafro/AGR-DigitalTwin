@@ -22,9 +22,10 @@ SECTION_OFFSET_M = 0.137  # keeps cuts off whole-number grid heights of hand-mad
 SAME_CONTOUR_M = 0.005    # sections closer than this (Hausdorff) are one contour; < the 1 cm acceptance
 WELD_M = 1e-4             # vertices closer than WELD_M / 2 on every axis are always welded
 SIMPLIFY_M = 0.005
-ROOF_SEARCH_M = 0.3       # the roof plane must lie within this of the top input level
+ROOF_LEVEL_TOL_M = 0.03   # roof plane vs the top input level: the level tolerance of HARNESS_PLAN §5
+ROOF_SEARCH_M = 0.3       # only to name nearby surfaces in the error message
+ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
-ROOF_COVER = 0.99         # a surface at the parapet top covering less of the top floor is a cap
 
 
 class SpecError(ValueError):
@@ -211,34 +212,40 @@ def _level_contour(v, tris, z0, z1, name):
 
 
 def _roof(v, tris, top_level, top_contour):
-    """Parapet top: highest body point on the outer wall line of the top floor. Roof plane: the
-    horizontal body surface nearest to the top input level, not counting a parapet cap — a
-    surface at the parapet top that leaves part of the top floor uncovered, whatever its shape
-    (a flat roof without parapet covers the whole floor and stays the roof). Missing roof
-    geometry is an error, never parapet 0 (PR #15 review 3, issue #16)."""
-    edge = top_contour.exterior
-    pts = v[np.unique(tris)]
-    on_edge = [z for (x, y, z) in pts if edge.distance(shapely.Point(x, y)) <= PARAPET_EDGE_M]
-    top_z = max(on_edge) if on_edge else None
+    """The roof level is input, like every level; geometry only confirms it (issue #16).
+    Roof plane: an up-facing horizontal body surface inside the top floor contour within
+    ROOF_LEVEL_TOL_M of the top input level. The roof plus every up-facing surface above it
+    (parapet cap, shaft tops) must close the top floor from above (ROOF_CLOSED share), else the
+    roof is missing. Several candidate planes, or none, is a question for the user, never a
+    guess. Parapet top: highest body point on the outer wall line of the top floor."""
     p = v[tris]
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
     length = np.linalg.norm(n, axis=1)
-    flat = (length > 0) & (np.abs(n[:, 2]) > 0.999 * length)
-    near = flat & (np.abs(p[:, 0, 2] - top_level["elev_m"]) <= ROOF_SEARCH_M)
+    up = (length > 0) & (n[:, 2] > 0.999 * length)
     planes = defaultdict(list)
-    for tri in p[near]:
-        planes[round(float(tri[0, 2]), 3)].append(Polygon(tri[:, :2]))
-    roofs = []
-    for z, faces in planes.items():
-        cover = shapely.unary_union([f for f in faces if f.area > 0]).intersection(top_contour).area
-        if top_z is not None and abs(z - top_z) <= 1e-3 and cover < ROOF_COVER * top_contour.area:
-            continue  # parapet cap
-        roofs.append(z)
-    if not roofs:
-        raise SpecError(f"no horizontal roof surface within {ROOF_SEARCH_M} m of level "
-                        f"{top_level['name']} ({top_level['elev_m']} m); a parapet cap is not a roof")
-    roof_z = min(roofs, key=lambda z: abs(z - top_level["elev_m"]))
-    return roof_z, roof_z if top_z is None else top_z
+    for tri in p[up]:
+        face = Polygon(tri[:, :2])
+        if face.area > 0 and face.intersection(top_contour).area >= 0.5 * face.area:
+            planes[round(float(tri[0, 2]), 3)].append(face)
+    level = top_level["elev_m"]
+    found = sorted(z for z in planes if abs(z - level) <= ROOF_LEVEL_TOL_M)
+    where = f"level {top_level['name']} ({level} m)"
+    if not found:
+        near = sorted(z for z in planes if abs(z - level) <= ROOF_SEARCH_M)
+        raise SpecError(f"no up-facing roof surface within {ROOF_LEVEL_TOL_M} m of {where}; "
+                        f"horizontal surfaces within {ROOF_SEARCH_M} m: {near or 'none'} — check the roof level")
+    if len(found) > 1:
+        raise SpecError(f"ambiguous roof at {where}: planes {found}; ask the user")
+    roof_z = found[0]
+    closing = [f for z, faces in planes.items() if z >= roof_z - 1e-3 for f in faces]
+    closed = shapely.unary_union(closing).intersection(top_contour).area / top_contour.area
+    if closed < ROOF_CLOSED:
+        raise SpecError(f"roof at {roof_z} m and the surfaces above it close only {closed:.0%} of the top "
+                        f"floor (< {ROOF_CLOSED:.0%}): roof missing or open; ask the user")
+    edge = top_contour.exterior
+    pts = v[np.unique(tris)]
+    on_edge = [z for (x, y, z) in pts if edge.distance(shapely.Point(x, y)) <= PARAPET_EDGE_M]
+    return roof_z, max(on_edge) if on_edge else roof_z, round(closed, 3)
 
 
 def extract_spec(dump, obj_cfg, profile="npm_min"):
@@ -258,8 +265,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
         polys.append(poly)
-    roof_z, top_z = _roof(v, body, levels[-1], polys[-1])
-    report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3),
+    roof_z, top_z, closed = _roof(v, body, levels[-1], polys[-1])
+    report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],
                       "plane_vs_top_level_m": round(roof_z - levels[-1]["elev_m"], 3)}
     spec = Spec(id=obj_cfg["id"], profile=profile,
