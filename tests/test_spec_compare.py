@@ -144,3 +144,13 @@ def test_notch_reach_is_its_depth_not_zero():
     notch = spec("mesh", contour=((0, 0), (4, 0), (4, 0.23), (5, 0.23), (5, 0), (10, 0), (10, 10), (0, 10)))
     out = compare_specs(spec("revit"), notch, REPORT, REPORT, TOL, ("revit", "mesh"))
     assert [(g["side"], g["reach_m"]) for g in out["contour_differences"]] == [("revit only", 0.23)]
+
+
+def test_floor_order_in_the_file_does_not_matter():
+    # PR #32 review 2: the same floors listed L1, L0 on one side
+    levels = [{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": 6.6}]
+    a = spec("revit", levels=levels)
+    a["floors"].append({"level": "L1", "contour": [[0, 0], [10, 0], [10, 10], [0, 10]], "openings": []})
+    b = {**json.loads(json.dumps(a)), "frame": {**FRAME, "source": "mesh"}}
+    b["floors"].reverse()
+    assert compare_specs(a, b, REPORT, REPORT, TOL, ("revit", "mesh"))["verdict"] == "match"

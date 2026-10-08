@@ -120,7 +120,8 @@ def compare_specs(spec_a, spec_b, report_a, report_b, tolerances, names=("a", "b
         rows.append(_row("parapet height, m", sa.roof.parapet_h_m, sb.roof.parapet_h_m, t["level_elev_m"], "abs", ref.get("parapet")))
     elev_a = {lv.name: lv.elev_m for lv in sa.levels}
     elev_b = {lv.name: lv.elev_m for lv in sb.levels}
-    floors_a, floors_b = sa.expanded_floors(), sb.expanded_floors()
+    order = {lv.name: i for i, lv in enumerate(sa.levels)}   # the schema allows any floor order (PR #32 review 2)
+    floors_a, floors_b = (sorted(s.expanded_floors(), key=lambda f: order.get(f.level, len(order))) for s in (sa, sb))
     names_a, names_b = [f.level for f in floors_a], [f.level for f in floors_b]
     rows.append(_row("floors", names_a, names_b, None, "equal", ref.get("levels")))
     if names_a != names_b:                       # a floor missing on one side is never skipped silently
