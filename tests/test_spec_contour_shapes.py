@@ -26,7 +26,7 @@ def flat(mesh, poly, z, up=True):
         mesh.triangles.append([n - 3, n - 2, n - 1])
 
 
-def walls(mesh, contour, z0, z1, boxes=(), extra_u=None):
+def walls(mesh, contour, z0, z1, boxes=(), extra_u=None, extra_z=()):
     """Vertical walls of a CCW contour from z0 to z1, split so box corners are shared vertices.
     boxes: (wall, u0, u1, bz0, bz1, depth) projections outward from that wall."""
     pts = np.asarray(contour, dtype=float)
@@ -34,7 +34,7 @@ def walls(mesh, contour, z0, z1, boxes=(), extra_u=None):
         a, b = pts[w], pts[(w + 1) % len(pts)]
         length = float(np.linalg.norm(b - a))
         us = {0.0, length, *[u for bx in boxes if bx[0] == w for u in bx[1:3]], *(extra_u or {}).get(w, [])}
-        zs = {z0, z1, *[z for bx in boxes if bx[0] == w for z in bx[3:5] if z0 < z < z1]}
+        zs = {z0, z1, *[z for bx in boxes if bx[0] == w for z in bx[3:5] if z0 < z < z1], *extra_z}
         us, zs = sorted(us), sorted(zs)
         t = (b - a) / length
         cuts = [bx for bx in boxes if bx[0] == w and bx[5] <= 0]  # recesses and holes (depth 0): no wall there
@@ -349,3 +349,13 @@ def test_coarse_true_arcs_are_rounded_corners(n):
     spec, _ = extract_spec(prism([[0, 0], [10, 0], *arc, [0, 10]]), OBJECT)
     pts = spec.floors[0].contour
     assert len(pts) == 4 and [p for p in pts if len(p) == 3][0][2]["r"] == pytest.approx(1.5, abs=0.02)
+
+
+def test_close_vertex_rows_do_not_hide_an_element():
+    # R3-F1 (review 3 of PR #19): a wall row 0.1 mm below a 0.5 m projection must not hide it
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 6.6, boxes=[(0, 2.0, 3.0, 1.0002, 1.5, 0.2)], extra_z=[1.0001])
+    flat(b, Polygon(SQUARE10), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    q = only_question(dump_of(b))
+    assert (q["wall"], q["depth_m"], q["length_m"], q["facade_share"]) == (0, 0.2, 1.0, 0.1)

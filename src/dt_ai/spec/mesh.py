@@ -303,8 +303,9 @@ def _spans(v, tris, z0, z1):
     cuts.append(z1)
     out = []
     for a, b in zip(cuts, cuts[1:]):
-        nxt = next((z for z in zs if z > a + 1e-9), b)      # cut below the first vertex row in the interval
-        out.append((a, b, (a + min(nxt, b)) / 2))
+        rows = [a] + [z for z in zs if a < z < b] + [b]     # cut in the largest gap between vertex rows,
+        lo, hi = max(zip(rows, rows[1:]), key=lambda g: g[1] - g[0])   # never in a sub-mm sliver (PR #19 r3)
+        out.append((a, b, (lo + hi) / 2))
     return out
 
 
