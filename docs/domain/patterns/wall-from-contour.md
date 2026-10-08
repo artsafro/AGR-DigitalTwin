@@ -39,6 +39,15 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; terms Level contou
   1.9 m high and 0.7-3 m wide at its mouth, is an opening and the contour runs straight over it;
   depth is no criterion. Its mouth must be one straight segment with the facade continuing beyond
   both ends; anything else (a block in an inner corner, an outward band) stays a question.
+- Size (spec v0.3, user decision 2026-10-08): an opening is the hole in the wall with its frame;
+  the glass is `glass_w` / `glass_h` and `panes`; depth is `opening_depth_default_m` with
+  exceptions. How the extractor reads it (author's rules, not user decisions — #36 / PR #39):
+  the reveal around the glass when all glass on that wall covers the reveal's rectangle jointly,
+  each pane grown by a frame of 0.20 m (glass of the next storey counts, so a frame through a
+  level line is read; an L-shaped set of panes or a tall recess with a short window is no frame);
+  panes of one accepted reveal are one opening; without such a reveal the glass places the opening
+  and its size is a question; `depth_m` is written when the reveal is more than 0.10 m off the
+  default.
 - Kind: an opening filled with glass over its whole height (no stretch without glass over 0.20 m,
   a frame member) is a `window`, from the floor or not; a `door` has no glass or glass over part
   of its height.

@@ -30,12 +30,18 @@ class Level(SpecPart):
 
 
 class Opening(SpecPart):
+    # the hole in the wall with its frame (spec v0.3, user decision 2026-10-08, #36): position along
+    # the wall, sill from the floor's level, width and height of the rough opening
     wall: int = Field(ge=0)
     x_m: NonNegative
     sill_m: Finite
     w_m: Positive
     h_m: Positive
-    depth_m: NonNegative
+    # only an exception to the spec's opening_depth_default_m (#36); None = the default
+    depth_m: NonNegative | None = None
+    # the glass in it, when there is glass: extent of its panes (#36)
+    glass_w: Positive | None = None
+    glass_h: Positive | None = None
     window_type: int | None = None
     # door: a recess from the floor >= 1.9 m high, 0.7-3 m wide (user decision 2026-10-08, #31)
     kind: Literal["window", "door"] | None = None
@@ -83,7 +89,9 @@ class Roof(SpecPart):
 
 class Spec(SpecPart):
     id: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)+$")
-    spec_version: Literal["0.1", "0.2"] = "0.2"   # 0.2: openings across levels (level_from / level_to)
+    # 0.2: openings across levels (level_from / level_to); 0.3: opening = hole with frame, glass_w /
+    # glass_h, depth_m only as an exception to opening_depth_default_m (#36)
+    spec_version: Literal["0.1", "0.2", "0.3"] = "0.3"
     profile: Literal["npm_min", "mid"]
     frame: Frame
     levels: list[Level] = Field(min_length=2)
@@ -112,6 +120,10 @@ class Spec(SpecPart):
                     raise ValueError(f"floor {f.level}: level_from must be the floor and level_to a level above it")
                 if o.level_to is not None and self.spec_version == "0.1":
                     raise ValueError("openings across levels need spec_version 0.2")
+                if self.spec_version in ("0.1", "0.2") and o.depth_m is None:
+                    raise ValueError(f"spec {self.spec_version}: every opening has depth_m (optional from 0.3)")
+                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version != "0.3":
+                    raise ValueError("glass_w / glass_h need spec_version 0.3")
         full = {f.level for f in self.floors if f.contour is not None}
         owner = {}
         for f in self.floors:

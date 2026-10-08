@@ -178,6 +178,68 @@ def _door(o, walls):
             "host_thickness": host["thickness"] if host else None}
 
 
+def _on_line(line, lo, hi):
+    """A glass rectangle (x0, y0, x1, y1, z0, z1) on a wall line from an element's box: its extent
+    along the line, its heights."""
+    (ax, ay), (bx, by) = line[0][:2], line[-1][:2]
+    length = math.hypot(bx - ax, by - ay)
+    ux, uy = (bx - ax) / length, (by - ay) / length
+    t = [(x - ax) * ux + (y - ay) * uy for x in (lo[0], hi[0]) for y in (lo[1], hi[1])]
+    t0, t1 = min(t), max(t)
+    return (ax + ux * t0, ay + uy * t0, ax + ux * t1, ay + uy * t1, lo[2], hi[2])
+
+
+def _openings(bands, walls, attached, clear_by_band):
+    """Openings as Revit gives them (spec v0.3, #36): the hole with its frame and the glass in it.
+    A curtain wall or a window frame wall (function curtain) with glass is one opening on its line
+    over its heights, its glass the transparent panels and windows it hosts; a window in a wall is
+    its family box; a door its record. A window without a transparent material (a grille) is no
+    opening here (counted)."""
+    out, grilles, glass_of = [], 0, {}
+    for b in bands:
+        clear = clear_by_band[b["band"]["band"]]
+        for pnl in b.get("curtainPanels", []):
+            host = walls.get(pnl.get("hostId"))
+            if host is not None and clear.intersection(pnl.get("materials", [])):
+                glass_of.setdefault(host["id"], {})[pnl["id"]] = _on_line(host["locationLine"], pnl["bboxMin"], pnl["bboxMax"])
+    seen = set()
+    for b in bands:
+        clear = clear_by_band[b["band"]["band"]]
+        for o in b["openings"]:
+            host = walls.get(o.get("hostId"))
+            if host is None or o["id"] in seen or o.get("hostId") in attached:
+                continue
+            seen.add(o["id"])
+            glazed = bool(clear.intersection(o.get("materials", [])))
+            if o["kind"] == "window" and not glazed:
+                grilles += 1
+                continue
+            if host.get("function") == "curtain" and o["kind"] == "window":
+                glass_of.setdefault(host["id"], {})[o["id"]] = _on_line(host["locationLine"], o["bboxMin"], o["bboxMax"])
+                continue
+            if o["kind"] == "door" and "point" not in o:
+                continue
+            (x0, y0, _), (x1, y1, _) = _span(o)
+            if o["kind"] == "door":
+                base = o["bboxMin"][2] - o.get("sill", 0.0)          # the level the sill is measured from
+                z0, z1 = base + o.get("sill", 0.0), base + (o.get("head") or o["height"])
+            else:
+                z0, z1 = o["bboxMin"][2], o["bboxMax"][2]
+            out.append({"revit_id": o["id"], "kind": o["kind"], "p0": [x0, y0], "p1": [x1, y1], "z0": z0, "z1": z1,
+                        "depth": host["thickness"], "host_thickness": host["thickness"], "glass": [],
+                        # a window in a wall: glazed, but the export gives no glass extent (counted)
+                        "glazed": glazed and o["kind"] == "window", "panes": 1 if glazed and o["kind"] == "window" else None})
+    for i, glass in glass_of.items():
+        w = walls[i]
+        if w.get("function") != "curtain" or i in attached:
+            continue
+        (x0, y0, _), (x1, y1, _) = w["locationLine"][0], w["locationLine"][-1]
+        out.append({"revit_id": i, "kind": "window", "p0": [x0, y0], "p1": [x1, y1], "z0": w["bboxMin"][2],
+                    "z1": w["bboxMax"][2], "depth": w["thickness"], "host_thickness": w["thickness"],
+                    "glass": list(glass.values()), "panes": len(glass)})
+    return out, grilles
+
+
 def _clear(band):
     """Ids of the band's transparent materials (glass), from the export's material table."""
     return {m["revitId"] for m in band.get("materials", {}).values() if m.get("transparency", 0) > 0 and "revitId" in m}
@@ -208,7 +270,7 @@ def to_dump(bands, objs, document=None):
         raise TwinDataError(f"{len(missing)} curved walls without geometry in reference.obj (ids {missing[:10]}); ask the user")
     occupied = {i: _occupied(parts) for i, parts in native.items()}
     attached = set(attachments(bands, occupied))
-    meshes, body, doors = [], [], {}
+    meshes, body = [], []
     outer = [_footprint(w, "square").buffer(0.01) for w in walls.values() if w.get("function") != "curtain"]
     plans = {i: _footprint(w) for i, w in walls.items() if w.get("function") != "curtain" and i not in curved}
     plans.update(occupied)                        # a curved wall's occupied plan for the joins of its neighbours
@@ -232,19 +294,16 @@ def to_dump(bands, objs, document=None):
             body.append(name)
     for b, obj in zip(bands, objects):
         top = b["band"]["top"]
-        clear = _clear(b)
-        glazed = {p["id"] for p in b.get("curtainPanels", []) if clear.intersection(p.get("materials", []))}
         for name, (verts, tris) in obj.items():
             kind, _, rid = name.partition("_")
-            if kind not in ("roof", "panel") or (kind == "panel" and int(rid) not in glazed):
-                continue                         # walls are prisms; opaque panels, mullions, families, slabs are not read
+            if kind != "roof":
+                continue                         # walls are prisms; glass and openings come from the records
             for v in verts:                      # close the 1 mm band gap
                 if abs(v[2] - top) <= 1e-6:
                     v[2] = top + BAND_GAP_M
-            mesh_name = f"{'glass_' if kind == 'panel' else ''}{name}_b{b['band']['band']}"
+            mesh_name = f"{name}_b{b['band']['band']}"
             meshes.append({"name": mesh_name, "vertices": verts, "triangles": tris})
-            if kind == "roof":
-                body.append(mesh_name)
+            body.append(mesh_name)
         for o in b["openings"]:
             host = walls.get(o.get("hostId"))
             if host is None:
@@ -254,10 +313,7 @@ def to_dump(bands, objs, document=None):
                 if plug not in body:
                     meshes.append(_plug(plug, _span(o), host["thickness"], o["bboxMin"][2], o["bboxMax"][2]))
                     body.append(plug)
-            if o["kind"] == "window" and clear.intersection(o.get("materials", [])):
-                meshes.append(_pane(o))         # a window without glass (a grille) is no opening anchor
-            elif o["kind"] == "door" and "point" in o:
-                doors.setdefault(o["id"], _door(o, walls))
+    openings, grilles = _openings(bands, walls, attached, {b["band"]["band"]: _clear(b) for b in bands})
     questions = []
     groups = []                                  # touching attachment elements are one attachment
     for i in sorted(attached):
@@ -277,7 +333,8 @@ def to_dump(bands, objs, document=None):
                           "heights_m": [round(min(w["bboxMin"][2] for w in ws), 3), round(max(w["bboxMax"][2] for w in ws), 3)],
                           "at": [round(c.x, 2), round(c.y, 2)], "revit_ids": sorted(g["ids"])})
     return {"source": "revit", "document": document, "units": "m", "meshes": meshes, "helpers": [], "body": body,
-            "doors": list(doors.values()), "questions": questions}
+            "openings": openings, "grilles_not_openings": grilles,
+            "windows_glass_unknown": sum(1 for o in openings if o.get("glazed")), "questions": questions}
 
 
 def load(index_path):

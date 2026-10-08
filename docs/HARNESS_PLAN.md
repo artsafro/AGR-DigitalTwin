@@ -61,11 +61,15 @@ technical_library/    reviewed operation packages (как есть; см. выш
 
 ---
 
-## 3. Нормализованный формат `spec.json` (контракт v0.1)
+## 3. Нормализованный формат `spec.json` (контракт v0.3)
 
 > v0.2 (2026-10-08, #31): у проёма есть `kind` (`window` / `door`), `panes` (стёкла одной рамы) и
 > `level_from` / `level_to` — проём, пересекающий отметку уровня, одна запись в нижнем этаже.
-> Остальное как в v0.1; схема — `schemas/Spec.schema.json`.
+> v0.3 (2026-10-08, #36): **проём = дыра в стене с рамой** (`x_m`, `sill_m`, `w_m`, `h_m` — по откосам;
+> в Revit — стена-витраж или стена-рамка, иначе габарит семейства); стекло — атрибуты `glass_w` /
+> `glass_h` и `panes`; `depth_m` — только исключение к `opening_depth_default_m` (mesh-путь пишет его,
+> когда измеренный откос дальше 0,10 м от умолчания). Схема — `schemas/Spec.schema.json`; пример ниже —
+> тот же документ, что `tests/fixtures/spec-b01-v0.3.json` (тест сверяет их).
 
 **Решено:** вход агенту — всегда `spec.json`, независимо от исходника. Формат **обязан** измениться при первом реальном Revit; это рабочий контракт, не эталон. Руками JSON не пишется никогда — только экстрактором.
 
@@ -74,7 +78,7 @@ technical_library/    reviewed operation packages (как есть; см. выш
 ```json
 {
   "id": "bench-b01-box",
-  "spec_version": "0.1",
+  "spec_version": "0.3",
   "profile": "npm_min",
   "frame": {"object": "bench-b01-box", "source": "etalon.fbx", "to_object": [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]},
   "levels": [
@@ -84,7 +88,7 @@ technical_library/    reviewed operation packages (как есть; см. выш
   ],
   "floors": [
     {"level": "L0", "contour": [[0,0],[10,0],[10,10],[0,10]], "openings": [
-      {"wall": 0, "x_m": 2.0, "sill_m": 0.9, "w_m": 1.5, "h_m": 1.5, "depth_m": 0.2, "window_type": 5}
+      {"wall": 0, "x_m": 2.0, "sill_m": 0.9, "w_m": 1.5, "h_m": 1.5, "glass_w": 1.36, "glass_h": 1.36, "panes": 1, "kind": "window", "window_type": 5}
     ]},
     {"level": "L1", "typical_of": "L0", "repeat_to": "L1"}
   ],

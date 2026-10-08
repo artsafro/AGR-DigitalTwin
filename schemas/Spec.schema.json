@@ -134,9 +134,43 @@
       "additionalProperties": false,
       "properties": {
         "depth_m": {
-          "minimum": 0,
-          "title": "Depth M",
-          "type": "number"
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Depth M"
+        },
+        "glass_h": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glass H"
+        },
+        "glass_w": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Glass W"
         },
         "h_m": {
           "exclusiveMinimum": 0,
@@ -267,8 +301,7 @@
         "x_m",
         "sill_m",
         "w_m",
-        "h_m",
-        "depth_m"
+        "h_m"
       ],
       "title": "Opening",
       "type": "object"
@@ -350,10 +383,11 @@
       "default": null
     },
     "spec_version": {
-      "default": "0.2",
+      "default": "0.3",
       "enum": [
         "0.1",
-        "0.2"
+        "0.2",
+        "0.3"
       ],
       "title": "Spec Version",
       "type": "string"

@@ -53,7 +53,7 @@ DOOR_MIN_H_M = 1.9
 DOOR_W_M = (0.7, 3.0)
 DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
 RELIEF_M = 0.10
-DOOR_HOST_M = 0.02        # a source door is a facade door when its host wall reaches the contour within this
+DOOR_HOST_M = 0.02        # a source door is a facade door when its ends lie within half its host + this of the contour
 
 
 class SpecError(ValueError):
@@ -896,27 +896,33 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         polys.append(poly)
         pieces.append(dev)
     panes, flat_glass = _glass(dump, m)
-    source_doors_skipped = 0
-    for d in dump.get("doors", []):                      # door records of a source (Revit, #29)
+    source_skipped, sources = 0, [[] for _ in floors]
+    for d in dump.get("openings", []):                   # openings a source gives explicitly (Revit, #29, #36)
         q0, q1 = _apply(m, [[*d["p0"], d["z0"]], [*d["p1"], d["z1"]]])
         li = next((i for i in range(len(floors)) if levels[i]["elev_m"] - op.LEVEL_JOINT_M <= q0[2]
                    < levels[i + 1]["elev_m"] - op.LEVEL_JOINT_M), None)
         run = q1[:2] - q0[:2]
         if li is None or np.linalg.norm(run) < 1e-6:
-            source_doors_skipped += 1
+            source_skipped += 1
             continue
         _, _, u, _ = op._wall_frame(floors[li]["contour"], (q0[:2] + q1[:2]) / 2)
-        # the door itself on the facade: its line (on its host's location line) within half the host's
-        # thickness of the contour, at the door, not anywhere along the host (PR #35 review 2)
-        reach = (d.get("host_thickness") or 0.0) / 2 + DOOR_HOST_M
+        # a door is on the facade when both its ends lie within half its host's thickness of the
+        # contour (PR #35 review 2); a glazed frame (curtain wall) may sit behind the facade face
+        reach = (d.get("host_thickness") or 0.0) / 2 + DOOR_HOST_M if d["kind"] == "door" else op.PANE_WALL_M
         if (abs(float(u @ run)) / float(np.linalg.norm(run)) < np.cos(np.radians(op.ALONG_DEG))
                 or max(polys[li].exterior.distance(shapely.Point(*q[:2])) for q in (q0, q1)) > reach):
-            source_doors_skipped += 1                    # not on the facade
+            source_skipped += 1                          # not a facade opening
             continue
-        span = LineString([q0[:2], q1[:2]]).buffer(max(d["depth"], 0.01) / 2, cap_style="flat")
-        doors[li].append({"geom": span, "z0": float(q0[2]), "z1": float(q1[2])})
+        glass = []
+        for g in d.get("glass", []):
+            g0, g1 = _apply(m, [[g[0], g[1], g[4]], [g[2], g[3], g[5]]])
+            glass.append((float(g0[0]), float(g0[1]), float(g1[0]), float(g1[1]), float(g0[2]), float(g1[2])))
+        sources[li].append({"p0": q0[:2], "p1": q1[:2], "z0": float(q0[2]), "z1": float(q1[2]), "depth": d["depth"],
+                            "kind": d["kind"], "glass": glass, "panes": d.get("panes"), "glazed": d.get("glazed")})
+    recesses = [[pc for pc in pcs if pc["kind"] == "recess"] for pcs in pieces]
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
-                                                              _planes(v, plane_tris), doors)
+                                                              _planes(v, plane_tris), doors, recesses, sources,
+                                                              obj_cfg.get("opening_depth_default_m", 0.2))
     cleared = 0
     for li, floor in enumerate(floors):
         floor["openings"] = per_floor[li]
@@ -924,7 +930,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         cleared += len(pieces[li]) - len(kept)
         pieces[li] = kept
     report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
-                          "source_doors_skipped": source_doors_skipped,
+                          "source_openings_skipped": source_skipped,
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
     suspects = _plane_suspects(dump, m, levels, polys)
     report["openings"]["planes_without_material_id"] = len(suspects)
@@ -947,5 +953,6 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     written, report["floor_classes"] = fl.collapse(levels, floors)
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
-                levels=levels, floors=written, roof={"parapet_h_m": round(max(top_z - roof_z, 0.0), 3)})
+                levels=levels, floors=written, roof={"parapet_h_m": round(max(top_z - roof_z, 0.0), 3)},
+                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
     return spec, report

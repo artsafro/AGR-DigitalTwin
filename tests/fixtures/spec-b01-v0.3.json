@@ -1,0 +1,20 @@
+{
+  "id": "bench-b01-box",
+  "spec_version": "0.3",
+  "profile": "npm_min",
+  "frame": {"object": "bench-b01-box", "source": "etalon.fbx", "to_object": [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]},
+  "levels": [
+    {"name": "L0", "elev_m": 0.0},
+    {"name": "L1", "elev_m": 3.3},
+    {"name": "roof", "elev_m": 6.6}
+  ],
+  "floors": [
+    {"level": "L0", "contour": [[0,0],[10,0],[10,10],[0,10]], "openings": [
+      {"wall": 0, "x_m": 2.0, "sill_m": 0.9, "w_m": 1.5, "h_m": 1.5, "glass_w": 1.36, "glass_h": 1.36, "panes": 1, "kind": "window", "window_type": 5}
+    ]},
+    {"level": "L1", "typical_of": "L0", "repeat_to": "L1"}
+  ],
+  "roof": {"parapet_h_m": 0.6},
+  "attachments": [],
+  "opening_depth_default_m": 0.2
+}

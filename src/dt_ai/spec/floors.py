@@ -14,7 +14,7 @@ Unique floors (often the bottom one or two and the top one) stay in full.
 import numpy as np
 
 SAME_M = 0.01   # contours, openings and storey heights equal within 1 cm
-FIELDS = ("x_m", "sill_m", "w_m", "h_m", "depth_m")
+FIELDS = ("x_m", "sill_m", "w_m", "h_m", "depth_m", "glass_w", "glass_h")
 META = ("source", "material_id", "window_type", "plane_conflict", "kind", "panes", "level_from", "level_to")
 
 
@@ -38,7 +38,12 @@ def _fits(x, y, wall):
     return (x["wall"] == wall
             and all(x.get(k, False if k == "plane_conflict" else None) ==
                     y.get(k, False if k == "plane_conflict" else None) for k in META)
-            and all(abs(x[k] - y[k]) <= SAME_M for k in FIELDS))
+            and all(_close(x.get(k), y.get(k)) for k in FIELDS))
+
+
+def _close(a, b):
+    """Two optional numbers within SAME_M; both absent is equal, one absent is not."""
+    return (a is None and b is None) or (a is not None and b is not None and abs(a - b) <= SAME_M)
 
 
 def _same_openings(a, b, shift, n):
