@@ -10,6 +10,7 @@ from dt_ai.core.profiles import load_profiles
 from dt_ai.drawing.index import index_pdf
 from dt_ai.materials.registry import merge_proposals
 from dt_ai.spec import extract_spec
+from dt_ai.spec.mesh import questions_markdown
 from dt_ai.validate.bundle import validate
 
 
@@ -69,15 +70,18 @@ def main(argv=None):
             result = index_pdf(args.source, args.output)
             print(f"Indexed {len(result['pages'])} pages: {args.output / 'index.json'}")
         elif args.command == "spec":
-            for path in (args.output, args.output.with_suffix(".report.json")):
+            outputs = [args.output.with_suffix(s) for s in (".json", ".report.json", ".questions.md")]
+            for path in [args.output] + outputs[1:]:
                 if path.exists():
                     raise ValueError(f"{path} exists; write a new versioned spec")
             result, report = extract_spec(read_json(args.dump.read_bytes()), read_json(args.object.read_bytes()),
                                           args.profile)
             write_json(args.output, result.model_dump(exclude_none=True))
-            write_json(args.output.with_suffix(".report.json"), report)
+            write_json(outputs[1], report)
+            if report["questions"]:
+                outputs[2].write_text(questions_markdown(result.id, report["questions"]), encoding="utf-8")
             print(f"Spec: {args.output}; {len(result.floors)} floors, {report['parts']} parts "
-                  f"({report['attachment_parts_ignored']} attachments ignored)")
+                  f"({report['attachment_parts_ignored']} attachments ignored), {len(report['questions'])} questions")
         elif args.command == "registry":
             current = MaterialRegistry.model_validate(read_json(args.current.read_bytes()))
             proposal = MaterialRegistry.model_validate(read_json(args.proposal.read_bytes()))
