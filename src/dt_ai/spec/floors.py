@@ -48,18 +48,36 @@ def _same_openings(a, b, shift, n):
     if len(a) != len(b) or any(not 0 <= o["wall"] < n for o in list(a) + list(b)):
         return False
     edges = [[i for i, x in enumerate(a) if _fits(x, y, (y["wall"] - shift) % n)] for y in b]
-    owner = {}
-
-    def augment(j, seen):
-        for i in edges[j]:
-            if i not in seen:
-                seen.add(i)
-                if i not in owner or augment(owner[i], seen):
-                    owner[i] = j
-                    return True
-        return False
-
-    return all(augment(j, set()) for j in range(len(b)))
+    owner = {}                                      # opening of a -> opening of b
+    for j in range(len(b)):                         # breadth-first augmenting path, no recursion
+        came, queue, free = {}, [j], None
+        seen = set()
+        while queue and free is None:
+            nxt = []
+            for y in queue:
+                for i in edges[y]:
+                    if i in seen:
+                        continue
+                    seen.add(i)
+                    came[i] = y
+                    if i not in owner:
+                        free = i
+                        break
+                    nxt.append(owner[i])
+                if free is not None:
+                    break
+            queue = nxt
+        if free is None:
+            return False
+        i = free
+        while True:                                 # flip the path back to j
+            y = came[i]
+            prev = next((k for k, v in owner.items() if v == y), None)
+            owner[i] = y
+            if y == j:
+                break
+            i = prev
+    return True
 
 
 def _reversed(floor):

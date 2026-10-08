@@ -178,3 +178,14 @@ def test_wall_outside_the_contour_is_rejected():
     bad["floors"][0]["openings"][0]["wall"] = 4
     with pytest.raises(ValueError, match="opening on wall 4, the contour has 4"):
         Spec.model_validate(bad)
+
+
+def test_long_matching_chain_needs_no_recursion():
+    # R3-F1: 1 100 openings whose only complete pairing shifts every one by one place
+    lo_x = [2.0 + 0.015 * j for j in range(1100)]
+    hi_x = [2.0 + 0.015 * j + 0.007 for j in range(1099)] + [1.993]
+    def fl(name, xs):
+        return {"level": name, "contour": [[0, 0], [20, 0], [20, 10], [0, 10]],
+                "openings": [{**OPEN, "x_m": x, "w_m": 0.003} for x in xs]}
+    assert same_floor(fl("L0", lo_x), fl("L1", hi_x), H, H)
+    assert same_floor(fl("L0", lo_x[::-1]), fl("L1", hi_x), H, H)
