@@ -16,9 +16,10 @@ extractor (`dt spec extract`, PR #15), #16 roof confirmed at the input level (PR
 rounded corners, strict full-height contour and questions file (PR #19), #7 openings from holes
 or glass panes and one `jobs/<object>/questions.md` per object (`dt spec merge-questions`, PR #20).
 Each PR had up to three Codex review rounds that ran the tests (`docs/agents/REVIEW_CHECKLIST.md`);
-findings left open by that limit are extractor issues #21-#24. Next: #8 floor classification,
-then #9 KPP1 run (trial: KPP1 v005 needs contour_at_m, and its roof is a separate part from the
-walls, so the roof check stops there). Human tickets: #2 (move `Unreal/`), #4 (window
+findings left open by that limit are extractor issues #21-#24. #8 typical floors written once
+(`typical_of` / `repeat_to`, PR #25) merged with no findings left open. Next: #9 KPP1 run, waiting
+for the user's three Revit-FBX point pairs at 0.000 and the roof covering level (fallback 7.700);
+decision (a) for the separate roof part is in `docs/domain/patterns/parapet.md` (PR #26). Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -99,7 +100,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #8 floor classification → #9 KPP1 run; extractor follow-ups #21-#24 (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 — #9 KPP1 run (after the user's frame points), then #10 Revit extractor; extractor follow-ups #21-#24 (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
