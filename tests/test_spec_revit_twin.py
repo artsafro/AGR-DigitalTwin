@@ -131,19 +131,19 @@ def test_free_curtain_wall_closes_the_facade_line():
     assert contour(spec).area == pytest.approx(100.0, abs=0.05)
 
 
-def box_obj(name, x0, y0, x1, y1, z0, z1):
-    """A closed box as an OBJ object."""
+def box_obj(name, x0, y0, x1, y1, z0, z1, offset=0):
+    """A closed box as an OBJ object; offset = vertices written before it (OBJ indices run over the file)."""
     q = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
     lines = [f"o {name}"] + [f"v {x} {y} {z}" for z in (z0, z1) for x, y in q]
     faces = [(1, 4, 3, 2), (5, 6, 7, 8), (1, 2, 6, 5), (2, 3, 7, 6), (3, 4, 8, 7), (4, 1, 5, 8)]
-    return "\n".join(lines + [f"f {a} {b} {c} {d}" for a, b, c, d in faces]) + "\n"
+    return "\n".join(lines + [f"f {a + offset} {b + offset} {c + offset} {d + offset}" for a, b, c, d in faces]) + "\n"
 
 
 def test_curved_wall_is_its_real_geometry():
     # the south wall flagged curved: read from reference.obj, not refused (PR #35 review 1)
     walls, t = ring()
     walls[0]["curved"] = True
-    obj = roof_obj(t) + box_obj("wall_1", 0.0, 0.0, 10.0, 0.3, 0.0, 7.2)
+    obj = roof_obj(t) + box_obj("wall_1", 0.0, 0.0, 10.0, 0.3, 0.0, 7.2, offset=8)
     dump = to_dump([band(walls)], [obj])
     assert "wall_1_b1" in dump["body"] and "wall_1" not in dump["body"]
     spec, _ = extract_spec(dump, OBJ)
@@ -192,7 +192,7 @@ def test_detached_lining_never_makes_a_roof_hole_a_shaft():
     outer, hole = [(0, 0), (10, 0), (10, 10), (0, 10)], [(4.5, 4.5), (5.5, 4.5), (5.5, 5.5), (4.5, 5.5)]
     roof = ["o roof_20"] + [f"v {x} {y} 6.6" for x, y in outer + hole]
     roof += [f"f {a + 1} {(a + 1) % 4 + 1} {(a + 1) % 4 + 5} {a + 5}" for a in range(4)]   # one surface around the hole
-    lining = box_obj("panel_70", 4.5, 4.5, 5.5, 5.5, 4.85, 5.05)
+    lining = box_obj("panel_70", 4.5, 4.5, 5.5, 5.5, 4.85, 5.05, offset=8)
     with pytest.raises(SpecError, match="not a shaft"):
         extract_spec(to_dump([band(walls)], ["\n".join(roof) + "\n" + lining]), OBJ)
 
