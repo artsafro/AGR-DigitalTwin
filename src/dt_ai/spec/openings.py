@@ -33,6 +33,12 @@ ON_WALL_M = 0.05         # an opening mouth lies within this of its contour wall
 PANE_JOIN_M = 0.15       # glass panes of one frame (gap <= 0.15 m, user decision 2026-10-08, #31) are one opening ...
 PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within the other's; stacked, one's width within
 GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
+LEVEL_JOINT_M = 0.15     # an opening reaching less than this past a level line does not cross it (a frame joint)
+# a door opening: from the storey floor, high and wide enough (user decisions 2026-10-08, #31;
+# the same numbers as mesh.DOOR_*, for through holes)
+DOOR_FLOOR_M = 0.05
+DOOR_MIN_H_M = 1.9
+DOOR_W_M = (0.7, 3.0)
 PANE_WALL_M = 1.0        # a pane further than this from its contour wall is not an opening
 MATCH_M = 0.05           # hole and glass, or recess and opening, within 5 cm are one place
 
@@ -332,6 +338,22 @@ def _kind(o):
     return "door" if o.get("door") else ("window" if o.get("glass_z") else None)
 
 
+def _door_size(o, elev):
+    """A through opening from the storey floor with a door's height and width."""
+    return (o["z0"] - elev <= DOOR_FLOOR_M and o["z1"] - o["z0"] >= DOOR_MIN_H_M - 1e-6
+            and DOOR_W_M[0] - 1e-6 <= o["x1"] - o["x0"] <= DOOR_W_M[1] + 1e-6)
+
+
+def _join_material(a, b):
+    """Material evidence of two parts of one opening: one id kept, two different ids or a conflict
+    on either side give no id and plane_conflict (PR #33 review 2)."""
+    ids = {o["material_id"] for o in (a, b) if o.get("material_id") is not None}
+    if a.get("plane_conflict") or b.get("plane_conflict") or len(ids) > 1:
+        a["material_id"], a["plane_conflict"] = None, True
+    elif ids:
+        a["material_id"] = ids.pop()
+
+
 def _world(o, contour):
     pts = np.array([q[:2] for q in contour], dtype=float)
     a = pts[o["wall"]]
@@ -365,6 +387,7 @@ def _across_levels(by_level, levels, floors):
                 rects = [(r["x0"], r["x1"], r["z0"], r["z1"]) for r in (lower, upper)]
                 if not _covered(rects, box):
                     continue
+                _join_material(low, up)
                 low.update(x0=low["x0"] + box[0], x1=low["x0"] + box[1], z1=box[3], depth=max(low["depth"], up["depth"]),
                            parts=low.get("parts", 0) + up.get("parts", 0),
                            glass_z=low.get("glass_z", []) + up.get("glass_z", []),
@@ -372,6 +395,29 @@ def _across_levels(by_level, levels, floors):
                            source=low["source"] if low["source"] == up["source"] else "hole+glass")
                 by_level[li + 1].remove(up)
                 break
+
+
+def _owners(by_level, levels, floors):
+    """Every opening belongs to the floor of its bottom and records the highest level it crosses,
+    from its whole height: one pane through a level line is one record too (PR #33 review 2).
+    A record moved down is re-measured on the lower floor's contour wall."""
+    top_floor = len(floors) - 1
+    for li in range(len(by_level)):
+        for o in list(by_level[li]):
+            owner = max([k for k in range(top_floor + 1) if levels[k]["elev_m"] <= o["z0"] + LEVEL_JOINT_M] or [0])
+            last = max([k for k in range(top_floor + 1) if levels[k]["elev_m"] < o["z1"] - LEVEL_JOINT_M] or [0])
+            if owner < li:
+                p0, p1, _ = _world(o, floors[li]["contour"])
+                w, a, u, _ = _wall_frame(floors[owner]["contour"], (p0 + p1) / 2, float(np.linalg.norm(p1 - p0)) / 2)
+                x0, x1 = sorted(float((q - a) @ u) for q in (p0, p1))
+                o.update(wall=w, x0=x0, x1=x1, level=owner)
+                by_level[li].remove(o)
+                by_level[owner].append(o)
+            last = max(last, o.get("level_to", owner))
+            if last > owner:
+                o["level_to"] = last
+            else:
+                o.pop("level_to", None)
 
 
 def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None):
@@ -390,6 +436,8 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
     by_level, breaks = [], []
     for li, floor in enumerate(floors):
         holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"], polys[li])
+        for h in holes:                          # a through hole of a door's size is a door (#31)
+            h["door"] = _door_size(h, levels[li]["elev_m"])
         holes += _door_items((doors or [[]] * len(floors))[li], li, floor["contour"])
         breaks.extend({**b, "level": li} for b in off)
         for g in [g for g in glass if g["level"] == li]:
@@ -409,6 +457,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                 h["plane_conflict"] = len(ids) > 0
         by_level.append(holes)
     _across_levels(by_level, levels, floors)
+    _owners(by_level, levels, floors)
     per_floor, footprints = [], []
     for li, (floor, holes) in enumerate(zip(floors, by_level)):
         elev = levels[li]["elev_m"]
