@@ -160,12 +160,16 @@ def test_revit_window_in_a_wall_is_glazed_with_unknown_glass():
 
 
 
-@pytest.mark.parametrize("upper_reveal", [False, True])
-def test_frame_across_a_level_keeps_the_size_question_of_either_part(upper_reveal):
-    # PR #39 review 2: a reveal below and glass above against a closed wall (or the reverse): one record,
-    # and its size stays a question
-    boxes = [(0, 2.0, 3.2, 3.3, 4.6, -0.26)] if upper_reveal else [(0, 2.0, 3.2, 1.2, 3.3, -0.26)]
-    spec, report = extract_spec(building(boxes=boxes, extra=[pane("glass", 2.13, 3.07, 1.32, 3.2, y=0.2),
-                                                             pane("glass2", 2.13, 3.07, 3.32, 4.48, y=0.2)]),
-                                at(L0=0.5, L1=5.0))
-    assert "opening-size-unknown" in [q["kind"] for q in report["questions"]]
+@pytest.mark.parametrize("case", ["upper glass on a closed wall", "lower glass on a closed wall, upper hole"])
+def test_frame_across_a_level_keeps_the_size_question_of_either_part(case):
+    # PR #39 reviews 2-3: the two parts join into one record across L1 and the size question stays
+    if case == "upper glass on a closed wall":
+        boxes, panes = [(0, 2.0, 3.2, 1.2, 3.3, -0.26)], [pane("glass", 2.0, 3.2, 1.32, 3.2, y=0.2),
+                                                          pane("glass2", 2.0, 3.2, 3.32, 4.48, y=0.0)]
+    else:
+        boxes, panes = [(0, 2.0, 3.2, 3.3, 4.6, 0.0)], [pane("glass", 2.0, 3.2, 1.32, 3.2, y=0.0),
+                                                        pane("glass2", 2.0, 3.2, 3.32, 4.48, y=0.1)]
+    spec, report = extract_spec(building(boxes=boxes, extra=panes), at(L0=0.5, L1=5.0))
+    floors = spec.expanded_floors()
+    assert [o.level_to for o in floors[0].openings] == ["L1"] and floors[1].openings == []
+    assert [q["kind"] for q in report["questions"]].count("opening-size-unknown") == 1
