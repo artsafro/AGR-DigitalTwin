@@ -41,12 +41,47 @@ def test_tall_recess_with_a_short_window_is_no_frame():
     spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.2, 2.8, -0.2)],
                                          extra=[pane("Glass", 2.0, 3.5, 1.0, 1.2, y=0.2)]), at(L0=0.1))
     assert ops(spec) == [(2.0, 1.0, 1.5, 0.2, 1.5, 0.2, 1, None)] and report["openings"]["rough_from_reveal"] == 0
-    assert [q["kind"] for q in report["questions"]] == ["recess"]
+    assert sorted(q["kind"] for q in report["questions"]) == ["opening-size-unknown", "recess"]
 
 
-def test_glass_without_a_reveal_is_its_own_size():
+def test_glass_without_a_reveal_is_a_question_about_its_size():
+    # the body closed over the window (VPM type): the glass places the opening, its size is a question (#36)
     spec, report = extract_spec(building(extra=[pane("glass", 2.0, 3.5, 1.32, 2.7, y=0.15)]), at())
     assert ops(spec) == [(2.0, 1.32, 1.5, 1.38, 1.5, 1.38, 1, None)] and report["openings"]["rough_from_reveal"] == 0
+    assert [q["kind"] for q in report["questions"]] == ["opening-size-unknown"]
+
+
+def test_l_shaped_reveal_with_l_shaped_panes_is_no_rectangle():
+    # PR #39 review 1 (F5): recess x 2-4 / z 1-2 plus x 2-3 / z 2-3 with matching panes: no 2 x 2 m opening
+    spec, _ = extract_spec(building(boxes=[(0, 2.0, 4.0, 1.0, 2.0, -0.26), (0, 2.0, 3.0, 2.0, 3.0, -0.26)],
+                                    extra=[pane("glass", 2.1, 3.9, 1.1, 1.9, y=0.2), pane("glass2", 2.1, 2.9, 2.1, 2.9, y=0.2)]),
+                           at(L0=0.5))
+    o = spec.expanded_floors()[0].openings
+    assert not any(x.x_m <= 3.5 < x.x_m + x.w_m and x.sill_m <= 2.5 < x.sill_m + x.h_m for x in o)
+
+
+def test_reveal_to_the_storey_top_without_glass_above_is_no_frame():
+    # PR #39 review 1 (F6): recess z 1.2-3.3 (the storey top), glass 1.32-1.52 only: the recess stays a question
+    spec, report = extract_spec(building(boxes=[(0, 2.0, 3.2, 1.2, 3.3, -0.26)],
+                                         extra=[pane("glass", 2.13, 3.07, 1.32, 1.52, y=0.2)]), at(L0=0.5, L1=5.0))
+    assert report["openings"]["rough_from_reveal"] == 0 and "recess" in [q["kind"] for q in report["questions"]]
+
+
+def test_equal_height_reveals_do_not_crash():
+    # PR #39 review 1: two recesses with the same heights, panes 0.15 m apart
+    spec, _ = extract_spec(building(boxes=[(0, 2.0, 2.8, 1.0, 2.5, -0.26), (0, 2.9, 3.7, 1.0, 2.5, -0.26)],
+                                    extra=[pane("glass", 2.05, 2.75, 1.05, 2.45, y=0.2), pane("glass2", 2.95, 3.65, 1.05, 2.45, y=0.2)]),
+                           at(L0=0.5))
+    assert len(spec.expanded_floors()[0].openings) >= 1
+
+
+def test_deep_reveal_across_a_level_keeps_its_depth():
+    # PR #39 review 1: a 0.6 m reveal z 1.2-4.6 with panes on both sides of the L1 line
+    spec, _ = extract_spec(building(boxes=[(0, 2.0, 3.2, 1.2, 4.6, -0.6)],
+                                    extra=[pane("glass", 2.13, 3.07, 1.32, 3.2, y=0.55),
+                                           pane("glass2", 2.13, 3.07, 3.32, 4.48, y=0.55)]), at(L0=0.5, L1=5.0))
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.level_to == "L1" and o.depth_m == pytest.approx(0.6, abs=0.01)
 
 
 def test_reveal_cut_by_the_level_goes_on_above():
@@ -103,7 +138,22 @@ def test_b01_example_is_spec_v03_and_matches_harness_plan():
 
 
 def test_v02_spec_still_needs_its_depth():
+    # PR #39 review 1 (P3): a valid v0.2 control with depth, then the same without it
     doc = json.loads((ROOT / "tests" / "fixtures" / "spec-b01-v0.3.json").read_text(encoding="utf-8"))
     doc["spec_version"] = "0.2"
-    with pytest.raises(ValueError):
+    o = doc["floors"][0]["openings"][0]
+    del o["glass_w"], o["glass_h"]
+    Spec.model_validate({**doc, "floors": [{**doc["floors"][0], "openings": [{**o, "depth_m": 0.2}]}, doc["floors"][1]]})
+    with pytest.raises(ValueError, match="every opening has depth_m"):
         Spec.model_validate(doc)
+
+
+def test_revit_window_in_a_wall_is_glazed_with_unknown_glass():
+    walls, t = ring()
+    win = {"id": 95, "kind": "window", "hostId": 1, "materials": [2], "hand": [1, 0, 0], "width": 1.2, "height": 1.5,
+           "point": [4.6, 0.15, 0.0], "bboxMin": [4.0, 0.0, 0.9], "bboxMax": [5.2, 0.3, 2.4]}
+    dump = to_dump([{**band(walls, [win]), "materials": GLASS}], [roof_obj(t)])
+    assert dump["windows_glass_unknown"] == 1
+    spec, _ = extract_spec(dump, OBJ)
+    (o,) = spec.expanded_floors()[0].openings
+    assert (o.kind, o.source, o.panes, o.glass_w, o.w_m) == ("window", "hole+glass", 1, None, 1.2)

@@ -2,11 +2,12 @@
 
 Date 2026-10-09. Tool: `uv run dt spec compare`; thresholds, reference sides and the verdict in
 `benchmark/bench-k01-kpp1/tolerances.json` (verdict enabled since #29). Local outputs:
-`jobs/KPP1/outputs/spec-compare-v018/`. Previous: `spec-compare-v002.md` (no match on openings only).
+`jobs/KPP1/outputs/spec-compare-v019/` (after Codex review 1 of PR #39; v018 before it, same result).
+Previous: `spec-compare-v002.md` (no match on openings only).
 
 - a = Revit path (`revit-twin`, walls on their location lines, #29): `outputs/revit-twin-v003/`
-  (TwinPack export, Revit 2025, document unmodified), spec `spec-revit-twin-v011.json`.
-- b = mesh path (Blender sections of VPM v005 `SM_Kpp_1.fbx`): `outputs/spec-v016/spec-v016.json`.
+  (TwinPack export, Revit 2025, document unmodified), spec `spec-revit-twin-v012.json`.
+- b = mesh path (Blender sections of VPM v005 `SM_Kpp_1.fbx`): `outputs/spec-v017/spec-v017.json`.
 - Both spec v0.3 (user decision 2026-10-08): the opening is the hole in the wall with its frame;
   glass is `glass_w` / `glass_h` and `panes`; `depth_m` only as an exception to
   `opening_depth_default_m` (0.2 m; no exception on KPP1).
@@ -31,7 +32,8 @@ z 1.2-6.65, 4 panes); L1 holds 10 windows and 1 door.
 
 - **Same definition.** v002 compared the Revit window family box (1.08 x 1.70) with the mesh glass
   (0.94 x 1.56). In v0.3 both give the hole with its frame: the mesh path reads the reveal of the
-  body around the glass (the recess pieces it touches, 18 openings on KPP1); the Revit path reads
+  body around the glass (the recess pieces it touches, when the glass covers it up to a 0.20 m
+  frame — the author's rule; 22 glass groups on KPP1, no opening left without a reveal); the Revit path reads
   the window frame wall (a curtain-function wall `ADSK_Стена для окна_рамка 50x100` hosting the
   window: its line and heights) or the embedded curtain wall. Example, south L0: mesh reveal
   x 18.395-19.57, z 1.2-3.0; Revit frame wall line 18.395-19.575, z 1.2-3.0.
@@ -46,4 +48,6 @@ z 1.2-6.65, 4 panes); L1 holds 10 windows and 1 door.
   openings on the Revit path; the mesh path has no element there either. HARNESS_PLAN §3 lists
   vent grilles among inset elements — how to carry them is open.
 - `glass_w` / `glass_h` are not a comparison criterion (Revit: family / panel extents; mesh: panes).
-- Questions: Revit 9 (attachments: vestibules, canopies); mesh 25.
+- Questions: Revit 9 (attachments: vestibules, canopies); mesh 25 (projections).
+- Depth: no KPP1 opening carries `depth_m`, so the pair boxes compare the default depth on both
+  sides; reveal depth agreement is not shown by this comparison.

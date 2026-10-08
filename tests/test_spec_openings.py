@@ -207,7 +207,8 @@ def test_tall_recess_with_a_short_window_stays_a_question():
     spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.2, 2.8, -0.2)],
                                          extra=[pane("Glass", 2.0, 3.5, 1.0, 1.2, y=0.2)]), at(L0=0.1))
     assert [o[6] for o in openings(spec)] == ["glass"]
-    assert [q["kind"] for q in report["questions"]] == ["recess"]
+    # v0.3 (#36): the recess is no frame, so the opening's size is a question too
+    assert sorted(q["kind"] for q in report["questions"]) == ["opening-size-unknown", "recess"]
 
 
 def test_opening_plane_keeps_the_hole_anchor_and_gives_its_material_id():

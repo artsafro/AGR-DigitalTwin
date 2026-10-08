@@ -195,7 +195,7 @@ Open: which opening size the spec uses (rough opening or glass) — user decisio
 ## Spec v0.3 and comparison v003: two paths match (issue #36, 2026-10-09)
 
 Opening = hole with frame, glass as attributes (user decision 2026-10-08). Revit spec
-`outputs/revit-twin-v003/spec-revit-twin-v011.json`, mesh spec `outputs/spec-v016/spec-v016.json`:
+`outputs/revit-twin-v003/spec-revit-twin-v012.json`, mesh spec `outputs/spec-v017/spec-v017.json`:
 `dt spec compare` verdict **match** (`spec-compare-v003.md`): levels, roof, parapet ≤ 2 mm, contours
 0.0 mm, openings 21 + 11 pairs within 0.005 m. Recorded in `docs/cases.md` as the first case where
 the two paths agree. Open: vent grilles (no openings yet), attachment questions.

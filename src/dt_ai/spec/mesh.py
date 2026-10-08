@@ -918,7 +918,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
             g0, g1 = _apply(m, [[g[0], g[1], g[4]], [g[2], g[3], g[5]]])
             glass.append((float(g0[0]), float(g0[1]), float(g1[0]), float(g1[1]), float(g0[2]), float(g1[2])))
         sources[li].append({"p0": q0[:2], "p1": q1[:2], "z0": float(q0[2]), "z1": float(q1[2]), "depth": d["depth"],
-                            "kind": d["kind"], "glass": glass, "panes": d.get("panes")})
+                            "kind": d["kind"], "glass": glass, "panes": d.get("panes"), "glazed": d.get("glazed")})
     recesses = [[pc for pc in pcs if pc["kind"] == "recess"] for pcs in pieces]
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
                                                               _planes(v, plane_tris), doors, recesses, sources,

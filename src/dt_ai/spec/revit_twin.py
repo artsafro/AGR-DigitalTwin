@@ -227,7 +227,8 @@ def _openings(bands, walls, attached, clear_by_band):
                 z0, z1 = o["bboxMin"][2], o["bboxMax"][2]
             out.append({"revit_id": o["id"], "kind": o["kind"], "p0": [x0, y0], "p1": [x1, y1], "z0": z0, "z1": z1,
                         "depth": host["thickness"], "host_thickness": host["thickness"], "glass": [],
-                        "panes": 1 if glazed and o["kind"] == "window" else None})
+                        # a window in a wall: glazed, but the export gives no glass extent (counted)
+                        "glazed": glazed and o["kind"] == "window", "panes": 1 if glazed and o["kind"] == "window" else None})
     for i, glass in glass_of.items():
         w = walls[i]
         if w.get("function") != "curtain" or i in attached:
@@ -332,7 +333,8 @@ def to_dump(bands, objs, document=None):
                           "heights_m": [round(min(w["bboxMin"][2] for w in ws), 3), round(max(w["bboxMax"][2] for w in ws), 3)],
                           "at": [round(c.x, 2), round(c.y, 2)], "revit_ids": sorted(g["ids"])})
     return {"source": "revit", "document": document, "units": "m", "meshes": meshes, "helpers": [], "body": body,
-            "openings": openings, "grilles_not_openings": grilles, "questions": questions}
+            "openings": openings, "grilles_not_openings": grilles,
+            "windows_glass_unknown": sum(1 for o in openings if o.get("glazed")), "questions": questions}
 
 
 def load(index_path):

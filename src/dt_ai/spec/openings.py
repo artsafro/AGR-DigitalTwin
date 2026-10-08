@@ -33,7 +33,6 @@ ON_WALL_M = 0.05         # an opening mouth lies within this of its contour wall
 PANE_JOIN_M = 0.15       # glass panes of one frame (gap <= 0.15 m, user decision 2026-10-08, #31) are one opening ...
 PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within the other's; stacked, one's width within
 DEPTH_EXCEPTION_M = 0.10  # a measured depth further than this from the spec default is written (#36)
-EVENT_M = 0.001           # heights closer than this are one height
 GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
 LEVEL_JOINT_M = 0.15     # an opening reaching less than this past a level line does not cross it (a frame joint)
 # a door opening: from the storey floor, high and wide enough (user decisions 2026-10-08, #31;
@@ -447,7 +446,7 @@ def _reveal(o, recesses, contour):
     foot = Polygon([p0 - u * MATCH_M - n * MATCH_M, p1 + u * MATCH_M - n * MATCH_M,
                     p1 + u * MATCH_M + n * (o["depth"] + MATCH_M), p0 - u * MATCH_M + n * (o["depth"] + MATCH_M)])
     near = [r for r in recesses if r["geom"].intersects(foot) and r["geom"].intersection(foot).area > 1e-6]
-    spans = sorted((a, b, r) for r in near for a, b in r["spans"])
+    spans = sorted(((a, b, r) for r in near for a, b in r["spans"]), key=lambda t: (t[0], t[1]))
     runs = []
     for a, b, r in spans:
         if runs and a <= runs[-1]["z1"] + 1e-6:
@@ -468,23 +467,31 @@ def _reveal(o, recesses, contour):
     return x0, x1, min(run["z0"], o["z0"]), max(run["z1"], o["z1"]), depth
 
 
-def _fills(rough, rects, storey=None):
-    """The glass of one reveal fills it up to a frame: no stretch without glass longer than
-    GLASS_FRAME_M across or along it (PR #20 F6: a tall recess with a short window is no frame).
-    A reveal cut by its storey's floor or top goes on in the next storey: that end is not checked."""
+def _fills(rough, rects):
+    """Glass fills the reveal up to a frame: the rectangle of the reveal (x0, x1, z0, z1) is covered
+    by the glass rectangles on its wall, each grown by GLASS_FRAME_M — jointly, not axis by axis, so an
+    L-shaped set of panes never makes a rectangle over solid wall (PR #20 F5, PR #39 review 1), and a
+    tall recess with a short window is no frame (F6). The glass may belong to any level (a frame
+    through a level line)."""
     x0, x1, z0, z1 = rough[:4]
-    s0, s1 = storey if storey else (None, None)
-    for lo, hi, ranges, axis in ((x0, x1, [(a, b) for a, b, _, _ in rects], "x"), (z0, z1, [(c, d) for _, _, c, d in rects], "z")):
-        open_lo = axis == "z" and s0 is not None and lo <= s0 + EVENT_M
-        open_hi = axis == "z" and s1 is not None and hi >= s1 - EVENT_M
-        top = lo
-        for a, b in sorted(ranges):
-            if a - top > GLASS_FRAME_M and not (open_lo and top == lo):
-                return False
-            top = max(top, b)
-        if hi - top > GLASS_FRAME_M and not open_hi:
-            return False
-    return True
+    g = GLASS_FRAME_M + 1e-6
+    cover = shapely.unary_union([shapely.box(a - g, c - g, b_ + g, d + g) for a, b_, c, d in rects]) if rects else Polygon()
+    return shapely.box(x0, z0, x1, z1).difference(cover).area < 1e-6
+
+
+def _glass_on_wall(o, contour, glass):
+    """Every glass rectangle on the wall line of o, from all glass groups, in o's wall frame."""
+    a, _, u = _span_world(contour, o["wall"], 0.0, 1.0)
+    n = _inward(contour, u)
+    out = []
+    for g in glass:
+        for x0w, y0w, x1w, y1w, z0, z1 in g["glass_world"]:
+            p0, p1 = np.array([x0w, y0w]), np.array([x1w, y1w])
+            if max(abs(float((q - a) @ n)) for q in (p0, p1)) > PANE_WALL_M:
+                continue
+            t0, t1 = sorted(float((q - a) @ u) for q in (p0, p1))
+            out.append((t0, t1, z0, z1))
+    return out
 
 
 def _source_items(items, li, contour):
@@ -495,7 +502,8 @@ def _source_items(items, li, contour):
         w, a, u, _ = _wall_frame(contour, (q0 + q1) / 2, float(np.linalg.norm(q1 - q0)) / 2)
         x0, x1 = sorted(float((q - a) @ u) for q in (q0, q1))
         out.append({"level": li, "wall": w, "x0": x0, "x1": x1, "z0": d["z0"], "z1": d["z1"], "depth": d["depth"],
-                    "source": "hole+glass" if d.get("glass") else "hole", "kind_fixed": d["kind"],
+                    "source": "hole+glass" if (d.get("glass") or d.get("glazed")) else "hole", "kind_fixed": d["kind"],
+                    "glazed": bool(d.get("glazed")),
                     "parts": d.get("panes") or 0, "glass_world": [tuple(g) for g in d.get("glass", [])],
                     "glass_z": [(g[2], g[3]) for g in d.get("glass", [])], "door": d["kind"] == "door"})
     return out
@@ -517,12 +525,16 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         g["glass_world"] = [(*_span_world(contour, g["wall"], x0, x1)[0], *_span_world(contour, g["wall"], x0, x1)[1], z0, z1)
                             for x0, x1, z0, z1 in g["rects"]]
         g["rough"] = _reveal(g, (recesses or [[]] * len(floors))[g["level"]], contour)
-    glass = _join_same_reveal(glass)
+    for g in glass:                              # a reveal counts only when glass fills it up to a frame
+        if g.get("rough") is not None and not _fills(g["rough"], _glass_on_wall(g, floors[g["level"]]["contour"], glass)):
+            g["rough"] = None
+    glass = _join_same_reveal(glass)             # so only panes of an accepted reveal are joined (PR #39 review 1)
     for g in glass:                              # the opening is the hole with its frame, not the glass
-        storey = (levels[g["level"]]["elev_m"], levels[g["level"] + 1]["elev_m"])
-        if g.get("rough") is not None and _fills(g["rough"], g["rects"], storey):
+        if g.get("rough") is not None:
             g["x0"], g["x1"], g["z0"], g["z1"], g["depth"] = g["rough"]
             rough_from_reveal += 1
+        else:
+            g["no_reveal"] = True                # size unknown: the glass stands in, and a question asks (#36)
     plane_items, planes_skipped = [], 0
     for pts, normal, mid in planes:
         items, skipped = _project([(pts, normal)], levels, floors, polys, "plane")
@@ -561,6 +573,11 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         by_level.append(holes)
     _across_levels(by_level, levels, floors)
     _owners(by_level, levels, floors)
+    for li, holes in enumerate(by_level):        # a glass opening without a reveal: its size is a question
+        for o in holes:
+            if o.get("no_reveal") and o["source"] == "glass":
+                p0, p1, _ = _world(o, floors[li]["contour"])
+                breaks.append({"kind": "opening-size-unknown", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
     per_floor, footprints = [], []
     for li, (floor, holes) in enumerate(zip(floors, by_level)):
         elev = levels[li]["elev_m"]
@@ -571,9 +588,10 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                     "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
                     "window_type": None, "source": o["source"],
                     "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False),
-                    "kind": o.get("kind_fixed") or _kind(o), "panes": (o.get("parts") or None) if o.get("glass_z") else None,
+                    "kind": o.get("kind_fixed") or _kind(o),
+                    "panes": (o.get("parts") or None) if (o.get("glass_z") or o.get("glazed")) else None,
                     **_glass_size(o, floor["contour"])}
-            if "kind_fixed" not in o and abs(o["depth"] - depth_default) > DEPTH_EXCEPTION_M:
+            if not o.get("kind_fixed") and abs(o["depth"] - depth_default) > DEPTH_EXCEPTION_M:
                 item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
@@ -589,6 +607,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         per_floor.append(items)
     report = {"glass_openings": len(glass), "glass_parts_skipped": glass_skipped,
               "rough_from_reveal": rough_from_reveal,
+              "openings_size_unknown": sum(1 for b in breaks if b["kind"] == "opening-size-unknown"),
               "source_openings": sum(len(x) for x in (sources or [])),
               "door_openings": sum(1 for f in per_floor for o in f if o["kind"] == "door"),
               "openings_across_levels": sum(1 for f in per_floor for o in f if o.get("level_to")),
@@ -641,7 +660,8 @@ def break_questions(breaks, levels):
     out = []
     for b in breaks:
         mid = (b["p"] + b["q"]) / 2
-        out.append({"priority": "high", "kind": b["kind"], "levels": [levels[b["level"]]["name"]], "wall": None,
+        out.append({"priority": "normal" if b["kind"] == "opening-size-unknown" else "high",
+                    "kind": b["kind"], "levels": [levels[b["level"]]["name"]], "wall": None,
                     "depth_m": None, "length_m": round(float(np.linalg.norm(b["p"] - b["q"])), 3),
                     "facade_share": None, "heights_m": [round(b["z0"], 3), round(b["z1"], 3)],
                     "at": [round(float(mid[0]), 2), round(float(mid[1]), 2)]})
