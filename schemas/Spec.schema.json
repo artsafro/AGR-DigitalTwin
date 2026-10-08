@@ -143,6 +143,18 @@
           "title": "H M",
           "type": "number"
         },
+        "material_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material Id"
+        },
         "sill_m": {
           "title": "Sill M",
           "type": "number"

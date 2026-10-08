@@ -121,14 +121,29 @@ def _weld(v):
     return rep
 
 
-def _mesh(dump, m):
-    """All non-collision triangles in object coordinates, vertices welded by position."""
-    verts, tris, base = [], [], 0
+def _opening_ids():
+    """Material ids of the `opening` group (standards/material_id_ranges.yaml, ADR 0001)."""
+    from functools import lru_cache
+
+    @lru_cache(maxsize=1)
+    def load():
+        import yaml
+        from dt_ai.core.io import repo_root
+        g = yaml.safe_load((repo_root() / "standards/material_id_ranges.yaml").read_text(encoding="utf-8"))
+        return frozenset(range(g["groups"]["opening"]["first"], g["groups"]["opening"]["last"] + 1))
+    return load()
+
+
+def _mesh(dump, m, with_materials=False):
+    """All non-collision triangles in object coordinates, vertices welded by position. With
+    with_materials, also the material id per triangle (0 when the dump has none)."""
+    verts, tris, mats, base = [], [], [], 0
     for mesh in dump["meshes"]:
         if mesh["name"].upper().startswith("UCX_") or not mesh["triangles"]:
             continue
         verts.append(_apply(m, mesh["vertices"]))
         tris.append(np.asarray(mesh["triangles"], dtype=np.int64) + base)
+        mats.append(np.asarray(mesh.get("material_ids") or [0] * len(mesh["triangles"]), dtype=np.int64))
         base += len(mesh["vertices"])
     if not tris:
         raise SpecError("the source holds no mesh triangles")
@@ -138,7 +153,7 @@ def _mesh(dump, m):
     t = inverse.ravel()[np.vstack(tris)]
     if np.linalg.det(m[:3, :3]) < 0:  # a mirroring frame flips facing; restore outward normals
         t = t[:, ::-1]
-    return v[used], t
+    return (v[used], t, np.concatenate(mats)) if with_materials else (v[used], t)
 
 
 def _areas(v, tris):
@@ -349,10 +364,10 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
             bins[k].append(i)
     closed, mouth_spans = [], []
     for a, b, z in spans:          # wall breaks are bridged as openings, so they do not open the section
-        poly, mouths = op.close_section(_section(None, None, z, p[bins[int(np.floor(z / BIN_M))]]))
+        poly, mouths, unresolved = op.close_section(_section(None, None, z, p[bins[int(np.floor(z / BIN_M))]]))
+        mouth_spans.append((a, b, mouths, unresolved))
         if poly is not None:
             closed.append((a, b, poly))
-            mouth_spans.append((a, b, mouths))
     if not closed:
         raise SpecError(f"level {name}: none of {len(spans)} body sections between {z0} and {z1} m "
                         "closes; the contour is not invented (ask the user, HARNESS_PLAN §7 gray zone)")
@@ -388,7 +403,7 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
     # every other shape is not over the full height -> questions
-    report["bridged_sections"] = sum(1 for _, _, m in mouth_spans if m)
+    report["bridged_sections"] = sum(1 for _, _, m, _ in mouth_spans if m)
     return base["poly"], report, _deviations([g for g in groups if g is not base], base["poly"]), mouth_spans
 
 
@@ -548,14 +563,29 @@ def _glass(dump, m):
     if not glass["meshes"]:
         return [], 0
     v, t = _mesh(glass, m)
-    return op.glass_panes(v, t, _parts(v, t))
+    return op.vertical_parts(v, t, _parts(v, t))
+
+
+def _planes(v, tris):
+    """Vertical opening planes (faces with an opening material id), each with its material id."""
+    if not len(tris):
+        return []
+    parts, _ = op.vertical_parts(v, tris[:, :3], _parts(v, tris[:, :3]))
+    ids = tris[:, 3]
+    out = []
+    for part, (pts, normal) in zip(_parts(v, tris[:, :3]), parts):
+        out.append((pts, normal, int(np.bincount(ids[part]).argmax())))
+    return out
 
 
 def extract_spec(dump, obj_cfg, profile="npm_min"):
     """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json."""
     m = _matrix(obj_cfg)
     levels = _levels(dump, obj_cfg, m)
-    v, tris = _mesh(dump, m)
+    v, tris, mats = _mesh(dump, m, with_materials=True)
+    plane = np.isin(mats, list(_opening_ids()))        # opening planes are not body: the hole stays the anchor
+    plane_tris = np.column_stack([tris[plane], mats[plane]])
+    tris = tris[~plane]
     parts = _parts(v, tris)
     body = tris[parts[0]]
     report = {"parts": len(parts), "body_triangles": int(len(body)),
@@ -572,7 +602,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         polys.append(poly)
         pieces.append(dev)
     panes, flat_glass = _glass(dump, m)
-    per_floor, footprints, glass_report = op.assemble(levels, floors, polys, mouths, panes)
+    per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
+                                                              _planes(v, plane_tris))
     cleared = 0
     for li, floor in enumerate(floors):
         floor["openings"] = per_floor[li]
@@ -581,7 +612,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         pieces[li] = kept
     report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
-    report["questions"] = _questions(levels, floors, polys, pieces)
+    questions = _questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels)
+    names = [lv["name"] for lv in levels]
+    questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
+    for n, q in enumerate(questions, 1):
+        q["n"] = n
+    report["questions"] = questions
     roof_z, top_z, closed = _roof(v, body, levels[-2], levels[-1], polys[-1])
     report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],

@@ -39,6 +39,8 @@ class Opening(SpecPart):
     window_type: int | None = None
     # anchor that found it (user decision 2026-10-08, #7): a hole in the body, a glass pane, or both
     source: Literal["hole", "glass", "hole+glass"] | None = None
+    # material id of an opening plane in it (group `opening`, ADR 0001); not the window type
+    material_id: int | None = None
 
 
 class Floor(SpecPart):

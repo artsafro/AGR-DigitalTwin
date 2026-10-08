@@ -124,3 +124,109 @@ def test_widest_bridged_gap_is_8_m(width, found):
     assert close(spec.floors[0].contour, contour)
     assert [o[3] for o in openings(spec)] == ([pytest.approx(width)] if found else [])
     assert (report["floors"]["L0"]["closed_sections"] < report["floors"]["L0"]["sections"]) != found
+
+
+# --- regressions from Codex review 1 of PR #20 -------------------------------------------------
+
+from dt_ai.spec import SpecError, mesh as spec_mesh  # noqa: E402
+from dt_ai.spec import openings as op  # noqa: E402
+
+
+def test_inner_wall_break_is_a_question_not_a_facade_opening():
+    # F1: inner wall pieces at y 5 with an 8 m gap; the south facade is intact
+    b = Mesh("Body")
+    contour = [(0, 0), (20, 0), (20, 10), (0, 10)]
+    walls(b, contour, 0, 6.6, extra_u={1: [5], 3: [5]}, extra_z=[0.9, 2.4])
+    for x0, x1 in [(0, 4), (12, 20)]:
+        b.quad((x0, 5, 0.9), (x1, 5, 0.9), (x1, 5, 2.4), (x0, 5, 2.4))
+    flat(b, Polygon(contour), 6.6, up=True)
+    flat(b, Polygon(contour), 0.0, up=False)
+    spec, report = extract_spec(dump_of(b), OBJECT)
+    assert openings(spec) == []
+    assert [q["kind"] for q in report["questions"]] == ["wall-break-off-contour"]
+
+
+def test_courtyard_opening_is_not_moved_to_the_facade(monkeypatch):
+    # F1: a hole in a courtyard wall cannot be a facade opening of the outer contour
+    monkeypatch.setattr(spec_mesh, "_roof", lambda *a, **k: (6.6, 6.6, 1.0))
+    outer, inner = [(0, 0), (20, 0), (20, 20), (0, 20)], [(5, 5), (15, 5), (15, 15), (5, 15)]
+    b = Mesh("Body")
+    walls(b, outer, 0, 6.6)
+    walls(b, inner, 0, 6.6, [(0, 3, 5, 0.9, 2.4, 0.0)])
+    ring = Polygon(outer, [inner])
+    flat(b, ring, 0.0, up=False)
+    flat(b, ring, 6.6, up=True)
+    spec, report = extract_spec(dump_of(b), OBJECT)
+    assert openings(spec) == []
+    assert "wall-break-off-contour" in [q["kind"] for q in report["questions"]]
+
+
+def chamfered(depth_leg):
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 6.6, [(0, 2.0, 3.5, 0.9, 2.4, 0.0)])
+    for path in [[(2, 0), (2.1, 0.1), (2.1, 0.1 + depth_leg)], [(3.5, 0), (3.4, 0.1), (3.4, 0.1 + depth_leg)]]:
+        for a, c in zip(path, path[1:]):
+            b.quad((*a, 0.9), (*c, 0.9), (*c, 2.4), (*a, 2.4))
+    flat(b, Polygon(SQUARE10), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    return dump_of(b)
+
+
+@pytest.mark.parametrize("leg, depth", [(0.2, 0.3), (1.1, 1.2)])
+def test_chamfered_and_deep_reveals_are_openings(leg, depth):
+    # F2: 0.1 m 45 degree chamfer, then a straight leg; also a 1.2 m deep reveal
+    spec, report = extract_spec(chamfered(leg), OBJECT)
+    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, depth, "hole")]
+    assert report["questions"] == []
+
+
+def test_stacked_holes_keep_their_own_width():
+    # F3: 1.500 m below, 1.518 m above
+    spec, _ = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.6, 1.2, 0.0), (0, 2.0, 3.518, 1.8, 2.6, 0.0)]), OBJECT)
+    assert [o[3] for o in openings(spec)] == [1.5, 1.518]
+
+
+def test_pane_not_parallel_to_its_wall_is_skipped():
+    # F4: an inner pane square to the south wall must not abort the extraction
+    g = Mesh("Glass")
+    g.quad((5, 0.1, 1.0), (5, 0.3, 1.0), (5, 0.3, 2.0), (5, 0.1, 2.0))
+    spec, report = extract_spec(building(extra=[g]), OBJECT)
+    assert openings(spec) == [] and report["openings"]["glass_parts_skipped"] == 1
+
+
+def test_panes_with_different_sills_are_separate_openings():
+    # F5: no merged rectangle over glass that is not there
+    spec, _ = extract_spec(building(extra=[pane("glass", 2.0, 3.0, 1.0, 2.0), pane("glass2", 3.1, 4.1, 1.9, 2.9)]),
+                           OBJECT)
+    assert [(o[1], o[2], o[3], o[4]) for o in openings(spec)] == [(2.0, 1.0, 1.0, 1.0), (3.1, 1.9, 1.0, 1.0)]
+
+
+def test_tall_recess_with_a_short_window_stays_a_question():
+    # F6: recess 0.2-2.8 m with glass at 1.0-1.2 m only
+    spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.2, 2.8, -0.2)],
+                                         extra=[pane("Glass", 2.0, 3.5, 1.0, 1.2, y=0.2)]), at(L0=0.1))
+    assert [o[6] for o in openings(spec)] == ["glass"]
+    assert [q["kind"] for q in report["questions"]] == ["recess"]
+
+
+def test_opening_plane_keeps_the_hole_anchor_and_gives_its_material_id():
+    # F9/F10: a plane with material id 12 (group opening) over the hole is not body
+    plane = Mesh("OpeningPlane")
+    plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
+    d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane])
+    d["meshes"][-1]["material_ids"] = [12, 12]
+    spec, _ = extract_spec(d, OBJECT)
+    (o,) = spec.floors[0].openings
+    assert (o.source, o.material_id, o.window_type, o.w_m) == ("hole", 12, None, 1.5)
+
+
+def test_one_pane_over_two_holes_marks_both():
+    spec, _ = extract_spec(building(boxes=[(0, 2.0, 3.0, 1.0, 2.0, 0.0), (0, 3.1, 4.1, 1.0, 2.0, 0.0)],
+                                    extra=[pane("Glass", 2.0, 4.1, 1.0, 2.0, y=0.1)]), OBJECT)
+    assert [o[6] for o in openings(spec)] == ["hole+glass", "hole+glass"]
+
+
+def test_breaks_that_do_not_face_each_other_are_not_bridged():
+    assert op.close_section([[(-1, 0), (0, 0)], [(0, 8), (-1, 8)]])[1] == []      # parallel walls 8 m apart
+    assert op.close_section([[(-1, 0), (0, 0)], [(1, 1), (1, 2)]])[1] == []       # corner ends, not collinear
+    assert SpecError

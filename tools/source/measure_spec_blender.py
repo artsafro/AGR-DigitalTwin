@@ -4,7 +4,8 @@
         --python tools/source/measure_spec_blender.py -- <source.fbx|.blend> <dump.json>
 
 Blender only reads: world-space vertices and triangles per mesh object, and the world
-location of every object named LEVEL_<name>. All geometry logic (sections, contours, parts)
+location of every object named LEVEL_<name>, plus the material id of every triangle (slot index + 1).
+All geometry logic (sections, contours, parts)
 runs outside Blender in dt_ai.spec (`uv run dt spec extract`). The source is never saved.
 """
 import hashlib
@@ -42,7 +43,9 @@ for obj in bpy.context.scene.objects:
     mw = obj.matrix_world
     meshes.append({"name": obj.name,
                    "vertices": [list(mw @ v.co) for v in mesh.vertices],
-                   "triangles": [list(t.vertices) for t in mesh.loop_triangles]})
+                   "triangles": [list(t.vertices) for t in mesh.loop_triangles],
+                   # material id = slot index + 1 = 3ds Max material id (docs/domain/materials.md)
+                   "material_ids": [t.material_index + 1 for t in mesh.loop_triangles]})
     obj.evaluated_get(depsgraph).to_mesh_clear()
 
 out.parent.mkdir(parents=True, exist_ok=True)
