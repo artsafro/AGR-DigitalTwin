@@ -35,8 +35,15 @@ door recesses from the floor leave the contour as openings (`kind` door, or wind
 fills the height), relief <= 10 cm is no kink, panes of one frame are one opening with `panes`, an
 opening across a level is one record with `level_from` / `level_to`. KPP1 mesh spec v009/v010:
 both contours the facade rectangle; L1 equal to Revit (Hausdorff 0.0 m); L0 differs only by the
-Revit entrance frames (0.70 m). Review-3 leftovers: #34. Next: #29 (Revit wall axes and
-connectivity), then the comparison rerun with the Rhino criterion. Human tickets: #2 (move `Unreal/`), #4 (window
+Revit entrance frames (0.70 m). Review-3 leftovers: #34. #29 merged (PR #35): Revit walls on
+their location lines through the TwinPack commands of the revit-http add-in
+(`tools/source/measure_spec_revit_twin.mjs`, `dt_ai.spec.revit_twin`; document never modified);
+attachments by the main-walls hull rule (user decision 2026-10-08). KPP1 comparison v002
+(`jobs/KPP1/spec-compare-v002.md`): levels, roof, parapet within 2 mm, both contours equal to
+0.0 mm — Rhino not needed for contours (HARNESS_PLAN §11, closed test); openings differ by
+definition (frame vs glass): user decision — the spec opening is the hole with its frame, glass as
+attributes (#36). Review-3 leftovers: #37. Next: remove the box route `revit.py` (separate PR),
+then #36. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -117,7 +124,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #29 Revit wall lines and connectivity, then the comparison rerun with the Rhino criterion; extractor follow-ups #21-#24, #34 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 — remove `revit.py` (box route, superseded by #29), then #36 (opening = hole with frame); extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
