@@ -16,7 +16,7 @@
     {"name": "L1", "elev_m": 3.9},
     {"name": "roof", "elev_m": 7.909}
   ],
-  "levels_derived_from": "Revit levels отм. 0,000 and +3,900; roof = top of the roof covering on average: level +7,700 plus mean covering thickness 0.209 m (volume 60.36 m3 / plan 289.4 m2 of 'Покрытие_ТН-КРОВЛЯ Классик', drainage slopes, top 7.700-7.965 m). Revit levels +7,700 (structural) and +8,650 (parapet) are not floors. PROVISIONAL: assumes the covering bottom is at +7,700 and uses a Revit plan area; to be confirmed by the user (or replaced by the measured covering top).",
+  "levels_derived_from": "Revit levels отм. 0,000 and +3,900; roof = top of the roof covering on average: level +7,700 plus mean covering thickness 0.209 m (volume 60.36 m3 / plan 289.4 m2 of 'Покрытие_ТН-КРОВЛЯ Классик', drainage slopes, top 7.700-7.965 m). Revit levels +7,700 (structural) and +8,650 (parapet) are not floors. Confirmed by the user 2026-10-08 (mesh v005 gives 7.911, 2 mm off).",
   "contour_at_m": {"L0": 0.5, "L1": 4.5},
   "contour_at_m_note": "Confirmed by the user 2026-10-08 (pattern wall-from-contour): L0 has a plinth and facade bands at the storey ends; 0.5 m and 4.5 m are plain wall bands below the windows."
 }

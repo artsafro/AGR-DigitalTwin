@@ -116,7 +116,7 @@ def test_roof_part_half_outside_the_contour_is_a_question():
     # F3
     d = dump_of(walls_only())
     d["meshes"] += [roof_part(6.6, 6.6).dump(), roof_part(6.69, 6.69, 8.0, 12.0, name="Half").dump()]
-    with pytest.raises(SpecError, match="outside the top floor contour"):
+    with pytest.raises(SpecError, match="outside and .* inside the top floor contour"):
         extract_spec(d, OBJECT)
 
 
@@ -149,3 +149,67 @@ def test_cap_8_cm_above_the_roof_is_not_folded_into_its_height():
     spec, report = extract_spec(dump_of(b), OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.001)
     assert spec.roof.parapet_h_m == pytest.approx(0.08, abs=0.005)
+
+
+# --- regressions from Codex review 2 of PR #27 -------------------------------------------------
+
+def test_lower_deck_never_closes_a_missing_roof():
+    # R2-1 (P1): 40 m2 roof at 6.6, a wall-connected 60 m2 deck at 5.8 below the missing part
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 7.2, extra_u={0: [4.0], 2: [6.0]}, extra_z=[5.8])   # deck corners on wall vertices
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    b.quad((4, 0, 5.8), (10, 0, 5.8), (10, 10, 5.8), (4, 10, 5.8))
+    d = dump_of(b)
+    d["meshes"].append(roof_part(6.6, 6.6, 0.0, 4.0).dump())
+    with pytest.raises(SpecError, match="close only 40%"):
+        extract_spec(d, OBJECT)
+
+
+def test_equipment_never_closes_a_narrow_building():
+    # R2-2 (P1): 10 x 1.5 m, roof on 6 m2 of 15, equipment over the rest above the parapet
+    narrow = [[0, 0], [10, 0], [10, 1.5], [0, 1.5]]
+    b = Mesh("Body")
+    walls(b, narrow, 0.0, 7.2)
+    flat(b, Polygon(narrow), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(roof_part(6.6, 6.6, 0.0, 4.0, 0.0, 1.5).dump())
+    box = Mesh("Equipment")
+    box.box((4.0, 0.0, 8.0), (10.0, 1.5, 9.0))
+    d["meshes"].append(box.dump())
+    with pytest.raises(SpecError, match="close only 40%"):
+        extract_spec(d, OBJECT)
+
+
+def test_narrow_wing_drainage_is_measured():
+    # R2-3: L-shaped floor; a 1.5 m wing rising 6.48 -> 6.72 is roof, its slope is reported
+    contour = [[0, 0], [10, 0], [10, 10], [1.5, 10], [1.5, 20], [0, 20]]
+    b = Mesh("Body")
+    walls(b, contour, 0.0, 7.2)
+    flat(b, Polygon(contour), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"] += [roof_part(6.6, 6.6).dump(), roof_part(6.48, 6.72, 0.0, 1.5, 10.0, 20.0, name="Wing").dump()]
+    _, report = extract_spec(d, OBJECT)
+    assert report["roof"]["slope_max_deg"] == pytest.approx(math.degrees(math.atan(0.024)), abs=0.05)
+    assert (report["roof"]["surface_z_min_m"], report["roof"]["surface_z_max_m"]) == (6.48, 6.72)
+
+
+def test_higher_ring_without_cap_evidence_stays_roof():
+    # R2-6: annulus at 6.68 around a 6.60 centre, walls up to 7.20: not at the parapet top, so roof
+    d = dump_of(walls_only())
+    ring = Mesh("Ring")
+    outer, inner = SQUARE10, [[2, 2], [8, 2], [8, 8], [2, 8]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        ring.quad((*outer[a], 6.68), (*outer[c], 6.68), (*inner[c], 6.68), (*inner[a], 6.68))
+    d["meshes"] += [ring.dump(), roof_part(6.6, 6.6, 2.0, 8.0, 2.0, 8.0).dump()]
+    _, report = extract_spec(d, OBJECT)
+    assert report["roof"]["plane_m"] == pytest.approx(6.6512, abs=0.001)
+
+
+@pytest.mark.parametrize("x0, x1", [(9.04, 10.04), (9.6, 19.6)])
+def test_slightly_or_mostly_outside_part_is_a_question(x0, x1):
+    # R2-7: 4 % or 96 % outside, both with real area on each side
+    d = dump_of(walls_only())
+    d["meshes"] += [roof_part(6.6, 6.6).dump(), roof_part(6.69, 6.69, x0, x1, name="Edge").dump()]
+    with pytest.raises(SpecError, match="outside and .* inside the top floor contour"):
+        extract_spec(d, OBJECT)

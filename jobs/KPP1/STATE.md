@@ -151,8 +151,8 @@ Outputs (local): `outputs/spec-v001/` — `dump.json`, `spec-v001.json`, `.repor
   coordinates (Project Base Point = internal origin, 0° to true north; 0.000 = absolute 171.050 m).
   Checked on Revit 2025, read only, document not modified: the 4 outer facade corners at 0.000
   (-0.330/27.330 × -0.330/11.330 m) hit v005 vertices within 0.0 mm; facade bottom 0.900 matches.
-- Levels L0 0.000, L1 3.900, roof 7.909 — **provisional**: +7,700 + 0.209 m mean covering thickness
-  (volume / Revit plan area, assumes the covering bottom at +7,700); to be confirmed by the user.
+- Levels L0 0.000, L1 3.900, roof 7.909 (+7,700 + 0.209 m mean covering thickness) — confirmed by
+  the user 2026-10-08; the mesh gives 7.911 (2 mm).
 - Without `contour_at_m` the extractor stops at L0 (14+ section shapes: plinth, facade bands) —
   expected (pattern `wall-from-contour`). Agent's proposal in `object.json`: L0 0.5 m, L1 4.5 m
   (plain wall bands below the windows) — confirmed by the user 2026-10-08. Parapet cap and shaft tops stay in the level-closure check, not in the roof level (user, 2026-10-08).
