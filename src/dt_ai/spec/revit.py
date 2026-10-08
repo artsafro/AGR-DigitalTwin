@@ -16,7 +16,7 @@ wall stops the extraction with a question and is never approximated. A curtain w
 and its box holds frame depth, so its box proves nothing (PR #30 review 2: 2.41 x 1 m at 45 degrees
 has both box sides equal to its length). Revit embeds a curtain wall in a host wall along the
 host's line, so its axis is the one where a box side equals its length AND the line through the
-box middle lies inside a parallel proven wall; exactly one such axis, or a question. It becomes an
+box middle lies inside a parallel proven wall over the curtain wall's height; exactly one such axis, or a question. It becomes an
 opening anchor along that axis and never shapes the contour. The result goes through the same
 `extract_spec` as a scanned mesh.
 """
@@ -53,16 +53,23 @@ def _m(p):
 
 
 def _hosted_axes(lo, hi, length, walls):
-    """Axes (True = X) along which a curtain wall's box side equals its length and the line through
-    the box middle lies inside a parallel proven wall box (its host)."""
+    """Axes (True = X) along which a curtain wall's box side equals its length and the middle plane
+    of the box, over its full length and height, lies inside parallel proven wall boxes (its host,
+    possibly stacked by height; PR #30 review 3: a wall below the curtain wall proves nothing)."""
     out = []
     for along_x in (True, False):
         a, b = (0, 1) if along_x else (1, 0)       # a: along the line, b: across it
         if abs(hi[a] - lo[a] - length) > LENGTH_TOL_M:
             continue
         mid = (lo[b] + hi[b]) / 2
-        if any(wx == along_x and wlo[a] - LENGTH_TOL_M <= lo[a] and hi[a] <= whi[a] + LENGTH_TOL_M
-               and wlo[b] - LENGTH_TOL_M <= mid <= whi[b] + LENGTH_TOL_M for wlo, whi, wx in walls):
+        spans = sorted((wlo[2], whi[2]) for wlo, whi, wx in walls
+                       if wx == along_x and wlo[a] - LENGTH_TOL_M <= lo[a] and hi[a] <= whi[a] + LENGTH_TOL_M
+                       and wlo[b] - LENGTH_TOL_M <= mid <= whi[b] + LENGTH_TOL_M)
+        top = lo[2]                              # host walls may be stacked (cladding by height bands)
+        for z0, z1 in spans:
+            if z0 - LENGTH_TOL_M <= top:
+                top = max(top, z1)
+        if top >= hi[2] - LENGTH_TOL_M:
             out.append(along_x)
     return out
 

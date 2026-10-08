@@ -132,3 +132,22 @@ def test_curtain_wall_outside_any_wall_stops_with_a_question():
                "bbox_ft": bbox(3.0, 4.5, 0.0, 6.0, 5.5, 2.5), "length_ft": 3.0 / FT}
     with pytest.raises(RevitDataError, match=r"ids \[95\]"):
         to_dump(revit_box([curtain]))
+
+
+def test_wall_below_a_curtain_wall_does_not_prove_its_orientation():
+    # PR #30 review 3: the only parallel wall ends 3 m below a 45 degree curtain wall with 1 m frames
+    low = wall(50, 2.0, 0.65, 8.0, 0.95, top=1.0)
+    curtain = {**rotated(94, 1 + math.sqrt(2), 1.0, 45), "family": "Curtain Wall"}
+    d = 1 + math.sqrt(2)
+    curtain["bbox_ft"] = bbox(3.0, 0.8 - d / 2, 4.0, 3.0 + d, 0.8 + d / 2, 6.0)
+    with pytest.raises(RevitDataError, match=r"ids \[94\]"):
+        to_dump(revit_box([low, curtain]))
+
+
+def test_curtain_wall_in_stacked_cladding_walls_is_hosted():
+    # KPP1: cladding is built of walls stacked by height (0.9-2.7, 2.7-7.1 m); together they host
+    stack = [wall(60, 2.0, -0.33, 8.0, -0.22, top=2.7), wall(61, 2.0, -0.33, 8.0, -0.22, top=7.1)]
+    stack[1]["bbox_ft"]["min"]["z"] = 2.7 / FT
+    curtain = {"id": 93, "category": "OST_Walls", "type": "Curtain", "family": "Curtain Wall",
+               "bbox_ft": bbox(3.0, -0.8, 1.2, 5.0, 0.2, 6.7), "length_ft": 2.0 / FT}
+    assert any(m["name"] == "glass_curtain_93" for m in to_dump(revit_box(stack + [curtain]))["meshes"])
