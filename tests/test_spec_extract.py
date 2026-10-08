@@ -227,30 +227,48 @@ def test_weld_does_not_depend_on_the_rounding_grid():
     assert rep[0] == rep[1] != rep[2]
 
 
-def wide_cap_building(roof=True):
-    """10 x 10 m walls to 6.8, a 2 m wide parapet cap (64 m2) at 6.8 around a 6 x 6 m roof (36 m2)
-    at 6.6 (Codex review 2 P1): the larger cap near the roof level must not become the roof."""
+def wide_cap_building(roof=True, inner_x=8.0):
+    """10 x 10 m walls to 6.8, a wide parapet cap at 6.8 around a roof at 6.6 spanning x 2..inner_x,
+    y 2..8 (Codex reviews 2 and 3 P1): the larger cap near the roof level must not become the roof.
+    inner_x=8 is symmetric (cap 64 m2, roof 36 m2); inner_x=4 is asymmetric (cap 88 m2 covers the
+    contour's interior point, roof 12 m2)."""
     b = Mesh("Body")
-    inner = [[2.0, 2.0], [8.0, 2.0], [8.0, 8.0], [2.0, 8.0]]
+    inner = [[2.0, 2.0], [inner_x, 2.0], [inner_x, 8.0], [2.0, 8.0]]
     for w in range(4):
         a, c = w, (w + 1) % 4
         b.quad((*SQUARE[a], 0), (*SQUARE[c], 0), (*SQUARE[c], 6.8), (*SQUARE[a], 6.8))
         b.quad((*SQUARE[a], 6.8), (*SQUARE[c], 6.8), (*inner[c], 6.8), (*inner[a], 6.8))
         b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 6.8), (*inner[c], 6.8))
     if roof:
-        b.quad((2, 2, 6.6), (8, 2, 6.6), (8, 8, 6.6), (2, 8, 6.6))
+        b.quad((2, 2, 6.6), (inner_x, 2, 6.6), (inner_x, 8, 6.6), (2, 8, 6.6))
     b.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))
     return {"source": "synthetic-wide-cap", "meshes": [b.dump()],
             "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]}
                         for n, z in (("L0", 0.0), ("L1", 3.3), ("roof", 6.6))]}
 
 
-def test_parapet_cap_near_the_roof_level_is_not_the_roof():
-    spec, report = extract_spec(wide_cap_building(), OBJECT)
+@pytest.mark.parametrize("inner_x", [8.0, 4.0])
+def test_parapet_cap_near_the_roof_level_is_not_the_roof(inner_x):
+    spec, report = extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.001)
     assert spec.roof.parapet_h_m == pytest.approx(0.2, abs=0.01)
     with pytest.raises(SpecError, match="no horizontal roof surface"):
-        extract_spec(wide_cap_building(roof=False), OBJECT)
+        extract_spec(wide_cap_building(roof=False, inner_x=inner_x), OBJECT)
+
+
+def test_flat_roof_without_parapet_is_the_roof():
+    b = Mesh("Body")
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE[a], 0), (*SQUARE[c], 0), (*SQUARE[c], 6.6), (*SQUARE[a], 6.6))
+    b.quad((0, 0, 6.6), (10, 0, 6.6), (10, 10, 6.6), (0, 10, 6.6))
+    b.quad((0, 0, 0), (0, 10, 0), (10, 10, 0), (10, 0, 0))
+    dump = {"source": "synthetic-flat", "meshes": [b.dump()],
+            "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]}
+                        for n, z in (("L0", 0.0), ("L1", 3.3), ("roof", 6.6))]}
+    spec, report = extract_spec(dump, OBJECT)
+    assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.001)
+    assert spec.roof.parapet_h_m == 0
 
 
 def test_weld_never_moves_a_vertex_more_than_the_weld_distance():
