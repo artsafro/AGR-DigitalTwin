@@ -17,6 +17,7 @@ from shapely.geometry.polygon import orient
 
 from dt_ai.spec import floors as fl
 from dt_ai.spec import openings as op
+from dt_ai.spec import revit as rv
 from dt_ai.spec.model import Spec
 
 LEVEL_PREFIX = "LEVEL_"
@@ -150,8 +151,8 @@ def _opening_ids():
 
 def _mesh(dump, m, with_materials=False):
     """All non-collision triangles in object coordinates, vertices welded by position. With
-    with_materials, also the material id per triangle (0 when the dump has none)."""
-    verts, tris, mats, base = [], [], [], 0
+    with_materials, also the material id and the source mesh name per triangle."""
+    verts, tris, mats, owners, base = [], [], [], [], 0
     for mesh in dump["meshes"]:
         if mesh["name"].upper().startswith("UCX_") or not mesh["triangles"]:
             continue
@@ -161,6 +162,7 @@ def _mesh(dump, m, with_materials=False):
         if ids and len(ids) != len(mesh["triangles"]):
             raise SpecError(f"mesh {mesh['name']}: {len(ids)} material ids for {len(mesh['triangles'])} triangles")
         mats.append(np.asarray(ids or [0] * len(mesh["triangles"]), dtype=np.int64))
+        owners += [mesh["name"]] * len(mesh["triangles"])
         base += len(mesh["vertices"])
     if not tris:
         raise SpecError("the source holds no mesh triangles")
@@ -170,7 +172,7 @@ def _mesh(dump, m, with_materials=False):
     t = inverse.ravel()[np.vstack(tris)]
     if np.linalg.det(m[:3, :3]) < 0:  # a mirroring frame flips facing; restore outward normals
         t = t[:, ::-1]
-    return (v[used], t, np.concatenate(mats)) if with_materials else (v[used], t)
+    return (v[used], t, np.concatenate(mats), np.array(owners)) if with_materials else (v[used], t)
 
 
 def _areas(v, tris):
@@ -752,11 +754,23 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json."""
     m = _matrix(obj_cfg, dump.get("source"))
     levels = _levels(dump, obj_cfg, m)
-    v, tris, mats = _mesh(dump, m, with_materials=True)
+    if dump.get("kind") == "revit-data":                 # Revit data path (issue #10): boxes and panes
+        try:
+            dump = rv.to_dump(dump)
+        except rv.RevitDataError as exc:
+            raise SpecError(str(exc)) from None
+    v, tris, mats, owners = _mesh(dump, m, with_materials=True)
     plane = np.isin(mats, list(_opening_ids()))        # opening planes are not body: the hole stays the anchor
     plane_tris = np.column_stack([tris[plane], mats[plane]])
-    tris = tris[~plane]
-    parts = _parts(v, tris)
+    tris, owners = tris[~plane], owners[~plane]
+    if dump.get("body"):                                 # a source that names its body (Revit boxes do
+        mine = np.isin(owners, list(dump["body"]))      # not share vertices): body = those meshes
+        parts = [np.flatnonzero(mine)] + _parts(v, tris[~mine]) if (~mine).any() else [np.flatnonzero(mine)]
+        if len(parts) > 1:
+            rest = np.flatnonzero(~mine)
+            parts = [parts[0]] + [rest[pt] for pt in parts[1:]]
+    else:
+        parts = _parts(v, tris)
     body = tris[parts[0]]
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
