@@ -79,7 +79,7 @@ def main(argv=None):
             report = read_json(args.report.read_bytes())
             spec_doc = read_json(args.report.with_name(args.report.name.replace(".report.json", ".json")).read_bytes())
             old = args.into.read_text(encoding="utf-8") if args.into.exists() else None
-            text = merge_questions(old, spec_doc["id"], args.version, report["questions"])
+            text = merge_questions(old, spec_doc["id"], args.version, report.get("questions"))
             args.into.parent.mkdir(parents=True, exist_ok=True)
             tmp = args.into.with_suffix(".md.tmp")
             tmp.write_text(text, encoding="utf-8")

@@ -3,8 +3,8 @@
 Pattern: none — this is extractor code, not a building node (REVIEW_CHECKLIST Q1: new-case).
 
 Holes are found in the horizontal sections themselves. Dangling ends of the section are paired
-(mutually nearest, at most OPENING_MAX_M apart, not joined by a short path of the section itself —
-that would be a pier between two openings); from each end the chain is
+(mutually nearest, at most OPENING_MAX_M apart, not joined by a nearly direct path of the section
+itself — no longer than the gap plus two reveals — which is a pier between two openings); from each end the chain is
 followed back until it runs along the gap: that point is the mouth on the wall line, and the way
 back from it (a reveal, a chamfer) gives the depth. Bridging the mouths closes the section for the
 level contour (a door from the floor no longer opens the storey end). An opening must sit on a
@@ -123,7 +123,9 @@ def close_section(segments):
             for j in np.argsort(d):
                 if j == i or not 1e-6 < d[j] <= OPENING_MAX_M:
                     continue
-                if comp[dangles[j]] != comp[p] or not _linked_within(adj, p, dangles[j], 3 * d[j] + 2 * REVEAL_PATH_MAX_M):
+                # a pier joins the two ends nearly directly (its width plus two reveals at most);
+                # the way round the building is long and does not make a pier
+                if comp[dangles[j]] != comp[p] or not _linked_within(adj, p, dangles[j], d[j] + 2 * REVEAL_PATH_MAX_M):
                     best[i] = int(j)
                     break
         cos = np.cos(np.radians(BRIDGE_DEG))
@@ -182,7 +184,7 @@ def _stack(items, same):
     return out
 
 
-def _hole_openings(mouth_spans, contour_pts):
+def _hole_openings(mouth_spans, contour_pts, section):
     """Openings on contour walls, and questions for breaks off the contour or without a mouth."""
     def ends_close(g, it):
         return min(max(np.linalg.norm(g["p"] - it["p"]), np.linalg.norm(g["q"] - it["q"])),
@@ -194,14 +196,13 @@ def _hole_openings(mouth_spans, contour_pts):
     for g in _stack(mouths, ends_close):
         width = float(np.linalg.norm(g["p"] - g["q"]))
         w, origin, u, _ = _wall_frame(contour_pts, (g["p"] + g["q"]) / 2, width / 2)
-        n = np.array([-u[1], u[0]])
-        on = (abs(float((g["p"] - origin) @ n)) <= ON_WALL_M and abs(float((g["q"] - origin) @ n)) <= ON_WALL_M
-              and abs(float(_unit(g["q"] - g["p"]) @ u)) >= np.cos(np.radians(BRIDGE_DEG)))
+        ring = section.exterior                         # the real wall line, rounded corners included
+        on = all(ring.distance(shapely.Point(x)) <= ON_WALL_M for x in (g["p"], g["q"], (g["p"] + g["q"]) / 2))
         if not on:
             off.append({"kind": "wall-break-off-contour", "p": g["p"], "q": g["q"], "z0": g["z0"], "z1": g["z1"]})
             continue
-        x = sorted((float((g["p"] - origin) @ u), float((g["q"] - origin) @ u)))
-        openings.append({"wall": w, "x0": x[0], "x1": x[1], "z0": g["z0"], "z1": g["z1"],
+        x0 = min(float((g["p"] - origin) @ u), float((g["q"] - origin) @ u))   # width = the mouth itself,
+        openings.append({"wall": w, "x0": x0, "x1": x0 + width, "z0": g["z0"], "z1": g["z1"],  # also on an arc
                          "depth": g["depth"], "source": "hole"})
     for g in _stack(breaks, ends_close):
         off.append({"kind": "unresolved-break", "p": g["p"], "q": g["q"], "z0": g["z0"], "z1": g["z1"]})
@@ -267,7 +268,7 @@ def _overlap(a, b, tol=MATCH_M):
 
 def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
     """Openings per floor, the plan footprints that clear recess questions, break questions, report.
-    planes: vertical opening-plane parts as (points, normal, material id)."""
+    planes: vertical opening-plane parts as (points, normal, material id or None when mixed)."""
     glass, glass_skipped = _project(panes, levels, floors, polys, "glass")
     glass = _merge_panes(glass)
     plane_items, planes_skipped = [], 0
@@ -277,7 +278,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
         planes_skipped += skipped
     per_floor, footprints, breaks = [], [], []
     for li, floor in enumerate(floors):
-        holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"])
+        holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"], polys[li])
         breaks.extend({**b, "level": li} for b in off)
         for g in [g for g in glass if g["level"] == li]:
             matches = [h for h in holes if _overlap(h, g)]
@@ -306,6 +307,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
         per_floor.append(items)
     report = {"glass_openings": len(glass), "glass_parts_skipped": glass_skipped,
               "opening_planes": len(plane_items), "opening_planes_skipped": planes_skipped,
+              "opening_planes_mixed_ids": sum(1 for _, _, mid in planes if mid is None),
               "breaks_off_contour": sum(b["kind"] == "wall-break-off-contour" for b in breaks),
               "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks)}
     return per_floor, footprints, breaks, report

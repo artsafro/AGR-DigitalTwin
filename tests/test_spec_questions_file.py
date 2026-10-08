@@ -2,7 +2,7 @@
 import json
 
 from dt_ai.cli.main import main
-from dt_ai.spec.questions_file import merge, parse
+from dt_ai.spec.questions_file import COLUMNS, merge, parse
 from test_spec_contour_shapes import SQUARE10, at, prism
 
 
@@ -80,3 +80,39 @@ def test_other_object_and_bad_report_are_refused():
         merge(answered_file(), "tec26-psu275", "v002", [q()])
     with pytest.raises(ValueError, match="no questions list"):
         merge(None, "tec26-kpp1", "v001", None)
+
+
+# --- regressions from Codex review 2 of PR #20 -------------------------------------------------
+
+def test_two_close_rows_keep_their_own_answers():
+    # N4: A at x 5.00, B at x 5.04; a new 5.02 arriving first must not take A from 5.00
+    text = merge(None, "tec26-kpp1", "v001", [q(x=5.0), q(x=5.04)])
+    text = text.replace("| 5.00, -0.05 |  |", "| 5.00, -0.05 | A |", 1).replace("| 5.04, -0.05 |  |", "| 5.04, -0.05 | B |", 1)
+    _, rows = parse(merge(text, "tec26-kpp1", "v002", [q(x=5.02), q(x=5.0)]))
+    by_answer = {r["Answer"]: r for r in rows}
+    assert by_answer["A"]["At (x, y)"] == "5.00, -0.05" and by_answer["A"]["Last"] == "v002"
+
+
+def test_escaped_pipe_at_the_end_of_an_answer_survives():
+    # N5: a row written without padding whose answer ends with an escaped pipe
+    text = merge(None, "tec26-kpp1", "v001", [q()])
+    _, (row,) = parse(text)
+    cells = [row[c] for c in COLUMNS[:-1]] + [r"retain a\|"]
+    tight = "|" + "|".join(cells) + "|"
+    line = next(l for l in text.splitlines() if l.startswith("| Q001"))
+    _, rows = parse(merge(text.replace(line, tight), "tec26-kpp1", "v002", [q()]))
+    assert rows[0]["Answer"] == r"retain a\|"
+
+
+def test_empty_questions_file_can_be_merged_again():
+    # N6
+    empty = merge(None, "tec26-kpp1", "v001", [])
+    _, rows = parse(merge(empty, "tec26-kpp1", "v002", [q()]))
+    assert [r["ID"] for r in rows] == ["Q001"]
+
+
+def test_one_unreadable_row_blocks_the_overwrite():
+    # N7
+    text = merge(None, "tec26-kpp1", "v001", [q(), q("recess", (1.0, 1.5), 2.0)]).replace("| Q002 |", "| Qbad |")
+    with pytest.raises(ValueError, match="unreadable row"):
+        merge(text, "tec26-kpp1", "v002", [q()])

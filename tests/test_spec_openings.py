@@ -1,6 +1,7 @@
 """Openings: a hole in the body or a glass pane at a wall (issue #7). Synthetic data; not a real object."""
 import math
 
+import numpy as np
 import pytest
 from shapely.geometry import Polygon
 
@@ -230,3 +231,80 @@ def test_breaks_that_do_not_face_each_other_are_not_bridged():
     assert op.close_section([[(-1, 0), (0, 0)], [(0, 8), (-1, 8)]])[1] == []      # parallel walls 8 m apart
     assert op.close_section([[(-1, 0), (0, 0)], [(1, 1), (1, 2)]])[1] == []       # corner ends, not collinear
     assert SpecError
+
+
+# --- regressions from Codex review 2 of PR #20 -------------------------------------------------
+
+@pytest.mark.parametrize("width", [4.0, 5.0, 6.0, 7.9])
+def test_wide_hole_in_a_small_building_is_not_a_pier(width):
+    # N1: 10 x 2 m body; the way round the building is not a pier
+    contour = [(0, 0), (10, 0), (10, 2), (0, 2)]
+    spec, report = extract_spec(building(contour, boxes=[(0, 1.0, 1.0 + width, 0.9, 2.4, 0.0)]), OBJECT)
+    assert [(o[1], o[3]) for o in openings(spec)] == [(1.0, pytest.approx(width))]
+
+
+def test_pier_between_two_windows_is_not_bridged():
+    spec, _ = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0), (0, 3.8, 5.3, 0.9, 2.4, 0.0)]), OBJECT)
+    assert [(o[1], o[3]) for o in openings(spec)] == [(2.0, 1.5), (3.8, 1.5)]
+
+
+@pytest.mark.parametrize("n", [12, 24])
+def test_hole_on_a_rounded_corner_is_an_opening(n):
+    # N2: one facet of an r 1.5 arc removed between 0.9 and 2.4 m
+    r = 1.5
+    arc = [[10 - r + r * math.cos(a), 10 - r + r * math.sin(a)] for a in np.linspace(0, math.pi / 2, n + 1)]
+    contour = [[0, 0], [10, 0], *arc, [0, 10]]
+    facet = 2 + n // 2                                  # a facet in the middle of the arc
+    chord = math.dist(contour[facet], contour[facet + 1])
+    spec, report = extract_spec(building(contour, boxes=[(facet, 0.0, chord, 0.9, 2.4, 0.0)]), OBJECT)
+    (o,) = spec.floors[0].openings
+    assert (o.w_m, o.h_m, o.source) == (pytest.approx(chord, abs=0.01), 1.5, "hole")
+    assert report["questions"] == []
+
+
+def test_plane_ids_follow_their_own_part():
+    # N3: a horizontal opening-group part (id 11) must not shift the vertical plane's id (12)
+    plane, flat_part = Mesh("OpeningPlane"), Mesh("Shelf")
+    plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
+    flat_part.quad((2, 2, 3.0), (8, 2, 3.0), (8, 8, 3.0), (2, 8, 3.0))
+    d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[flat_part, plane])
+    d["meshes"][-2]["material_ids"], d["meshes"][-1]["material_ids"] = [11, 11], [12, 12]
+    (o,) = extract_spec(d, OBJECT)[0].floors[0].openings
+    assert o.material_id == 12
+
+
+def test_plane_with_mixed_ids_gets_no_id():
+    plane = Mesh("OpeningPlane")
+    plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
+    d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane])
+    d["meshes"][-1]["material_ids"] = [12, 13]
+    spec, report = extract_spec(d, OBJECT)
+    assert spec.floors[0].openings[0].material_id is None and report["openings"]["opening_planes_mixed_ids"] == 1
+
+
+def test_plane_without_material_ids_is_a_question():
+    # N8: shape alone cannot tell an opening plane from a wall piece: ask, do not certify
+    plane = Mesh("OpeningPlane")
+    plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
+    spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane]), OBJECT)
+    assert [q["kind"] for q in report["questions"]] == ["plane-without-material-id"]
+    assert report["openings"]["planes_without_material_id"] == 1
+
+
+def test_partial_material_ids_are_an_error():
+    # N10
+    plane = Mesh("OpeningPlane")
+    plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
+    d = building(extra=[plane])
+    d["meshes"][-1]["material_ids"] = [12]
+    with pytest.raises(SpecError, match="1 material ids for 2 triangles"):
+        extract_spec(d, OBJECT)
+
+
+def test_pier_check_stays_cheap_on_a_comb():
+    # N9: many short teeth; the pier search is bounded by the gap plus two reveals
+    import time
+    segs = [[(0, 0), (100, 0)]] + [[(x, 0), (x, 0.3)] for x in np.arange(0.5, 100, 0.5)]
+    t = time.perf_counter()
+    op.close_section(segs)
+    assert time.perf_counter() - t < 5.0

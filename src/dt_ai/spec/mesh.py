@@ -143,7 +143,10 @@ def _mesh(dump, m, with_materials=False):
             continue
         verts.append(_apply(m, mesh["vertices"]))
         tris.append(np.asarray(mesh["triangles"], dtype=np.int64) + base)
-        mats.append(np.asarray(mesh.get("material_ids") or [0] * len(mesh["triangles"]), dtype=np.int64))
+        ids = mesh.get("material_ids")
+        if ids and len(ids) != len(mesh["triangles"]):
+            raise SpecError(f"mesh {mesh['name']}: {len(ids)} material ids for {len(mesh['triangles'])} triangles")
+        mats.append(np.asarray(ids or [0] * len(mesh["triangles"]), dtype=np.int64))
         base += len(mesh["vertices"])
     if not tris:
         raise SpecError("the source holds no mesh triangles")
@@ -566,15 +569,45 @@ def _glass(dump, m):
     return op.vertical_parts(v, t, _parts(v, t))
 
 
+def _plane_suspects(dump, m, levels):
+    """Separate flat vertical source objects (not glass) without material ids, small enough to be an
+    opening plane: they may close a hole and hide an opening. Shape alone cannot prove it, so they
+    become questions; the geometry is left as it is (PR #20 review 2, N8)."""
+    out = []
+    for mesh in dump["meshes"]:
+        name = mesh["name"]
+        if (name.upper().startswith("UCX_") or "glass" in name.lower() or not mesh["triangles"]
+                or any(i in _opening_ids() for i in (mesh.get("material_ids") or []))):
+            continue
+        pts = _apply(m, mesh["vertices"])
+        centred = pts - pts.mean(axis=0)
+        sv = np.linalg.svd(centred, full_matrices=False)
+        normal, flatness = sv[2][-1], sv[1][-1]
+        size = np.ptp(pts, axis=0)
+        if (flatness > 1e-6 * max(len(pts), 1) or abs(normal[2]) > 0.5
+                or max(size[0], size[1]) > op.OPENING_MAX_M or size[2] > 4.0):
+            continue
+        zc = float(pts[:, 2].mean())
+        li = next((i for i in range(len(levels) - 1) if levels[i]["elev_m"] <= zc < levels[i + 1]["elev_m"]), 0)
+        c = pts.mean(axis=0)
+        out.append({"priority": "high", "kind": "plane-without-material-id", "levels": [levels[li]["name"]],
+                    "wall": None, "depth_m": None, "length_m": round(float(max(size[0], size[1])), 3),
+                    "facade_share": None, "heights_m": [round(float(pts[:, 2].min()), 3), round(float(pts[:, 2].max()), 3)],
+                    "at": [round(float(c[0]), 2), round(float(c[1]), 2)]})
+    return out
+
+
 def _planes(v, tris):
     """Vertical opening planes (faces with an opening material id), each with its material id."""
     if not len(tris):
         return []
-    parts, _ = op.vertical_parts(v, tris[:, :3], _parts(v, tris[:, :3]))
-    ids = tris[:, 3]
     out = []
-    for part, (pts, normal) in zip(_parts(v, tris[:, :3]), parts):
-        out.append((pts, normal, int(np.bincount(ids[part]).argmax())))
+    for part in _parts(v, tris[:, :3]):
+        found, _ = op.vertical_parts(v, tris[:, :3], [part])
+        if found:
+            pts, normal = found[0]
+            ids = set(tris[part, 3].tolist())
+            out.append((pts, normal, ids.pop() if len(ids) == 1 else None))   # mixed ids: no id is invented
     return out
 
 
@@ -612,7 +645,9 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         pieces[li] = kept
     report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
-    questions = _questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels)
+    suspects = _plane_suspects(dump, m, levels)
+    report["openings"]["planes_without_material_id"] = len(suspects)
+    questions = _questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
     names = [lv["name"] for lv in levels]
     questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
     for n, q in enumerate(questions, 1):

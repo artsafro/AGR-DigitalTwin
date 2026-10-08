@@ -44,16 +44,18 @@ def parse(text):
         body = line.strip()
         if not body.startswith("|"):
             continue
-        cells = [c.strip() for c in _SPLIT.split(body.strip("|"))]
+        inner = body[1:]
+        if inner.endswith("|") and not inner.endswith("\\|"):
+            inner = inner[:-1]
+        cells = [c.strip() for c in _SPLIT.split(inner)]
         if cells and cells[0] == "ID":
             table = True
-        elif cells and re.fullmatch(r"Q\d+", cells[0]):
-            if len(cells) != len(COLUMNS):
-                raise ValueError(f"questions file row {cells[0]} has {len(cells)} cells, expected {len(COLUMNS)}; "
-                                 "not overwriting")
+        elif all(re.fullmatch(r":?-+:?", c) for c in cells if c):
+            continue
+        elif table and re.fullmatch(r"Q\d+", cells[0]) and len(cells) == len(COLUMNS):
             rows.append(dict(zip(COLUMNS, cells)))
-    if (table or "| Q" in text or "|Q" in text) and not rows:
-        raise ValueError("questions file has a table but no readable question rows; not overwriting")
+        elif table:
+            raise ValueError(f"questions file has an unreadable row ({body[:40]}...); not overwriting")
     return (title.group(1) if title else None), rows
 
 
@@ -76,17 +78,20 @@ def merge(text, spec_id, version, questions):
     title, rows = parse(text or "")
     if title and title != spec_id:
         raise ValueError(f"questions file belongs to {title}, not {spec_id}; not merging")
-    seen = set()
-    for q in questions:
-        cells = _cells(q)
-        scored = [(d, i) for i, r in enumerate(rows) if i not in seen and (d := _same(r, cells)) is not None]
-        if scored:
-            i = min(scored)[1]
-        else:
+    cells = [_cells(q) for q in questions]
+    pairs = sorted((d, k, i) for k, c in enumerate(cells) for i, r in enumerate(rows)
+                   if (d := _same(r, c)) is not None)
+    match, seen = {}, set()
+    for d, k, i in pairs:                          # one-to-one, nearest first: exact matches keep answers
+        if k not in match and i not in seen:
+            match[k] = i
+            seen.add(i)
+    for k, c in enumerate(cells):
+        if k not in match:
             rows.append({"ID": f"Q{len(rows) + 1:03d}", "First": version, "Answer": ""})
-            i = len(rows) - 1
-        rows[i].update(cells, Last=version)
-        seen.add(i)
+            match[k] = len(rows) - 1
+            seen.add(match[k])
+        rows[match[k]].update(c, Last=version)
     for i, row in enumerate(rows):
         row["Status"] = "answered" if row.get("Answer") else ("open" if i in seen else f"gone {version}")
     lines = [f"# Questions — {spec_id}", "", INTRO, "",
