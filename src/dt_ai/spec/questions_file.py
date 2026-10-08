@@ -48,8 +48,10 @@ def parse(text):
         if inner.endswith("|") and not inner.endswith("\\|"):
             inner = inner[:-1]
         cells = [c.strip() for c in _SPLIT.split(inner)]
-        if cells and cells[0] == "ID":
+        if cells and cells[0] == "ID" and len(cells) == len(COLUMNS):
             table = True
+        elif cells and re.fullmatch(r"(?i)q\d+|id", cells[0]) and not table:
+            raise ValueError("questions file has question rows without its header row; not overwriting")
         elif all(re.fullmatch(r":?-+:?", c) for c in cells if c):
             continue
         elif table and re.fullmatch(r"Q\d+", cells[0]) and len(cells) == len(COLUMNS):

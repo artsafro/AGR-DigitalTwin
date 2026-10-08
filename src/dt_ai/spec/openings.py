@@ -286,9 +286,11 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
                 h["source"], h["depth"] = "hole+glass", max(h["depth"], g["depth"])
             if not matches:
                 holes.append(g)
-        for pl in [p for p in plane_items if p["level"] == li]:
-            for h in [h for h in holes if _overlap(h, pl)]:
-                h["material_id"] = pl["material_id"]
+        for h in holes:
+            ids = {pl["material_id"] for pl in plane_items if pl["level"] == li and _overlap(h, pl)}
+            if ids:                                  # two planes with different ids: no id is invented
+                h["material_id"] = ids.pop() if len(ids) == 1 else None
+                h["plane_conflict"] = len(ids) > 0
         elev = levels[li]["elev_m"]
         pts = np.array([q[:2] for q in floor["contour"]], dtype=float)
         items = []
@@ -296,7 +298,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
             items.append({"wall": o["wall"], "x_m": round(max(o["x0"], 0.0), 3), "sill_m": round(o["z0"] - elev, 3),
                           "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
                           "depth_m": round(o["depth"], 3), "window_type": None, "source": o["source"],
-                          "material_id": o.get("material_id")})
+                          "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False)})
             a = pts[o["wall"]]
             u = _unit(pts[(o["wall"] + 1) % len(pts)] - a)
             n = np.array([u[1], -u[0]])
@@ -308,6 +310,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes):
     report = {"glass_openings": len(glass), "glass_parts_skipped": glass_skipped,
               "opening_planes": len(plane_items), "opening_planes_skipped": planes_skipped,
               "opening_planes_mixed_ids": sum(1 for _, _, mid in planes if mid is None),
+              "openings_with_conflicting_planes": sum(1 for f in per_floor for o in f if o.get("plane_conflict")),
               "breaks_off_contour": sum(b["kind"] == "wall-break-off-contour" for b in breaks),
               "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks)}
     return per_floor, footprints, breaks, report

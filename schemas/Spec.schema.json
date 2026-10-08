@@ -155,6 +155,11 @@
           "default": null,
           "title": "Material Id"
         },
+        "plane_conflict": {
+          "default": false,
+          "title": "Plane Conflict",
+          "type": "boolean"
+        },
         "sill_m": {
           "title": "Sill M",
           "type": "number"

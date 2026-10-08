@@ -116,3 +116,14 @@ def test_one_unreadable_row_blocks_the_overwrite():
     text = merge(None, "tec26-kpp1", "v001", [q(), q("recess", (1.0, 1.5), 2.0)]).replace("| Q002 |", "| Qbad |")
     with pytest.raises(ValueError, match="unreadable row"):
         merge(text, "tec26-kpp1", "v002", [q()])
+
+
+
+@pytest.mark.parametrize("damage", ["lowercase", "missing"])
+def test_damaged_header_never_loses_an_answer(damage):
+    # R3 (P1): a header changed to lower case or deleted must stop the merge
+    text = answered_file()
+    header = next(l for l in text.splitlines() if l.startswith("| ID |"))
+    text = text.replace(header, header.replace("| ID |", "| id |") if damage == "lowercase" else "")
+    with pytest.raises(ValueError, match="not overwriting"):
+        merge(text, "tec26-kpp1", "v002", [q()])

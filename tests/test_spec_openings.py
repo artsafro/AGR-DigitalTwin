@@ -287,7 +287,7 @@ def test_plane_without_material_ids_is_a_question():
     plane = Mesh("OpeningPlane")
     plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
     spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane]), OBJECT)
-    assert [q["kind"] for q in report["questions"]] == ["plane-without-material-id"]
+    assert [q["kind"] for q in report["questions"]] == ["flat-object-in-wall"]
     assert report["openings"]["planes_without_material_id"] == 1
 
 
@@ -308,3 +308,40 @@ def test_pier_check_stays_cheap_on_a_comb():
     t = time.perf_counter()
     op.close_section(segs)
     assert time.perf_counter() - t < 5.0
+
+
+# --- regressions from Codex review 3 of PR #20 -------------------------------------------------
+
+def test_unused_vertices_do_not_hide_a_flat_object_in_the_wall():
+    # R5: an unused vertex far away must not make the plane look non-flat
+    plane = Mesh("OpeningPlane")
+    plane.quad((2.0, 0, 0.9), (3.5, 0, 0.9), (3.5, 0, 2.4), (2.0, 0, 2.4))
+    d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=[plane])
+    d["meshes"][-1]["vertices"].append([8.0, 8.0, 3.0])
+    _, report = extract_spec(d, OBJECT)
+    assert [q["kind"] for q in report["questions"]] == ["flat-object-in-wall"]
+
+
+def test_conflicting_opening_planes_give_no_material_id():
+    # R6: planes 12 and 13 over one hole, in either order
+    for ids in ((12, 13), (13, 12)):
+        planes = []
+        for y, mid in zip((0.1, 0.2), ids):
+            pl = Mesh(f"Plane{mid}")
+            pl.quad((2.0, y, 0.9), (3.5, y, 0.9), (3.5, y, 2.4), (2.0, y, 2.4))
+            planes.append(pl)
+        d = building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)], extra=planes)
+        d["meshes"][-2]["material_ids"], d["meshes"][-1]["material_ids"] = [ids[0]] * 2, [ids[1]] * 2
+        spec, report = extract_spec(d, OBJECT)
+        (o,) = spec.floors[0].openings
+        assert (o.material_id, o.plane_conflict) == (None, True)
+        assert report["openings"]["openings_with_conflicting_planes"] == 1
+
+
+def test_remote_or_high_flat_objects_are_not_questions():
+    # R8: a sign 40 m away and a plane above the roof are attachments, not wall planes
+    sign, high = Mesh("Sign"), Mesh("High")
+    sign.quad((40.0, 40, 1.0), (41.0, 40, 1.0), (41.0, 40, 2.0), (40.0, 40, 2.0))
+    high.quad((2.0, 0, 9.0), (3.0, 0, 9.0), (3.0, 0, 10.0), (2.0, 0, 10.0))
+    _, report = extract_spec(building(extra=[sign, high]), OBJECT)
+    assert report["questions"] == []

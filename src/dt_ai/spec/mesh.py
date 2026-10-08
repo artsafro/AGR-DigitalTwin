@@ -569,17 +569,19 @@ def _glass(dump, m):
     return op.vertical_parts(v, t, _parts(v, t))
 
 
-def _plane_suspects(dump, m, levels):
-    """Separate flat vertical source objects (not glass) without material ids, small enough to be an
-    opening plane: they may close a hole and hide an opening. Shape alone cannot prove it, so they
-    become questions; the geometry is left as it is (PR #20 review 2, N8)."""
+def _plane_suspects(dump, m, levels, polys):
+    """Separate flat vertical source objects (not glass) without an opening material id, small
+    enough to be an opening plane and lying on a wall of their level: they may close a hole and hide
+    an opening. Shape alone cannot prove it, so they become questions; the geometry is left as it
+    is (PR #20 reviews 2-3, N8/R5/R8)."""
     out = []
     for mesh in dump["meshes"]:
         name = mesh["name"]
         if (name.upper().startswith("UCX_") or "glass" in name.lower() or not mesh["triangles"]
                 or any(i in _opening_ids() for i in (mesh.get("material_ids") or []))):
             continue
-        pts = _apply(m, mesh["vertices"])
+        used = np.unique(np.asarray(mesh["triangles"], dtype=np.int64))      # referenced vertices only
+        pts = _apply(m, np.asarray(mesh["vertices"], dtype=float)[used])
         centred = pts - pts.mean(axis=0)
         sv = np.linalg.svd(centred, full_matrices=False)
         normal, flatness = sv[2][-1], sv[1][-1]
@@ -588,9 +590,11 @@ def _plane_suspects(dump, m, levels):
                 or max(size[0], size[1]) > op.OPENING_MAX_M or size[2] > 4.0):
             continue
         zc = float(pts[:, 2].mean())
-        li = next((i for i in range(len(levels) - 1) if levels[i]["elev_m"] <= zc < levels[i + 1]["elev_m"]), 0)
+        li = next((i for i in range(len(levels) - 1) if levels[i]["elev_m"] <= zc < levels[i + 1]["elev_m"]), None)
         c = pts.mean(axis=0)
-        out.append({"priority": "high", "kind": "plane-without-material-id", "levels": [levels[li]["name"]],
+        if li is None or polys[li].exterior.distance(shapely.Point(c[0], c[1])) > op.ON_WALL_M + 0.25:
+            continue                                  # not on a wall of a storey: an attachment, not a plane
+        out.append({"priority": "high", "kind": "flat-object-in-wall", "levels": [levels[li]["name"]],
                     "wall": None, "depth_m": None, "length_m": round(float(max(size[0], size[1])), 3),
                     "facade_share": None, "heights_m": [round(float(pts[:, 2].min()), 3), round(float(pts[:, 2].max()), 3)],
                     "at": [round(float(c[0]), 2), round(float(c[1]), 2)]})
@@ -645,7 +649,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         pieces[li] = kept
     report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
-    suspects = _plane_suspects(dump, m, levels)
+    suspects = _plane_suspects(dump, m, levels, polys)
     report["openings"]["planes_without_material_id"] = len(suspects)
     questions = _questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
     names = [lv["name"] for lv in levels]

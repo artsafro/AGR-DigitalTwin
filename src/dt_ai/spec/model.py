@@ -41,6 +41,8 @@ class Opening(SpecPart):
     source: Literal["hole", "glass", "hole+glass"] | None = None
     # material id of an opening plane in it (group `opening`, ADR 0001); not the window type
     material_id: int | None = None
+    # two overlapping opening planes with different ids: material_id is left null
+    plane_conflict: bool = False
 
 
 class Floor(SpecPart):
