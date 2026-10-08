@@ -22,12 +22,14 @@ SAME_CONTOUR_M = 0.005    # sections closer than this (Hausdorff) are one contou
 WELD_M = 1e-4             # vertices closer than WELD_M / 2 on every axis are always welded
 SIMPLIFY_M = 0.0005       # numeric noise only; kinks and arcs are decided by angle below
 KINK_DEG = 5.0            # a facade kink is a turn over 5 degrees (HARNESS_PLAN §3)
-ARC_TURN_MAX_DEG = 15.0   # arc tessellation turns at most this per vertex (>= 6 segments per quarter)
+ARC_TURN_MAX_DEG = 22.0   # arc tessellation turns at most this per vertex (a quarter in >= 5 chords);
+                          # the circle fit and wall tangency below decide, not this gate
 ARC_MIN_VERTICES = 3
 ARC_MIN_TURN_DEG = 20.0
 ARC_FIT_M = 0.005         # arc points and both walls must fit one circle within 5 mm + 0.5 % of r
 ARC_FIT_SHARE = 0.005
-EVENT_MIN_M = 0.001       # thinner height intervals between vertex heights are not cut
+EVENT_MIN_M = 0.001       # vertex heights closer than this share one interval
+BIN_M = 0.05              # height bins of storey triangles, so each cut reads only nearby triangles
 SHARE_TOL_M = 0.005       # a piece shares a wall when its boundary lies within 5 mm of it
 PRIORITY_SHARE = 0.10     # question priority high: >= 2 levels or > 10 % of the facade length
 ROOF_LEVEL_TOL_M = 0.03   # roof plane vs the top input level: the level tolerance of HARNESS_PLAN §5
@@ -164,9 +166,9 @@ def _clear_height(v, tris, z):
     return z
 
 
-def _section(v, tris, z):
-    """Segments where the plane z cuts the triangles."""
-    p = v[tris]
+def _section(v, tris, z, p=None):
+    """Segments where the plane z cuts the triangles (p: the triangles' points, if already taken)."""
+    p = v[tris] if p is None else p
     d = p[:, :, 2] - z
     cut = (d.min(axis=1) < 0) & (d.max(axis=1) > 0)
     segments = []
@@ -287,15 +289,39 @@ def _contour_points(poly):
 
 
 def _spans(v, tris, z0, z1):
-    """Height intervals of the storey between consecutive vertex heights: inside one interval every
-    horizontal section has the same shape, so one cut per interval sees every element exactly."""
-    zs = np.unique(np.round(v[np.unique(tris), 2], 6))
-    cuts = [z0] + [float(z) for z in zs if z0 < z < z1] + [z1]
-    return [(a, b) for a, b in zip(cuts, cuts[1:]) if b - a > EVENT_MIN_M]
+    """Height intervals of the storey between consecutive vertex heights: for vertical walls every
+    horizontal section inside one interval has the same shape, so one cut per interval sees every
+    element with its heights. Vertex heights closer than EVENT_MIN_M are coalesced (a densely
+    subdivided wall keeps its intervals; PR #19 review 2), never dropped."""
+    zs = [float(z) for z in np.unique(np.round(v[np.unique(tris), 2], 6)) if z0 < z < z1]
+    cuts = [z0]
+    for z in zs:
+        if z - cuts[-1] >= EVENT_MIN_M:
+            cuts.append(z)
+    if z1 - cuts[-1] < EVENT_MIN_M and len(cuts) > 1:
+        cuts.pop()
+    cuts.append(z1)
+    out = []
+    for a, b in zip(cuts, cuts[1:]):
+        nxt = next((z for z in zs if z > a + 1e-9), b)      # cut below the first vertex row in the interval
+        out.append((a, b, (a + min(nxt, b)) / 2))
+    return out
+
+
+def _runs(spans):
+    """Contiguous height runs of a shape's intervals: one shape at 0-0.6 and 3.0-3.3 is two elements."""
+    runs = []
+    for a, b in sorted(spans):
+        if runs and a - runs[-1][-1][1] < 1e-6:
+            runs[-1].append((a, b))
+        else:
+            runs.append([(a, b)])
+    return runs
 
 
 def _deviations(groups, contour):
-    """Pieces where other section shapes of the storey differ from its contour (not full height)."""
+    """Pieces where other section shapes of the storey differ from its contour (not full height),
+    one piece per contiguous height run of the shape."""
     pieces = []
     for g in groups:
         for kind, diff in (("projection", g["poly"].difference(contour)), ("recess", contour.difference(g["poly"]))):
@@ -304,17 +330,35 @@ def _deviations(groups, contour):
                     continue
                 far = max(contour.exterior.distance(shapely.Point(xy)) for xy in part.exterior.coords)
                 if far >= SAME_CONTOUR_M:
-                    pieces.append({"kind": kind, "geom": part, "spans": list(g["spans"])})
+                    pieces.extend({"kind": kind, "geom": part, "spans": run} for run in _runs(g["spans"]))
     return pieces
 
 
-def _level_contour(v, tris, z0, z1, name):
-    """Level contour = walls over the full storey height (user decision 2026-10-08): the section shape
-    found at both ends of the storey. If the ends differ (a plinth at the bottom), the shape over the
-    taller end shape is used; a contour-choice question is raised when it covers under half the storey.
-    Frequency decides nothing."""
+def _span_text(spans):
+    merged = []
+    for a, b in sorted(spans):
+        if merged and a - merged[-1][1] < 1e-6:
+            merged[-1][1] = b
+        else:
+            merged.append([a, b])
+    return ", ".join(f"{a:.3f}-{b:.3f}" for a, b in merged)
+
+
+def _level_contour(v, tris, z0, z1, name, at_m=None):
+    """Level contour = walls over the full storey height (user decisions 2026-10-08). Accepted only
+    when one section shape is at both storey ends and is also the tallest; otherwise the exterior
+    shell cannot tell the wall from a plinth, cornice or belt, so the extractor stops with the
+    candidate shapes and the user names a height of the wall shape (object.json contour_at_m)."""
     spans = _spans(v, tris, z0, z1)
-    closed = [(a, b, poly) for a, b in spans if (poly := _outer(_section(v, tris, (a + b) / 2))) is not None]
+    p = v[tris]
+    p = p[(p[:, :, 2].min(axis=1) < z1) & (p[:, :, 2].max(axis=1) > z0)]   # this storey only, taken once
+    lo, hi = np.floor(p[:, :, 2].min(axis=1) / BIN_M).astype(int), np.floor(p[:, :, 2].max(axis=1) / BIN_M).astype(int)
+    bins = defaultdict(list)                                               # height bins: a cut reads its own
+    for i, (l, h) in enumerate(zip(lo, hi)):
+        for k in range(l, h + 1):
+            bins[k].append(i)
+    closed = [(a, b, poly) for a, b, z in spans
+              if (poly := _outer(_section(None, None, z, p[bins[int(np.floor(z / BIN_M))]]))) is not None]
     if not closed:
         raise SpecError(f"level {name}: none of {len(spans)} body sections between {z0} and {z1} m "
                         "closes; the contour is not invented (ask the user, HARNESS_PLAN §7 gray zone)")
@@ -330,47 +374,73 @@ def _level_contour(v, tris, z0, z1, name):
         g["height"] = sum(b - a for a, b in g["spans"])
     bottom = next(g for g in groups if closed[0][:2] in g["spans"])
     top = next(g for g in groups if closed[-1][:2] in g["spans"])
-    if len(groups) == 1:
-        base, rule = groups[0], "single shape"
-    elif bottom is top:
-        base, rule = bottom, "both storey ends"
-    else:  # e.g. a plinth at the bottom: the taller of the two end shapes; ask if it is under half the storey
-        base = max((bottom, top), key=lambda g: g["height"])
-        rule = "taller storey end" if base["height"] >= 0.5 * (z1 - z0) else "unclear: storey ends differ"
+    at_ends = closed[0][0] - z0 < EVENT_MIN_M and z1 - closed[-1][1] < EVENT_MIN_M
+    tallest = max(g["height"] for g in groups)
+    if at_m is not None:
+        base = next((g for g in groups if any(a <= at_m <= b for a, b in g["spans"])), None)
+        if base is None:
+            raise SpecError(f"level {name}: contour_at_m {at_m} m is not on a closed section of the storey")
+        rule = f"user height {at_m} m"
+    elif at_ends and bottom is top and bottom["height"] >= tallest - 1e-9:
+        base, rule = bottom, "single shape" if len(groups) == 1 else "both storey ends, tallest"
+    else:
+        shapes = "; ".join(f"shape {i + 1}: {g['poly'].area:.2f} m2 at {_span_text(g['spans'])} m "
+                           f"({g['height'] / (z1 - z0):.0%})" for i, g in enumerate(groups))
+        ends = "" if at_ends else f"; the storey ends are not closed sections (first closed {closed[0][0]:.3f}, " \
+                                  f"last {closed[-1][1]:.3f} m)"
+        raise SpecError(f"level {name}: no section shape is both at the two storey ends and the tallest, so the "
+                        f"wall over the full height is unclear{ends}. {shapes}. Set contour_at_m.{name} in "
+                        "object.json to a height of the wall shape (HARNESS_PLAN §4)")
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
+    # every other shape is not over the full height -> questions
     return base["poly"], report, _deviations([g for g in groups if g is not base], base["poly"])
 
 
-def _measure(piece, contour_pts):
-    """Bind a piece to the contour wall it shares most boundary with; measure along and across it."""
-    pts = np.array([q[:2] for q in contour_pts], dtype=float)
+def _measure(piece, section, contour_pts):
+    """Bind a piece to the facet of the source section it shares most boundary with and measure
+    along and across that facet (not the simplified contour: a dropped small kink or a rounded
+    corner must not change depth). The reported wall is the contour wall nearest to that facet.
+    A piece sharing no facet is reported unbound (wall None), never bound to wall 0."""
+    ring = np.array(orient(section, sign=1.0).exterior.coords)[:-1]
+    ring = ring[np.abs(_turns(ring)) >= 0.05]
     best = None
-    for w in range(len(pts)):
-        shared = piece["geom"].boundary.intersection(LineString([pts[w], pts[(w + 1) % len(pts)]]).buffer(SHARE_TOL_M))
+    for f in range(len(ring)):
+        shared = piece["geom"].boundary.intersection(LineString([ring[f], ring[(f + 1) % len(ring)]]).buffer(SHARE_TOL_M))
         if best is None or shared.length > best[1].length:
-            best = (w, shared)
-    w, shared = best
-    a, b = pts[w], pts[(w + 1) % len(pts)]
-    u = (b - a) / np.linalg.norm(b - a)
+            best = (f, shared)
+    f, shared = best
     coords = np.array([xy for g in shapely.get_parts(piece["geom"]) for xy in g.exterior.coords])
-    along_pts = np.array([xy for g in shapely.get_parts(shared) for xy in g.coords]) if shared.length > 0 else coords
-    along = (along_pts - a) @ u
+    if shared.length <= 2 * SHARE_TOL_M:
+        box = np.array(piece["geom"].minimum_rotated_rectangle.exterior.coords)[:-1]
+        sides = sorted(float(np.linalg.norm(box[i] - box[i - 1])) for i in range(4))
+        return {"wall": None, "length_m": sides[-1], "depth_m": sides[0], "facade_share": 0.0}
+    a, b = ring[f], ring[(f + 1) % len(ring)]
+    u = (b - a) / np.linalg.norm(b - a)
+    along = (np.array([xy for g in shapely.get_parts(shared) for xy in g.coords]) - a) @ u
     length = float(along.max() - along.min())
     depth = max(_line_distance(xy, a, b) for xy in coords)
-    return {"wall": w, "length_m": length, "depth_m": depth, "facade_share": length / float(np.linalg.norm(b - a))}
+    pts = np.array([q[:2] for q in contour_pts], dtype=float)
+    mid = shapely.Point(*(a + u * (along.max() + along.min()) / 2))
+    wall = min(range(len(pts)), key=lambda w: LineString([pts[w], pts[(w + 1) % len(pts)]]).distance(mid))
+    wall_len = float(np.linalg.norm(pts[(wall + 1) % len(pts)] - pts[wall]))
+    return {"wall": wall, "length_m": length, "depth_m": depth, "facade_share": length / wall_len}
 
 
-def _questions(levels, floors, pieces_by_level, rules):
+def _questions(levels, floors, polys, pieces_by_level):
     """Merge pieces into connected components across levels and turn them into questions."""
     items = []
     for li, pieces in enumerate(pieces_by_level):
         for p in pieces:
-            items.append({**p, **_measure(p, floors[li]["contour"]), "levels": {li}})
+            items.append({**p, **_measure(p, polys[li], floors[li]["contour"]), "levels": {li}})
+    def touch(x, y):  # one element: same kind, overlapping in plan and adjacent in height
+        return (x["kind"] == y["kind"] and x["geom"].buffer(0.01).intersects(y["geom"]) and
+                any(c <= b + EVENT_MIN_M and a <= d + EVENT_MIN_M for a, b in x["spans"] for c, d in y["spans"]))
+
     sets = _Sets(len(items))
     for i in range(len(items)):
         for j in range(i + 1, len(items)):
-            if items[i]["kind"] == items[j]["kind"] and items[i]["geom"].buffer(0.01).intersects(items[j]["geom"]):
+            if touch(items[i], items[j]):
                 sets.union(i, j)
     comps = defaultdict(list)
     for i in range(len(items)):
@@ -382,7 +452,8 @@ def _questions(levels, floors, pieces_by_level, rules):
         lv = sorted({names[li] for p in comp for li in p["levels"]}, key=names.index)
         spans = [s for p in comp for s in p["spans"]]
         union = shapely.unary_union([p["geom"] for p in comp])
-        whole = _measure({"geom": union}, floors[min(main["levels"])]["contour"])
+        li = min(main["levels"])
+        whole = _measure({"geom": union}, polys[li], floors[li]["contour"])
         share = max(whole["facade_share"], *(p["facade_share"] for p in comp))
         c = union.centroid
         out.append({"priority": "high" if len(lv) >= 2 or share > PRIORITY_SHARE else "normal",
@@ -391,10 +462,6 @@ def _questions(levels, floors, pieces_by_level, rules):
                     "facade_share": round(share, 4),
                     "heights_m": [round(min(a for a, _ in spans), 3), round(max(b for _, b in spans), 3)],
                     "at": [round(c.x, 2), round(c.y, 2)]})
-    for li, rule in enumerate(rules):
-        if rule.startswith("unclear"):
-            out.append({"priority": "high", "kind": "contour-choice", "levels": [names[li]], "wall": None,
-                        "depth_m": None, "length_m": None, "facade_share": None, "heights_m": None, "at": None})
     out.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
     for n, q in enumerate(out, 1):
         q["n"] = n
@@ -408,7 +475,7 @@ def questions_markdown(spec_id, questions):
              "so it does not change the level contour (user decision 2026-10-08). Priority high = through",
              "2 or more levels or over 10 % of the facade length. Heights are the exact height interval of",
              "the element. A recess at window height may be an opening (separated by issue #7).",
-             "`contour-choice`: the storey ends differ and neither shape covers half the storey height.", "",
+             "Wall `—`: the piece shares no facet with the contour (unbound); measured on its own box.", "",
              "| # | Priority | Kind | Levels | Wall | Depth m | Length m | Facade share | Heights m | At (x, y) | Answer |",
              "|---|---|---|---|---|---|---|---|---|---|---|"]
 
@@ -489,16 +556,16 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
               "attachment_parts_ignored": len(parts) - 1, "floors": {}}
-    floors, polys, pieces, rules = [], [], [], []
+    floors, polys, pieces = [], [], []
+    at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"])
+        poly, rep, dev = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]))
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
         polys.append(poly)
         pieces.append(dev)
-        rules.append(rep["contour_rule"])
-    report["questions"] = _questions(levels, floors, pieces, rules)
+    report["questions"] = _questions(levels, floors, polys, pieces)
     roof_z, top_z, closed = _roof(v, body, levels[-2], levels[-1], polys[-1])
     report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],

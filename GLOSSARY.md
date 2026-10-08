@@ -70,10 +70,12 @@ _Avoid_: Master Building (the older quad-list schema), brief.
 ## Level contour
 
 Контур уровня — the walls of the body over the full storey height: the closed outer boundary
-of the horizontal body section found at both ends of the storey. Anything not over the full
-height (plinth, belt, cornice, partial recess) never changes it and goes to the questions file;
-2 or more levels or over 10 % of the facade length only raises the question's priority.
-Decided 2026-10-08 (#6).
+of the horizontal body section that is at both ends of the storey and is also the tallest
+shape. When no shape is both, the exterior cannot tell the wall from a plinth or cornice: the
+extractor stops and the user names a height of the wall shape (`contour_at_m` in object.json).
+Anything not over the full height (plinth, belt, cornice, partial recess) never changes the
+contour and goes to the questions file; 2 or more levels or over 10 % of the facade length only
+raises the question's priority. Decided 2026-10-08 (#6).
 _Avoid_: footprint (that is the ground print only), outline.
 
 ## Etalon
