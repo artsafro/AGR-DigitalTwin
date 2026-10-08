@@ -159,6 +159,30 @@
           "default": null,
           "title": "Kind"
         },
+        "level_from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Level From"
+        },
+        "level_to": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Level To"
+        },
         "material_id": {
           "anyOf": [
             {
@@ -326,8 +350,11 @@
       "default": null
     },
     "spec_version": {
-      "const": "0.1",
-      "default": "0.1",
+      "default": "0.2",
+      "enum": [
+        "0.1",
+        "0.2"
+      ],
       "title": "Spec Version",
       "type": "string"
     }

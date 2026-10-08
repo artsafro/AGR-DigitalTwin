@@ -32,6 +32,7 @@ MOUTH_KEY_M = 0.005      # bridges at different heights are one opening when eac
 ON_WALL_M = 0.05         # an opening mouth lies within this of its contour wall line
 PANE_JOIN_M = 0.15       # glass panes of one frame (gap <= 0.15 m, user decision 2026-10-08, #31) are one opening ...
 PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within the other's; stacked, one's width within
+GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
 PANE_WALL_M = 1.0        # a pane further than this from its contour wall is not an opening
 MATCH_M = 0.05           # hole and glass, or recess and opening, within 5 cm are one place
 
@@ -254,36 +255,45 @@ def _within(a, b, axis):
     return any(p[lo] >= q[lo] - PANE_BAND_M and p[hi] <= q[hi] + PANE_BAND_M for p, q in ((a, b), (b, a)))
 
 
+def _covered(rects, box):
+    """The panes (x0, x1, z0, z1) cover the box up to the joints of one frame (PANE_JOIN_M), so
+    a merged rectangle never stands over solid wall (PR #20 F5, PR #33 review 1)."""
+    h = PANE_JOIN_M / 2 + 1e-6
+    union = shapely.unary_union([shapely.box(x0 - h, z0 - h, x1 + h, z1 + h) for x0, x1, z0, z1 in rects])
+    return shapely.box(box[0], box[2], box[1], box[3]).difference(union).area < 1e-6
+
+
 def _merge_panes(items):
     """Panes of one frame are one opening (user decision 2026-10-08, #31): panes on the same wall
-    whose boxes come within PANE_JOIN_M of each other and are aligned in one frame — side by side
-    with one's heights inside the other's, or one above the other (a transom) with one's width
-    inside the other's, within PANE_BAND_M — joined transitively. Staggered panes stay apart, so
-    no rectangle covers wall without glass (PR #20 F5). The opening counts its panes."""
-    items = sorted(items, key=lambda o: (o["level"], o["wall"], o["x0"], o["z0"]))
-    parent = list(range(len(items)))
-
-    def find(i):
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    for i, o in enumerate(items):
-        for j in range(i):
-            m = items[j]
-            gap_x = max(0.0, o["x0"] - m["x1"], m["x0"] - o["x1"])
-            gap_z = max(0.0, o["z0"] - m["z1"], m["z0"] - o["z1"])
-            if m["level"] != o["level"] or m["wall"] != o["wall"] or max(gap_x, gap_z) > PANE_JOIN_M + 1e-9:
-                continue
-            if (gap_z == 0 and _within(o, m, "z")) or (gap_x == 0 and _within(o, m, "x")):
-                parent[find(i)] = find(j)
-    groups = {}
-    for i, o in enumerate(items):
-        g = groups.setdefault(find(i), dict(o, parts=0))
-        g.update(x0=min(g["x0"], o["x0"]), x1=max(g["x1"], o["x1"]), z0=min(g["z0"], o["z0"]),
-                 z1=max(g["z1"], o["z1"]), depth=max(g["depth"], o["depth"]), parts=g["parts"] + o["parts"])
-    return list(groups.values())
+    within PANE_JOIN_M of each other and aligned — side by side with one's heights inside the
+    other's, or a transom with one's width inside the other's, within PANE_BAND_M. Two groups join
+    only when their panes cover the joined rectangle, so staggered or L-shaped sets stay apart
+    (PR #20 F5, PR #33 review 1). The opening counts its panes."""
+    groups = [dict(o, rects=[(o["x0"], o["x1"], o["z0"], o["z1"])])
+              for o in sorted(items, key=lambda o: (o["level"], o["wall"], o["x0"], o["z0"]))]
+    merged = True
+    while merged:
+        merged = False
+        for i, m in enumerate(groups):
+            for j in range(i + 1, len(groups)):
+                o = groups[j]
+                gap_x = max(0.0, o["x0"] - m["x1"], m["x0"] - o["x1"])
+                gap_z = max(0.0, o["z0"] - m["z1"], m["z0"] - o["z1"])
+                if m["level"] != o["level"] or m["wall"] != o["wall"] or max(gap_x, gap_z) > PANE_JOIN_M + 1e-9:
+                    continue
+                if not ((gap_z == 0 and _within(o, m, "z")) or (gap_x == 0 and _within(o, m, "x"))):
+                    continue
+                box = (min(m["x0"], o["x0"]), max(m["x1"], o["x1"]), min(m["z0"], o["z0"]), max(m["z1"], o["z1"]))
+                if not _covered(m["rects"] + o["rects"], box):
+                    continue
+                m.update(x0=box[0], x1=box[1], z0=box[2], z1=box[3], depth=max(m["depth"], o["depth"]),
+                         parts=m["parts"] + o["parts"], rects=m["rects"] + o["rects"])
+                del groups[j]
+                merged = True
+                break
+            if merged:
+                break
+    return groups
 
 
 def _overlap(a, b, tol=MATCH_M):
@@ -300,8 +310,68 @@ def _door_items(doors, li, contour):
         along = (pts - a) @ u
         n = np.array([u[1], -u[0]])
         out.append({"level": li, "wall": w, "x0": float(along.min()), "x1": float(along.max()), "z0": d["z0"],
-                    "z1": d["z1"], "depth": max(0.0, float(-((pts - a) @ n).min())), "source": "hole", "kind": "door"})
+                    "z1": d["z1"], "depth": max(0.0, float(-((pts - a) @ n).min())), "source": "hole", "door": True})
     return out
+
+
+def _glass_fills(o):
+    """Glass fills the opening's height: no stretch of it without glass longer than GLASS_FRAME_M."""
+    top = o["z0"]
+    for z0, z1 in sorted(o.get("glass_z", [])):
+        if z0 - top > GLASS_FRAME_M:
+            return False
+        top = max(top, z1)
+    return o["z1"] - top <= GLASS_FRAME_M
+
+
+def _kind(o):
+    """window when glass fills the height; door for a door recess without glass or with glass over
+    part of its height (user decision 2026-10-08, #31)."""
+    if o.get("glass_z") and _glass_fills(o):
+        return "window"
+    return "door" if o.get("door") else ("window" if o.get("glass_z") else None)
+
+
+def _world(o, contour):
+    pts = np.array([q[:2] for q in contour], dtype=float)
+    a = pts[o["wall"]]
+    u = _unit(pts[(o["wall"] + 1) % len(pts)] - a)
+    return a + u * o["x0"], a + u * o["x1"], u
+
+
+def _across_levels(by_level, levels, floors):
+    """One record for an opening that crosses a level (user decision 2026-10-08, spec v0.2): an
+    opening of the floor above on the same facade line and plan span, starting within PANE_JOIN_M
+    above the top of one of the floor below (either may reach past the level), joins it when their
+    rectangles are covered as one frame; the lower floor keeps it with level_to. Runs top down, so
+    a chain over several levels ends in the lowest floor."""
+    for li in range(len(by_level) - 2, -1, -1):
+        elev = levels[li + 1]["elev_m"]
+        for up in list(by_level[li + 1]):
+            pb0, pb1, ub = _world(up, floors[li + 1]["contour"])
+            for low in by_level[li]:
+                pa0, pa1, ua = _world(low, floors[li]["contour"])
+                n = np.array([ua[1], -ua[0]])
+                if (abs(float(ua @ ub)) < np.cos(np.radians(ALONG_DEG))
+                        or max(abs(float((q - pa0) @ n)) for q in (pb0, pb1)) > MATCH_M):
+                    continue
+                s0, s1 = sorted(float((q - pa0) @ ua) for q in (pb0, pb1))
+                lower = {"x0": 0.0, "x1": float((pa1 - pa0) @ ua), "z0": low["z0"], "z1": low["z1"]}
+                upper = {"x0": s0, "x1": s1, "z0": up["z0"], "z1": up["z1"]}
+                if not (upper["z0"] - lower["z1"] <= PANE_JOIN_M + 1e-9 and lower["z0"] < elev < upper["z1"]
+                        and _within(lower, upper, "x")):
+                    continue
+                box = (min(0.0, s0), max(lower["x1"], s1), lower["z0"], max(lower["z1"], upper["z1"]))
+                rects = [(r["x0"], r["x1"], r["z0"], r["z1"]) for r in (lower, upper)]
+                if not _covered(rects, box):
+                    continue
+                low.update(x0=low["x0"] + box[0], x1=low["x0"] + box[1], z1=box[3], depth=max(low["depth"], up["depth"]),
+                           parts=low.get("parts", 0) + up.get("parts", 0),
+                           glass_z=low.get("glass_z", []) + up.get("glass_z", []),
+                           door=low.get("door") or up.get("door"), level_to=up.get("level_to", li + 1),
+                           source=low["source"] if low["source"] == up["source"] else "hole+glass")
+                by_level[li + 1].remove(up)
+                break
 
 
 def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None):
@@ -310,12 +380,14 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
     doors: door recesses per level (mesh._door_recesses)."""
     glass, glass_skipped = _project(panes, levels, floors, polys, "glass")
     glass = _merge_panes(glass)
+    for g in glass:
+        g["glass_z"] = [(z0, z1) for _, _, z0, z1 in g["rects"]]
     plane_items, planes_skipped = [], 0
     for pts, normal, mid in planes:
         items, skipped = _project([(pts, normal)], levels, floors, polys, "plane")
         plane_items.extend({**it, "material_id": mid} for it in items)
         planes_skipped += skipped
-    per_floor, footprints, breaks = [], [], []
+    by_level, breaks = [], []
     for li, floor in enumerate(floors):
         holes, off = _hole_openings(mouth_spans_by_level[li], floor["contour"], polys[li])
         holes += _door_items((doors or [[]] * len(floors))[li], li, floor["contour"])
@@ -325,6 +397,9 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
             for h in matches:
                 h["source"], h["depth"] = "hole+glass", max(h["depth"], g["depth"])
                 h["parts"] = h.get("parts", 0) + g["parts"]
+                h["glass_z"] = h.get("glass_z", []) + g["glass_z"]
+                if h.get("door"):                    # the frame's glass may reach past the recess
+                    h["z0"], h["z1"] = min(h["z0"], g["z0"]), max(h["z1"], g["z1"])
             if not matches:
                 holes.append(g)
         for h in holes:
@@ -332,26 +407,34 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
             if ids:                                  # two planes with different ids: no id is invented
                 h["material_id"] = ids.pop() if len(ids) == 1 else None
                 h["plane_conflict"] = len(ids) > 0
+        by_level.append(holes)
+    _across_levels(by_level, levels, floors)
+    per_floor, footprints = [], []
+    for li, (floor, holes) in enumerate(zip(floors, by_level)):
         elev = levels[li]["elev_m"]
         pts = np.array([q[:2] for q in floor["contour"]], dtype=float)
         items = []
         for o in sorted(holes, key=lambda o: (o["wall"], o["x0"])):
-            items.append({"wall": o["wall"], "x_m": round(max(o["x0"], 0.0), 3), "sill_m": round(o["z0"] - elev, 3),
-                          "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
-                          "depth_m": round(o["depth"], 3), "window_type": None, "source": o["source"],
-                          "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False),
-                          "kind": o.get("kind") or ("window" if "glass" in o["source"] else None),
-                          "panes": o.get("parts") if "glass" in o["source"] else None})
+            item = {"wall": o["wall"], "x_m": round(max(o["x0"], 0.0), 3), "sill_m": round(o["z0"] - elev, 3),
+                    "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
+                    "depth_m": round(o["depth"], 3), "window_type": None, "source": o["source"],
+                    "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False),
+                    "kind": _kind(o), "panes": o.get("parts") if o.get("glass_z") else None}
+            if "level_to" in o:
+                item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
+            items.append(item)
             a = pts[o["wall"]]
             u = _unit(pts[(o["wall"] + 1) % len(pts)] - a)
             n = np.array([u[1], -u[0]])
             p0, p1 = a + u * o["x0"], a + u * o["x1"]
             out_, in_ = MATCH_M, o["depth"] + MATCH_M
-            footprints.append({"level": li, "z0": o["z0"], "z1": o["z1"],
-                               "geom": Polygon([p0 + n * out_, p1 + n * out_, p1 - n * in_, p0 - n * in_])})
+            geom = Polygon([p0 + n * out_, p1 + n * out_, p1 - n * in_, p0 - n * in_])
+            for lj in range(li, o.get("level_to", li) + 1):
+                footprints.append({"level": lj, "z0": o["z0"], "z1": o["z1"], "geom": geom})
         per_floor.append(items)
     report = {"glass_openings": len(glass), "glass_parts_skipped": glass_skipped,
               "door_openings": sum(1 for f in per_floor for o in f if o["kind"] == "door"),
+              "openings_across_levels": sum(1 for f in per_floor for o in f if o.get("level_to")),
               "opening_planes": len(plane_items), "opening_planes_skipped": planes_skipped,
               "opening_planes_mixed_ids": sum(1 for _, _, mid in planes if mid is None),
               "openings_with_conflicting_planes": sum(1 for f in per_floor for o in f if o.get("plane_conflict")),

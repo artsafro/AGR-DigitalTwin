@@ -175,12 +175,11 @@ from Revit-path bounding boxes (entrance frames, #29); door recesses read as con
 the mesh path (#31); 13 frame profiles 7.5 x 9 cm on the mesh L1 contour (relief, #31). No Rhino verdict
 until #29 (user decision).
 
-## Spec v007: doors, relief, panes (issue #31, 2026-10-08)
+## Spec v009: doors, relief, panes, openings across levels (issue #31, 2026-10-08)
 
-Same dump, rules of #31: 13 door recesses became `kind: door` openings (L0 11, L1 2), 13 frame
-profiles on L1 are relief, a transom joins its window (`panes: 2`). Mesh contours are now the
-outer facade rectangle on both levels (322.516 m2). Against Revit (`outputs/spec-compare-v004/`):
-L1 contour equal (Hausdorff 0.0 m, 4 = 4 kinks); L0 differs only by the 6 Revit entrance-frame
-bumps (0.70 m, #29). Questions 58 -> 45. Open: the tall glazed opening L1 south x 12.96-14.14
-(Revit: three windows in one frame, z 1.12-6.73) is a door by the rule at L1 — question to the user.
-
+Same dump, rules of #31 (spec v0.2): 12 door openings (L0 11, L1 1), 13 frame profiles on L1 are
+relief, the L0 transom joins its window (`panes: 2`). The tall glazed opening of the south facade
+(x 13.29, 1.18 m) is one `window` record L0 -> L1, z 1.32-6.65, 4 panes (Revit: one frame
+z 1.12-6.73). Mesh contours are the outer facade rectangle on both levels (322.516 m2). Against
+Revit (`outputs/spec-compare-v006/`): L1 contour equal (Hausdorff 0.0 m, 4 = 4 kinks); L0 differs
+only by the 6 Revit entrance-frame bumps (0.70 m, #29). Questions 58 -> 45.

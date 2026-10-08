@@ -51,7 +51,7 @@ PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of t
 # a bump or notch with both sizes <= RELIEF_M is relief, not a kink
 DOOR_MIN_H_M = 1.9
 DOOR_W_M = (0.7, 3.0)
-DOOR_FLOOR_M = 0.05       # "from the floor": the recess is open from within this of the storey floor
+DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
 RELIEF_M = 0.10
 
 
@@ -387,13 +387,34 @@ def _is_relief(geom):
     return max(float(np.linalg.norm(box[i] - box[i - 1])) for i in range(len(box))) <= RELIEF_M + 1e-6
 
 
+def _mouth(n, base, edge):
+    """Width of a recess n at its mouth, or None when the mouth is not proven on the facade."""
+    free = shapely.line_merge(n.boundary.difference(edge))
+    parts = [g for g in shapely.get_parts(free) if g.length > SHARE_TOL_M]
+    if len(parts) != 1:
+        return None
+    c = np.array(parts[0].coords)
+    m0, m1 = c[0], c[-1]
+    span = float(np.linalg.norm(m1 - m0))
+    if span < 1e-6 or parts[0].length > span * 1.01 + 1e-6:          # bent mouth: not a facade line
+        return None
+    u = (m1 - m0) / span
+    beyond = 4 * SHARE_TOL_M                                         # the edge buffer shortened the mouth
+    if any(base.boundary.distance(shapely.Point(q)) > SHARE_TOL_M for q in (m0 - u * beyond, m1 + u * beyond)):
+        return None
+    along = (np.array(n.exterior.coords) - m0) @ u
+    return float(np.ptp(along))
+
+
 def _door_recesses(closed, base, z0, z1):
     """Recesses of the contour shape open from the storey floor (user rules, #31): returns the
     shape with them filled and the doors [{geom, z0, z1, mouth_m}]. A recess is a region the shape
-    at another height covers but this one does not, lined by the shape on more of its boundary
-    than its mouth (an outward band — plinth, cornice — is lined on one side only). Relief is
-    taken off every shape first, and only the part inside the shape's convex hull is a recess, so
-    frame profiles next to a door neither widen it nor join it (outward bands stay questions)."""
+    at another height covers but this one does not, whose mouth is proven to be on the facade: the
+    part of its boundary off the shape is one straight segment and the shape's boundary continues
+    along that line beyond both of its ends (PR #33 review 1: a block in the inner corner of an
+    L-shaped plan has a bent mouth and stays a question; an outward band has no facade beyond its
+    ends). The width is the recess's exact extent along the mouth. Relief is taken off every shape
+    first, so frame profiles next to a door neither widen it nor join it."""
     closed = [(a, b, _relief(poly)[0]) for a, b, poly in closed]
     hull = base.convex_hull
     cands = shapely.unary_union([poly.difference(base).intersection(hull) for _, _, poly in closed])
@@ -403,9 +424,8 @@ def _door_recesses(closed, base, z0, z1):
     for n in shapely.get_parts(cands):
         if n.area < 1e-4:
             continue
-        lined = n.boundary.intersection(edge).length
-        mouth = n.boundary.length - lined
-        if lined <= mouth or not (DOOR_W_M[0] - 1e-6 <= mouth <= DOOR_W_M[1] + 1e-6):
+        mouth = _mouth(n, base, edge)
+        if mouth is None or not (DOOR_W_M[0] - 1e-6 <= mouth <= DOOR_W_M[1] + 1e-6):
             continue
         top = None
         for a, b, poly in closed:                # contiguous open heights from the floor up
