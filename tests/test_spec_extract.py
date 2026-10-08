@@ -248,12 +248,19 @@ def wide_cap_building(roof=True, inner_x=8.0):
 
 
 @pytest.mark.parametrize("inner_x", [8.0, 4.0])
-def test_parapet_cap_near_the_roof_level_is_not_the_roof(inner_x):
-    spec, report = extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
-    assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.001)
-    assert spec.roof.parapet_h_m == pytest.approx(0.2, abs=0.01)
+def test_wide_cap_around_a_small_roof_is_a_question_never_6_8(inner_x):
+    # roof 36 % / 12 % of the floor under a cap at 6.8: "roof or cap?" goes to the user (issue #16)
+    with pytest.raises(SpecError, match="covers only .* roof or cap"):
+        extract_spec(wide_cap_building(inner_x=inner_x), OBJECT)
     with pytest.raises(SpecError, match="no up-facing roof surface"):
         extract_spec(wide_cap_building(roof=False, inner_x=inner_x), OBJECT)
+
+
+def test_mirroring_frame_keeps_the_roof_facing_up():
+    mirror = {"id": "bench-synth-box", "frame": {"to_object": [[-1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    spec, report = extract_spec(box_building(canopy=False), mirror)
+    assert close(spec.floors[0].contour, [[-10, 0], [0, 0], [0, 10], [-10, 10]])
+    assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.6)
 
 
 def test_flat_roof_without_parapet_is_the_roof():
@@ -294,10 +301,15 @@ SMALL = [[2, 2], [3, 2], [3, 2.6], [2, 2.6]]
 
 
 def test_roof_is_confirmed_at_the_input_level_not_guessed():
-    # cap covering 99.4 % of the floor around a 0.6 m2 roof: roof 6.6, parapet 0.2
-    _, d = ring_building(SMALL)
-    spec, report = extract_spec(d, OBJECT)
-    assert (report["roof"]["plane_m"], spec.roof.parapet_h_m) == (6.6, 0.2)
+    # cap covering 99.4 % of the floor around a 0.6 m2 patch, or around a 0.1 m2 ledge only:
+    # the patch is not confirmed as the roof (Codex review 2 of PR #18)
+    for ledge in (False, True):
+        b, d = ring_building(SMALL, roof=not ledge)
+        if ledge:
+            b.quad((2, 2, 6.6), (3, 2, 6.6), (3, 2.1, 6.6), (2, 2.1, 6.6))
+            d["meshes"] = [b.dump()]
+        with pytest.raises(SpecError, match="covers only"):
+            extract_spec(d, OBJECT)
     # same cap, no roof: the cap is not taken for a roof 0.2 m off the level
     with pytest.raises(SpecError, match="no up-facing roof surface .* \\[6.8\\]"):
         extract_spec(ring_building(SMALL, roof=False)[1], OBJECT)
@@ -330,7 +342,7 @@ def test_roof_that_does_not_close_the_floor_is_missing(filler):
             c = (a + 1) % 4
             b.quad((*SQUARE[a], 6.6), (*SQUARE[c], 6.6), (*inner[c], 6.6), (*inner[a], 6.6))
     d["meshes"] = [b.dump()]
-    with pytest.raises(SpecError, match="close only 88%"):
+    with pytest.raises(SpecError, match="covers only 0%" if filler == "ledge" else "close only 88%"):
         extract_spec(d, OBJECT)
 
 

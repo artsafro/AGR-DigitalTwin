@@ -24,6 +24,7 @@ WELD_M = 1e-4             # vertices closer than WELD_M / 2 on every axis are al
 SIMPLIFY_M = 0.005
 ROOF_LEVEL_TOL_M = 0.03   # roof plane vs the top input level: the level tolerance of HARNESS_PLAN §5
 ROOF_SEARCH_M = 0.3       # only to name nearby surfaces in the error message
+ROOF_OWN = 0.5            # share of the top floor the roof plane itself must cover (else roof or cap?)
 ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
 
@@ -121,7 +122,10 @@ def _mesh(dump, m):
     v = np.vstack(verts)
     rep = _weld(v)
     used, inverse = np.unique(rep, return_inverse=True)
-    return v[used], inverse.ravel()[np.vstack(tris)]
+    t = inverse.ravel()[np.vstack(tris)]
+    if np.linalg.det(m[:3, :3]) < 0:  # a mirroring frame flips facing; restore outward normals
+        t = t[:, ::-1]
+    return v[used], t
 
 
 def _areas(v, tris):
@@ -214,10 +218,12 @@ def _level_contour(v, tris, z0, z1, name):
 def _roof(v, tris, top_level, top_contour):
     """The roof level is input, like every level; geometry only confirms it (issue #16).
     Roof plane: an up-facing horizontal body surface inside the top floor contour within
-    ROOF_LEVEL_TOL_M of the top input level. The roof plus every up-facing surface above it
-    (parapet cap, shaft tops) must close the top floor from above (ROOF_CLOSED share), else the
-    roof is missing. Several candidate planes, or none, is a question for the user, never a
-    guess. Parapet top: highest body point on the outer wall line of the top floor."""
+    ROOF_LEVEL_TOL_M of the top input level; it must itself cover ROOF_OWN of the top floor (a
+    patch under a wide cap is "roof or cap?"), and with every up-facing surface above it (cap,
+    shaft tops) close ROOF_CLOSED of it, else the roof is missing. Several candidate planes, or
+    none, is a question for the user, never a guess. A near-full slab at the level with a small
+    hole is a flat roof with an opening. Parapet top: highest body point on the outer wall line
+    of the top floor."""
     p = v[tris]
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
     length = np.linalg.norm(n, axis=1)
@@ -237,6 +243,10 @@ def _roof(v, tris, top_level, top_contour):
     if len(found) > 1:
         raise SpecError(f"ambiguous roof at {where}: planes {found}; ask the user")
     roof_z = found[0]
+    own = shapely.unary_union(planes[roof_z]).intersection(top_contour).area / top_contour.area
+    if own < ROOF_OWN:
+        raise SpecError(f"roof plane at {roof_z} m covers only {own:.0%} of the top floor (< {ROOF_OWN:.0%}); "
+                        f"planes above it: {sorted(z for z in planes if z > roof_z)} — roof or cap? ask the user")
     closing = [f for z, faces in planes.items() if z >= roof_z - 1e-3 for f in faces]
     closed = shapely.unary_union(closing).intersection(top_contour).area / top_contour.area
     if closed < ROOF_CLOSED:
