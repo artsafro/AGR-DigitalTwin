@@ -17,9 +17,11 @@ rounded corners, strict full-height contour and questions file (PR #19), #7 open
 or glass panes and one `jobs/<object>/questions.md` per object (`dt spec merge-questions`, PR #20).
 Each PR had up to three Codex review rounds that ran the tests (`docs/agents/REVIEW_CHECKLIST.md`);
 findings left open by that limit are extractor issues #21-#24. #8 typical floors written once
-(`typical_of` / `repeat_to`, PR #25) merged with no findings left open. Next: #9 KPP1 run, waiting
-for the user's three Revit-FBX point pairs at 0.000 and the roof covering level (fallback 7.700);
-decision (a) for the separate roof part is in `docs/domain/patterns/parapet.md` (PR #26). Human tickets: #2 (move `Unreal/`), #4 (window
+(`typical_of` / `repeat_to`, PR #25) merged with no findings left open. #9 KPP1 spec v001 merged
+(PR #27): `jobs/KPP1/object.json` frame checked on Revit within 0.0 mm, roof 7.909 and contour
+heights confirmed by the user, roof 7.911 (drainage slopes <= 2 deg), 23 glass openings, 58
+questions in `jobs/KPP1/questions.md` for the user. Roof rules (drainage <= 10 deg, caps and
+closure by structure) are in `docs/domain/patterns/parapet.md`. Next: #10 Revit extractor. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -100,7 +102,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #9 KPP1 run (after the user's frame points), then #10 Revit extractor; extractor follow-ups #21-#24 (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 — #10 Revit extractor, then #11 comparison; extractor follow-ups #21-#24 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
