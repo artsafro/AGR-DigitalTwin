@@ -21,7 +21,14 @@ SECTION_STEP_M = 0.25
 SECTION_OFFSET_M = 0.137  # keeps cuts off whole-number grid heights of hand-made etalons
 SAME_CONTOUR_M = 0.005    # sections closer than this (Hausdorff) are one contour; < the 1 cm acceptance
 WELD_M = 1e-4             # vertices closer than WELD_M / 2 on every axis are always welded
-SIMPLIFY_M = 0.005
+SIMPLIFY_M = 0.0005       # numeric noise only; kinks and arcs are decided by angle below
+KINK_DEG = 5.0            # a facade kink is a turn over 5 degrees (HARNESS_PLAN §3)
+ARC_TURN_MAX_DEG = 45.0   # a vertex turning more than this is a corner, not part of an arc
+ARC_SEG_MAX_M = 1.0       # arc tessellation segments are shorter than this
+ARC_MIN_VERTICES = 3
+ARC_MIN_TURN_DEG = 20.0
+DEVIATION_MIN_M2 = 0.005  # smaller differences between sections are noise
+PRIORITY_SHARE = 0.10     # question priority high: >= 2 levels or > 10 % of the facade length
 ROOF_LEVEL_TOL_M = 0.03   # roof plane vs the top input level: the level tolerance of HARNESS_PLAN §5
 ROOF_SEARCH_M = 0.3       # only to name nearby surfaces in the error message
 ROOF_OWN = 0.25           # share of the top floor the roof plane itself must cover (else roof or cap?)
@@ -187,11 +194,105 @@ def _outer(segments):
     return Polygon(biggest.exterior)
 
 
+def _turns(pts):
+    """Signed turn in degrees (left positive) at every vertex of a closed ring."""
+    d1 = pts - np.roll(pts, 1, axis=0)
+    d2 = np.roll(pts, -1, axis=0) - pts
+    return np.degrees(np.arctan2(d1[:, 0] * d2[:, 1] - d1[:, 1] * d2[:, 0], (d1 * d2).sum(axis=1)))
+
+
+def _line_cross(p1, p2, q1, q2):
+    d, e = p2 - p1, q2 - q1
+    den = d[0] * e[1] - d[1] * e[0]
+    if abs(den) < 1e-12:
+        return None
+    t = ((q1[0] - p1[0]) * e[1] - (q1[1] - p1[1]) * e[0]) / den
+    return p1 + t * d
+
+
+def _circle_radius(pts):
+    """Least-squares (Kasa) circle radius through the points."""
+    a = np.column_stack([2 * pts[:, 0], 2 * pts[:, 1], np.ones(len(pts))])
+    cx, cy, c = np.linalg.lstsq(a, (pts ** 2).sum(axis=1), rcond=None)[0]
+    return float(np.sqrt(c + cx * cx + cy * cy))
+
+
+def _rounded_corners(pts):
+    """Replace tessellated arcs between two straight walls by the corner point with a radius.
+    Returns a list of (xy, r or None)."""
+    pts = pts[np.abs(_turns(pts)) >= 0.05]   # collinear section points (triangle diagonals) split arcs
+    n = len(pts)
+    turn = _turns(pts)
+    seg = np.linalg.norm(np.roll(pts, -1, axis=0) - pts, axis=1)   # segment i -> i+1
+    short_side = (seg <= ARC_SEG_MAX_M) | (np.roll(seg, 1) <= ARC_SEG_MAX_M)
+    arc = (np.abs(turn) > 0.05) & (np.abs(turn) < ARC_TURN_MAX_DEG) & short_side
+    if arc.all() or not arc.any():
+        return [(p, None) for p in pts]
+    start = int(np.flatnonzero(~arc)[0])
+    order = [(start + k) % n for k in range(n)]
+    out, k = [], 0
+    while k < n:
+        i = order[k]
+        if not arc[i]:
+            out.append((pts[i], None))
+            k += 1
+            continue
+        run = [i]
+        while k + len(run) < n and arc[order[k + len(run)]] and np.sign(turn[order[k + len(run)]]) == np.sign(turn[i]):
+            run.append(order[k + len(run)])
+        total = abs(turn[run].sum())
+        corner = None
+        if len(run) >= ARC_MIN_VERTICES and total >= ARC_MIN_TURN_DEG:
+            before, after = (run[0] - 1) % n, (run[-1] + 1) % n
+            corner = _line_cross(pts[before], pts[run[0]], pts[run[-1]], pts[after])
+        if corner is None:
+            out.extend((pts[j], None) for j in run)
+        else:
+            out.append((corner, _circle_radius(pts[run])))
+        k += len(run)
+    return out
+
+
+def _drop_small_kinks(points):
+    """Remove vertices turning by KINK_DEG or less: they are not facade kinks (HARNESS_PLAN §3)."""
+    points = list(points)
+    while len(points) > 3:
+        xy = np.array([p for p, _ in points])
+        turn = np.abs(_turns(xy))
+        turn[[i for i, (_, r) in enumerate(points) if r is not None]] = np.inf
+        i = int(turn.argmin())
+        if turn[i] > KINK_DEG:
+            break
+        del points[i]
+    return points
+
+
 def _contour_points(poly):
     poly = orient(poly.simplify(SIMPLIFY_M, preserve_topology=True), sign=1.0)
-    pts = [(round(x, 3) + 0.0, round(y, 3) + 0.0) for x, y in list(poly.exterior.coords)[:-1]]
-    start = min(range(len(pts)), key=lambda i: (pts[i][1], pts[i][0]))
-    return [list(p) for p in pts[start:] + pts[:start]]
+    pts = _drop_small_kinks(_rounded_corners(np.array(poly.exterior.coords)[:-1]))
+    out = [[round(float(x), 3) + 0.0, round(float(y), 3) + 0.0] + ([{"r": round(r, 3)}] if r else [])
+           for (x, y), r in pts]
+    start = min(range(len(out)), key=lambda i: (out[i][1], out[i][0]))
+    return out[start:] + out[:start]
+
+
+def _deviations(groups, contour):
+    """Pieces where closed sections of the storey differ from its contour: not over the full height."""
+    pieces = []
+    for g in groups:
+        poly = g[0][1]
+        for kind, diff in (("projection", poly.difference(contour)), ("recess", contour.difference(poly))):
+            for part in shapely.get_parts(diff):
+                if part.area < DEVIATION_MIN_M2:
+                    continue
+                heights = [z for z, _ in g]
+                for p in pieces:
+                    if p["kind"] == kind and p["geom"].buffer(0.01).intersects(part):
+                        p["geom"], p["heights"] = p["geom"].union(part), p["heights"] + heights
+                        break
+                else:
+                    pieces.append({"kind": kind, "geom": part, "heights": heights})
+    return pieces
 
 
 def _level_contour(v, tris, z0, z1, name):
@@ -212,9 +313,63 @@ def _level_contour(v, tris, z0, z1, name):
             groups.append([(z, poly)])
     best = max(groups, key=len)
     medoid = min(best, key=lambda a: sum(a[1].hausdorff_distance(b[1]) for b in best))
+    others = [g for g in groups if g is not best]
     return medoid[1], {"sections": len(heights), "closed_sections": len(closed),
-                       "modal_sections": len(best), "other_contours": len(groups) - 1,
-                       "contour_height_m": round(medoid[0], 3)}
+                       "modal_sections": len(best), "other_contours": len(others),
+                       "contour_height_m": round(medoid[0], 3)}, _deviations(others, medoid[1])
+
+
+def _questions(levels, floors, polys, pieces_by_level):
+    """Merge deviation pieces across levels and measure them against the wall they sit on."""
+    merged = []
+    for li, pieces in enumerate(pieces_by_level):
+        for p in pieces:
+            for m in merged:
+                if m["kind"] == p["kind"] and m["geom"].buffer(0.01).intersects(p["geom"]):
+                    m["geom"] = m["geom"].union(p["geom"])
+                    m["heights"] += p["heights"]
+                    m["levels"].append(li)
+                    break
+            else:
+                merged.append({**p, "levels": [li]})
+    out = []
+    for n, m in enumerate(merged, 1):
+        li = m["levels"][0]
+        pts = np.array([q[:2] for q in floors[li]["contour"]], dtype=float)
+        walls = [LineString([pts[i], pts[(i + 1) % len(pts)]]) for i in range(len(pts))]
+        c = m["geom"].centroid
+        wall = min(range(len(walls)), key=lambda i: walls[i].distance(c))
+        a, b = pts[wall], pts[(wall + 1) % len(pts)]
+        u = (b - a) / np.linalg.norm(b - a)
+        coords = np.array(m["geom"].exterior.coords if m["geom"].geom_type == "Polygon"
+                          else [xy for g in m["geom"].geoms for xy in g.exterior.coords])
+        along = (coords - a) @ u
+        length = float(along.max() - along.min())
+        depth = max(polys[li].exterior.distance(shapely.Point(xy)) for xy in coords)
+        share = length / float(np.linalg.norm(b - a))
+        names = sorted({levels[i]["name"] for i in m["levels"]}, key=[lv["name"] for lv in levels].index)
+        out.append({"n": n, "priority": "high" if len(names) >= 2 or share > PRIORITY_SHARE else "normal",
+                    "kind": m["kind"], "levels": names, "wall": wall, "depth_m": round(depth, 3),
+                    "length_m": round(length, 3), "facade_share": round(share, 3),
+                    "heights_m": [round(min(m["heights"]), 2), round(max(m["heights"]), 2)],
+                    "at": [round(c.x, 2), round(c.y, 2)]})
+    return out
+
+
+def questions_markdown(spec_id, questions):
+    """The object's questions file: everything not over the full storey height (HARNESS_PLAN §4)."""
+    lines = [f"# Questions — {spec_id}", "",
+             "Written by the spec extractor. Each row is geometry that is not over the full storey height,",
+             "so it does not change the level contour (user decision 2026-10-08). Priority high = through",
+             "2 or more levels or over 10 % of the facade length. Heights are section heights (every",
+             f"{SECTION_STEP_M} m). A recess at window height may be an opening (separated by issue #7).", "",
+             "| # | Priority | Kind | Levels | Wall | Depth m | Length m | Facade share | Heights m | At (x, y) | Answer |",
+             "|---|---|---|---|---|---|---|---|---|---|---|"]
+    for q in questions:
+        lines.append(f"| {q['n']} | {q['priority']} | {q['kind']} | {', '.join(q['levels'])} | {q['wall']} | "
+                     f"{q['depth_m']} | {q['length_m']} | {q['facade_share']:.0%} | "
+                     f"{q['heights_m'][0]}–{q['heights_m'][1]} | {q['at'][0]}, {q['at'][1]} | |")
+    return "\n".join(lines) + "\n"
 
 
 def _roof(v, tris, below_level, top_level, top_contour):
@@ -283,13 +438,15 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
               "attachment_parts_ignored": len(parts) - 1, "floors": {}}
-    floors, polys = [], []
+    floors, polys, pieces = [], [], []
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"])
+        poly, rep, dev = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"])
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
         polys.append(poly)
+        pieces.append(dev)
+    report["questions"] = _questions(levels, floors, polys, pieces)
     roof_z, top_z, closed = _roof(v, body, levels[-2], levels[-1], polys[-1])
     report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],
