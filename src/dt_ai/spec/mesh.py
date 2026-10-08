@@ -53,6 +53,7 @@ DOOR_MIN_H_M = 1.9
 DOOR_W_M = (0.7, 3.0)
 DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
 RELIEF_M = 0.10
+DOOR_HOST_M = 0.02        # a source door is a facade door when its host wall reaches the contour within this
 
 
 class SpecError(ValueError):
@@ -756,10 +757,8 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
                         f"floor (< {ROOF_CLOSED:.0%}): roof missing or open; ask the user")
     holes = [h for h in shapely.get_parts(top_contour.difference(cover)) if h.area >= HOLE_MIN_M2]
     if holes:
-        # walls of the body or separate parts (a Revit source gives inner walls as parts, #29), cut
-        # inside the top storey, where nothing standing on the roof reaches
-        z_mid = _clear_height(v, every_part, (below_level["elev_m"] + roof_z) / 2)
-        walls = shapely.unary_union(_section(v, every_part, z_mid) or [LineString()])
+        z_mid = _clear_height(v, tris, (below_level["elev_m"] + roof_z) / 2)
+        walls = shapely.unary_union(_section(v, tris, z_mid) or [LineString()])
         for hole in holes:
             lined = walls.intersection(hole.buffer(PARAPET_EDGE_M)).length / hole.exterior.length
             if lined < SHAFT_WALL_SHARE:
@@ -905,9 +904,13 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
             source_doors_skipped += 1
             continue
         _, _, u, _ = op._wall_frame(floors[li]["contour"], (q0[:2] + q1[:2]) / 2)
-        off = polys[li].exterior.distance(shapely.Point(*((q0[:2] + q1[:2]) / 2)))
-        if abs(float(u @ run)) / float(np.linalg.norm(run)) < np.cos(np.radians(op.ALONG_DEG)) or off > op.PANE_WALL_M:
-            source_doors_skipped += 1                    # across the facade or inside: no facade opening
+        host = None
+        if d.get("host_line"):
+            h0, h1 = _apply(m, [[*d["host_line"][0], 0.0], [*d["host_line"][-1], 0.0]])
+            host = LineString([h0[:2], h1[:2]]).buffer(d["host_thickness"] / 2, cap_style="flat")
+        if (abs(float(u @ run)) / float(np.linalg.norm(run)) < np.cos(np.radians(op.ALONG_DEG))
+                or host is None or host.distance(polys[li].exterior) > DOOR_HOST_M):
+            source_doors_skipped += 1                    # its wall is not on the facade (PR #35 review 1)
             continue
         span = LineString([q0[:2], q1[:2]]).buffer(max(d["depth"], 0.01) / 2, cap_style="flat")
         doors[li].append({"geom": span, "z0": float(q0[2]), "z1": float(q1[2])})

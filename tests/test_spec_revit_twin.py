@@ -131,11 +131,70 @@ def test_free_curtain_wall_closes_the_facade_line():
     assert contour(spec).area == pytest.approx(100.0, abs=0.05)
 
 
-def test_curved_wall_stops_with_a_question():
-    walls, _ = ring()
+def box_obj(name, x0, y0, x1, y1, z0, z1):
+    """A closed box as an OBJ object."""
+    q = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    lines = [f"o {name}"] + [f"v {x} {y} {z}" for z in (z0, z1) for x, y in q]
+    faces = [(1, 4, 3, 2), (5, 6, 7, 8), (1, 2, 6, 5), (2, 3, 7, 6), (3, 4, 8, 7), (4, 1, 5, 8)]
+    return "\n".join(lines + [f"f {a} {b} {c} {d}" for a, b, c, d in faces]) + "\n"
+
+
+def test_curved_wall_is_its_real_geometry():
+    # the south wall flagged curved: read from reference.obj, not refused (PR #35 review 1)
+    walls, t = ring()
     walls[0]["curved"] = True
-    with pytest.raises(TwinDataError, match="curved walls"):
-        to_dump([band(walls)], [""])
+    obj = roof_obj(t) + box_obj("wall_1", 0.0, 0.0, 10.0, 0.3, 0.0, 7.2)
+    dump = to_dump([band(walls)], [obj])
+    assert "wall_1_b1" in dump["body"] and "wall_1" not in dump["body"]
+    spec, _ = extract_spec(dump, OBJ)
+    assert contour(spec).area == pytest.approx(100.0, abs=0.01)
+
+
+def test_curved_wall_without_geometry_stops_with_a_question():
+    walls, t = ring()
+    walls[0]["curved"] = True
+    with pytest.raises(TwinDataError, match="curved walls without geometry"):
+        to_dump([band(walls)], [roof_obj(t)])
+
+
+def test_free_wall_end_is_not_extended():
+    # a wall with one free end: no half thickness invented past it (PR #35 review 1)
+    walls, t = ring()
+    stub = wall(60, (5.0, 9.7), (5.0, 8.0), t=0.2)              # meets the north wall at 9.7, free at 8.0
+    dump = to_dump([band(walls + [stub])], [roof_obj(t)])
+    ys = [v[1] for m in dump["meshes"] if m["name"] == "wall_60" for v in m["vertices"]]
+    assert min(ys) == pytest.approx(8.0) and max(ys) == pytest.approx(9.8)
+
+
+def test_door_of_an_attachment_adds_no_plug_to_the_body():
+    walls, _ = ring()
+    frame = [wall(40, (4.0, 0.0), (4.0, -0.6), t=0.14, z1=2.7), wall(41, (4.0, -0.6), (5.0, -0.6), t=0.14, z1=2.7),
+             wall(42, (5.0, -0.6), (5.0, 0.0), t=0.14, z1=2.7)]
+    d = door(33, 4.2, 4.8, 41)
+    d["point"] = [4.5, -0.6, 0.0]
+    dump = to_dump([band(walls + frame, [d])], [""])
+    assert not any(n.startswith("plug_") for n in dump["body"])
+
+
+def test_inner_door_parallel_to_the_facade_is_no_facade_opening():
+    # an inner wall 0.6 m behind an intact south wall, with a door: the host is not on the facade
+    walls, _ = ring()
+    inner = wall(61, (0.3, 0.6), (9.7, 0.6), t=0.12, z1=3.3)
+    d = door(34, 4.0, 5.0, 61)
+    d["point"] = [4.5, 0.6, 0.0]
+    spec, report = spec_of(walls + [inner], [d])
+    assert spec.expanded_floors()[0].openings == [] and report["openings"]["source_doors_skipped"] == 1
+
+
+def test_detached_lining_never_makes_a_roof_hole_a_shaft():
+    # a 1 m2 hole in the roof with lining faces floating 1.55 m below it in a separate part (PR #35 review 1, P1)
+    walls, t = ring()
+    outer, hole = [(0, 0), (10, 0), (10, 10), (0, 10)], [(4.5, 4.5), (5.5, 4.5), (5.5, 5.5), (4.5, 5.5)]
+    roof = ["o roof_20"] + [f"v {x} {y} 6.6" for x, y in outer + hole]
+    roof += [f"f {a + 1} {(a + 1) % 4 + 1} {(a + 1) % 4 + 5} {a + 5}" for a in range(4)]   # one surface around the hole
+    lining = box_obj("panel_70", 4.5, 4.5, 5.5, 5.5, 4.85, 5.05)
+    with pytest.raises(SpecError, match="not a shaft"):
+        extract_spec(to_dump([band(walls)], ["\n".join(roof) + "\n" + lining]), OBJ)
 
 
 def test_cli_reads_a_twin_index(tmp_path):
