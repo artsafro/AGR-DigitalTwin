@@ -37,6 +37,14 @@ class Opening(SpecPart):
     h_m: Positive
     depth_m: NonNegative
     window_type: int | None = None
+    # door: a recess from the floor >= 1.9 m high, 0.7-3 m wide (user decision 2026-10-08, #31)
+    kind: Literal["window", "door"] | None = None
+    # panes of one frame (gap <= 0.15 m) grouped into this opening: a curtain wall is one opening (#31)
+    panes: int | None = Field(default=None, ge=1)
+    # an opening across a level is one record (spec v0.2, user decision 2026-10-08): kept by the
+    # floor of level_from, sill from that level, height up to level_to's floor and above
+    level_from: str | None = None
+    level_to: str | None = None
     # anchor that found it (user decision 2026-10-08, #7): a hole in the body, a glass pane, or both
     source: Literal["hole", "glass", "hole+glass"] | None = None
     # material id of an opening plane in it (group `opening`, ADR 0001); not the window type
@@ -75,7 +83,7 @@ class Roof(SpecPart):
 
 class Spec(SpecPart):
     id: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)+$")
-    spec_version: Literal["0.1"] = "0.1"
+    spec_version: Literal["0.1", "0.2"] = "0.2"   # 0.2: openings across levels (level_from / level_to)
     profile: Literal["npm_min", "mid"]
     frame: Frame
     levels: list[Level] = Field(min_length=2)
@@ -95,6 +103,15 @@ class Spec(SpecPart):
             for ref in (f.level, f.typical_of, f.repeat_to):
                 if ref is not None and ref not in names:
                     raise ValueError(f"floor refers to unknown level {ref}")
+        for f in self.floors:
+            for o in f.openings:
+                if (o.level_from is None) != (o.level_to is None):
+                    raise ValueError(f"floor {f.level}: an opening across levels needs level_from and level_to")
+                if o.level_to is not None and (o.level_from != f.level or o.level_to not in names
+                                               or names.index(o.level_to) <= names.index(f.level)):
+                    raise ValueError(f"floor {f.level}: level_from must be the floor and level_to a level above it")
+                if o.level_to is not None and self.spec_version == "0.1":
+                    raise ValueError("openings across levels need spec_version 0.2")
         full = {f.level for f in self.floors if f.contour is not None}
         owner = {}
         for f in self.floors:

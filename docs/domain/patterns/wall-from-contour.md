@@ -34,5 +34,20 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; terms Level contou
 - Never give `contour_at_m` inside a window band: the contour then follows the window notches and
   breaks into many short walls. Pick a band without openings.
 - A door from the floor or any wall break up to 8 m is an opening, not an open storey end.
+- A door recess (not a through hole) cut by the contour height is not a notch of the contour
+  (user decisions 2026-10-08, #31): a recess open from the storey floor (within 5 cm), at least
+  1.9 m high and 0.7-3 m wide at its mouth, is an opening and the contour runs straight over it;
+  depth is no criterion. Its mouth must be one straight segment with the facade continuing beyond
+  both ends; anything else (a block in an inner corner, an outward band) stays a question.
+- Kind: an opening filled with glass over its whole height (no stretch without glass over 0.20 m,
+  a frame member) is a `window`, from the floor or not; a `door` has no glass or glass over part
+  of its height.
+- Relief is not a kink: a bump or notch with both sizes <= 10 cm (frame profiles, e.g. 7.5 x 9 cm)
+  is taken off the contour.
+- Panes of one frame — side by side or a transom above, gap <= 0.15 m, aligned, and covering the
+  joined rectangle — are one opening with `panes: N`; a curtain wall is one opening, the unit of
+  the window library.
+- An opening across a level (one frame through the slab line) is one record in the lower floor
+  with `level_from` / `level_to` (spec v0.2), not two openings.
 - Small kinks (≤ 5°) are removed from the contour on purpose; elements on them are still measured
   on the real facet.

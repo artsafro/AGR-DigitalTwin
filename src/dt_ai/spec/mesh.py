@@ -46,6 +46,13 @@ HOLE_MIN_M2 = 0.01        # uncovered pieces of the top floor smaller than this 
 SHAFT_WALL_SHARE = 0.9    # a roof hole is a shaft when body walls line this share of its edge at mid top storey
 ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
+# user decisions 2026-10-08 (#31): a recess open from the storey floor, at least DOOR_MIN_H_M high
+# and DOOR_W_M wide at its mouth, is a door opening and leaves the contour (depth is no criterion);
+# a bump or notch with both sizes <= RELIEF_M is relief, not a kink
+DOOR_MIN_H_M = 1.9
+DOOR_W_M = (0.7, 3.0)
+DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
+RELIEF_M = 0.10
 
 
 class SpecError(ValueError):
@@ -350,12 +357,96 @@ def _deviations(groups, contour):
     for g in groups:
         for kind, diff in (("projection", g["poly"].difference(contour)), ("recess", contour.difference(g["poly"]))):
             for part in shapely.get_parts(diff):
-                if part.is_empty:
+                if part.is_empty or _is_relief(part):      # relief is no question (#31)
                     continue
                 far = max(contour.exterior.distance(shapely.Point(xy)) for xy in part.exterior.coords)
                 if far >= SAME_CONTOUR_M:
                     pieces.extend({"kind": kind, "geom": part, "spans": run} for run in _runs(g["spans"]))
     return pieces
+
+
+def _relief(poly):
+    """Parts of a contour shape with both sizes <= RELIEF_M (bumps out and notches in), and the
+    shape without them. Found by a mitred opening and closing, kept only when both sides of the
+    part's minimum rectangle are small, so a thin but deep fin is not relief."""
+    r = RELIEF_M / 2 + 1e-4
+    opened = poly.buffer(-r, join_style="mitre").buffer(r, join_style="mitre")
+    closed = poly.buffer(r, join_style="mitre").buffer(-r, join_style="mitre")
+    bumps = [g for g in shapely.get_parts(poly.difference(opened)) if g.area > 1e-8 and _is_relief(g)]
+    notches = [g for g in shapely.get_parts(closed.difference(poly)) if g.area > 1e-8 and _is_relief(g)]
+    if not bumps and not notches:
+        return poly, 0
+    out = poly.difference(shapely.unary_union([g.buffer(1e-7) for g in bumps]) if bumps else Polygon())
+    out = out.union(shapely.unary_union([g.buffer(1e-7) for g in notches])) if notches else out
+    out = max(shapely.get_parts(out.buffer(0)), key=lambda x: x.area)
+    return Polygon(out.exterior).simplify(SIMPLIFY_M, preserve_topology=True), len(bumps) + len(notches)
+
+
+def _is_relief(geom):
+    box = np.array(geom.minimum_rotated_rectangle.exterior.coords)[:-1]
+    return max(float(np.linalg.norm(box[i] - box[i - 1])) for i in range(len(box))) <= RELIEF_M + 1e-6
+
+
+def _mouth(n, base, edge):
+    """Width of a recess n at its mouth, or None when the mouth is not proven on the facade."""
+    free = shapely.line_merge(n.boundary.difference(edge))
+    parts = [g for g in shapely.get_parts(free) if g.length > SHARE_TOL_M]
+    if len(parts) != 1:
+        return None
+    c = np.array(parts[0].coords)
+    m0, m1 = c[0], c[-1]
+    span = float(np.linalg.norm(m1 - m0))
+    if span < 1e-6 or parts[0].length > span * 1.01 + 1e-6:          # bent mouth: not a facade line
+        return None
+    u = (m1 - m0) / span
+    beyond = 4 * SHARE_TOL_M                                         # the edge buffer shortened the mouth
+    if any(base.boundary.distance(shapely.Point(q)) > SHARE_TOL_M for q in (m0 - u * beyond, m1 + u * beyond)):
+        return None
+    along = (np.array(n.exterior.coords) - m0) @ u
+    return float(np.ptp(along))
+
+
+def _door_recesses(closed, base, z0, z1):
+    """Recesses of the contour shape open from the storey floor (user rules, #31): returns the
+    shape with them filled and the doors [{geom, z0, z1, mouth_m}]. A recess is a region the shape
+    at another height covers but this one does not, whose mouth is proven to be on the facade: the
+    part of its boundary off the shape is one straight segment and the shape's boundary continues
+    along that line beyond both of its ends (PR #33 review 1: a block in the inner corner of an
+    L-shaped plan has a bent mouth and stays a question; an outward band has no facade beyond its
+    ends). The width is the recess's exact extent along the mouth. Relief is taken off every shape
+    first, so frame profiles next to a door neither widen it nor join it."""
+    closed = [(a, b, _relief(poly)[0]) for a, b, poly in closed]
+    hull = base.convex_hull
+    cands = shapely.unary_union([poly.difference(base).intersection(hull) for _, _, poly in closed])
+    cands = cands.buffer(-SHARE_TOL_M, join_style="mitre").buffer(SHARE_TOL_M, join_style="mitre")   # no slivers
+    edge = base.boundary.buffer(SHARE_TOL_M)
+    doors = []
+    for n in shapely.get_parts(cands):
+        if n.area < 1e-4:
+            continue
+        mouth = _mouth(n, base, edge)
+        if mouth is None or not (DOOR_W_M[0] - 1e-6 <= mouth <= DOOR_W_M[1] + 1e-6):
+            continue
+        top = None
+        for a, b, poly in closed:                # contiguous open heights from the floor up
+            covered = poly.intersection(n).area >= 0.5 * n.area
+            if top is None:
+                if a - z0 > DOOR_FLOOR_M:
+                    break
+                if covered:
+                    continue
+                top = b
+            elif covered or a - top > EVENT_MIN_M:
+                break
+            else:
+                top = b
+        if top is not None and top - z0 >= DOOR_MIN_H_M - 1e-6:
+            doors.append({"geom": n, "z0": z0, "z1": top, "mouth_m": round(mouth, 3)})
+    if doors:
+        base = shapely.unary_union([base] + [d["geom"].buffer(1e-7) for d in doors]).buffer(0)
+        base = max(shapely.get_parts(base), key=lambda x: x.area)
+        base = Polygon(base.exterior).simplify(SIMPLIFY_M, preserve_topology=True)
+    return base, doors
 
 
 def _span_text(spans):
@@ -421,9 +512,13 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
                         "object.json to a height of the wall shape (HARNESS_PLAN §4)")
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
+    # door recesses leave the contour and become openings; relief is not a kink (#31)
+    poly, relief = _relief(base["poly"])
+    poly, doors = _door_recesses(closed, poly, z0, z1)
+    report["door_recesses"], report["relief_parts"] = len(doors), relief
     # every other shape is not over the full height -> questions
     report["bridged_sections"] = sum(1 for _, _, m, _ in mouth_spans if m)
-    return base["poly"], report, _deviations([g for g in groups if g is not base], base["poly"]), mouth_spans
+    return poly, report, _deviations([g for g in groups if g is not base], poly), mouth_spans, doors
 
 
 def _measure(piece, section, contour_pts):
@@ -775,11 +870,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
               "attachment_parts_ignored": len(parts) - 1, "floors": {}}
-    floors, polys, pieces, mouths = [], [], [], []
+    floors, polys, pieces, mouths, doors = [], [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev, ms = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]))
+        poly, rep, dev, ms, dr = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]))
         mouths.append(ms)
+        doors.append(dr)
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
@@ -787,7 +883,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         pieces.append(dev)
     panes, flat_glass = _glass(dump, m)
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
-                                                              _planes(v, plane_tris))
+                                                              _planes(v, plane_tris), doors)
     cleared = 0
     for li, floor in enumerate(floors):
         floor["openings"] = per_floor[li]
