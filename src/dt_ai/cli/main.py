@@ -10,6 +10,7 @@ from dt_ai.core.profiles import load_profiles
 from dt_ai.drawing.index import index_pdf
 from dt_ai.materials.registry import merge_proposals
 from dt_ai.spec import extract_spec
+from dt_ai.spec.compare import compare_specs, markdown as spec_compare_markdown
 from dt_ai.spec.mesh import questions_markdown
 from dt_ai.spec.questions_file import merge as merge_questions
 from dt_ai.validate.bundle import validate
@@ -32,8 +33,8 @@ def parser():
     reg.add_argument("--current", type=Path, required=True)
     reg.add_argument("--proposal", type=Path, required=True)
     reg.add_argument("--output", type=Path, required=True)
-    spec = sub.add_parser("spec", help="Extract spec.json from a mesh dump; merge its questions into the object's file")
-    spec.add_argument("action", choices=["extract", "merge-questions"])
+    spec = sub.add_parser("spec", help="Extract spec.json from a mesh dump; merge its questions; compare two specs")
+    spec.add_argument("action", choices=["extract", "merge-questions", "compare"])
     spec.add_argument("--dump", type=Path, help="extract: dump of tools/source/measure_spec_blender.py")
     spec.add_argument("--object", type=Path, help="extract: object.json with id and frame")
     spec.add_argument("--output", type=Path, help="extract: new spec.json; report and questions beside it")
@@ -41,6 +42,9 @@ def parser():
     spec.add_argument("--report", type=Path, help="merge-questions: <spec>.report.json of one version")
     spec.add_argument("--version", help="merge-questions: the spec version, e.g. v002")
     spec.add_argument("--into", type=Path, help="merge-questions: the object's questions.md (created if missing)")
+    spec.add_argument("--a", type=Path, help="compare: first spec.json (its <spec>.report.json beside it)")
+    spec.add_argument("--b", type=Path, help="compare: second spec.json (its <spec>.report.json beside it)")
+    spec.add_argument("--tolerances", type=Path, help="compare: benchmark tolerances.json")
     for name in ("build", "validate"):
         item = sub.add_parser(name, help="Build/check a labelled development bundle; never certify delivery")
         item.add_argument("--job" if name == "build" else "--archive", type=Path, required=True)
@@ -85,6 +89,22 @@ def main(argv=None):
             tmp.write_text(text, encoding="utf-8")
             tmp.replace(args.into)
             print(f"Questions: {args.into}; {len(report['questions'])} from {args.version}")
+        elif args.command == "spec" and args.action == "compare":
+            if not (args.a and args.b and args.tolerances and args.output):
+                raise ValueError("compare needs --a, --b, --tolerances and --output")
+            md = args.output.with_suffix(".md")
+            for path in (args.output, md):
+                if path.exists():
+                    raise ValueError(f"{path} exists; write a new versioned comparison")
+            docs = [read_json(x.read_bytes()) for x in (args.a, args.b)]
+            reports = [read_json(x.with_name(x.name.replace(".json", ".report.json")).read_bytes()) for x in (args.a, args.b)]
+            result = compare_specs(*docs, *reports, read_json(args.tolerances.read_bytes()),
+                                   names=tuple(d["frame"]["source"] for d in docs))
+            result["inputs"] = {"a": str(args.a), "b": str(args.b), "tolerances": str(args.tolerances)}
+            write_json(args.output, result)
+            md.write_text(spec_compare_markdown(result), encoding="utf-8")
+            print(f"Compare: {args.output}; verdict {result['verdict']}; {len(result['failing'])} criteria outside: "
+                  f"{', '.join(result['failing']) or 'none'}")
         elif args.command == "spec":
             if not (args.dump and args.object and args.output):
                 raise ValueError("extract needs --dump, --object and --output")

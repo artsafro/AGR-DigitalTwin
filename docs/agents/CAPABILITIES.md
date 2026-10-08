@@ -151,6 +151,10 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   curtain walls (system family Витраж / Curtain Wall) are glass panes. A wall whose box is not its width (type) across stops
   with a question (no location lines on either route). Limits: boxes are solid (wall openings and
   attachments such as porches join the body); `window_type` null until #4. KPP1: `jobs/KPP1/outputs/spec-revit-v003/`.
+- Spec comparison (Claude, 2026-10-08, #11): `dt spec compare --a <spec> --b <spec> --tolerances
+  benchmark/<id>/tolerances.json --output <cmp.json>` (+ `.md`): rows per criterion of HARNESS_PLAN §4
+  with both values, threshold and reference side, contour difference regions; thresholds, reference
+  sides and whether a verdict is given come from tolerances.json. KPP1: `jobs/KPP1/spec-compare-v001.md`.
 
 ### Operation library — `technical_library/`
 - Status: WORKING per package README (Russian): `glb_atlas`, `uv_continuous` (UV v006),

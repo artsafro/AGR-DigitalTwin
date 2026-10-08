@@ -1,0 +1,23 @@
+{
+  "bench": "bench-k01-kpp1",
+  "profile": "npm_min",
+  "spec_compare": {
+    "level_elev_m": 0.03,
+    "contour_area_rel": 0.02,
+    "contour_hausdorff_m": 0.05,
+    "opening_bbox_m": 0.05
+  },
+  "spec_compare_source": "HARNESS_PLAN §4 (issue #11): level count and kink count equal, opening count equal; roof covering, parapet top and parapet height use the level threshold",
+  "reference": {
+    "levels": "revit",
+    "roof": "revit",
+    "parapet": "revit",
+    "contours": null,
+    "openings": null
+  },
+  "reference_note": "User decision 2026-10-08: levels, roof and parapet from Revit are the reference now; contours only after Revit walls come from location lines (#29); openings are not ranked",
+  "verdict": {
+    "enabled": false,
+    "reason": "no match / Rhino verdict until #29: the Revit path reads walls as bounding boxes (user decision 2026-10-08)"
+  }
+}
