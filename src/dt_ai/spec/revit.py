@@ -7,13 +7,17 @@ from bounding boxes: every wall and roof becomes a box (the body), a roof's top 
 covering height (bottom + volume / plan area), and every window and door becomes a vertical pane
 in the middle plane of its box (an opening anchor, source `glass`), and so does every curtain wall
 (system family Витраж / Curtain Wall: its box holds mullion and frame depth, not a facade face).
-A wall whose box's long side is shorter than the wall — a diagonal or curved wall — stops the
-extraction with a question; it is never approximated. The result goes through the same `extract_spec` as a scanned mesh.
+A wall runs along X or Y only when its box's short side equals its width (type parameter) and its
+long side is at least its length (joins extend the box past the location line's ends). The width
+is the proof: a wall of length L and width w at angle t has a short side w*cos(t) + L*sin(t), so a
+turn the tolerance hides moves the wall by at most LENGTH_TOL_M; the length alone proves nothing
+(PR #30 review 1: 10 x 1 m at 10 degrees has a long side within 2 cm of its length). Any other
+wall stops the extraction with a question and is never approximated. A curtain wall has no width:
+one box side must equal its length; it becomes an opening anchor and never shapes the contour. The result goes through the same `extract_spec` as a scanned mesh.
 """
 FT = 0.3048
 CURTAIN_FAMILIES = {"Витраж", "Curtain Wall"}   # Revit system family of curtain walls (RU / EN)
-LENGTH_TOL_M = 0.05       # a straight wall runs along X or Y when its box's long side equals its length:
-                          # a wall at angle t has a long side L*cos(t) < L, an arc a chord shorter than L
+LENGTH_TOL_M = 0.05       # a box side equals the wall width / length within this
 
 
 class RevitDataError(ValueError):
@@ -51,13 +55,19 @@ def to_dump(data):
     for e in data["elements"]:
         lo, hi = _m(e["bbox_ft"]["min"]), _m(e["bbox_ft"]["max"])
         dx, dy = hi[0] - lo[0], hi[1] - lo[1]
-        if e["category"] == "OST_Walls" and e.get("family") in CURTAIN_FAMILIES:
-            # a curtain wall is glazing: its box carries mullion and frame depth, not a facade face
-            meshes.append(_pane(f"glass_curtain_{e['id']}", lo, hi))
-        elif e["category"] == "OST_Walls":
-            length = (e.get("length_ft") or 0.0) * FT
-            if length <= 0 or max(dx, dy) < length - LENGTH_TOL_M:
+        if e["category"] == "OST_Walls":
+            length, width = (e.get("length_ft") or 0.0) * FT, (e.get("width_ft") or 0.0) * FT
+            curtain = e.get("family") in CURTAIN_FAMILIES
+            if curtain:    # mullion and frame depth may exceed a short curtain wall's length
+                along = length > 0 and min(abs(dx - length), abs(dy - length)) <= LENGTH_TOL_M
+            else:
+                along = (length > 0 and width > 0 and max(dx, dy) >= length - LENGTH_TOL_M
+                         and abs(min(dx, dy) - width) <= LENGTH_TOL_M)
+            if not along:
                 skew.append(e["id"])
+                continue
+            if curtain:    # a curtain wall is glazing: its box carries mullion and frame depth, not a facade face
+                meshes.append(_pane(f"glass_curtain_{e['id']}", lo, hi))
                 continue
             name = f"wall_{e['id']}"
             meshes.append(_box(name, lo, hi))
@@ -74,7 +84,8 @@ def to_dump(data):
         elif e["category"] in ("OST_Windows", "OST_Doors"):
             meshes.append(_pane(f"glass_{e['category'][4:-1].lower()}_{e['id']}", lo, hi))
     if skew:
-        raise RevitDataError(f"{len(skew)} walls do not run along X or Y (ids {skew[:10]}): wall location lines are "
-                             "not available from Revit here, so they are not approximated; ask the user")
+        raise RevitDataError(f"{len(skew)} walls are not proven to run along X or Y — box is not length x width "
+                             f"(ids {skew[:10]}): wall location lines are not available from Revit here (#29), "
+                             "so they are not approximated; ask the user")
     return {"source": data.get("source", "revit"), "document": data.get("document"), "units": "m",
             "meshes": meshes, "helpers": [], "body": body}

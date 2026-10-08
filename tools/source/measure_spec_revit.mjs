@@ -4,7 +4,7 @@
 //   node tools/source/measure_spec_revit.mjs <revit-data.json>
 //
 // Writes levels and, for walls, windows, doors and roofs, the bounding box (feet), the wall
-// length and the roof volume, through the revit-http MCP route (docs/agents/CAPABILITIES.md).
+// length, width (type) and system family, and the roof volume, through the revit-http MCP route (docs/agents/CAPABILITIES.md).
 // Neither MCP route exposes wall location lines, so geometry comes from bounding boxes; the
 // conversion (dt_ai.spec.revit) refuses walls that do not run along X or Y (user decision
 // 2026-10-08). Server path: REVIT_MCP_SERVER, default the workstation install.
@@ -45,7 +45,7 @@ try {
   const doc = await call('revit_get_document_info');
   if (doc.isModified) console.warn('WARNING: the document reports unsaved changes; reading anyway, never saving');
   const levels = (await call('revit_list_levels')).levels.map(l => ({name: l.name, elev_m: l.elevationMeters}));
-  const elements = [];
+  const elements = [], widths = {};
   for (const category of ['OST_Walls', 'OST_Windows', 'OST_Doors', 'OST_Roofs']) {
     for (const id of await all(category)) {
       const info = await call('revit_get_element_info', {id});
@@ -55,6 +55,9 @@ try {
       if (category === 'OST_Walls') {
         e.length_ft = (param(info, 'Длина', 'Length') || {}).value ?? null;
         e.family = (param(info, 'Семейство', 'Family') || {}).valueString ?? null;   // system family: basic / curtain
+        if (info.typeId != null && !(info.typeId in widths))                          // wall width is a type parameter
+          widths[info.typeId] = (param(await call('revit_get_element_info', {id: info.typeId}), 'Толщина', 'Width') || {}).value ?? null;
+        e.width_ft = widths[info.typeId] ?? null;
       }
       if (category === 'OST_Roofs') e.volume_ft3 = (await call('revit_get_element_geometry', {id})).volumeCubicFeet;
       elements.push(e);

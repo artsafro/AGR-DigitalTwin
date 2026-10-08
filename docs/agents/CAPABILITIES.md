@@ -148,9 +148,9 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   active document through `revit-http-2025` (read only; records `modified_before/after`), and
   `dt spec extract --dump <revit-data.json>` runs the same spec logic. Geometry from bounding boxes:
   walls and roofs are body boxes (roof top = mean covering height from volume), windows, doors and
-  curtain walls (system family Витраж / Curtain Wall) are glass panes. A wall not along X or Y stops
+  curtain walls (system family Витраж / Curtain Wall) are glass panes. A wall whose box is not its width (type) across stops
   with a question (no location lines on either route). Limits: boxes are solid (wall openings and
-  attachments such as porches join the body); `window_type` null until #4. KPP1: `jobs/KPP1/outputs/spec-revit-v002/`.
+  attachments such as porches join the body); `window_type` null until #4. KPP1: `jobs/KPP1/outputs/spec-revit-v003/`.
 
 ### Operation library — `technical_library/`
 - Status: WORKING per package README (Russian): `glb_atlas`, `uv_continuous` (UV v006),
