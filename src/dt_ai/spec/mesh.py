@@ -36,7 +36,10 @@ SHARE_TOL_M = 0.005       # a piece shares a wall when its boundary lies within 
 PRIORITY_SHARE = 0.10     # question priority high: >= 2 levels or > 10 % of the facade length
 ROOF_LEVEL_TOL_M = 0.10   # roof surfaces lie within this of the top input level (user decision 2026-10-08, #9)
 ROOF_SLOPE_MAX_DEG = 10.0 # drainage slopes up to this are a flat roof; steeper roof parts are a question
+ROOF_SLOPE_BAND_M = 1.0   # faces of a sloped roof surface reach this far below the input level
 ROOF_STEEP_SHARE = 0.01   # steep up-facing roof area above this share of the floor stops the extractor
+CAP_BAND_M = 1.0          # a cap or coping lies within this of the top floor's outer edge
+ROOF_PART_INSIDE = 0.95   # a separate roof part lies inside the top contour; partly outside is a question
 ROOF_SEARCH_M = 0.3       # only to name nearby surfaces in the error message
 ROOF_OWN = 0.25           # share of the top floor the roof plane itself must cover (else roof or cap?)
 HOLE_MIN_M2 = 0.01        # uncovered pieces of the top floor smaller than this are numeric slivers
@@ -542,24 +545,62 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
         face = Polygon(p[i, :, :2])
         return face.area > 0 and face.intersection(top_contour).area >= 0.5 * face.area, face
 
-    near_flat, roof, steep = [], [], 0.0
-    for i in np.flatnonzero(ok & (n[:, 2] > 0) & (zc >= level - ROOF_LEVEL_TOL_M)):
+    core = top_contour.buffer(-CAP_BAND_M)       # the floor further than CAP_BAND_M from its outer edge
+
+    def at_edge(face):                           # a cap or coping: (almost) none of it reaches the core
+        return face.intersection(core).area <= 0.01 * face.area
+
+    near_flat, steep = [], 0.0
+    for i in np.flatnonzero(ok & (n[:, 2] > 0) & (zc >= level - ROOF_SLOPE_BAND_M)):
         is_in, face = inside(i)
         if not is_in:
             continue
         if slope[i] <= ROOF_SLOPE_MAX_DEG:
             near_flat.append((i, face))
-            if abs(zc[i] - level) <= ROOF_LEVEL_TOL_M:
-                roof.append((i, face))
-        elif slope[i] < 80.0 and zc[i] <= level + 1.5:
+        elif slope[i] < 80.0 and zc[i] <= level + 1.5 and not at_edge(face):
             steep += float(length[i]) / 2
     if steep > ROOF_STEEP_SHARE * floor_area:
         raise SpecError(f"roof parts steeper than {ROOF_SLOPE_MAX_DEG:.0f} degrees cover {steep:.1f} m2 at {where}: "
                         "a pitched roof is not read automatically; ask the user")
+    # near-flat faces form surfaces (faces sharing vertices); each surface has its own area-weighted
+    # height, and the roof is the surfaces within ROOF_LEVEL_TOL_M of the input level. A surface
+    # lying along the outer edge (a cap) is not roof when another surface is (PR #27 review 1)
+    sets = _Sets(len(near_flat))
+    by_vertex = {}
+    for k, (i, _) in enumerate(near_flat):
+        for vid in every[i]:
+            if int(vid) in by_vertex:
+                sets.union(by_vertex[int(vid)], k)
+            else:
+                by_vertex[int(vid)] = k
+    surfaces = defaultdict(list)
+    for k in range(len(near_flat)):
+        surfaces[sets.find(k)].append(near_flat[k])
+    candidates = []
+    for members in surfaces.values():
+        ids = np.array([i for i, _ in members])
+        w = length[ids] / 2
+        mean = float((zc[ids] * w).sum() / w.sum())
+        if abs(mean - level) <= ROOF_LEVEL_TOL_M:
+            plan = shapely.unary_union([f for _, f in members])
+            candidates.append((members, mean, all(at_edge(f) for _, f in members), plan))
+
+    def ring_around(c):                          # a higher ring with another candidate in its hole
+        rings = [Polygon(r) for g in shapely.get_parts(c[3]) for r in getattr(g, "interiors", [])]
+        return any(o is not c and o[1] < c[1] and any(r.contains(o[3].representative_point()) for r in rings)
+                   for o in candidates)
+
+    if any(not c[2] for c in candidates):
+        candidates = [c for c in candidates if not c[2]]
+    if len(candidates) > 1:
+        candidates = [c for c in candidates if not ring_around(c)] or candidates
+    roof = [m for c in candidates for m in c[0]]
     if not roof:
-        nearby = sorted({round(float(zc[i]), 2) for i, _ in near_flat})[:10]
+        nearby = sorted({round(mean, 2) for members, mean, _ in
+                         [(m, float(np.average(zc[[i for i, _ in m]], weights=length[[i for i, _ in m]])), 0)
+                          for m in surfaces.values()]})[:10]
         raise SpecError(f"no up-facing roof surface within {ROOF_LEVEL_TOL_M} m of {where}; "
-                        f"near-flat surfaces above it at {nearby or 'none'} — check the roof level")
+                        f"near-flat surfaces at {nearby or 'none'} — check the roof level")
     idx = np.array([i for i, _ in roof])
     areas = length[idx] / 2
     roof_z = float((zc[idx] * areas).sum() / areas.sum())
@@ -576,7 +617,9 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
         for i in np.flatnonzero((ql > 0) & (qn[:, 2] >= np.cos(np.radians(ROOF_SLOPE_MAX_DEG)) * ql)
                                 & (q[:, :, 2].mean(axis=1) > roof_z)):
             face = Polygon(q[i, :, :2])
-            if face.area > 0 and face.intersection(top_contour).area >= 0.5 * face.area:
+            # only a cap along the outer edge closes the floor; an equipment top over a missing
+            # roof does not (PR #27 review 1, P1)
+            if face.area > 0 and face.intersection(top_contour).area >= 0.5 * face.area and at_edge(face):
                 lids.append(face)
     cover = shapely.unary_union([f for _, f in near_flat] + lids).intersection(top_contour)
     closed = cover.area / floor_area
@@ -597,7 +640,7 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
     edge = top_contour.exterior
     pts = v[np.unique(tris)]
     on_edge = [z for (x, y, z) in pts if edge.distance(shapely.Point(x, y)) <= PARAPET_EDGE_M]
-    stats = {"surface_z_min_m": round(float(zc[idx].min()), 3), "surface_z_max_m": round(float(zc[idx].max()), 3),
+    stats = {"surface_z_min_m": round(float(p[idx][:, :, 2].min()), 3), "surface_z_max_m": round(float(p[idx][:, :, 2].max()), 3),
              "slope_max_deg": round(float(slope[idx].max()), 2),
              "slope_mean_deg": round(float((slope[idx] * areas).sum() / areas.sum()), 2)}
     return roof_z, max(on_edge) if on_edge else roof_z, round(closed, 3), stats
@@ -619,9 +662,15 @@ def _roof_parts(v, parts, top_level, top_contour):
         z = float((p[flat][:, :, 2].mean(axis=1) * a).sum() / a.sum())
         faces = [Polygon(t[:, :2]) for t in p[flat]]
         plan = shapely.unary_union([f for f in faces if f.area > 0])
-        if abs(z - top_level["elev_m"]) <= ROOF_LEVEL_TOL_M and plan.area > 0 \
-                and plan.intersection(top_contour).area >= 0.5 * plan.area:
+        if abs(z - top_level["elev_m"]) > ROOF_LEVEL_TOL_M or plan.area <= 0:
+            continue
+        share = plan.intersection(top_contour).area / plan.area
+        if share >= ROOF_PART_INSIDE:
             out.append(part)
+        elif share >= 0.05:
+            c = plan.centroid
+            raise SpecError(f"a separate part at the roof level ({z:.3f} m) lies {1 - share:.0%} outside the top floor "
+                            f"contour at ({c.x:.2f}, {c.y:.2f}): roof or not? ask the user")
     return out
 
 

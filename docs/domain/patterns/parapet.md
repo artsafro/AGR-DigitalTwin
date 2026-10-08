@@ -10,9 +10,11 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4; issues #16, #9; user de
 
 ## How the extractor reads the roof
 
-- The roof level is input; geometry only confirms it: up-facing surfaces inside the top floor
-  contour within ±10 cm of that level, covering at least 25 % of the floor themselves and, with
-  the cap and shaft tops above them, at least 90 %. Otherwise the extractor stops and asks.
+- The roof level is input; geometry only confirms it: up-facing near-flat surfaces inside the top
+  floor contour whose area-weighted height lies within ±10 cm of that level, covering at least
+  25 % of the floor themselves and, with the cap along the outer edge and shaft tops of the body,
+  at least 90 %. A surface along the outer edge (cap, coping) is not roof when another surface is.
+  Equipment tops never close a missing roof. Otherwise the extractor stops and asks.
 - **Drainage slopes are the norm of a flat roof.** Roof surfaces sloped up to 10° are one roof;
   its height is their area-weighted mean, reported with the height range and the slope (max,
   mean). Roof parts steeper than 10° are a question, not a guess (user decision 2026-10-08, #9).
