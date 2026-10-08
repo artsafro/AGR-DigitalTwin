@@ -30,7 +30,13 @@ walls, anything else a question. KPP1 Revit vs mesh: L0 324.20 / 319.48 m2 (Haus
 match the Revit reference within 2 mm; L0 0.70 m is the Revit path (entrance-frame walls as body,
 #29); door recesses and 7.5 x 9 cm frame profiles are the mesh side (#31, user rules 2026-10-08:
 recess from the floor >= 1.9 m, 0.7-3 m wide = door; curtain wall = one opening with `panes`;
-both sizes <= 10 cm = relief). No Rhino verdict until #29. Next: #31, then #29. Human tickets: #2 (move `Unreal/`), #4 (window
+both sizes <= 10 cm = relief). No Rhino verdict until #29. #31 merged (PR #33, spec v0.2):
+door recesses from the floor leave the contour as openings (`kind` door, or window when glass
+fills the height), relief <= 10 cm is no kink, panes of one frame are one opening with `panes`, an
+opening across a level is one record with `level_from` / `level_to`. KPP1 mesh spec v009/v010:
+both contours the facade rectangle; L1 equal to Revit (Hausdorff 0.0 m); L0 differs only by the
+Revit entrance frames (0.70 m). Review-3 leftovers: #34. Next: #29 (Revit wall axes and
+connectivity), then the comparison rerun with the Rhino criterion. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -111,7 +117,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 — #31 mesh openings rules, then #29 Revit wall lines and the comparison rerun with the Rhino criterion; extractor follow-ups #21-#24 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 — #29 Revit wall lines and connectivity, then the comparison rerun with the Rhino criterion; extractor follow-ups #21-#24, #34 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
