@@ -43,6 +43,7 @@ ROOF_PART_SLIVER_M2 = 0.05  # a separate roof part with more than this both insi
 ROOF_SEARCH_M = 0.3       # only to name nearby surfaces in the error message
 ROOF_OWN = 0.25           # share of the top floor the roof plane itself must cover (else roof or cap?)
 HOLE_MIN_M2 = 0.01        # uncovered pieces of the top floor smaller than this are numeric slivers
+SHAFT_UPPER = 0.85        # ... and again at this share of the top storey's height
 SHAFT_WALL_SHARE = 0.9    # a roof hole is a shaft when body walls line this share of its edge at mid top storey
 ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
@@ -53,6 +54,7 @@ DOOR_MIN_H_M = 1.9
 DOOR_W_M = (0.7, 3.0)
 DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
 RELIEF_M = 0.10
+DOOR_HOST_M = 0.02        # a source door is a facade door when its host wall reaches the contour within this
 
 
 class SpecError(ValueError):
@@ -592,6 +594,17 @@ def _questions(levels, floors, polys, pieces_by_level):
     return out
 
 
+def _source_questions(dump, levels):
+    """Questions a source converter already found (Revit attachments, #29), placed on the storeys
+    their heights touch."""
+    out = []
+    for q in dump.get("questions", []):
+        z0, z1 = q["heights_m"]
+        names = [a["name"] for a, b in zip(levels, levels[1:]) if z0 < b["elev_m"] and z1 > a["elev_m"]]
+        out.append({**q, "levels": names or [levels[0]["name"]]})
+    return out
+
+
 def questions_markdown(spec_id, questions):
     """The object's questions file: everything not over the full storey height (HARNESS_PLAN §4)."""
     lines = [f"# Questions — {spec_id}", "",
@@ -745,10 +758,14 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
                         f"floor (< {ROOF_CLOSED:.0%}): roof missing or open; ask the user")
     holes = [h for h in shapely.get_parts(top_contour.difference(cover)) if h.area >= HOLE_MIN_M2]
     if holes:
-        z_mid = _clear_height(v, tris, (below_level["elev_m"] + roof_z) / 2)
-        walls = shapely.unary_union(_section(v, tris, z_mid) or [LineString()])
+        # lined at mid storey and in the storey's upper part: walls that stop well below the roof
+        # line nothing (PR #35 review 2, P1)
+        cuts = [_clear_height(v, tris, below_level["elev_m"] + share * (roof_z - below_level["elev_m"]))
+                for share in (0.5, SHAFT_UPPER)]
+        sections = [shapely.unary_union(_section(v, tris, z) or [LineString()]) for z in cuts]
         for hole in holes:
-            lined = walls.intersection(hole.buffer(PARAPET_EDGE_M)).length / hole.exterior.length
+            lined = min(w.intersection(hole.buffer(PARAPET_EDGE_M)).length for w in sections) / hole.exterior.length
+            z_mid = cuts[0]
             if lined < SHAFT_WALL_SHARE:
                 c = hole.centroid
                 raise SpecError(f"roof at {roof_z:.3f} m has an opening of {hole.area:.2f} m2 at ({c.x:.2f}, {c.y:.2f}) "
@@ -882,6 +899,25 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         polys.append(poly)
         pieces.append(dev)
     panes, flat_glass = _glass(dump, m)
+    source_doors_skipped = 0
+    for d in dump.get("doors", []):                      # door records of a source (Revit, #29)
+        q0, q1 = _apply(m, [[*d["p0"], d["z0"]], [*d["p1"], d["z1"]]])
+        li = next((i for i in range(len(floors)) if levels[i]["elev_m"] - op.LEVEL_JOINT_M <= q0[2]
+                   < levels[i + 1]["elev_m"] - op.LEVEL_JOINT_M), None)
+        run = q1[:2] - q0[:2]
+        if li is None or np.linalg.norm(run) < 1e-6:
+            source_doors_skipped += 1
+            continue
+        _, _, u, _ = op._wall_frame(floors[li]["contour"], (q0[:2] + q1[:2]) / 2)
+        # the door itself on the facade: its line (on its host's location line) within half the host's
+        # thickness of the contour, at the door, not anywhere along the host (PR #35 review 2)
+        reach = (d.get("host_thickness") or 0.0) / 2 + DOOR_HOST_M
+        if (abs(float(u @ run)) / float(np.linalg.norm(run)) < np.cos(np.radians(op.ALONG_DEG))
+                or max(polys[li].exterior.distance(shapely.Point(*q[:2])) for q in (q0, q1)) > reach):
+            source_doors_skipped += 1                    # not on the facade
+            continue
+        span = LineString([q0[:2], q1[:2]]).buffer(max(d["depth"], 0.01) / 2, cap_style="flat")
+        doors[li].append({"geom": span, "z0": float(q0[2]), "z1": float(q1[2])})
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
                                                               _planes(v, plane_tris), doors)
     cleared = 0
@@ -891,10 +927,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
         cleared += len(pieces[li]) - len(kept)
         pieces[li] = kept
     report["openings"] = {"count": sum(len(f["openings"]) for f in floors), **glass_report,
+                          "source_doors_skipped": source_doors_skipped,
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
     suspects = _plane_suspects(dump, m, levels, polys)
     report["openings"]["planes_without_material_id"] = len(suspects)
-    questions = _questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
+    questions = (_questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
+                 + _source_questions(dump, levels))
     names = [lv["name"] for lv in levels]
     questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
     for n, q in enumerate(questions, 1):

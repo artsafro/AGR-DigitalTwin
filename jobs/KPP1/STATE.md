@@ -183,3 +183,12 @@ relief, the L0 transom joins its window (`panes: 2`). The tall glazed opening of
 z 1.12-6.73). Mesh contours are the outer facade rectangle on both levels (322.516 m2). Against
 Revit (`outputs/spec-compare-v006/`): L1 contour equal (Hausdorff 0.0 m, 4 = 4 kinks); L0 differs
 only by the 6 Revit entrance-frame bumps (0.70 m, #29). Questions 58 -> 45.
+
+## Revit wall lines and comparison v002 (issue #29, 2026-10-08)
+
+`outputs/revit-twin-v003/` (TwinPack export, document unmodified): Revit spec with walls on their
+location lines. Against mesh v010 (`spec-compare-v002.md`): levels, roof, parapet and both contours
+match (0.0 mm); verdict "no match" on openings only — Revit window = family box with frame
+(1.08 x 1.70), mesh = glass (0.94 x 1.56), plus depth definitions. Rhino not needed for contours.
+Open: which opening size the spec uses (rough opening or glass) — user decision.
+
