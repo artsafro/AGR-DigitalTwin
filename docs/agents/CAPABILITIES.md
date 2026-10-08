@@ -58,6 +58,8 @@ substitute ad-hoc scripting.
 - Status: BROKEN (2026-10-06: connection closed). Its source was only on the former DT branch
   `feature/revit-workflow` (archive bundle); the Claude user registration points at that
   worktree. Not part of this repo — backlog H3.
+- 2026-10-08 (Claude): still fails to connect (CONNECTION_CLOSED). The Revit spec extractor
+  uses `revit-http-2025` instead (`docs/HARNESS_PLAN.md` §4).
 
 ### AutoCAD — `multiCAD`
 - Status: WORKING (Codex, 2026-10-06, AutoCAD 2025): inspection on `flora.dwg`; on a fixture, seven

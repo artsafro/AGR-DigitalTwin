@@ -31,6 +31,9 @@ BODY — the building's main shell mesh: exterior faces only, no interior.
 Cuts follow corners and real openings; clean exterior mesh with holes first,
 then Shell inward 0.4 m, then windows. Kept as a logical group separate from
 windows and roof.
+In a source mesh read by the spec extractor, the body (корпус) is the largest connected
+part; attachments (canopies, porches, stairs, roof equipment) are the other parts.
+Decided 2026-10-08 (`docs/HARNESS_PLAN.md` §4).
 
 ## AGR
 
@@ -55,3 +58,25 @@ TODO: define.
 ## Production asset
 
 TODO: define.
+
+## Spec
+
+`spec.json` — the normalized description of one building's exterior that every modelling
+run starts from: levels, a level contour per floor, openings, roof, attachments and a
+mandatory `frame` to the object's coordinate system. Written only by an extractor, never
+by hand. Contract: `docs/HARNESS_PLAN.md` §3.
+_Avoid_: Master Building (the older quad-list schema), brief.
+
+## Level contour
+
+Контур уровня — the closed outer boundary of the body cut by a horizontal plane above a
+level. A projection belongs to the contour when it runs through two or more levels or over
+10 % of the facade length; smaller ones go to `questions.md`. Decided 2026-10-08.
+_Avoid_: footprint (that is the ground print only), outline.
+
+## Etalon
+
+Эталон — a benchmark building modelled by hand by the user (3ds Max, `.max` + FBX) on a
+grid, from which the extractor takes the reference spec. Levels are marked by helpers
+`LEVEL_<name>`. Lives in `benchmark/<bench-id>/`. An etalon with defects teaches defects.
+_Avoid_: reference model, sample.
