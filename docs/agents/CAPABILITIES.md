@@ -197,6 +197,15 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
 - Near-parallel faces closer than 5 mm (profile), on faces JSON or FBX via
   `tools/blender/export_faces.py`. Hits need classifying (embed vs defect).
 
+### Benchmark geometry checks — `tools/qa/check_geometry.py`
+- Status: WORKING on synthetic boxes only (2026-10-09, `tests/qa/test_geometry_checks.py`); no
+  real etalon yet (B01, issue #12). Logic in `src/twinqa/geometry/`.
+- Model vs etalon mesh dumps (`tools/source/measure_spec_blender.py`, now with `polygon_sizes`):
+  bbox, levels, storey areas, silhouettes, mesh (closed, manifold, n-gons, overlaps), triangle
+  budget, opening planes, material ID ranges; thresholds from `benchmark/<id>/tolerances.json`.
+- `uv run python tools/qa/check_geometry.py <model-dump> <etalon-dump> --spec <spec.json> --tolerances <t.json> --output <report.json>`;
+  exit 0 pass / 1 fail / 2 not measured or bad input.
+
 ### 3ds Max production scripts (external)
 - Status: CONFIGURED (inventory only, not run) — see `docs/tools/max-scripts.md` for which
   script serves Flora, Ground, MAF, UCX, lights, and their rule mismatches.

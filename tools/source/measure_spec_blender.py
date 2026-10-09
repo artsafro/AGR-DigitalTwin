@@ -45,7 +45,9 @@ for obj in bpy.context.scene.objects:
                    "vertices": [list(mw @ v.co) for v in mesh.vertices],
                    "triangles": [list(t.vertices) for t in mesh.loop_triangles],
                    # material id = slot index + 1 = 3ds Max material id (docs/domain/materials.md)
-                   "material_ids": [t.material_index + 1 for t in mesh.loop_triangles]})
+                   "material_ids": [t.material_index + 1 for t in mesh.loop_triangles],
+                   # vertex count of every source polygon: n-gon check of the benchmark (twinqa.geometry)
+                   "polygon_sizes": [len(p.vertices) for p in mesh.polygons]})
     obj.evaluated_get(depsgraph).to_mesh_clear()
 
 out.parent.mkdir(parents=True, exist_ok=True)
