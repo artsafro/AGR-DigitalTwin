@@ -2,7 +2,7 @@
 
 The box below is synthetic test data, not the user's etalon (issue #12): 10 x 10 m, levels
 0 / 3.3 / 6.6, parapet 0.6 m, one 1.5 x 1.5 m window per storey on wall 0, recessed 0.2 m with an
-opening plane — the numbers of tests/fixtures/spec-b01-v0.3.json. The mesh is closed and welded:
+opening plane — the numbers of tests/fixtures/spec-b01-v0.3.json. The synthetic mesh is closed and welded:
 global height cuts on every wall, per-wall cuts at the opening edges, fans on the bottom and roof.
 """
 import json
@@ -119,9 +119,10 @@ def _walk(node):
 
 def test_missing_opening_plane_fails_cover_and_leaves_a_hole():
     report = run(box_dump(planes=False, windows=WINDOWS))
-    assert {"opening_planes", "mesh"} <= set(report["failed"])
-    assert by_id(report)["opening_planes"]["value"] == 0.0
-    assert by_id(report)["mesh"]["details"]["boundary_edges"] == 8
+    assert report["failed"] == ["opening_planes"] and by_id(report)["opening_planes"]["value"] == 0.0
+    assert by_id(report)["mesh"]["details"]["boundary_edges"] == 8  # reported, not judged (null)
+    closed = run(box_dump(planes=False, windows=WINDOWS), tol={**TOL, "boundary_edges_max": 0})
+    assert {"opening_planes", "mesh"} <= set(closed["failed"])
 
 
 def test_window_on_another_wall_fails():
@@ -179,7 +180,7 @@ def test_face_two_mm_in_front_of_a_wall_is_an_overlap():
 
 def test_standalone_opening_plane_may_stay_open():
     plane = ([[20, 0, 1], [21, 0, 1], [21, 0, 2], [20, 0, 2]], PLANE)
-    report = run(box_dump(extra=[plane]), box_dump())
+    report = run(box_dump(extra=[plane]), box_dump(), tol={**TOL, "boundary_edges_max": 0})
     assert by_id(report)["mesh"]["status"] == "pass" and by_id(report)["mesh"]["details"]["open_parts_allowed"] == 1
 
 

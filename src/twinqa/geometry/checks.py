@@ -86,7 +86,8 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
 
 
 def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
-    """Edge-manifold, closed except parts made only of open_part_groups, no n-gons, no overlapping faces."""
+    """Edge-manifold, no n-gons, no overlapping faces; open edges judged only when boundary_edges_max is set
+    (NPM keeps reveals without inner faces, docs/domain/geometry.md), outside parts made only of open_part_groups."""
     ids = weld(model.vertices, tol["weld_m"])
     _, counts, side_edges = edge_uses(model.triangles, ids)
     part = parts(model.triangles, ids)
@@ -108,7 +109,8 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
                "open_parts_allowed": len(open_ok), "ngons": ngons,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
-    ok = (non_manifold <= tol["non_manifold_edges_max"] and boundary_n <= tol["boundary_edges_max"]
+    closed_ok = tol["boundary_edges_max"] is None or boundary_n <= tol["boundary_edges_max"]
+    ok = (non_manifold <= tol["non_manifold_edges_max"] and closed_ok
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
     if not ngon_measured and ok:
         return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes"}, measured=False)
