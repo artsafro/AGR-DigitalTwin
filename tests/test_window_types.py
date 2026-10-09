@@ -95,3 +95,28 @@ def test_same_subdivision_and_size_within_2_cm_is_one_type():
     c = entry("C", "c", "window", 2.05, 1.8, panes, source={})                    # 5 cm wider: another type
     d = entry("D", "d", "window", 2.0, 1.8, [[0.05, 0.05, 1.95, 0.6], [0.05, 0.7, 1.95, 1.75]], source={})
     assert [t["same_as"] for t in dedupe([a, b, c, d])] == [None, "A", None, None]
+
+
+
+# PR #43 review 1
+
+def test_opaque_infill_is_part_of_the_subdivision():
+    glass = [[0.05, 0.05, 0.95, 2.0], [1.05, 0.05, 1.95, 2.0]]
+    one = entry("A", "a", "door", 2.0, 3.0, glass, source={}, opaque_m=[[0.05, 2.1, 1.95, 2.95]])
+    two = entry("B", "b", "door", 2.0, 3.0, glass, source={}, opaque_m=[[0.05, 2.1, 0.95, 2.95], [1.05, 2.1, 1.95, 2.95]])
+    assert [t["same_as"] for t in dedupe([one, two])] == [None, None]
+
+
+def test_2_cm_is_inclusive():
+    panes = [[0.05, 0.05, 0.95, 1.75]]
+    a = entry("A", "a", "window", 1.0, 1.8, panes, source={})
+    b = entry("B", "b", "window", 1.02, 1.8, [[0.07, 0.05, 0.97, 1.75]], source={})
+    assert [t["same_as"] for t in dedupe([a, b])] == [None, "A"]
+
+
+def test_a_max_source_given_twice_stops_the_build(tmp_path):
+    import build_window_types as b
+    src = ROOT / "library" / "windows" / "sources" / "win-typical-max-v001.json"
+    with pytest.raises(SystemExit, match="given twice"):
+        b.main(["--type-map", "x", "--library-v001", "x", "--kpp1-twin", "x", "--kpp1-spec", "x",
+                "--output", str(tmp_path / "o.json"), "--max-source", str(src), "--max-source", str(src)])

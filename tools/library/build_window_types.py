@@ -80,10 +80,10 @@ def _mm(v):
     return round(v * 1000)
 
 
-def max_types(source):
+def max_types(source, path):
     """Window types of a 3ds Max window file (library/windows/sources/*.json): frame extent, glass,
     opaque infill; name by form + size, no project."""
-    out = []
+    out, prefix = [], source["id_prefix"]
     for n, o in enumerate(source["objects"], 1):
         door = "Дверь" in o["object"] or "Д_" in o["object"]
         fields = o["glass_m"] + o["opaque_m"]
@@ -96,8 +96,8 @@ def max_types(source):
         extra = " с глухой фрамугой" if o["opaque_m"] else (" с фрамугой" if transoms else "")
         name = f"{base}{extra} {_mm(o['width_m'])}×{_mm(o['height_m'])}"
         out.append(entry(
-            f"WT-{n:02d}", name, "door" if door else "window", o["width_m"], o["height_m"], o["glass_m"],
-            source={"object": "Win_Typical.max", "file": "library/windows/sources/win-typical-max-v001.json",
+            f"{prefix}-{n:02d}", name, "door" if door else "window", o["width_m"], o["height_m"], o["glass_m"],
+            source={"object": Path(source["source"]["file"]).name, "file": Path(path).as_posix(),
                     "max_object": o["object"], "occurrences": None},
             opaque_m=o["opaque_m"] or None))
         if sections is not None:                  # members of the layout include the opaque infill
@@ -105,14 +105,23 @@ def max_types(source):
     return out
 
 
+def _near(u, v):
+    """Within SAME_M, inclusive, in whole millimetres (no binary-float edge, PR #43 review 1)."""
+    return abs(round(u * 1000) - round(v * 1000)) <= round(SAME_M * 1000)
+
+
 def _same(a, b):
-    """Same subdivision and size within SAME_M (user decision 2026-10-09)."""
+    """Same subdivision — fields, transoms, glass and opaque infill with their layout — and size, all
+    within SAME_M (user decision 2026-10-09)."""
     if (a["sections"], a["transoms"], a["panes"]) != (b["sections"], b["transoms"], b["panes"]):
         return False
-    if abs(a["width_m"] - b["width_m"]) > SAME_M or abs(a["height_m"] - b["height_m"]) > SAME_M:
+    if not (_near(a["width_m"], b["width_m"]) and _near(a["height_m"], b["height_m"])):
         return False
-    pa, pb = sorted(a["panes_m"] or []), sorted(b["panes_m"] or [])
-    return all(abs(u - v) <= SAME_M for p, q in zip(pa, pb) for u, v in zip(p, q))
+    for key in ("panes_m", "opaque_m"):
+        pa, pb = sorted(a.get(key) or []), sorted(b.get(key) or [])
+        if len(pa) != len(pb) or not all(_near(u, v) for p, q in zip(pa, pb) for u, v in zip(p, q)):
+            return False
+    return True
 
 
 def dedupe(types):
@@ -205,11 +214,18 @@ def main(argv=None):
     args = ap.parse_args(argv)
     if not args.confirmations.exists():                 # never drop the user's decisions silently (PR #42 review 1)
         raise SystemExit(f"confirmations file not found: {args.confirmations}")
+    max_sources, prefixes = [], set()
+    for src in args.max_source:                           # one id space per source (PR #43 review 1)
+        source = json.loads(src.read_text(encoding="utf-8"))
+        if source["id_prefix"] in prefixes:
+            raise SystemExit(f"max source given twice or prefix {source['id_prefix']} reused: {src}")
+        prefixes.add(source["id_prefix"])
+        max_sources.append((src, source))
     types = (sosh(json.loads(args.type_map.read_text(encoding="utf-8")),
                   json.loads(args.library_v001.read_text(encoding="utf-8")))
              + kpp1(args.kpp1_twin, args.kpp1_spec))
-    for src in args.max_source:
-        types += max_types(json.loads(src.read_text(encoding="utf-8")))
+    for src, source in max_sources:
+        types += max_types(source, src)
     types = dedupe(types)
     types = confirm(types, json.loads(args.confirmations.read_text(encoding="utf-8")))
     doc = {"schema": "window-types/1",
