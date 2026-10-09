@@ -4,6 +4,8 @@
         --library-v001 <curtain-types.json> --kpp1-twin <twin-data.json> --kpp1-spec <spec.json> \
         --output library/windows/window_types.json
 
+Pattern: none — library tooling, not a building node (REVIEW_CHECKLIST Q1: new-case).
+
 Sources (read only; the user's .blend is not opened):
 - SOSH1150 typology v003 (`jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json` in the user's
   project folder): 11 types and 6 size variants with their pane layouts;
@@ -139,11 +141,12 @@ def main(argv=None):
     ap.add_argument("--output", type=Path, required=True)
     ap.add_argument("--confirmations", type=Path, default=Path(__file__).resolve().parents[2] / "library" / "windows" / "confirmations.json")
     args = ap.parse_args(argv)
+    if not args.confirmations.exists():                 # never drop the user's decisions silently (PR #42 review 1)
+        raise SystemExit(f"confirmations file not found: {args.confirmations}")
     types = (sosh(json.loads(args.type_map.read_text(encoding="utf-8")),
                   json.loads(args.library_v001.read_text(encoding="utf-8")))
              + kpp1(args.kpp1_twin, args.kpp1_spec))
-    if args.confirmations.exists():
-        types = confirm(types, json.loads(args.confirmations.read_text(encoding="utf-8")))
+    types = confirm(types, json.loads(args.confirmations.read_text(encoding="utf-8")))
     doc = {"schema": "window-types/1",
            "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). An entry is unconfirmed until "
                    "the user confirms and names it (library/windows/confirmations.json); handing is null; sashes are not in "

@@ -63,3 +63,13 @@ def test_kpp1_candidates_come_from_the_spec():
 ])
 def test_layout_counts_sections_and_transoms(panes, expected):
     assert layout(panes) == expected
+
+
+def test_a_missing_confirmations_file_stops_the_build(tmp_path):
+    # PR #42 review 1: the user's decisions are never dropped silently
+    import build_window_types as b
+    out = tmp_path / "window_types.json"
+    with pytest.raises(SystemExit, match="confirmations file not found"):
+        b.main(["--type-map", "x", "--library-v001", "x", "--kpp1-twin", "x", "--kpp1-spec", "x",
+                "--output", str(out), "--confirmations", str(tmp_path / "missing.json")])
+    assert not out.exists()
