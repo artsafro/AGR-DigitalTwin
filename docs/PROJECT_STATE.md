@@ -51,9 +51,10 @@ pairs within 5 mm) — first case "two paths match" in `docs/cases.md` (a compar
 model acceptance). PR #40 (user decisions 2026-10-09): the 0.20 / 0.10 m thresholds live in
 `spec_extract` of the benchmark tolerances (`dt spec extract --tolerances`); vent grilles are openings of
 kind `grille` (pattern `vent-grille`: npm_min texture, mid geometry; mesh classifier pending), reported
-and kept out of the comparison verdict; KPP1 still match. #4 in work (PR #41): `library/windows/window_types.json`,
-22 entries all `unconfirmed` (SOSH1150 typology v003, CW_021 / CW_022 / D04 not typed, 3 KPP1 candidates);
-waiting for the user's atlas acceptance and names. Human tickets: #2 (move `Unreal/`), #4 (window
+and kept out of the comparison verdict; KPP1 still match. #4 (PRs #41-#43): `library/windows/window_types.json`,
+46 entries — 13 confirmed and named by the user (W01-W07, D01-D03, KPP1-W01..03; `confirmations.json`), the rest
+unconfirmed: SOSH1150 size variants, CW_021 / CW_022 / D04 not typed, 24 windows and doors of `Win_Typical.max`
+(WT-01..24, read from 3ds Max without changes; no duplicates by subdivision + size within 2 cm). Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -134,7 +135,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 done for KPP1 (two paths match); next per the user: B01 etalon (#12); #4 waits for the user's acceptance of the window types; extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 done for KPP1 (two paths match); next per the user: B01 etalon (#12); #4: the WT types wait for the user's acceptance and names; extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
