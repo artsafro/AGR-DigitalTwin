@@ -118,10 +118,29 @@ def _same(a, b):
     if not (_near(a["width_m"], b["width_m"]) and _near(a["height_m"], b["height_m"])):
         return False
     for key in ("panes_m", "opaque_m"):
-        pa, pb = sorted(a.get(key) or []), sorted(b.get(key) or [])
-        if len(pa) != len(pb) or not all(_near(u, v) for p, q in zip(pa, pb) for u, v in zip(p, q)):
+        if not _matched(a.get(key) or [], b.get(key) or []):
             return False
     return True
+
+
+def _matched(pa, pb):
+    """Every rectangle of pa has its own partner in pb within SAME_M (one to one, augmenting paths),
+    so a 1 mm shift never reorders the pairing (PR #43 review 2)."""
+    if len(pa) != len(pb):
+        return False
+    ok = [[j for j, q in enumerate(pb) if all(_near(u, v) for u, v in zip(p, q))] for p in pa]
+    owner = {}
+
+    def augment(i, seen):
+        for j in ok[i]:
+            if j not in seen:
+                seen.add(j)
+                if j not in owner or augment(owner[j], seen):
+                    owner[j] = i
+                    return True
+        return False
+
+    return all(augment(i, set()) for i in range(len(pa)))
 
 
 def dedupe(types):

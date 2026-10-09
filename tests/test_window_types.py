@@ -120,3 +120,11 @@ def test_a_max_source_given_twice_stops_the_build(tmp_path):
     with pytest.raises(SystemExit, match="given twice"):
         b.main(["--type-map", "x", "--library-v001", "x", "--kpp1-twin", "x", "--kpp1-spec", "x",
                 "--output", str(tmp_path / "o.json"), "--max-source", str(src), "--max-source", str(src)])
+
+
+
+def test_pane_matching_survives_a_1_mm_shift():
+    # PR #43 review 2: a 1 mm shift must not reorder the pairing of the panes
+    a = entry("A", "a", "window", 1.0, 1.8, [[0.05, 0.05, 0.95, 0.8], [0.05, 0.9, 0.95, 1.75]], source={})
+    b = entry("B", "b", "window", 1.0, 1.8, [[0.051, 0.05, 0.95, 0.8], [0.05, 0.9, 0.95, 1.75]], source={})
+    assert [t["same_as"] for t in dedupe([a, b])] == [None, "A"]
