@@ -18,8 +18,10 @@ geometry before UV and textures).
 ## C3 — UCX triangle budget (decided)
 
 Decided 2026-10-07: < 50 000 triangles -> 15 000, else min(ceil(5 %), 100 000), as the SINTEZ AGR
-Checker. `standards/VPM_STANDARD.yaml` `collision.triangle_limit` carries it (`noted`). Left: the
-boundary 49 999 / 50 000 is untested; test it with the UCX validator V010 (P5).
+Checker. `standards/VPM_STANDARD.yaml` `collision.triangle_limit` carries it (`noted`), and
+`tests/qa/test_scene.py::test_ucx_budget_is_checker_formula_conflict_3` covers the boundary
+(49 999 -> 15 000, 50 000 -> 2 500). Left: no real package and no native SINTEZ run has checked
+it yet (UCX validator V010, P5).
 
 ## C7 — Two-sided alpha planes
 
@@ -45,7 +47,8 @@ Both YAML files already carry it as `noted`; only `conflicts.md` lacks the decis
 
 - **A (recommended):** confirm the rule per profile as encoded. NPM opacity always a separate
   `_o_` map. VPM cut-outs in Diffuse alpha (0–127 invisible, 128–255 visible).
-- B: separate opacity maps in VPM too. Allowed by the regulation, but it adds a map per material.
+- B: separate opacity maps in VPM for transparency only. Cut-outs stay in Diffuse alpha in any
+  case (reg p.36 §12.1-12.2, `docs/domain/uv-textures.md`); B adds a map per material.
 
 Decision: _____
 
@@ -66,7 +69,8 @@ Decision: _____
 - General rule: measure the seating per window from the source; the 10 mm embed does not define
   the seating depth; do not invent it.
 
-The benchmark checker accepts both: a plane anywhere inside the reveal, within 2 cm of the edges.
+The benchmark checker proposed in PR #47 would accept both (a plane anywhere inside the reveal,
+within 2 cm of the edges); that tolerance is itself a proposal, tuned after B01.
 
 - A: always mid-reveal + 10 mm. Simple, accepted once; ignores a real window that sits elsewhere.
 - B: always measured. Needs the window position in every source; an `npm_min` mesh source often
