@@ -11,7 +11,8 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user d
   - a recess over part of the storey height (plinth, belt, cornice) goes to the questions file;
   - a door recess (from the floor, >= 1.9 m high, 0.7-3 m wide at its mouth) is an opening
     of kind `door`;
-  - a bump or notch with both plan sizes <= 0.10 m is relief.
+  - a bump or notch with both plan sizes <= 0.10 m is relief, and so is a band or groove with
+    depth and height both <= 0.10 m (user decision 2026-10-09).
 
 ## How to build
 
