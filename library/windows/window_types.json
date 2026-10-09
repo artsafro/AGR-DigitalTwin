@@ -1,11 +1,11 @@
 {
  "schema": "window-types/1",
- "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). Every entry is unconfirmed until the user confirms and names it (user decision 2026-10-09); handing is null; sashes are not in the sources. Sizes are the rough opening with its frame (spec v0.3); panes_m are glass rectangles [x0, z0, x1, z1] from the bottom left of the opening. Built by tools/library/build_window_types.py.",
+ "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). An entry is unconfirmed until the user confirms and names it (library/windows/confirmations.json); handing is null; sashes are not in the sources. Sizes are the rough opening with its frame (spec v0.3); panes_m are glass rectangles [x0, z0, x1, z1] from the bottom left of the opening. Built by tools/library/build_window_types.py.",
  "types": [
   {
    "id": "W01",
-   "name": "Широкое окно / 3 поля",
-   "status": "unconfirmed",
+   "name": "Окно трёхпольное 3600×2900",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 3.6,
@@ -67,12 +67,16 @@
     "occurrences": 84
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "W02",
-   "name": "Двухсекционное",
-   "status": "unconfirmed",
+   "name": "Окно двухпольное 2050×2850",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.05,
@@ -126,12 +130,16 @@
     "occurrences": 26
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "W03",
-   "name": "Узкое с фрамугой",
-   "status": "unconfirmed",
+   "name": "Окно однопольное узкое 850×2850",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 0.85,
@@ -178,12 +186,16 @@
     "occurrences": 7
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "W04",
-   "name": "Витраж / 2 секции",
-   "status": "unconfirmed",
+   "name": "Витраж двухпольный с фрамугой 2100×2800",
+   "status": "confirmed",
    "typed": true,
    "role": "curtain",
    "width_m": 2.1,
@@ -238,12 +250,16 @@
     "occurrences": 29
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "W05",
-   "name": "Витражная сетка / 6 секций",
-   "status": "unconfirmed",
+   "name": "Витраж шестипольный 5500×3880",
+   "status": "confirmed",
    "typed": true,
    "role": "curtain",
    "width_m": 5.5,
@@ -344,12 +360,16 @@
     "occurrences": 8
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "W06",
-   "name": "Витраж / 2 высоких поля",
-   "status": "unconfirmed",
+   "name": "Витраж двухпольный 2100×2800",
+   "status": "confirmed",
    "typed": true,
    "role": "curtain",
    "width_m": 2.1,
@@ -390,12 +410,16 @@
     "occurrences": 6
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "W07",
-   "name": "Витраж / 3 секции",
-   "status": "unconfirmed",
+   "name": "Витраж трёхпольный с фрамугой 3150×2800",
+   "status": "confirmed",
    "typed": true,
    "role": "curtain",
    "width_m": 3.15,
@@ -460,12 +484,16 @@
     "occurrences": 4
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "D01",
-   "name": "Остеклённая 1 створка",
-   "status": "unconfirmed",
+   "name": "Дверь остеклённая однопольная 1110×2100",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 1.11,
@@ -500,12 +528,16 @@
     "occurrences": 1
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "D02",
-   "name": "Остеклённая 2 створки",
-   "status": "unconfirmed",
+   "name": "Дверь остеклённая двупольная неравнопольная 1650×2100",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 1.65,
@@ -546,12 +578,16 @@
     "occurrences": 34
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "D03",
-   "name": "Входная группа с фрамугой",
-   "status": "unconfirmed",
+   "name": "Дверной блок с боковым полем и фрамугой 2775×2800",
+   "status": "confirmed",
    "typed": true,
    "role": "door_system",
    "width_m": 2.775,
@@ -616,7 +652,11 @@
     "occurrences": 38
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "D04",
@@ -654,7 +694,12 @@
    },
    "infill": "opaque_leaf",
    "frame_finish": "unassigned",
-   "note": "не типизирован: взят из FBX как пример полотна, к месту на фасаде не привязан"
+   "note": "не типизирован: взят из FBX как пример полотна, к месту на фасаде не привязан",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09",
+    "note": "не тип: в исходнике нет места на фасаде"
+   }
   },
   {
    "id": "W01_H",
@@ -1104,8 +1149,8 @@
   },
   {
    "id": "KPP1-W01",
-   "name": null,
-   "status": "unconfirmed",
+   "name": "Окно однопольное 1180×1800",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 1.18,
@@ -1135,12 +1180,16 @@
     ],
     "across_level": null
    },
-   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68"
+   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "KPP1-W02",
-   "name": null,
-   "status": "unconfirmed",
+   "name": "Витраж однопольный 4 стекла по высоте 1180×5450",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 1.18,
@@ -1188,12 +1237,16 @@
     ],
     "across_level": "L1"
    },
-   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68"
+   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "KPP1-W03",
-   "name": null,
-   "status": "unconfirmed",
+   "name": "Окно двухпольное 2000×1800",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.0,
@@ -1229,7 +1282,11 @@
     ],
     "across_level": null
    },
-   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68"
+   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68",
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   }
  ]
 }
