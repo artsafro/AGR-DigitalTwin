@@ -1,0 +1,31 @@
+{
+  "bench": "bench-b01-box",
+  "profile": "npm_min",
+  "spec_extract": {
+    "glass_frame_m": 0.2,
+    "depth_exception_m": 0.1
+  },
+  "spec_extract_note": "Extraction thresholds (#36), the same author's values the user kept for bench-k01-kpp1 on 2026-10-09; `dt spec extract --tolerances` reads them",
+  "geometry": {
+    "bbox_m": 0.05,
+    "level_elev_m": 0.03,
+    "floor_area_rel": 0.02,
+    "section_fractions": [0.1, 0.3, 0.5, 0.7, 0.9],
+    "silhouette_iou_min": 0.97,
+    "silhouette_views": ["x", "y", "top"],
+    "weld_m": 0.0001,
+    "non_manifold_edges_max": 0,
+    "boundary_edges_max": null,
+    "open_part_groups": ["opening"],
+    "ngons_max": 0,
+    "overlap_m": 0.005,
+    "overlap_pairs_max": 0,
+    "triangles_max": 150000,
+    "opening_plane_kinds": ["window", "door", null],
+    "opening_plane_cover_min": 0.95,
+    "opening_plane_offset_m": 0.02,
+    "unassigned_ids_max": 0
+  },
+  "geometry_source": "HARNESS_PLAN §5 starting numbers for npm_min (bbox ±5 cm, levels ±3 cm, storey area ±2 %, silhouette IoU >= 0.97); triangles_max = standards/NPM_STANDARD.yaml oks_triangles_per_fbx_max; overlap_m = profile near_coplanar_spacing_m.min (5 mm); weld_m = the extractor's weld (0.1 mm). To be tuned after the first B01 runs (HARNESS_PLAN §11.5)",
+  "geometry_note": "Storey area: outer area of horizontal sections at section_fractions of each storey, compared where both sections close. Silhouettes: front/back and left/right orthographic outlines are mirror images, so views x, y and top cover the 4 sides + top. Mesh: no edge of more than two faces; open edges are reported, never a fail (user decision 2026-10-09: boundary_edges_max null; NPM deletes inner back faces and keeps reveals, and open boundaries may be intentional, docs/domain/geometry.md), never judged on parts made only of open_part_groups (stand-alone opening planes); n-gons need `polygon_sizes` in the dump. Opening planes: kinds checked (null = untyped); a grille is a texture in npm_min (pattern vent-grille) and is not checked"
+}
