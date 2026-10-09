@@ -119,7 +119,8 @@ def _walk(node):
 
 def test_missing_opening_plane_fails_cover_and_leaves_a_hole():
     report = run(box_dump(planes=False, windows=WINDOWS))
-    assert report["failed"] == ["opening_planes"] and by_id(report)["opening_planes"]["value"] == 0.0
+    # the open window also stops the model section closing where the etalon's closes
+    assert report["failed"] == ["floor_areas", "opening_planes"] and by_id(report)["opening_planes"]["value"] == 0.0
     assert by_id(report)["mesh"]["details"]["boundary_edges"] == 8  # reported, not judged (null)
     closed = run(box_dump(planes=False, windows=WINDOWS), tol={**TOL, "boundary_edges_max": 0})
     assert {"opening_planes", "mesh"} <= set(closed["failed"])
@@ -160,7 +161,9 @@ def test_dump_without_polygon_sizes_is_an_open_gate_not_a_pass():
 
 def test_ngon_fails():
     dump = box_dump()
-    dump["meshes"][0]["polygon_sizes"][0] = 6
+    sizes = dump["meshes"][0]["polygon_sizes"]
+    assert sizes[:2] == [4, 4]
+    sizes[:2] = [6]  # two quads read as one hexagon: same 4 triangles
     assert by_id(run(dump))["mesh"]["details"]["ngons"] == 1
 
 
@@ -198,3 +201,42 @@ def test_tool_writes_a_new_report_and_refuses_to_overwrite(tmp_path):
     assert check_geometry.main(argv) == 0
     assert json.loads(out.read_text(encoding="utf-8"))["passed"] is True
     assert check_geometry.main(argv) == 2
+
+
+# Codex review 1 of PR #47
+
+
+def test_section_closed_on_one_side_only_fails():
+    dump = box_dump()
+    body = dump["meshes"][0]
+    v = np.asarray(body["vertices"])
+    keep = [k for k, t in enumerate(body["triangles"]) if not (np.all(v[t][:, 1] == 0) and np.all(v[t][:, 2] <= 0.9))]
+    body["triangles"] = [body["triangles"][k] for k in keep]
+    body["material_ids"] = [body["material_ids"][k] for k in keep]
+    del body["polygon_sizes"]
+    area = by_id(run(dump))["floor_areas"]
+    assert area["status"] == "fail" and ["L0", 0.33] in area["details"]["closed_on_one_side"]
+
+
+def test_clockwise_contour_takes_the_normal_from_its_winding():
+    data = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
+    data["floors"][0]["contour"] = [[0, 0], [0, 10], [10, 10], [10, 0]]
+    data["floors"][0]["openings"][0].update({"wall": 3, "x_m": 6.5})
+    cw = Spec.model_validate(data)
+    report = checks.run(from_dump(box_dump()), from_dump(box_dump()), cw, TOL)
+    assert [o["cover"] for o in by_id(report)["opening_planes"]["details"]["openings"]] == [1.0, 1.0]
+
+
+def test_collision_hulls_are_left_out():
+    dump = box_dump()
+    dump["meshes"].append({**_mesh("UCX_SM_Box_Main_001", [([[0, 0, 0], [10, 0, 0], [10, 0, 7.2], [0, 0, 7.2]], 0)])})
+    report = run(dump)
+    assert report["passed"] and by_id(report)["mesh"]["details"]["collision_meshes_left_out"] == 1
+
+
+def test_polygon_sizes_that_do_not_match_the_triangles_are_not_measured():
+    dump = box_dump()
+    for m in dump["meshes"]:
+        m["polygon_sizes"] = []
+    report = run(dump)
+    assert not report["passed"] and report["not_measured"] == ["mesh"]

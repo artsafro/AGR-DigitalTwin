@@ -53,11 +53,12 @@ def check_levels(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
 
 
 def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
-    """Outer section area of every storey at the sampled heights, where both sections close."""
+    """Outer section area of every storey at the sampled heights. Where both sections close they are
+    compared; where only one closes the model differs from the etalon there (a fail, never skipped)."""
     names = [lv.name for lv in spec.levels]
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     mc, ec = model.corners(), etalon.corners()
-    per_floor, worst, unmeasured = {}, 0.0, []
+    per_floor, worst, unmeasured, one_sided = {}, 0.0, [], []
     for lo, hi in zip(names, names[1:]):
         rows = []
         for f in tol["section_fractions"]:
@@ -65,6 +66,8 @@ def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
             am, ae = measure.section_area(mc, z), measure.section_area(ec, z)
             if am is None or ae is None or ae <= 0:
                 rows.append({"z": round(z, 3), "model_m2": am, "etalon_m2": ae})
+                if (am is None) != (ae is None):
+                    one_sided.append([lo, round(z, 3)])
                 continue
             rel = abs(am - ae) / ae
             worst = max(worst, rel)
@@ -72,9 +75,9 @@ def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
         if not any("rel" in r for r in rows):
             unmeasured.append(lo)
         per_floor[lo] = rows
-    ok = worst <= tol["floor_area_rel"] and not unmeasured
+    ok = worst <= tol["floor_area_rel"] and not unmeasured and not one_sided
     return result("floor_areas", ok, round(worst, 4), tol["floor_area_rel"],
-                  {"floors": per_floor, "no_closed_section": unmeasured})
+                  {"floors": per_floor, "no_closed_section": unmeasured, "closed_on_one_side": one_sided})
 
 
 def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
@@ -107,14 +110,14 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
     else:
         ngons, ngon_measured = int((model.polygon_sizes > 4).sum()), True
     details = {"non_manifold_edges": non_manifold, "boundary_edges": boundary_n,
-               "open_parts_allowed": len(open_ok), "ngons": ngons,
+               "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
     closed_ok = tol["boundary_edges_max"] is None or boundary_n <= tol["boundary_edges_max"]
     ok = (non_manifold <= tol["non_manifold_edges_max"] and closed_ok
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
     if not ngon_measured and ok:
-        return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes"}, measured=False)
+        return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes matching its triangles"}, measured=False)
     return result("mesh", ok, {"non_manifold": non_manifold, "boundary": boundary_n, "overlaps": len(overlaps),
                                "ngons": ngons}, None, details)
 
@@ -136,10 +139,13 @@ def check_material_ids(model: Soup, tol: dict, ranges: dict) -> dict:
 
 
 def _wall(contour, i):
-    a = np.asarray(contour[i][:2], dtype=float)
-    b = np.asarray(contour[(i + 1) % len(contour)][:2], dtype=float)
+    pts = np.asarray([p[:2] for p in contour], dtype=float)
+    a, b = pts[i], pts[(i + 1) % len(pts)]
     u = (b - a) / np.linalg.norm(b - a)
-    return a, u, np.array([u[1], -u[0]])  # outward normal of a counter-clockwise contour
+    x, y = pts[:, 0], pts[:, 1]
+    ccw = float(np.dot(x, np.roll(y, -1)) - np.dot(np.roll(x, -1), y)) > 0  # spec contours are CCW; never assume
+    n = np.array([u[1], -u[0]])
+    return a, u, n if ccw else -n
 
 
 def opening_planes(spec: Spec, kinds) -> list[dict]:

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 LEVEL_PREFIX = "LEVEL_"
+COLLISION_PREFIX = "UCX_"  # collision hulls (reg p.36, docs/domain/geometry.md) are no render geometry
 
 
 @dataclass
@@ -16,8 +17,9 @@ class Soup:
     vertices: np.ndarray        # (n, 3) float, object system
     triangles: np.ndarray       # (m, 3) int into vertices
     material_ids: np.ndarray    # (m,) int
-    polygon_sizes: np.ndarray | None  # vertex count of every source polygon; None = not in the dump
+    polygon_sizes: np.ndarray | None  # vertex count of every source polygon; None = absent or inconsistent
     levels: dict[str, float]    # LEVEL_<name> helper elevations, object system
+    collisions: int = 0         # UCX_ meshes left out
 
     def corners(self) -> np.ndarray:
         """(m, 3, 3) corner points of every triangle."""
@@ -30,12 +32,15 @@ def _apply(m: np.ndarray, points) -> np.ndarray:
 
 
 def from_dump(dump: dict, to_object=None) -> Soup:
-    """All meshes of a dump; to_object: 4x4 matrix from the dump's frame (default identity)."""
+    """Render meshes of a dump (UCX_ collisions left out); to_object: 4x4 matrix from the dump's frame.
+    Polygon sizes count only when every mesh has them and they add up to its triangles."""
     m = np.eye(4) if to_object is None else np.asarray(to_object, dtype=float)
     verts, tris, mids, sizes = [], [], [], []
-    has_sizes = all("polygon_sizes" in mesh for mesh in dump["meshes"])
+    render = [x for x in dump["meshes"] if not x["name"].startswith(COLLISION_PREFIX)]
+    has_sizes = all("polygon_sizes" in mesh and len(mesh["triangles"]) ==
+                    sum(max(int(k) - 2, 0) for k in mesh["polygon_sizes"]) for mesh in render)
     base = 0
-    for mesh in dump["meshes"]:
+    for mesh in render:
         v = _apply(m, mesh["vertices"])
         t = np.asarray(mesh["triangles"], dtype=int).reshape(-1, 3)
         verts.append(v)
@@ -48,7 +53,7 @@ def from_dump(dump: dict, to_object=None) -> Soup:
               for h in dump.get("helpers", []) if h["name"].startswith(LEVEL_PREFIX)}
     cat = lambda parts, shape, dtype: np.concatenate(parts) if parts else np.zeros(shape, dtype)  # noqa: E731
     return Soup(cat(verts, (0, 3), float), cat(tris, (0, 3), int), cat(mids, (0,), int),
-                cat(sizes, (0,), int) if has_sizes else None, levels)
+                cat(sizes, (0,), int) if has_sizes else None, levels, len(dump["meshes"]) - len(render))
 
 
 def weld(vertices: np.ndarray, weld_m: float) -> np.ndarray:
