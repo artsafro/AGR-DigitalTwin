@@ -159,8 +159,10 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   sides and whether a verdict is given come from tolerances.json. KPP1: `jobs/KPP1/spec-compare-v001.md`.
 
 ### Window type list — `library/windows/window_types.json` (#4)
-- Status: WORKING (Claude, 2026-10-09): 22 entries; 13 confirmed and named by the user (W01–W07, D01–D03, KPP1-W01–W03;
-  `library/windows/confirmations.json`), the rest `unconfirmed` — SOSH1150
+- Status: WORKING (Claude, 2026-10-09): 46 entries; 13 confirmed and named by the user (W01–W07, D01–D03, KPP1-W01–W03;
+  `library/windows/confirmations.json`), the rest `unconfirmed`; 24 from `Win_Typical.max` (WT-01–WT-24, read from 3ds Max
+  without changes into `library/windows/sources/win-typical-max-v001.json`; duplicates by subdivision + size ±2 cm get
+  `same_as`) — SOSH1150
   typology v003 (11 types, 6 size variants; CW_021, CW_022, D04 kept as not typed) and 3 KPP1 candidates from the
   Revit spec. Rebuilt by `tools/library/build_window_types.py` from the user's library files (read only); handing
   null, sashes not in the sources. The spec's `window_type` index waits for confirmed entries.

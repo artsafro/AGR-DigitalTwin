@@ -68,6 +68,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -131,6 +132,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -187,6 +189,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -251,6 +254,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -361,6 +365,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -411,6 +416,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -485,6 +491,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -529,6 +536,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -579,6 +587,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -592,7 +601,7 @@
    "role": "door_system",
    "width_m": 2.775,
    "height_m": 2.8,
-   "sections": 2,
+   "sections": 3,
    "transoms": 1,
    "sashes": null,
    "handing": null,
@@ -653,6 +662,7 @@
    },
    "infill": "glass",
    "frame_finish": "F11 / RAL 7016",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -695,6 +705,7 @@
    "infill": "opaque_leaf",
    "frame_finish": "unassigned",
    "note": "не типизирован: взят из FBX как пример полотна, к месту на фасаде не привязан",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09",
@@ -766,7 +777,8 @@
     "occurrences": 31
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "same_as": null
   },
   {
    "id": "W02_H",
@@ -826,7 +838,8 @@
     "occurrences": 16
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "same_as": null
   },
   {
    "id": "W03_H",
@@ -878,7 +891,8 @@
     "occurrences": 4
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "same_as": null
   },
   {
    "id": "W01_N",
@@ -943,7 +957,8 @@
     "occurrences": 4
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "same_as": null
   },
   {
    "id": "W04_N",
@@ -1001,7 +1016,8 @@
     "occurrences": 6
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "same_as": null
   },
   {
    "id": "D03_W",
@@ -1011,7 +1027,7 @@
    "role": "door_system",
    "width_m": 3.1,
    "height_m": 2.8,
-   "sections": 3,
+   "sections": 4,
    "transoms": 1,
    "sashes": null,
    "handing": null,
@@ -1077,7 +1093,8 @@
     "occurrences": 5
    },
    "infill": "glass",
-   "frame_finish": "F11 / RAL 7016"
+   "frame_finish": "F11 / RAL 7016",
+   "same_as": null
   },
   {
    "id": "CW_021",
@@ -1111,7 +1128,8 @@
      "doors": 0
     }
    },
-   "note": "не типизирован: особое членение (3 панели, 15 импостов, 1 окно)"
+   "note": "не типизирован: особое членение (3 панели, 15 импостов, 1 окно)",
+   "same_as": null
   },
   {
    "id": "CW_022",
@@ -1145,7 +1163,8 @@
      "doors": 0
     }
    },
-   "note": "не типизирован: неоднозначные наложения панелей в исходнике; габарит по bbox, не проверен"
+   "note": "не типизирован: неоднозначные наложения панелей в исходнике; габарит по bbox, не проверен",
+   "same_as": null
   },
   {
    "id": "KPP1-W01",
@@ -1181,6 +1200,7 @@
     "across_level": null
    },
    "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -1238,6 +1258,7 @@
     "across_level": "L1"
    },
    "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
@@ -1283,10 +1304,1238 @@
     "across_level": null
    },
    "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68",
+   "same_as": null,
    "decision": {
     "by": "user",
     "date": "2026-10-09"
    }
+  },
+  {
+   "id": "WT-01",
+   "name": "Дверь остеклённая трёхпольная с фрамугой 2374×2714",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 2.374,
+   "height_m": 2.714,
+   "sections": 3,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 9,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.679,
+     0.809
+    ],
+    [
+     0.795,
+     0.125,
+     1.379,
+     0.809
+    ],
+    [
+     1.553,
+     0.183,
+     2.251,
+     0.809
+    ],
+    [
+     1.553,
+     0.896,
+     2.251,
+     2.131
+    ],
+    [
+     0.795,
+     0.925,
+     1.379,
+     2.189
+    ],
+    [
+     0.123,
+     0.983,
+     0.621,
+     2.131
+    ],
+    [
+     0.065,
+     2.305,
+     0.679,
+     2.649
+    ],
+    [
+     0.795,
+     2.305,
+     1.379,
+     2.649
+    ],
+    [
+     1.495,
+     2.305,
+     2.309,
+     2.649
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Балкон_Дверь_V3_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-02",
+   "name": "Окно четырёхпольное с фрамугой 3287×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 3.287,
+   "height_m": 2.614,
+   "sections": 4,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 8,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.789,
+     1.132
+    ],
+    [
+     0.839,
+     0.057,
+     1.572,
+     1.132
+    ],
+    [
+     1.629,
+     0.057,
+     2.361,
+     1.132
+    ],
+    [
+     2.411,
+     0.057,
+     3.144,
+     1.132
+    ],
+    [
+     0.117,
+     1.242,
+     0.789,
+     2.497
+    ],
+    [
+     0.839,
+     1.242,
+     1.512,
+     2.497
+    ],
+    [
+     1.689,
+     1.242,
+     2.361,
+     2.497
+    ],
+    [
+     2.411,
+     1.242,
+     3.084,
+     2.497
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "Object007",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-03",
+   "name": "Окно однопольное с фрамугой 974×1944",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 0.974,
+   "height_m": 1.944,
+   "sections": 1,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.909,
+     0.429
+    ],
+    [
+     0.065,
+     0.545,
+     0.909,
+     1.879
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Отлив_V2_H1_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-04",
+   "name": "Окно двухпольное с фрамугой 1684×1944",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 1.684,
+   "height_m": 1.944,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.784,
+     0.429
+    ],
+    [
+     0.9,
+     0.125,
+     1.619,
+     0.429
+    ],
+    [
+     0.123,
+     0.603,
+     0.726,
+     1.821
+    ],
+    [
+     0.958,
+     0.603,
+     1.561,
+     1.821
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Отлив_V2_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-05",
+   "name": "Окно трёхпольное с фрамугой 2474×1944",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.474,
+   "height_m": 1.944,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 6,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.784,
+     0.429
+    ],
+    [
+     0.9,
+     0.125,
+     1.574,
+     0.429
+    ],
+    [
+     1.69,
+     0.125,
+     2.409,
+     0.429
+    ],
+    [
+     0.9,
+     0.545,
+     1.574,
+     1.879
+    ],
+    [
+     0.123,
+     0.603,
+     0.726,
+     1.821
+    ],
+    [
+     1.748,
+     0.603,
+     2.351,
+     1.821
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Отлив_V2_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-06",
+   "name": "Окно двухпольное с фрамугой 2014×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.014,
+   "height_m": 2.614,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.982,
+     1.132
+    ],
+    [
+     1.032,
+     0.057,
+     1.957,
+     1.132
+    ],
+    [
+     0.117,
+     1.242,
+     0.982,
+     2.497
+    ],
+    [
+     1.032,
+     1.242,
+     1.897,
+     2.497
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Балкон_Окно_V2_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-07",
+   "name": "Окно трёхпольное с фрамугой 2514×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.514,
+   "height_m": 2.614,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 6,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.823,
+     1.132
+    ],
+    [
+     0.873,
+     0.057,
+     1.64,
+     1.132
+    ],
+    [
+     1.69,
+     0.057,
+     2.457,
+     1.132
+    ],
+    [
+     0.117,
+     1.242,
+     0.823,
+     2.497
+    ],
+    [
+     0.873,
+     1.242,
+     1.605,
+     2.497
+    ],
+    [
+     1.725,
+     1.242,
+     2.397,
+     2.497
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Балкон_Окно_V2_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-08",
+   "name": "Дверь остеклённая двухпольная с фрамугой 1474×2714",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 1.474,
+   "height_m": 2.714,
+   "sections": 2,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 6,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.679,
+     0.809
+    ],
+    [
+     0.853,
+     0.183,
+     1.351,
+     0.809
+    ],
+    [
+     0.853,
+     0.896,
+     1.351,
+     2.131
+    ],
+    [
+     0.123,
+     0.983,
+     0.621,
+     2.131
+    ],
+    [
+     0.065,
+     2.305,
+     0.679,
+     2.649
+    ],
+    [
+     0.795,
+     2.305,
+     1.409,
+     2.649
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Балкон_Дверь_V3_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-09",
+   "name": "Дверь остеклённая двухпольная с фрамугой 1474×2247",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 1.474,
+   "height_m": 2.247,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.679,
+     0.809
+    ],
+    [
+     0.853,
+     0.183,
+     1.351,
+     0.809
+    ],
+    [
+     0.853,
+     0.896,
+     1.351,
+     2.131
+    ],
+    [
+     0.123,
+     0.983,
+     0.621,
+     2.131
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Дверь_V2_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-10",
+   "name": "Окно трёхпольное с фрамугой 2514×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.514,
+   "height_m": 2.614,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 6,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.823,
+     1.774
+    ],
+    [
+     0.873,
+     0.057,
+     1.64,
+     1.774
+    ],
+    [
+     1.69,
+     0.057,
+     2.457,
+     1.774
+    ],
+    [
+     0.057,
+     1.824,
+     0.823,
+     2.557
+    ],
+    [
+     0.873,
+     1.824,
+     1.64,
+     2.557
+    ],
+    [
+     1.69,
+     1.824,
+     2.457,
+     2.557
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V2_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-11",
+   "name": "Окно двухпольное с фрамугой 1694×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 1.694,
+   "height_m": 2.614,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.823,
+     1.774
+    ],
+    [
+     0.873,
+     0.057,
+     1.637,
+     1.774
+    ],
+    [
+     0.057,
+     1.824,
+     0.823,
+     2.557
+    ],
+    [
+     0.873,
+     1.824,
+     1.637,
+     2.557
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V2_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-12",
+   "name": "Окно однопольное с фрамугой 867×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 0.867,
+   "height_m": 2.614,
+   "sections": 1,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.81,
+     1.774
+    ],
+    [
+     0.057,
+     1.824,
+     0.81,
+     2.557
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V2_H1_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-13",
+   "name": "Дверь остеклённая двухпольная с глухой фрамугой 1474×3060",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 1.474,
+   "height_m": 3.06,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.123,
+     0.183,
+     0.494,
+     2.131
+    ],
+    [
+     0.636,
+     0.183,
+     1.351,
+     2.131
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Дверь_Вход_V2_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": [
+    [
+     0.065,
+     2.305,
+     1.409,
+     2.995
+    ]
+   ],
+   "same_as": null
+  },
+  {
+   "id": "WT-14",
+   "name": "Дверь остеклённая однопольная с глухой фрамугой 948×3060",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 0.948,
+   "height_m": 3.06,
+   "sections": 1,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 1,
+   "panes_m": [
+    [
+     0.123,
+     0.183,
+     0.825,
+     2.131
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Дверь_Вход_V2_H1_000",
+    "occurrences": null
+   },
+   "opaque_m": [
+    [
+     0.065,
+     2.305,
+     0.883,
+     2.995
+    ]
+   ],
+   "same_as": null
+  },
+  {
+   "id": "WT-15",
+   "name": "Дверь остеклённая трёхпольная с глухой фрамугой 2303×3060",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 2.303,
+   "height_m": 3.06,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 3,
+   "panes_m": [
+    [
+     1.474,
+     0.057,
+     2.246,
+     2.247
+    ],
+    [
+     0.123,
+     0.183,
+     0.494,
+     2.131
+    ],
+    [
+     0.636,
+     0.183,
+     1.351,
+     2.131
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Дверь_Вход_V2_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": [
+    [
+     0.065,
+     2.305,
+     1.409,
+     2.995
+    ],
+    [
+     1.474,
+     2.305,
+     2.246,
+     2.995
+    ]
+   ],
+   "same_as": null
+  },
+  {
+   "id": "WT-16",
+   "name": "Дверь остеклённая однопольная 949×2247",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 0.949,
+   "height_m": 2.247,
+   "sections": 1,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 1,
+   "panes_m": [
+    [
+     0.123,
+     0.183,
+     0.826,
+     2.131
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Дверь_Вход_V1_H1_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-17",
+   "name": "Окно однопольное 868×1824",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 0.868,
+   "height_m": 1.824,
+   "sections": 1,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 1,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.811,
+     1.774
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V1_H1_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-18",
+   "name": "Окно двухпольное 1695×1824",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 1.695,
+   "height_m": 1.824,
+   "sections": 2,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.823,
+     1.774
+    ],
+    [
+     0.873,
+     0.057,
+     1.638,
+     1.774
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V1_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-19",
+   "name": "Окно трёхпольное 2514×1824",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.514,
+   "height_m": 1.824,
+   "sections": 3,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 3,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.823,
+     1.774
+    ],
+    [
+     0.873,
+     0.057,
+     1.64,
+     1.774
+    ],
+    [
+     1.69,
+     0.057,
+     2.457,
+     1.774
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V1_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-20",
+   "name": "Окно четырёхпольное с фрамугой 3354×1944",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 3.354,
+   "height_m": 1.944,
+   "sections": 4,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 8,
+   "panes_m": [
+    [
+     0.065,
+     0.125,
+     0.784,
+     0.429
+    ],
+    [
+     0.9,
+     0.125,
+     1.619,
+     0.429
+    ],
+    [
+     1.735,
+     0.125,
+     2.454,
+     0.429
+    ],
+    [
+     2.57,
+     0.125,
+     3.289,
+     0.429
+    ],
+    [
+     0.9,
+     0.545,
+     1.619,
+     1.879
+    ],
+    [
+     1.735,
+     0.545,
+     2.454,
+     1.879
+    ],
+    [
+     0.123,
+     0.603,
+     0.726,
+     1.821
+    ],
+    [
+     2.628,
+     0.603,
+     3.231,
+     1.821
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Отлив_V2_H4_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-21",
+   "name": "Окно четырёхпольное с фрамугой 3330×2614",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 3.33,
+   "height_m": 2.614,
+   "sections": 4,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 8,
+   "panes_m": [
+    [
+     0.057,
+     0.057,
+     0.824,
+     1.774
+    ],
+    [
+     0.874,
+     0.057,
+     1.64,
+     1.774
+    ],
+    [
+     1.69,
+     0.057,
+     2.457,
+     1.774
+    ],
+    [
+     2.507,
+     0.057,
+     3.273,
+     1.774
+    ],
+    [
+     0.057,
+     1.824,
+     0.824,
+     2.557
+    ],
+    [
+     0.874,
+     1.824,
+     1.64,
+     2.557
+    ],
+    [
+     1.69,
+     1.824,
+     2.457,
+     2.557
+    ],
+    [
+     2.507,
+     1.824,
+     3.273,
+     2.557
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Окно_Большое_V2_H4_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-22",
+   "name": "Дверь остеклённая однопольная с фрамугой 949×3060",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 0.949,
+   "height_m": 3.06,
+   "sections": 1,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.123,
+     0.183,
+     0.826,
+     2.131
+    ],
+    [
+     0.065,
+     2.305,
+     0.884,
+     2.995
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Д_Вход_Стекло_V2_H1_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-23",
+   "name": "Дверь остеклённая двухпольная с фрамугой 1474×3060",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 1.474,
+   "height_m": 3.06,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 3,
+   "panes_m": [
+    [
+     0.123,
+     0.183,
+     0.494,
+     2.131
+    ],
+    [
+     0.636,
+     0.183,
+     1.351,
+     2.131
+    ],
+    [
+     0.065,
+     2.305,
+     1.409,
+     2.995
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Д_Вход_Стекло_V2_H2_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
+  },
+  {
+   "id": "WT-24",
+   "name": "Дверь остеклённая трёхпольная с фрамугой 2303×3060",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 2.303,
+   "height_m": 3.06,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 5,
+   "panes_m": [
+    [
+     1.474,
+     0.057,
+     2.246,
+     2.247
+    ],
+    [
+     0.123,
+     0.183,
+     0.494,
+     2.131
+    ],
+    [
+     0.636,
+     0.183,
+     1.351,
+     2.131
+    ],
+    [
+     0.065,
+     2.305,
+     1.409,
+     2.995
+    ],
+    [
+     1.474,
+     2.305,
+     2.246,
+     2.995
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "Win_Typical.max",
+    "file": "library/windows/sources/win-typical-max-v001.json",
+    "max_object": "New_Д_Вход_Стекло_V2_H3_000",
+    "occurrences": null
+   },
+   "opaque_m": null,
+   "same_as": null
   }
  ]
 }
