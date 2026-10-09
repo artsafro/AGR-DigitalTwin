@@ -27,8 +27,8 @@ spec v0.3 (#36); window library `library/windows/window_types.json` (#4).
 ## Check
 
 - `opening_planes` (`twinqa.geometry`): group `opening` faces facing the wall, inside the reveal,
-  covering the opening. Starting cover 95 % and seat anywhere in the reveal are proposals in the
-  benchmark's `tolerances.json`, tuned after B01. Also `material_ids`, `mesh`.
+  covering the opening. Cover 95 % and a seat anywhere in the reveal are proposed by PR #47
+  (B01 `tolerances.json`), to be tuned with the user after B01. Also `material_ids`, `mesh`.
 
 ## Traps
 
