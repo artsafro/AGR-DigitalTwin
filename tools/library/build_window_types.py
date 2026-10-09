@@ -10,7 +10,13 @@ Sources (read only; the user's .blend is not opened):
 - SOSH1150 typology v003 (`jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json` in the user's
   project folder): 11 types and 6 size variants with their pane layouts;
 - the untyped curtain assemblies CW_021 / CW_022 from `library-v001/curtain-types.json`;
-- KPP1 facade windows from the Revit spec (spec v0.3) and their pane layout from the Revit export.
+- KPP1 facade windows from the Revit spec (spec v0.3) and their pane layout from the Revit export;
+- the window file Win_Typical.max (`library/windows/sources/win-typical-max-v001.json`, read from
+  3ds Max without changing it): frame extent, glass and opaque infill per object.
+
+Duplicates (user decision 2026-10-09): the same subdivision — fields, transoms, panes and pane
+layout within SAME_M — and the same size within SAME_M are one type; the later entry keeps its
+row and points to the first with `same_as`. Names are form + size, no project.
 
 User decision 2026-10-09: every entry is `unconfirmed` until the user confirms and names it — the
 user's decisions are kept in library/windows/confirmations.json and applied here;
@@ -25,6 +31,8 @@ from collections import Counter
 from pathlib import Path
 
 GAP_M = 0.02             # panes closer than this along an axis are in one field / row
+SAME_M = 0.02            # same type: size and pane layout within 2 cm (user decision 2026-10-09)
+FIELDS = {1: "однопольное", 2: "двухпольное", 3: "трёхпольное", 4: "четырёхпольное", 5: "пятипольное", 6: "шестипольное"}
 
 
 def _clusters(ranges):
@@ -47,7 +55,12 @@ def layout(panes):
     for a, b in columns:
         rows = _clusters([(p[1], p[3]) for p in panes if p[0] >= a - GAP_M and p[2] <= b + GAP_M])
         transoms = max(transoms, len(rows) - 1)
-    return len(columns), transoms
+    # fields: the most columns in one horizontal band, so a full-width transom above does not merge
+    # the fields below it (an entrance door with a fanlight over two leaves)
+    bands = _clusters([(p[1], p[3]) for p in panes])
+    sections = max(len(_clusters([(p[0], p[2]) for p in panes if p[1] >= a - GAP_M and p[3] <= b + GAP_M]))
+                   for a, b in bands)
+    return max(sections, len(columns)), transoms
 
 
 def entry(id_, name, role, width, height, panes, *, source, typed=True, note=None, variant_of=None, **extra):
@@ -61,6 +74,81 @@ def entry(id_, name, role, width, height, panes, *, source, typed=True, note=Non
     if note:
         out["note"] = note
     return out
+
+
+def _mm(v):
+    return round(v * 1000)
+
+
+def max_types(source, path):
+    """Window types of a 3ds Max window file (library/windows/sources/*.json): frame extent, glass,
+    opaque infill; name by form + size, no project."""
+    out, prefix = [], source["id_prefix"]
+    for n, o in enumerate(source["objects"], 1):
+        door = "Дверь" in o["object"] or "Д_" in o["object"]
+        fields = o["glass_m"] + o["opaque_m"]
+        sections, transoms = layout(fields)
+        words = FIELDS.get(sections, f"{sections}-польн")
+        if door:
+            base = f"Дверь {'остеклённая ' if o['glass_m'] else ''}{words[:-2]}ая"
+        else:
+            base = f"Окно {words}"
+        extra = " с глухой фрамугой" if o["opaque_m"] else (" с фрамугой" if transoms else "")
+        name = f"{base}{extra} {_mm(o['width_m'])}×{_mm(o['height_m'])}"
+        out.append(entry(
+            f"{prefix}-{n:02d}", name, "door" if door else "window", o["width_m"], o["height_m"], o["glass_m"],
+            source={"object": Path(source["source"]["file"]).name, "file": Path(path).as_posix(),
+                    "max_object": o["object"], "occurrences": None},
+            opaque_m=o["opaque_m"] or None))
+        if sections is not None:                  # members of the layout include the opaque infill
+            out[-1]["sections"], out[-1]["transoms"] = sections, transoms
+    return out
+
+
+def _near(u, v):
+    """Within SAME_M, inclusive, in whole millimetres (no binary-float edge, PR #43 review 1)."""
+    return abs(round(u * 1000) - round(v * 1000)) <= round(SAME_M * 1000)
+
+
+def _same(a, b):
+    """Same subdivision — fields, transoms, glass and opaque infill with their layout — and size, all
+    within SAME_M (user decision 2026-10-09)."""
+    if (a["sections"], a["transoms"], a["panes"]) != (b["sections"], b["transoms"], b["panes"]):
+        return False
+    if not (_near(a["width_m"], b["width_m"]) and _near(a["height_m"], b["height_m"])):
+        return False
+    for key in ("panes_m", "opaque_m"):
+        if not _matched(a.get(key) or [], b.get(key) or []):
+            return False
+    return True
+
+
+def _matched(pa, pb):
+    """Every rectangle of pa has its own partner in pb within SAME_M (one to one, augmenting paths),
+    so a 1 mm shift never reorders the pairing (PR #43 review 2)."""
+    if len(pa) != len(pb):
+        return False
+    ok = [[j for j, q in enumerate(pb) if all(_near(u, v) for u, v in zip(p, q))] for p in pa]
+    owner = {}
+
+    def augment(i, seen):
+        for j in ok[i]:
+            if j not in seen:
+                seen.add(j)
+                if j not in owner or augment(owner[j], seen):
+                    owner[j] = i
+                    return True
+        return False
+
+    return all(augment(i, set()) for i in range(len(pa)))
+
+
+def dedupe(types):
+    """Each entry that repeats an earlier typed one points to it with same_as."""
+    for i, t in enumerate(types):
+        first = next((u for u in types[:i] if u["typed"] and not u.get("same_as") and _same(u, t)), None)
+        t["same_as"] = first["id"] if (first and t["typed"]) else None
+    return types
 
 
 def sosh(type_map, curtain_types):
@@ -139,13 +227,25 @@ def main(argv=None):
     ap.add_argument("--kpp1-twin", type=Path, required=True)
     ap.add_argument("--kpp1-spec", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--max-source", type=Path, action="append", default=[],
+                    help="a 3ds Max window source (library/windows/sources/*.json); repeatable")
     ap.add_argument("--confirmations", type=Path, default=Path(__file__).resolve().parents[2] / "library" / "windows" / "confirmations.json")
     args = ap.parse_args(argv)
     if not args.confirmations.exists():                 # never drop the user's decisions silently (PR #42 review 1)
         raise SystemExit(f"confirmations file not found: {args.confirmations}")
+    max_sources, prefixes = [], set()
+    for src in args.max_source:                           # one id space per source (PR #43 review 1)
+        source = json.loads(src.read_text(encoding="utf-8"))
+        if source["id_prefix"] in prefixes:
+            raise SystemExit(f"max source given twice or prefix {source['id_prefix']} reused: {src}")
+        prefixes.add(source["id_prefix"])
+        max_sources.append((src, source))
     types = (sosh(json.loads(args.type_map.read_text(encoding="utf-8")),
                   json.loads(args.library_v001.read_text(encoding="utf-8")))
              + kpp1(args.kpp1_twin, args.kpp1_spec))
+    for src, source in max_sources:
+        types += max_types(source, src)
+    types = dedupe(types)
     types = confirm(types, json.loads(args.confirmations.read_text(encoding="utf-8")))
     doc = {"schema": "window-types/1",
            "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). An entry is unconfirmed until "
