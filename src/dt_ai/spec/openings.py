@@ -386,6 +386,9 @@ def _across_levels(by_level, levels, floors):
                 if not (upper["z0"] - lower["z1"] <= PANE_JOIN_M + 1e-9 and lower["z0"] < elev < upper["z1"]
                         and _within(lower, upper, "x")):
                     continue
+                kinds = {low.get("kind_fixed"), up.get("kind_fixed")} - {None}
+                if "grille" in kinds and (len(kinds) > 1 or low.get("kind_fixed") != up.get("kind_fixed")):
+                    continue                     # a grille and a window or door are two elements (PR #40 review 1)
                 box = (min(0.0, s0), max(lower["x1"], s1), lower["z0"], max(lower["z1"], upper["z1"]))
                 rects = [(r["x0"], r["x1"], r["z0"], r["z1"]) for r in (lower, upper)]
                 if not _covered(rects, box):

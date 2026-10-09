@@ -141,6 +141,24 @@ def test_extraction_thresholds_come_from_tolerances(tmp_path):
                      "--tolerances", str(tmp_path / f"tol-{name}.json"), "--output", str(tmp_path / f"spec-{name}.json")]) == 0
     widths = [json.loads((tmp_path / f"spec-{n}.json").read_text(encoding="utf-8"))["floors"][0]["openings"][0]["w_m"] for n in "ab"]
     assert widths == [1.2, 0.94]
+    # the depth threshold too: a 0.26 m reveal is no exception at 0.10, an exception at 0.05
+    (tmp_path / "tol-c.json").write_text(json.dumps({"spec_extract": {"depth_exception_m": 0.05}}), encoding="utf-8")
+    assert main(["spec", "extract", "--dump", str(tmp_path / "dump.json"), "--object", str(tmp_path / "object.json"),
+                 "--tolerances", str(tmp_path / "tol-c.json"), "--output", str(tmp_path / "spec-c.json")]) == 0
+    depths = [json.loads((tmp_path / f"spec-{n}.json").read_text(encoding="utf-8"))["floors"][0]["openings"][0].get("depth_m")
+              for n in "ac"]
+    assert depths == [None, 0.26]
+
+
+def test_grille_and_window_above_it_stay_two_openings():
+    # PR #40 review 1: same host and span, a grille z 2.9-3.3 and a glazed window z 3.3-4.3 across L1 (3.3)
+    walls, t = ring()
+    grille = {"id": 96, "kind": "window", "hostId": 1, "materials": [1], "hand": [1, 0, 0], "width": 0.3, "height": 0.4,
+              "point": [4.15, 0.15, 0.0], "bboxMin": [4.0, 0.0, 2.9], "bboxMax": [4.3, 0.3, 3.3]}
+    window = {**grille, "id": 97, "materials": [2], "height": 1.0, "bboxMin": [4.0, 0.0, 3.3], "bboxMax": [4.3, 0.3, 4.3]}
+    spec, _ = extract_spec(to_dump([{**band(walls, [grille, window]), "materials": GLASS}], [roof_obj(t)]), OBJ)
+    kinds = [[o.kind for o in f.openings] for f in spec.expanded_floors()]
+    assert kinds == [["grille"], ["window"]]
 
 
 def test_b01_example_is_spec_v03_and_matches_harness_plan():

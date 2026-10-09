@@ -13,8 +13,10 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3 (inset elements); user decisio
 - Revit path: an element of the window category with no transparent material is a grille; its
   opening is the family box along its host (point ± hand × width / 2, family box heights). Glass is
   told by material transparency, never by a family or type name.
-- Mesh path: a grille is read only when the source carries it as geometry (a hole with louvres);
-  an `npm_min` source carries it as texture, so the mesh path has no grille there.
+- Mesh path: not read yet — the mesh path has no grille classifier (an opaque hole without glass
+  or door evidence stays an untyped opening). An `npm_min` source carries grilles as texture, so
+  there is nothing to read there anyway; a `mid` source with grille geometry needs the classifier.
+- A grille never joins a window or door into one opening across a level line.
 
 ## Profiles
 
