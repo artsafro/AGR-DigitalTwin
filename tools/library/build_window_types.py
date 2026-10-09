@@ -46,8 +46,9 @@ def _clusters(ranges):
     return out
 
 
-def layout(panes):
-    """Sections and transoms of a pane layout [[x0, z0, x1, z1], ...] (metres from the bottom left)."""
+def layout(panes, opaque=()):
+    """Sections and transoms of a pane layout [[x0, z0, x1, z1], ...] (metres from the bottom left);
+    `opaque` are the opaque infill rectangles among the panes."""
     if not panes:
         return None, None
     columns = _clusters([(p[0], p[2]) for p in panes])
@@ -55,11 +56,15 @@ def layout(panes):
     for a, b in columns:
         rows = _clusters([(p[1], p[3]) for p in panes if p[0] >= a - GAP_M and p[2] <= b + GAP_M])
         transoms = max(transoms, len(rows) - 1)
-    # fields: the columns of the row under the fanlight (the band below the top one; the only band when
-    # there is no fanlight), not the columns over the whole height (user rule 2026-10-09: a full-width
-    # fanlight never merges the leaves under it, and a fanlight's own division never adds fields)
+    # fields: the columns of the row under the fanlight, not the columns over the whole height (user rule
+    # 2026-10-09: a full-width fanlight never merges the leaves under it, and a fanlight's own division never
+    # adds fields). Bands holding only opaque infill (lower panels) are not rows; of several glazed bands the
+    # top one is the fanlight and the fields are those of the tallest band under it. Limit: a low glazed
+    # band under a tall main row with no fanlight reads as the field row.
     bands = _clusters([(p[1], p[3]) for p in panes])
-    a, b = bands[-2] if len(bands) > 1 else bands[0]
+    glazed = [(a, b) for a, b in bands
+              if any(p not in opaque and p[1] >= a - GAP_M and p[3] <= b + GAP_M for p in panes)] or bands
+    a, b = max(glazed[:-1] or glazed, key=lambda band: band[1] - band[0])
     sections = len(_clusters([(p[0], p[2]) for p in panes if p[1] >= a - GAP_M and p[3] <= b + GAP_M]))
     return sections, transoms
 
@@ -89,7 +94,7 @@ def max_types(source, path):
         door = "Дверь" in o["object"] or "Д_" in o["object"]
         balcony = door and "Балкон" in o["object"]       # a balcony door and window in one frame (user 2026-10-09)
         fields = o["glass_m"] + o["opaque_m"]
-        sections, transoms = layout(fields)
+        sections, transoms = layout(fields, o["opaque_m"])
         words = FIELDS.get(sections, f"{sections}-польн")
         if balcony:
             base = f"Балконный блок {words[:-2]}ый"

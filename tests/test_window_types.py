@@ -73,6 +73,16 @@ def test_layout_counts_sections_and_transoms(panes, expected):
     assert layout(panes) == expected
 
 
+def test_a_lower_opaque_panel_is_not_the_field_row():
+    # PR #44 review 2: two glazed fields over a full-width opaque panel, no fanlight
+    glass, opaque = [[0.05, 0.55, 0.95, 2.7], [1.05, 0.55, 1.95, 2.7]], [[0.05, 0.05, 1.95, 0.45]]
+    assert layout(glass + opaque, opaque) == (2, 1)
+    # the panel under two fields under a fanlight
+    fan = [[0.05, 2.1, 1.95, 2.7]]
+    glass = [[0.05, 0.55, 0.95, 2.0], [1.05, 0.55, 1.95, 2.0]]
+    assert layout(glass + fan + opaque, opaque) == (2, 2)
+
+
 def test_a_missing_confirmations_file_stops_the_build(tmp_path):
     # PR #42 review 1: the user's decisions are never dropped silently
     import build_window_types as b
