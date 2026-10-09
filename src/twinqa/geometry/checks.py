@@ -86,8 +86,9 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
 
 
 def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
-    """Edge-manifold, no n-gons, no overlapping faces; open edges judged only when boundary_edges_max is set
-    (NPM keeps reveals without inner faces, docs/domain/geometry.md), outside parts made only of open_part_groups."""
+    """Edge-manifold, no n-gons, no overlapping faces. Open edges are reported; they fail only when a
+    benchmark sets boundary_edges_max (null by user decision 2026-10-09: NPM keeps reveals without inner
+    faces, docs/domain/geometry.md), and never on parts made only of open_part_groups."""
     ids = weld(model.vertices, tol["weld_m"])
     _, counts, side_edges = edge_uses(model.triangles, ids)
     part = parts(model.triangles, ids)
