@@ -18,7 +18,8 @@ from twinqa.geometry.mesh import edge_uses, from_dump, weld
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
-INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE)
+INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE,
+                     plane_seat="spec_depth")
 
 
 def spec(**changes):
@@ -30,6 +31,22 @@ def spec(**changes):
 
 def by_id(report):
     return {c["id"]: c for c in report["checks"]}
+
+
+def t_junctions(dump):
+    """Vertices lying strictly inside an edge of another face (a geometric T-junction)."""
+    soup = from_dump(dump)
+    v = soup.vertices
+    edges = {tuple(sorted((int(a), int(b)))) for t in soup.triangles for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0]))}
+    hits = 0
+    for a, b in edges:
+        p, q = v[a], v[b]
+        d = q - p
+        length2 = float(d @ d)
+        s = (v - p) @ d / length2
+        off = np.linalg.norm(v - p - np.outer(s, d), axis=1)
+        hits += int(np.sum((s > 1e-6) & (s < 1 - 1e-6) & (off < 1e-6)))
+    return hits
 
 
 def test_b01_spec_builds_a_model_that_passes_every_check_against_the_synthetic_etalon():
@@ -47,7 +64,8 @@ def test_model_is_all_quads_welded_and_open_only_at_the_bottom():
     soup = from_dump(dump)
     ids = weld(soup.vertices, 1e-4)
     edges, counts, _ = edge_uses(soup.triangles, ids)
-    assert counts.max() <= 2                                   # no T-junction or fin
+    assert counts.max() <= 2                                   # no fin
+    assert t_junctions(dump) == 0
     open_z = soup.vertices[np.unique(ids, return_index=True)[1]][edges[counts == 1].ravel(), 2]
     assert np.allclose(open_z, 0.0)                            # only the bottom ring is open
     assert {lv["name"] for lv in dump["helpers"]} == {"LEVEL_L0", "LEVEL_L1", "LEVEL_roof"}
@@ -112,3 +130,86 @@ def test_different_floor_contours_are_an_error():
     data["floors"][1] = {"level": "L1", "contour": [[0, 0], [8, 0], [8, 10], [0, 10]], "openings": []}
     with pytest.raises(BuildError, match="different contours"):
         build(Spec.model_validate(data), INPUTS)
+
+
+# Codex review 1 of PR #50
+
+
+def edited(edit):
+    data = json.loads(json.dumps(FIXTURE))
+    edit(data)
+    return Spec.model_validate(data)
+
+
+@pytest.mark.parametrize("edit, message", [
+    (lambda d: d["floors"][0]["openings"][0].update({"plane_conflict": True}), "plane_conflict"),
+    (lambda d: d["floors"][0]["openings"][0].update({"x_m": 0.0}), "wall end"),
+    (lambda d: d["floors"][0]["openings"][0].update({"x_m": 8.5}), "wall end"),
+    (lambda d: d["floors"][0]["openings"][0].update({"depth_m": 0.0}), "depth 0"),
+    (lambda d: d["floors"][0]["openings"].append({**d["floors"][0]["openings"][0], "x_m": 3.5}), "touch or overlap"),
+    (lambda d: d["floors"][0]["openings"].append({**d["floors"][0]["openings"][0], "x_m": 3.0}), "touch or overlap"),
+    (lambda d: d["attachments"].append({"kind": "balcony"}), "attachments"),
+])
+def test_unsupported_or_unresolved_openings_are_errors(edit, message):
+    with pytest.raises(BuildError, match=message):
+        build(edited(edit), INPUTS)
+
+
+def test_opening_reaching_the_roof_level_is_an_error():
+    def edit(d):
+        d["floors"][1] = {"level": "L1", "contour": d["floors"][0]["contour"], "openings": [
+            {"wall": 0, "x_m": 2.0, "sill_m": 3.1, "w_m": 1.5, "h_m": 0.5, "kind": "window", "depth_m": 0.4}]}
+    with pytest.raises(BuildError, match="below the roof level"):
+        build(edited(edit), INPUTS)
+
+
+def test_floors_must_cover_every_level():
+    def edit(d):
+        d["floors"] = [{"level": "L1", "contour": d["floors"][0]["contour"], "openings": []}]
+    with pytest.raises(BuildError, match="cover every level"):
+        build(edited(edit), INPUTS)
+
+
+def test_cross_level_opening_in_a_typical_template_is_asked_not_copied():
+    def edit(d):
+        d["levels"] = [{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "L2", "elev_m": 6.6},
+                       {"name": "roof", "elev_m": 9.9}]
+        d["floors"] = [{"level": "L0", "contour": d["floors"][0]["contour"], "openings": [
+                           {"wall": 0, "x_m": 2.0, "sill_m": 0.0, "w_m": 1.5, "h_m": 3.5, "kind": "window",
+                            "level_from": "L0", "level_to": "L1"}]},
+                       {"level": "L1", "typical_of": "L0", "repeat_to": "L2"}]
+    with pytest.raises(BuildError, match="ask the user"):
+        build(edited(edit), INPUTS)
+
+
+def test_seating_is_a_required_choice():
+    with pytest.raises(BuildError, match="C24"):
+        build(spec(), BuildInputs(**{**INPUTS.__dict__, "plane_seat": "mid"}))
+    half = from_dump(build(spec(), BuildInputs(**{**INPUTS.__dict__, "plane_seat": "half_depth"})))
+    planes = half.corners()[half.material_ids == PLANE]
+    assert np.allclose(planes[:, :, 1], 0.1)                   # wall 0 at y = 0, half of 0.2 m
+
+
+def test_planes_face_out_and_reversed_planes_fail_the_checker():
+    dump = build(spec(), INPUTS)
+    soup = from_dump(dump)
+    c = soup.corners()[soup.material_ids == PLANE]
+    n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+    assert np.all(n[:, 1] < 0)                                 # wall 0 faces -y
+    body = dump["meshes"][0]
+    body["triangles"] = [t[::-1] if m == PLANE else t for t, m in zip(body["triangles"], body["material_ids"])]
+    report = checks.run(from_dump(dump), from_dump(box_dump()), spec(), TOL)
+    assert "opening_planes" in report["failed"]
+
+
+@pytest.mark.parametrize("contour", [
+    [[0, 0], [10, 0], [10, 4], [6, 4], [6, 10], [0, 10]],                              # L
+    [[0, 0], [10, 0], [10, 10], [7, 10], [7, 6], [3, 6], [3, 10], [0, 10]],            # U
+])
+def test_rectilinear_contours_build_without_t_junctions(contour):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+    dump = build(edited(edit), INPUTS)
+    soup = from_dump(dump)
+    _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
+    assert counts.max() <= 2 and t_junctions(dump) == 0

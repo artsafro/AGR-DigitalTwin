@@ -7,17 +7,19 @@ Nothing else is assumed; anything this step cannot build is an error, never a gu
 What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat, parapet):
 - one outer wall surface per contour edge, from the bottom level to the parapet top; no Shell
   (wall thickness is open, conflict C23);
-- every window / door / untyped opening as a hole with reveals to its depth (`depth_m` or
-  `opening_depth_default_m`) and a plane closing the reveal, ID by the opening's own
-  `material_id`, else its window type, else the object's default opening ID (seating: conflict C24
-  is open; the plane sits at the spec depth). Grilles stay texture (`vent-grille`);
+- every window / door / untyped opening as a hole with reveals and a plane closing them, ID by the
+  opening's own `material_id`, else its window type, else the object's default opening ID (never
+  under `plane_conflict`). Seating is conflict C24 (open), so it is a required input: `spec_depth`
+  puts the plane at the opening depth (`depth_m` or `opening_depth_default_m`), `half_depth` at
+  half of it. Grilles stay texture (`vent-grille`);
 - the roof plane at the top input level inside the parapet, parapet inner walls and cap.
 
 Topology: quads only, welded, no T-junctions. Wall cuts run at every contour vertex and opening
 edge, Z cuts at every level, sill, head, roof and parapet top, and cuts are propagated through the
 roof and cap until every shared edge splits the same way (docs/domain/geometry.md, BODY quad
 layout). The shape comes only from the contour polygon. Supported now: one contour for every
-floor, axis-parallel walls, no rounded corners.
+floor, axis-parallel walls, no rounded corners, openings inside one wall that touch neither its
+ends, nor each other, nor the roof level, no attachments; anything else is a BuildError.
 
 Output: a mesh dump in the format of tools/source/measure_spec_blender.py (one mesh `body` with
 vertices, triangles, material ids, polygon sizes, plus LEVEL_<name> helpers), so the benchmark
@@ -33,6 +35,7 @@ from dt_ai.spec.model import Spec
 
 KEY_M = 1e-6          # vertices on one 1 µm grid are one vertex
 BUILT_KINDS = ("window", "door", None)
+SEATS = {"spec_depth": 1.0, "half_depth": 0.5}   # conflict C24 is open: the caller chooses
 
 
 class BuildError(ValueError):
@@ -46,6 +49,7 @@ class BuildInputs:
     reveal_id: int
     roof_id: int
     opening_id: int                       # default plane ID when the opening has none of its own
+    plane_seat: str                       # "spec_depth" or "half_depth" (C24 open, no default)
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
 
 
@@ -90,6 +94,16 @@ def _contour(spec: Spec):
         raise BuildError("rounded corners are not built yet (pattern non-90-corner)")
     if len(contours) != 1:
         raise BuildError("floors have different contours; steps between floors are not built yet (contour-niche)")
+    names = [lv.name for lv in spec.levels]
+    if [f.level for f in floors] != names[:-1]:
+        raise BuildError(f"floors {[f.level for f in floors]} must cover every level below the top: {names[:-1]}")
+    if spec.attachments:
+        raise BuildError("attachments are not built yet")
+    templates = {f.typical_of for f in spec.floors if f.typical_of is not None}
+    for f in spec.floors:
+        if f.level in templates and any(o.level_to is not None for o in f.openings):
+            raise BuildError(f"floor {f.level} repeats an opening across levels: ask the user before copying it "
+                             "up the run (typical-floor-repeat, user decision 2026-10-09)")
     pts = np.asarray(floors[0].contour, float)
     for i in range(len(pts)):
         d = pts[(i + 1) % len(pts)] - pts[i]
@@ -107,6 +121,8 @@ def _openings(spec, floors, inputs):
         for o in f.openings:
             if o.kind not in BUILT_KINDS:
                 continue
+            if o.plane_conflict:
+                raise BuildError(f"floor {f.level} wall {o.wall} x {o.x_m}: plane_conflict, the plane ID is the user's")
             if o.material_id is not None:
                 mid = o.material_id
             elif o.window_type is not None and inputs.opening_ids_by_type and o.window_type in inputs.opening_ids_by_type:
@@ -114,13 +130,23 @@ def _openings(spec, floors, inputs):
             else:
                 mid = inputs.opening_id
             z0 = elev[f.level] + o.sill_m
+            depth = (spec.opening_depth_default_m if o.depth_m is None else o.depth_m) * SEATS[inputs.plane_seat]
+            if depth <= KEY_M:
+                raise BuildError(f"floor {f.level} wall {o.wall} x {o.x_m}: depth 0 has no reveal to build")
             out.append({"wall": o.wall, "s0": o.x_m, "s1": o.x_m + o.w_m, "z0": z0, "z1": z0 + o.h_m, "id": mid,
-                        "depth": spec.opening_depth_default_m if o.depth_m is None else o.depth_m})
+                        "depth": depth, "where": f"floor {f.level} wall {o.wall} x {o.x_m}"})
+    for i, a in enumerate(out):
+        for b in out[i + 1:]:
+            if (a["wall"] == b["wall"] and a["s0"] <= b["s1"] + KEY_M and b["s0"] <= a["s1"] + KEY_M
+                    and a["z0"] <= b["z1"] + KEY_M and b["z0"] <= a["z1"] + KEY_M):
+                raise BuildError(f"openings touch or overlap ({a['where']}, {b['where']}); not built yet")
     return out
 
 
 def build(spec: Spec, inputs: BuildInputs) -> dict:
     """Mesh dump of the spec's exterior (see module docstring)."""
+    if inputs.plane_seat not in SEATS:
+        raise BuildError(f"plane_seat must be one of {sorted(SEATS)} (conflict C24 is open)")
     pts, floors = _contour(spec)
     openings = _openings(spec, floors, inputs)
     bottom, roof = spec.levels[0].elev_m, spec.levels[-1].elev_m
@@ -141,15 +167,15 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         a, b = pts[o["wall"]], pts[(o["wall"] + 1) % n]
         u = (b - a) / np.linalg.norm(b - a)
         for s in (o["s0"], o["s1"]):
-            if s < -KEY_M or s > np.linalg.norm(b - a) + KEY_M:
-                raise BuildError(f"opening on wall {o['wall']} runs off the wall")
+            if s <= KEY_M or s >= np.linalg.norm(b - a) - KEY_M:
+                raise BuildError(f"{o['where']}: the opening reaches the wall end; corner openings are not built yet")
             x, y = a + u * s
             (xs if abs(u[0]) > 0.5 else ys).add(x if abs(u[0]) > 0.5 else y)
     xs, ys = sorted(round(v, 9) for v in xs), sorted(round(v, 9) for v in ys)
     zs = _cuts([lv.elev_m for lv in spec.levels] + [top] + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
     for o in openings:
-        if o["z1"] > top + KEY_M or o["z0"] < bottom - KEY_M:
-            raise BuildError("opening runs past the walls' height")
+        if o["z1"] >= roof - KEY_M or o["z0"] < bottom - KEY_M:
+            raise BuildError(f"{o['where']}: the opening must lie between the bottom level and below the roof level")
 
     mesh = _Mesh()
     for w in range(n):

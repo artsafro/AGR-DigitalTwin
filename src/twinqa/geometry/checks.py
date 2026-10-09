@@ -169,7 +169,7 @@ def opening_planes(spec: Spec, kinds) -> list[dict]:
 
 
 def check_opening_planes(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
-    """In every spec opening a plane facing the wall, inside the reveal, of group `opening`, covering it."""
+    """In every spec opening a plane facing out of the wall, inside the reveal, of group `opening`, covering it."""
     g = ranges["groups"]["opening"]
     corners = model.corners()
     in_group = (model.material_ids >= g["first"]) & (model.material_ids <= g["last"])
@@ -183,7 +183,7 @@ def check_opening_planes(model: Soup, spec: Spec, tol: dict, ranges: dict) -> di
         s0, s1, z1 = o.x_m, o.x_m + o.w_m, z0 + o.h_m
         rel = corners[:, :, :2] - a
         s, t, z = rel @ u, rel @ n, corners[:, :, 2]
-        facing = np.abs((n3[:, :2] @ n) / np.where(norm > 0, norm, 1)) > 0.99
+        facing = (n3[:, :2] @ n) / np.where(norm > 0, norm, 1) > 0.99   # the plane faces out of the wall
         inside = ((s.min(1) >= s0 - off) & (s.max(1) <= s1 + off) & (z.min(1) >= z0 - off) & (z.max(1) <= z1 + off)
                   & (t.max(1) <= off) & (t.min(1) >= -(row["depth"] + off)))
         hit = in_group & facing & inside
