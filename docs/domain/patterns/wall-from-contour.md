@@ -54,7 +54,9 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; terms Level contou
   a frame member) is a `window`, from the floor or not; a `door` has no glass or glass over part
   of its height.
 - Relief is not a kink: a bump or notch with both sizes <= 10 cm (frame profiles, e.g. 7.5 x 9 cm)
-  is taken off the contour.
+  is taken off the contour. The same holds in section (user decision 2026-10-09): a projection or
+  groove not over the full storey height whose depth and height are both <= 10 cm (a frame rail)
+  is relief, counted as `section_relief_parts` in the report, not a question.
 - Panes of one frame — side by side or a transom above, gap <= 0.15 m, aligned, and covering the
   joined rectangle — are one opening with `panes: N`; a curtain wall is one opening, the unit of
   the window library.

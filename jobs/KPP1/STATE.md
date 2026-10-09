@@ -203,3 +203,18 @@ the two paths agree. Open: vent grilles (no openings yet), attachment questions.
 reported and kept out of the verdict; extraction thresholds 0.20 / 0.10 m in `spec_extract` of the
 benchmark tolerances. Comparison `outputs/spec-compare-v021/`: still match.
 
+
+## Questions recount on spec v020 (2026-10-09)
+
+Same v005 dump (`outputs/spec-v001/dump.json`), extractor of `main` at e5c5e47, tolerances of
+`bench-k01-kpp1`: `outputs/spec-v020/` (local). `dt spec merge-questions` into `questions.md`:
+the 58 questions of v001 are `gone v020` (closed by the rules of #31, #36, #40), 25 are new and
+open, none answered. All 25 are one kind: horizontal projections 0.09 m deep and 0.075 m high,
+1.33-5.24 m long (L0 12, L1 13; high 16, normal 9) — the top and bottom rails of the facade panel
+frames at 1.125-1.2 / 3.0-3.075 / 4.775-4.85 / 6.65-6.725 m. The relief rule (#31) covered bumps
+with both plan sizes <= 0.10 m only.
+
+User decision 2026-10-09: the relief rule also holds in section — a projection or groove with
+depth and height both <= 0.10 m is relief, not a question. Spec v021 (`outputs/spec-v021/`, same
+dump): spec identical to v020, 25 rails counted as `section_relief_parts`, 0 questions; all 83 rows
+of `questions.md` are `gone`. No open contour question is left for KPP1.
