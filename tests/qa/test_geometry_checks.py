@@ -240,3 +240,17 @@ def test_polygon_sizes_that_do_not_match_the_triangles_are_not_measured():
         m["polygon_sizes"] = []
     report = run(dump)
     assert not report["passed"] and report["not_measured"] == ["mesh"]
+
+
+def test_section_open_in_both_is_listed_not_judged():
+    # Codex review 2 of PR #47: both dumps miss the same strip; they agree, the height is reported
+    def strip(dump):
+        body = dump["meshes"][0]
+        v = np.asarray(body["vertices"])
+        keep = [k for k, t in enumerate(body["triangles"]) if not (np.all(v[t][:, 1] == 0) and np.all(v[t][:, 2] <= 0.9))]
+        body["triangles"] = [body["triangles"][k] for k in keep]
+        body["material_ids"] = [body["material_ids"][k] for k in keep]
+        del body["polygon_sizes"]
+        return dump
+    area = by_id(run(strip(box_dump()), strip(box_dump())))["floor_areas"]
+    assert area["status"] == "pass" and ["L0", 0.33] in area["details"]["open_on_both_sides"]

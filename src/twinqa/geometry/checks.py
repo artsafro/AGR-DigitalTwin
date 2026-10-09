@@ -54,11 +54,14 @@ def check_levels(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
 
 def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
     """Outer section area of every storey at the sampled heights. Where both sections close they are
-    compared; where only one closes the model differs from the etalon there (a fail, never skipped)."""
+    compared; where only one closes the model differs from the etalon there (a fail, never skipped).
+    Where neither closes both agree; the height is listed as open_on_both_sides, not judged, because an
+    NPM shell open at its reveals has no closed section in a window band (user decision 2026-10-09).
+    A storey with no compared height at all fails."""
     names = [lv.name for lv in spec.levels]
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     mc, ec = model.corners(), etalon.corners()
-    per_floor, worst, unmeasured, one_sided = {}, 0.0, [], []
+    per_floor, worst, unmeasured, one_sided, both_open = {}, 0.0, [], [], []
     for lo, hi in zip(names, names[1:]):
         rows = []
         for f in tol["section_fractions"]:
@@ -68,6 +71,8 @@ def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
                 rows.append({"z": round(z, 3), "model_m2": am, "etalon_m2": ae})
                 if (am is None) != (ae is None):
                     one_sided.append([lo, round(z, 3)])
+                elif am is None:
+                    both_open.append([lo, round(z, 3)])
                 continue
             rel = abs(am - ae) / ae
             worst = max(worst, rel)
@@ -77,7 +82,8 @@ def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
         per_floor[lo] = rows
     ok = worst <= tol["floor_area_rel"] and not unmeasured and not one_sided
     return result("floor_areas", ok, round(worst, 4), tol["floor_area_rel"],
-                  {"floors": per_floor, "no_closed_section": unmeasured, "closed_on_one_side": one_sided})
+                  {"floors": per_floor, "no_closed_section": unmeasured, "closed_on_one_side": one_sided,
+                   "open_on_both_sides": both_open})
 
 
 def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
