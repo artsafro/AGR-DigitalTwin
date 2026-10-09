@@ -48,7 +48,8 @@ ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above i
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
 # user decisions 2026-10-08 (#31): a recess open from the storey floor, at least DOOR_MIN_H_M high
 # and DOOR_W_M wide at its mouth, is a door opening and leaves the contour (depth is no criterion);
-# a bump or notch with both sizes <= RELIEF_M is relief, not a kink
+# a bump or notch with both sizes <= RELIEF_M is relief, not a kink; the same in section: a projection or
+# recess with depth and height both <= RELIEF_M is relief, not a question (user decision 2026-10-09)
 DOOR_MIN_H_M = 1.9
 DOOR_W_M = (0.7, 3.0)
 DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
@@ -552,8 +553,9 @@ def _measure(piece, section, contour_pts):
     return {"wall": wall, "length_m": length, "depth_m": depth, "facade_share": length / wall_len}
 
 
-def _questions(levels, floors, polys, pieces_by_level):
-    """Merge pieces into connected components across levels and turn them into questions."""
+def _questions(levels, floors, polys, pieces_by_level, stats):
+    """Merge pieces into connected components across levels and turn them into questions; a
+    component with depth and height both <= RELIEF_M is relief (counted in stats, no question)."""
     items = []
     for li, pieces in enumerate(pieces_by_level):
         for p in pieces:
@@ -580,10 +582,14 @@ def _questions(levels, floors, polys, pieces_by_level):
         li = min(main["levels"])
         whole = _measure({"geom": union}, polys[li], floors[li]["contour"])
         share = max(whole["facade_share"], *(p["facade_share"] for p in comp))
+        depth = max(p["depth_m"] for p in comp)
+        if depth <= RELIEF_M + 1e-6 and max(b for _, b in spans) - min(a for a, _ in spans) <= RELIEF_M + 1e-6:
+            stats["section_relief_parts"] = stats.get("section_relief_parts", 0) + 1
+            continue
         c = union.centroid
         out.append({"priority": "high" if len(lv) >= 2 or share > PRIORITY_SHARE else "normal",
                     "kind": main["kind"], "levels": lv, "wall": main["wall"],
-                    "depth_m": round(max(p["depth_m"] for p in comp), 3), "length_m": round(whole["length_m"], 3),
+                    "depth_m": round(depth, 3), "length_m": round(whole["length_m"], 3),
                     "facade_share": round(share, 4),
                     "heights_m": [round(min(a for a, _ in spans), 3), round(max(b for _, b in spans), 3)],
                     "at": [round(c.x, 2), round(c.y, 2)]})
@@ -935,13 +941,15 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                           "horizontal_glass_parts": flat_glass, "recesses_cleared_as_openings": cleared}
     suspects = _plane_suspects(dump, m, levels, polys)
     report["openings"]["planes_without_material_id"] = len(suspects)
-    questions = (_questions(levels, floors, polys, pieces) + op.break_questions(breaks, levels) + suspects
+    stats = {"section_relief_parts": 0}
+    questions = (_questions(levels, floors, polys, pieces, stats) + op.break_questions(breaks, levels) + suspects
                  + _source_questions(dump, levels))
     names = [lv["name"] for lv in levels]
     questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
     for n, q in enumerate(questions, 1):
         q["n"] = n
     report["questions"] = questions
+    report["section_relief_parts"] = stats["section_relief_parts"]
     others = [tris[pt] for pt in parts[1:]]
     roof_parts = _roof_parts(v, others, levels[-1], polys[-1])
     roof_z, top_z, closed, roof_stats = _roof(v, body, levels[-2], levels[-1], polys[-1],

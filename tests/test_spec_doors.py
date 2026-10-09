@@ -55,6 +55,19 @@ def test_frame_profile_is_relief_not_a_kink():
     assert report["floors"]["L0"]["relief_parts"] == 1
 
 
+@pytest.mark.parametrize("box, relief", [
+    ((0, 2.0, 6.0, 1.125, 1.2, 0.09), True),     # frame rail 0.09 deep, 0.075 high (KPP1 cassettes)
+    ((0, 2.0, 6.0, 1.125, 1.2, -0.09), True),    # groove of the same section
+    ((0, 2.0, 6.0, 1.0, 1.5, 0.09), False),      # 0.5 m high band
+    ((0, 2.0, 6.0, 1.125, 1.2, 0.15), False),    # 0.15 m deep
+])
+def test_band_with_both_section_sizes_small_is_relief_not_a_question(box, relief):
+    # user decision 2026-10-09: the relief rule of #31 also holds in section (depth and height)
+    _, report = extract_spec(building(boxes=[box]), at())
+    assert (report["questions"] == []) == relief
+    assert report["section_relief_parts"] == (1 if relief else 0)
+
+
 def test_thin_deep_fin_is_not_relief():
     finned = [[0, 0], [10, 0], [10, 10], [5.075, 10], [5.075, 10.5], [5, 10.5], [5, 10], [0, 10]]
     spec, report = extract_spec(building(contour=finned), {**at(), "contour_at_m": {}})
