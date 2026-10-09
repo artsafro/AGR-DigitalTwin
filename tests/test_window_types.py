@@ -66,6 +66,8 @@ def test_kpp1_candidates_come_from_the_spec():
     # user rule 2026-10-09: fields of the row under the fanlight; a fanlight in three parts over two fields adds none
     ([[0.05, 0.05, 0.95, 2.0], [1.05, 0.05, 1.95, 2.0], [0.05, 2.1, 0.6, 2.7], [0.7, 2.1, 1.3, 2.7], [1.4, 2.1, 1.95, 2.7]],
      (2, 1)),
+    # PR #44 review 1: a fanlight taller than the row under it is still the fanlight
+    ([[0.05, 0.05, 0.95, 0.95], [1.05, 0.05, 1.95, 0.95], [0.05, 1.05, 1.95, 2.7]], (2, 1)),
 ])
 def test_layout_counts_sections_and_transoms(panes, expected):
     assert layout(panes) == expected

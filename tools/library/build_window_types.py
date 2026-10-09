@@ -55,11 +55,11 @@ def layout(panes):
     for a, b in columns:
         rows = _clusters([(p[1], p[3]) for p in panes if p[0] >= a - GAP_M and p[2] <= b + GAP_M])
         transoms = max(transoms, len(rows) - 1)
-    # fields: the columns of the main row — the tallest horizontal band, the row under the fanlight —
-    # not the columns over the whole height (user rule 2026-10-09: a full-width fanlight never merges the
-    # leaves under it, and a fanlight's own division never adds fields)
+    # fields: the columns of the row under the fanlight (the band below the top one; the only band when
+    # there is no fanlight), not the columns over the whole height (user rule 2026-10-09: a full-width
+    # fanlight never merges the leaves under it, and a fanlight's own division never adds fields)
     bands = _clusters([(p[1], p[3]) for p in panes])
-    a, b = max(bands, key=lambda band: band[1] - band[0])
+    a, b = bands[-2] if len(bands) > 1 else bands[0]
     sections = len(_clusters([(p[0], p[2]) for p in panes if p[1] >= a - GAP_M and p[3] <= b + GAP_M]))
     return sections, transoms
 
