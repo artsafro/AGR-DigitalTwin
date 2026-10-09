@@ -44,9 +44,12 @@ z 1.2-6.65, 4 panes); L1 holds 10 windows and 1 door.
 
 ## Not compared / open
 
-- Revit `window` elements without a transparent material (vent grilles, 8 on L0, 1 on L1) are no
-  openings on the Revit path; the mesh path has no element there either. HARNESS_PLAN §3 lists
-  vent grilles among inset elements — how to carry them is open.
+- Vent grilles (user decision 2026-10-09): openings of kind `grille` (position, size; pattern
+  `vent-grille`). The Revit path gives 8 on L0 and 1 on L1 (window elements without a transparent
+  material); the `npm_min` VPM carries them as texture, so the mesh path has none. They are reported
+  per level and kept out of the verdict (`opening_kinds_not_in_verdict` in tolerances.json); with
+  them the verdict stays match (`outputs/spec-compare-v021/`, specs `spec-revit-twin-v013.json` and
+  `spec-v019.json`, extracted with `--tolerances`).
 - `glass_w` / `glass_h` are not a comparison criterion (Revit: family / panel extents; mesh: panes).
 - Questions: Revit 9 (attachments: vestibules, canopies); mesh 25 (projections).
 - Depth: no KPP1 opening carries `depth_m`, so the pair boxes compare the default depth on both

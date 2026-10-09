@@ -861,8 +861,9 @@ def _planes(v, tris):
     return out
 
 
-def extract_spec(dump, obj_cfg, profile="npm_min"):
-    """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json."""
+def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
+    """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json;
+    thresholds: the `spec_extract` section of a benchmark's tolerances.json (defaults in openings.py)."""
     m = _matrix(obj_cfg, dump.get("source"))
     levels = _levels(dump, obj_cfg, m)
     if dump.get("kind") == "revit-data":                 # the box route of #10, removed after #29
@@ -922,7 +923,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min"):
     recesses = [[pc for pc in pcs if pc["kind"] == "recess"] for pcs in pieces]
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
                                                               _planes(v, plane_tris), doors, recesses, sources,
-                                                              obj_cfg.get("opening_depth_default_m", 0.2))
+                                                              obj_cfg.get("opening_depth_default_m", 0.2), thresholds)
     cleared = 0
     for li, floor in enumerate(floors):
         floor["openings"] = per_floor[li]

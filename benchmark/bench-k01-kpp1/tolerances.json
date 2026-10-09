@@ -1,13 +1,21 @@
 {
   "bench": "bench-k01-kpp1",
   "profile": "npm_min",
+  "spec_extract": {
+    "glass_frame_m": 0.2,
+    "depth_exception_m": 0.1
+  },
+  "spec_extract_note": "Extraction thresholds (#36): glass fills a reveal up to this frame on every side; a reveal depth further than depth_exception_m from opening_depth_default_m is written. Author's values, kept by the user 2026-10-09; `dt spec extract --tolerances` reads them",
   "spec_compare": {
     "level_elev_m": 0.03,
     "contour_area_rel": 0.02,
     "contour_hausdorff_m": 0.05,
-    "opening_bbox_m": 0.05
+    "opening_bbox_m": 0.05,
+    "opening_kinds_not_in_verdict": [
+      "grille"
+    ]
   },
-  "spec_compare_source": "HARNESS_PLAN §4 (issue #11): level count and kink count equal, opening count equal; roof covering, parapet top and parapet height use the level threshold",
+  "spec_compare_source": "HARNESS_PLAN §4 (issue #11): level count and kink count equal, opening count equal; roof covering, parapet top and parapet height use the level threshold; vent grilles are reported, not in the verdict: npm_min sources carry them as texture (pattern vent-grille, user decision 2026-10-09)",
   "reference": {
     "levels": "revit",
     "roof": "revit",

@@ -154,3 +154,17 @@ def test_floor_order_in_the_file_does_not_matter():
     b = {**json.loads(json.dumps(a)), "frame": {**FRAME, "source": "mesh"}}
     b["floors"].reverse()
     assert compare_specs(a, b, REPORT, REPORT, TOL, ("revit", "mesh"))["verdict"] == "match"
+
+
+
+def test_kinds_aside_are_reported_but_not_in_the_verdict():
+    # grilles of an npm_min texture-only source: listed in tolerances, reported per level, not in the verdict
+    grille = {"wall": 1, "x_m": 4.0, "sill_m": 3.0, "w_m": 0.3, "h_m": 0.4, "kind": "grille"}
+    a = spec("revit")
+    a["floors"][0]["openings"].append(grille)
+    tol = {**TOL, "spec_compare": {**TOL["spec_compare"], "opening_kinds_not_in_verdict": ["grille"]}}
+    out = compare_specs(a, spec("mesh"), REPORT, REPORT, tol, ("revit", "mesh"))
+    assert out["verdict"] == "match"
+    row = next(r for r in out["rows"] if r["criterion"].startswith("openings of kind grille"))
+    assert (row["a"], row["b"], row["within"]) == (1, 0, True)
+    assert compare_specs(a, spec("mesh"), REPORT, REPORT, TOL, ("revit", "mesh"))["verdict"] == "no match"

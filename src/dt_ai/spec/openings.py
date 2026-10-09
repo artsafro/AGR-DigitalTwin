@@ -32,6 +32,8 @@ MOUTH_KEY_M = 0.005      # bridges at different heights are one opening when eac
 ON_WALL_M = 0.05         # an opening mouth lies within this of its contour wall line
 PANE_JOIN_M = 0.15       # glass panes of one frame (gap <= 0.15 m, user decision 2026-10-08, #31) are one opening ...
 PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within the other's; stacked, one's width within
+# defaults of the extraction thresholds; a benchmark's tolerances.json (spec_extract) gives the values
+# in use (user decision 2026-10-09)
 DEPTH_EXCEPTION_M = 0.10  # a measured depth further than this from the spec default is written (#36)
 GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
 LEVEL_JOINT_M = 0.15     # an opening reaching less than this past a level line does not cross it (a frame joint)
@@ -321,20 +323,20 @@ def _door_items(doors, li, contour):
     return out
 
 
-def _glass_fills(o):
-    """Glass fills the opening's height: no stretch of it without glass longer than GLASS_FRAME_M."""
+def _glass_fills(o, frame=GLASS_FRAME_M):
+    """Glass fills the opening's height: no stretch of it without glass longer than a frame."""
     top = o["z0"]
     for z0, z1 in sorted(o.get("glass_z", [])):
-        if z0 - top > GLASS_FRAME_M:
+        if z0 - top > frame:
             return False
         top = max(top, z1)
-    return o["z1"] - top <= GLASS_FRAME_M
+    return o["z1"] - top <= frame
 
 
-def _kind(o):
+def _kind(o, frame=GLASS_FRAME_M):
     """window when glass fills the height; door for a door recess without glass or with glass over
     part of its height (user decision 2026-10-08, #31)."""
-    if o.get("glass_z") and _glass_fills(o):
+    if o.get("glass_z") and _glass_fills(o, frame):
         return "window"
     return "door" if o.get("door") else ("window" if o.get("glass_z") else None)
 
@@ -468,14 +470,14 @@ def _reveal(o, recesses, contour):
     return x0, x1, min(run["z0"], o["z0"]), max(run["z1"], o["z1"]), depth
 
 
-def _fills(rough, rects):
+def _fills(rough, rects, frame=GLASS_FRAME_M):
     """Glass fills the reveal up to a frame: the rectangle of the reveal (x0, x1, z0, z1) is covered
     by the glass rectangles on its wall, each grown by GLASS_FRAME_M — jointly, not axis by axis, so an
     L-shaped set of panes never makes a rectangle over solid wall (PR #20 F5, PR #39 review 1), and a
     tall recess with a short window is no frame (F6). The glass may belong to any level (a frame
     through a level line)."""
     x0, x1, z0, z1 = rough[:4]
-    g = GLASS_FRAME_M + 1e-6
+    g = frame + 1e-6
     cover = shapely.unary_union([shapely.box(a - g, c - g, b_ + g, d + g) for a, b_, c, d in rects]) if rects else Polygon()
     return shapely.box(x0, z0, x1, z1).difference(cover).area < 1e-6
 
@@ -511,12 +513,15 @@ def _source_items(items, li, contour):
 
 
 def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None, recesses=None, sources=None,
-             depth_default=0.2):
+             depth_default=0.2, thresholds=None):
     """Openings per floor, the plan footprints that clear recess questions, break questions, report.
     planes: vertical opening-plane parts as (points, normal, material id or None when mixed);
     doors: door recesses per level (mesh._door_recesses); recesses: recess pieces per level (the
     reveals that give a glass opening its rough size, #36); sources: openings a source gives
     explicitly, per level (Revit)."""
+    thresholds = thresholds or {}
+    frame = thresholds.get("glass_frame_m", GLASS_FRAME_M)
+    depth_exception = thresholds.get("depth_exception_m", DEPTH_EXCEPTION_M)
     glass, glass_skipped = _project(panes, levels, floors, polys, "glass")
     glass = _merge_panes(glass)
     rough_from_reveal = 0
@@ -527,7 +532,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                             for x0, x1, z0, z1 in g["rects"]]
         g["rough"] = _reveal(g, (recesses or [[]] * len(floors))[g["level"]], contour)
     for g in glass:                              # a reveal counts only when glass fills it up to a frame
-        if g.get("rough") is not None and not _fills(g["rough"], _glass_on_wall(g, floors[g["level"]]["contour"], glass)):
+        if g.get("rough") is not None and not _fills(g["rough"], _glass_on_wall(g, floors[g["level"]]["contour"], glass), frame):
             g["rough"] = None
     glass = _join_same_reveal(glass)             # so only panes of an accepted reveal are joined (PR #39 review 1)
     for g in glass:                              # the opening is the hole with its frame, not the glass
@@ -589,10 +594,10 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                     "w_m": round(o["x1"] - o["x0"], 3), "h_m": round(o["z1"] - o["z0"], 3),
                     "window_type": None, "source": o["source"],
                     "material_id": o.get("material_id"), "plane_conflict": o.get("plane_conflict", False),
-                    "kind": o.get("kind_fixed") or _kind(o),
+                    "kind": o.get("kind_fixed") or _kind(o, frame),
                     "panes": (o.get("parts") or None) if (o.get("glass_z") or o.get("glazed")) else None,
                     **_glass_size(o, floor["contour"])}
-            if not o.get("kind_fixed") and abs(o["depth"] - depth_default) > DEPTH_EXCEPTION_M:
+            if not o.get("kind_fixed") and abs(o["depth"] - depth_default) > depth_exception:
                 item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
