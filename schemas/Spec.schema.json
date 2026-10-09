@@ -182,7 +182,8 @@
             {
               "enum": [
                 "window",
-                "door"
+                "door",
+                "grille"
               ],
               "type": "string"
             },

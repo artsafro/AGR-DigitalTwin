@@ -199,4 +199,7 @@ Opening = hole with frame, glass as attributes (user decision 2026-10-08). Revit
 `dt spec compare` verdict **match** (`spec-compare-v003.md`): levels, roof, parapet ≤ 2 mm, contours
 0.0 mm, openings 21 + 11 pairs within 0.005 m. Recorded in `docs/cases.md` as the first case where
 the two paths agree. Open: vent grilles (no openings yet), attachment questions.
+2026-10-09: vent grilles are openings of kind `grille` (Revit 8 + 1; none in the npm_min mesh),
+reported and kept out of the verdict; extraction thresholds 0.20 / 0.10 m in `spec_extract` of the
+benchmark tolerances. Comparison `outputs/spec-compare-v021/`: still match.
 

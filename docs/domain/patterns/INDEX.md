@@ -15,3 +15,4 @@ Status: draft / proven on benchmark / in work. A pattern changes only with the u
 | Corner that is not 90° | `non-90-corner` | joins two walls at any angle without breaking the mesh | draft |
 | Niche in the contour | `contour-niche` | facade recess given by contour points | draft |
 | Parapet | `parapet` | roof edge along the contour of the top level | draft |
+| Vent grille | `vent-grille` | inset grille: an opening of kind `grille`; texture in `npm_min`, geometry in `mid` | draft |

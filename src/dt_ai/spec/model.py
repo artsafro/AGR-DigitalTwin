@@ -44,7 +44,8 @@ class Opening(SpecPart):
     glass_h: Positive | None = None
     window_type: int | None = None
     # door: a recess from the floor >= 1.9 m high, 0.7-3 m wide (user decision 2026-10-08, #31)
-    kind: Literal["window", "door"] | None = None
+    # grille: a vent grille, position and size only (user decision 2026-10-09; pattern vent-grille)
+    kind: Literal["window", "door", "grille"] | None = None
     # panes of one frame (gap <= 0.15 m) grouped into this opening: a curtain wall is one opening (#31)
     panes: int | None = Field(default=None, ge=1)
     # an opening across a level is one record (spec v0.2, user decision 2026-10-08): kept by the

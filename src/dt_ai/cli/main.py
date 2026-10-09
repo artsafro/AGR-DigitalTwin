@@ -45,7 +45,7 @@ def parser():
     spec.add_argument("--into", type=Path, help="merge-questions: the object's questions.md (created if missing)")
     spec.add_argument("--a", type=Path, help="compare: first spec.json (its <spec>.report.json beside it)")
     spec.add_argument("--b", type=Path, help="compare: second spec.json (its <spec>.report.json beside it)")
-    spec.add_argument("--tolerances", type=Path, help="compare: benchmark tolerances.json")
+    spec.add_argument("--tolerances", type=Path, help="compare / extract: benchmark tolerances.json (extract: its spec_extract thresholds)")
     for name in ("build", "validate"):
         item = sub.add_parser(name, help="Build/check a labelled development bundle; never certify delivery")
         item.add_argument("--job" if name == "build" else "--archive", type=Path, required=True)
@@ -116,7 +116,8 @@ def main(argv=None):
             dump = read_json(args.dump.read_bytes())
             if dump.get("kind") == "revit-twin":         # band folders beside the index (#29)
                 dump = revit_twin.load(args.dump)
-            result, report = extract_spec(dump, read_json(args.object.read_bytes()), args.profile)
+            thresholds = read_json(args.tolerances.read_bytes()).get("spec_extract") if args.tolerances else None
+            result, report = extract_spec(dump, read_json(args.object.read_bytes()), args.profile, thresholds)
             write_json(args.output, result.model_dump(exclude_none=True))
             write_json(outputs[1], report)
             if report["questions"]:

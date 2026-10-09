@@ -41,7 +41,9 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; terms Level contou
   both ends; anything else (a block in an inner corner, an outward band) stays a question.
 - Size (spec v0.3, user decision 2026-10-08): an opening is the hole in the wall with its frame;
   the glass is `glass_w` / `glass_h` and `panes`; depth is `opening_depth_default_m` with
-  exceptions. How the extractor reads it (author's rules, not user decisions — #36 / PR #39):
+  exceptions. How the extractor reads it (rules of #36 / PR #39; the 0.20 m frame and the 0.10 m
+  depth threshold were kept by the user 2026-10-09 and live in `spec_extract` of the benchmark's
+  `tolerances.json`):
   the reveal around the glass when all glass on that wall covers the reveal's rectangle jointly,
   each pane grown by a frame of 0.20 m (glass of the next storey counts, so a frame through a
   level line is read; an L-shaped set of panes or a tall recess with a short window is no frame);

@@ -193,9 +193,9 @@ def _openings(bands, walls, attached, clear_by_band):
     """Openings as Revit gives them (spec v0.3, #36): the hole with its frame and the glass in it.
     A curtain wall or a window frame wall (function curtain) with glass is one opening on its line
     over its heights, its glass the transparent panels and windows it hosts; a window in a wall is
-    its family box; a door its record. A window without a transparent material (a grille) is no
-    opening here (counted)."""
-    out, grilles, glass_of = [], 0, {}
+    its family box; a door its record. A window without a transparent material is a vent grille:
+    an opening of kind grille, its family box (user decision 2026-10-09)."""
+    out, glass_of = [], {}
     for b in bands:
         clear = clear_by_band[b["band"]["band"]]
         for pnl in b.get("curtainPanels", []):
@@ -211,21 +211,19 @@ def _openings(bands, walls, attached, clear_by_band):
                 continue
             seen.add(o["id"])
             glazed = bool(clear.intersection(o.get("materials", [])))
-            if o["kind"] == "window" and not glazed:
-                grilles += 1
-                continue
-            if host.get("function") == "curtain" and o["kind"] == "window":
+            kind = "grille" if o["kind"] == "window" and not glazed else o["kind"]
+            if host.get("function") == "curtain" and kind == "window":
                 glass_of.setdefault(host["id"], {})[o["id"]] = _on_line(host["locationLine"], o["bboxMin"], o["bboxMax"])
                 continue
-            if o["kind"] == "door" and "point" not in o:
+            if kind == "door" and "point" not in o:
                 continue
             (x0, y0, _), (x1, y1, _) = _span(o)
-            if o["kind"] == "door":
+            if kind == "door":
                 base = o["bboxMin"][2] - o.get("sill", 0.0)          # the level the sill is measured from
                 z0, z1 = base + o.get("sill", 0.0), base + (o.get("head") or o["height"])
             else:
                 z0, z1 = o["bboxMin"][2], o["bboxMax"][2]
-            out.append({"revit_id": o["id"], "kind": o["kind"], "p0": [x0, y0], "p1": [x1, y1], "z0": z0, "z1": z1,
+            out.append({"revit_id": o["id"], "kind": kind, "p0": [x0, y0], "p1": [x1, y1], "z0": z0, "z1": z1,
                         "depth": host["thickness"], "host_thickness": host["thickness"], "glass": [],
                         # a window in a wall: glazed, but the export gives no glass extent (counted)
                         "glazed": glazed and o["kind"] == "window", "panes": 1 if glazed and o["kind"] == "window" else None})
@@ -237,7 +235,7 @@ def _openings(bands, walls, attached, clear_by_band):
         out.append({"revit_id": i, "kind": "window", "p0": [x0, y0], "p1": [x1, y1], "z0": w["bboxMin"][2],
                     "z1": w["bboxMax"][2], "depth": w["thickness"], "host_thickness": w["thickness"],
                     "glass": list(glass.values()), "panes": len(glass)})
-    return out, grilles
+    return out
 
 
 def _clear(band):
@@ -313,7 +311,7 @@ def to_dump(bands, objs, document=None):
                 if plug not in body:
                     meshes.append(_plug(plug, _span(o), host["thickness"], o["bboxMin"][2], o["bboxMax"][2]))
                     body.append(plug)
-    openings, grilles = _openings(bands, walls, attached, {b["band"]["band"]: _clear(b) for b in bands})
+    openings = _openings(bands, walls, attached, {b["band"]["band"]: _clear(b) for b in bands})
     questions = []
     groups = []                                  # touching attachment elements are one attachment
     for i in sorted(attached):
@@ -333,7 +331,7 @@ def to_dump(bands, objs, document=None):
                           "heights_m": [round(min(w["bboxMin"][2] for w in ws), 3), round(max(w["bboxMax"][2] for w in ws), 3)],
                           "at": [round(c.x, 2), round(c.y, 2)], "revit_ids": sorted(g["ids"])})
     return {"source": "revit", "document": document, "units": "m", "meshes": meshes, "helpers": [], "body": body,
-            "openings": openings, "grilles_not_openings": grilles,
+            "openings": openings,
             "windows_glass_unknown": sum(1 for o in openings if o.get("glazed")), "questions": questions}
 
 

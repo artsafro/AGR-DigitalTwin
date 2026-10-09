@@ -28,14 +28,14 @@ def _ring(contour):
     return [(float(p[0]), float(p[1])) for p in contour]
 
 
-def _opening_boxes(floor, z0, default_depth=0.2):
+def _opening_boxes(floor, z0, default_depth=0.2, openings=None):
     """3D bounds (min xyz, max xyz) of each opening in the object system: along its contour wall
     from x_m over w_m, inward by depth_m or the spec default (v0.3, #36; left of a CCW contour, right of
     a CW one), sill to top."""
     pts = np.array(_ring(floor.contour))
     side = 1.0 if Polygon(pts).exterior.is_ccw else -1.0
     out = []
-    for o in floor.openings:
+    for o in floor.openings if openings is None else openings:
         a, b = pts[o.wall], pts[(o.wall + 1) % len(pts)]
         u = (b - a) / np.linalg.norm(b - a)
         inward = side * np.array([-u[1], u[0]]) * (o.depth_m if o.depth_m is not None else default_depth)
@@ -144,9 +144,12 @@ def compare_specs(spec_a, spec_b, report_a, report_b, tolerances, names=("a", "b
                     reach = max(other.exterior.distance(shapely.Point(c)) for c in edge.coords)
                     regions.append({"level": lv, "side": side, "area_m2": round(g.area, 4),
                                     "reach_m": round(reach, 3), "bounds": [round(c, 3) for c in g.bounds]})
-        rows.append(_row("opening count", len(fa.openings), len(fb.openings), None, "equal", ref.get("openings"), lv))
-        ba = _opening_boxes(fa, elev_a[lv], sa.opening_depth_default_m)
-        bb = _opening_boxes(fb, elev_b[lv], sb.opening_depth_default_m)
+        aside = set(t.get("opening_kinds_not_in_verdict", []))   # e.g. grilles a texture-only source lacks
+        oa = [o for o in fa.openings if o.kind not in aside]
+        ob = [o for o in fb.openings if o.kind not in aside]
+        rows.append(_row("opening count", len(oa), len(ob), None, "equal", ref.get("openings"), lv))
+        ba = _opening_boxes(fa, elev_a[lv], sa.opening_depth_default_m, oa)
+        bb = _opening_boxes(fb, elev_b[lv], sb.opening_depth_default_m, ob)
         match = _match(ba, bb, t["opening_bbox_m"])
         worst = max((_box_diff(ba[i], bb[j]) for i, j in match.items()), default=0.0)
         r = _row("opening pairs within bbox tolerance, m (worst pair)", None, worst, t["opening_bbox_m"], "abs",
@@ -155,6 +158,11 @@ def compare_specs(spec_a, spec_b, report_a, report_b, tolerances, names=("a", "b
         r["unpaired"] = {names[0]: len(ba) - len(match), names[1]: len(bb) - len(match)}
         r["within"] = len(match) == len(ba) == len(bb)       # two empty sets are a match
         rows.append(r)
+        for kind in sorted(aside):                # reported, not in the verdict (tolerances.json)
+            na, nb = (sum(1 for o in f.openings if o.kind == kind) for f in (fa, fb))
+            info = _row(f"openings of kind {kind}, not in the verdict", na, nb, None, "equal", ref.get("openings"), lv)
+            info["within"], info["info"] = True, True
+            rows.append(info)
     failing = sorted({(r["criterion"] + (f" {r['level']}" if "level" in r else "")) for r in rows if not r["within"]})
     out["failing"] = failing
     if verdict.get("enabled"):
@@ -175,7 +183,8 @@ def markdown(result):
         extra = f" ({r['pairs']} pairs, unpaired {r['unpaired']})" if "pairs" in r else ""
         lines.append(f"| {r.get('level', '')} | {r['criterion']}{extra} | {'' if r['a'] is None else r['a']} | "
                      f"{'' if r['b'] is None else r['b']} | {'' if r['delta'] is None else r['delta']} | "
-                     f"{'equal' if r['threshold'] is None else r['threshold']} | {'yes' if r['within'] else 'no'} | "
+                     f"{'not in verdict' if r.get('info') else 'equal' if r['threshold'] is None else r['threshold']} | "
+                     f"{'—' if r.get('info') else 'yes' if r['within'] else 'no'} | "
                      f"{r.get('reference') or ''} |")
     if result["contour_differences"]:
         lines += ["", "| Level | Contour region | Area, m2 | Reach, m | Bounds (x0, y0, x1, y1) |", "|---|---|---|---|---|"]
