@@ -1,0 +1,1235 @@
+{
+ "schema": "window-types/1",
+ "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). Every entry is unconfirmed until the user confirms and names it (user decision 2026-10-09); handing is null; sashes are not in the sources. Sizes are the rough opening with its frame (spec v0.3); panes_m are glass rectangles [x0, z0, x1, z1] from the bottom left of the opening. Built by tools/library/build_window_types.py.",
+ "types": [
+  {
+   "id": "W01",
+   "name": "Широкое окно / 3 поля",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 3.6,
+   "height_m": 2.9,
+   "sections": 3,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 5,
+   "panes_m": [
+    [
+     0.07,
+     0.07,
+     1.55,
+     2.83
+    ],
+    [
+     1.62,
+     0.07,
+     2.54,
+     0.55
+    ],
+    [
+     1.67,
+     0.67,
+     2.49,
+     2.24
+    ],
+    [
+     1.67,
+     2.41,
+     2.49,
+     2.78
+    ],
+    [
+     2.61,
+     0.07,
+     3.53,
+     2.83
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_001",
+    "merged": [
+     "CW_001",
+     "CW_002",
+     "CW_004"
+    ],
+    "pdf_pages": [
+     18,
+     19,
+     20,
+     21
+    ],
+    "match": "pixel+dimension",
+    "occurrences": 84
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W02",
+   "name": "Двухсекционное",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.05,
+   "height_m": 2.85,
+   "sections": 2,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.07,
+     0.07,
+     0.97,
+     0.52
+    ],
+    [
+     0.12,
+     0.59,
+     0.92,
+     2.21
+    ],
+    [
+     0.12,
+     2.38,
+     0.92,
+     2.73
+    ],
+    [
+     1.05,
+     0.07,
+     1.97,
+     2.83
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "WINDOW_027",
+    "merged": [
+     "WINDOW_027",
+     "WINDOW_028",
+     "WINDOW_033"
+    ],
+    "pdf_pages": [
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 26
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W03",
+   "name": "Узкое с фрамугой",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 0.85,
+   "height_m": 2.85,
+   "sections": 1,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 3,
+   "panes_m": [
+    [
+     0.08,
+     0.08,
+     0.77,
+     0.53
+    ],
+    [
+     0.13,
+     0.61,
+     0.72,
+     2.19
+    ],
+    [
+     0.13,
+     2.39,
+     0.72,
+     2.74
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "WINDOW_025",
+    "merged": [
+     "WINDOW_025"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 7
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W04",
+   "name": "Витраж / 2 секции",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "curtain",
+   "width_m": 2.1,
+   "height_m": 2.8,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.05,
+     0.1,
+     1.025,
+     2.075
+    ],
+    [
+     0.05,
+     2.125,
+     1.025,
+     2.7
+    ],
+    [
+     1.075,
+     0.1,
+     2.05,
+     2.075
+    ],
+    [
+     1.075,
+     2.125,
+     2.05,
+     2.7
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_006",
+    "merged": [
+     "CW_006",
+     "CW_008",
+     "CW_010",
+     "CW_024"
+    ],
+    "pdf_pages": [
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 29
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W05",
+   "name": "Витражная сетка / 6 секций",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "curtain",
+   "width_m": 5.5,
+   "height_m": 3.88,
+   "sections": 6,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 12,
+   "panes_m": [
+    [
+     0.125,
+     0.05,
+     0.975,
+     1.975
+    ],
+    [
+     0.125,
+     2.025,
+     0.975,
+     3.83
+    ],
+    [
+     1.025,
+     0.05,
+     1.875,
+     1.975
+    ],
+    [
+     1.025,
+     2.025,
+     1.875,
+     3.83
+    ],
+    [
+     1.925,
+     0.05,
+     2.775,
+     1.975
+    ],
+    [
+     1.925,
+     2.025,
+     2.775,
+     3.83
+    ],
+    [
+     2.825,
+     0.05,
+     3.675,
+     1.975
+    ],
+    [
+     2.825,
+     2.025,
+     3.675,
+     3.83
+    ],
+    [
+     3.725,
+     0.05,
+     4.575,
+     1.975
+    ],
+    [
+     3.725,
+     2.025,
+     4.575,
+     3.83
+    ],
+    [
+     4.625,
+     0.05,
+     5.45,
+     1.975
+    ],
+    [
+     4.625,
+     2.025,
+     5.45,
+     3.83
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_016",
+    "merged": [
+     "CW_016",
+     "CW_017"
+    ],
+    "pdf_pages": [
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 8
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W06",
+   "name": "Витраж / 2 высоких поля",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "curtain",
+   "width_m": 2.1,
+   "height_m": 2.8,
+   "sections": 2,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.075,
+     0.05,
+     1.025,
+     2.725
+    ],
+    [
+     1.075,
+     0.05,
+     2.025,
+     2.725
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_011",
+    "merged": [
+     "CW_011"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 6
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W07",
+   "name": "Витраж / 3 секции",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "curtain",
+   "width_m": 3.15,
+   "height_m": 2.8,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 6,
+   "panes_m": [
+    [
+     0.05,
+     0.1,
+     1.025,
+     2.075
+    ],
+    [
+     0.05,
+     2.125,
+     1.025,
+     2.7
+    ],
+    [
+     1.075,
+     0.1,
+     2.075,
+     2.075
+    ],
+    [
+     1.075,
+     2.125,
+     2.075,
+     2.7
+    ],
+    [
+     2.125,
+     0.1,
+     3.1,
+     2.075
+    ],
+    [
+     2.125,
+     2.125,
+     3.1,
+     2.7
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_018",
+    "merged": [
+     "CW_018"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 4
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "D01",
+   "name": "Остеклённая 1 створка",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 1.11,
+   "height_m": 2.095,
+   "sections": 1,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 1,
+   "panes_m": [
+    [
+     0.16,
+     0.12,
+     0.95,
+     1.935
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "DOOR_119",
+    "merged": [
+     "DOOR_119"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 1
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "D02",
+   "name": "Остеклённая 2 створки",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door",
+   "width_m": 1.65,
+   "height_m": 2.1,
+   "sections": 2,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.16,
+     0.12,
+     0.5,
+     1.94
+    ],
+    [
+     0.7,
+     0.12,
+     1.49,
+     1.94
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "DOOR_102",
+    "merged": [
+     "DOOR_102"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 34
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "D03",
+   "name": "Входная группа с фрамугой",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door_system",
+   "width_m": 2.775,
+   "height_m": 2.8,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 5,
+   "panes_m": [
+    [
+     0.05,
+     2.15,
+     1.7,
+     2.7
+    ],
+    [
+     0.21,
+     0.12,
+     1.0,
+     1.94
+    ],
+    [
+     1.2,
+     0.12,
+     1.54,
+     1.94
+    ],
+    [
+     1.75,
+     0.05,
+     2.725,
+     2.1
+    ],
+    [
+     1.75,
+     2.15,
+     2.725,
+     2.7
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_005",
+    "merged": [
+     "CW_005",
+     "CW_020",
+     "CW_025",
+     "CW_013",
+     "CW_023",
+     "CW_015",
+     "CW_026"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "visual+FBX",
+    "occurrences": 38
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "D04",
+   "name": "Глухое полотно / 1 створка",
+   "status": "unconfirmed",
+   "typed": false,
+   "role": "door",
+   "width_m": 0.76,
+   "height_m": 2.13,
+   "sections": 1,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 1,
+   "panes_m": [
+    [
+     0.1,
+     0.1,
+     0.66,
+     2.03
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "DOOR_048",
+    "merged": [
+     "DOOR_048",
+     "DOOR_049"
+    ],
+    "pdf_pages": [],
+    "match": "FBX only; facade mapping pending",
+    "occurrences": 97
+   },
+   "infill": "opaque_leaf",
+   "frame_finish": "unassigned",
+   "note": "не типизирован: взят из FBX как пример полотна, к месту на фасаде не привязан"
+  },
+  {
+   "id": "W01_H",
+   "name": "Широкое окно / высокая версия",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 3.6,
+   "height_m": 3.2,
+   "sections": 3,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 5,
+   "panes_m": [
+    [
+     0.07,
+     0.07,
+     0.99,
+     3.13
+    ],
+    [
+     1.06,
+     0.07,
+     1.98,
+     0.55
+    ],
+    [
+     1.11,
+     0.67,
+     1.93,
+     2.24
+    ],
+    [
+     1.11,
+     2.41,
+     1.93,
+     3.08
+    ],
+    [
+     2.05,
+     0.07,
+     3.53,
+     3.13
+    ]
+   ],
+   "variant_of": "W01",
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_003",
+    "merged": [
+     "CW_003",
+     "CW_007",
+     "CW_014"
+    ],
+    "pdf_pages": [
+     18,
+     19,
+     20,
+     21
+    ],
+    "match": "same subdivision, FBX size",
+    "occurrences": 31
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W02_H",
+   "name": "Двухсекционное / высокая версия",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.05,
+   "height_m": 3.15,
+   "sections": 2,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.07,
+     0.07,
+     0.97,
+     0.52
+    ],
+    [
+     0.12,
+     0.59,
+     0.92,
+     2.21
+    ],
+    [
+     0.12,
+     2.38,
+     0.92,
+     3.03
+    ],
+    [
+     1.05,
+     0.07,
+     1.97,
+     3.13
+    ]
+   ],
+   "variant_of": "W02",
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "WINDOW_029",
+    "merged": [
+     "WINDOW_029",
+     "WINDOW_030",
+     "WINDOW_032",
+     "WINDOW_034"
+    ],
+    "pdf_pages": [
+     20,
+     21
+    ],
+    "match": "same subdivision, FBX size",
+    "occurrences": 16
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W03_H",
+   "name": "Узкое / высокая версия",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 0.85,
+   "height_m": 3.15,
+   "sections": 1,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 3,
+   "panes_m": [
+    [
+     0.08,
+     0.08,
+     0.77,
+     0.53
+    ],
+    [
+     0.13,
+     0.61,
+     0.72,
+     2.19
+    ],
+    [
+     0.13,
+     2.39,
+     0.72,
+     3.04
+    ]
+   ],
+   "variant_of": "W03",
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "WINDOW_026",
+    "merged": [
+     "WINDOW_026"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "same subdivision, FBX size",
+    "occurrences": 4
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W01_N",
+   "name": "Широкое окно / уже",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 3.2,
+   "height_m": 2.9,
+   "sections": 3,
+   "transoms": 2,
+   "sashes": null,
+   "handing": null,
+   "panes": 5,
+   "panes_m": [
+    [
+     0.07,
+     0.07,
+     0.965,
+     2.83
+    ],
+    [
+     1.035,
+     0.07,
+     1.965,
+     0.55
+    ],
+    [
+     1.085,
+     0.67,
+     1.915,
+     2.24
+    ],
+    [
+     1.085,
+     2.41,
+     1.915,
+     2.78
+    ],
+    [
+     2.035,
+     0.07,
+     3.13,
+     2.83
+    ]
+   ],
+   "variant_of": "W01",
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_019",
+    "merged": [
+     "CW_019"
+    ],
+    "pdf_pages": [
+     18,
+     19,
+     20,
+     21
+    ],
+    "match": "same subdivision, FBX size",
+    "occurrences": 4
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "W04_N",
+   "name": "Витраж / уже",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "curtain",
+   "width_m": 1.8,
+   "height_m": 2.8,
+   "sections": 2,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.05,
+     0.1,
+     0.875,
+     2.075
+    ],
+    [
+     0.05,
+     2.125,
+     0.875,
+     2.7
+    ],
+    [
+     0.925,
+     0.1,
+     1.7,
+     2.075
+    ],
+    [
+     0.925,
+     2.125,
+     1.7,
+     2.7
+    ]
+   ],
+   "variant_of": "W04",
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_009",
+    "merged": [
+     "CW_009"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "same subdivision, FBX size",
+    "occurrences": 6
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "D03_W",
+   "name": "Входная группа / шире",
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "door_system",
+   "width_m": 3.1,
+   "height_m": 2.8,
+   "sections": 3,
+   "transoms": 1,
+   "sashes": null,
+   "handing": null,
+   "panes": 7,
+   "panes_m": [
+    [
+     0.05,
+     0.05,
+     0.4,
+     2.075
+    ],
+    [
+     0.05,
+     2.15,
+     0.4,
+     2.7
+    ],
+    [
+     0.45,
+     0.05,
+     1.4,
+     2.075
+    ],
+    [
+     0.45,
+     2.15,
+     1.4,
+     2.7
+    ],
+    [
+     1.45,
+     2.15,
+     3.0,
+     2.7
+    ],
+    [
+     1.61,
+     0.12,
+     1.9,
+     1.94
+    ],
+    [
+     2.1,
+     0.12,
+     2.84,
+     1.94
+    ]
+   ],
+   "variant_of": "D03",
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json (user project)",
+    "fbx": "CW_012",
+    "merged": [
+     "CW_012"
+    ],
+    "pdf_pages": [
+     19,
+     20,
+     21
+    ],
+    "match": "same entrance family, FBX size",
+    "occurrences": 5
+   },
+   "infill": "glass",
+   "frame_finish": "F11 / RAL 7016"
+  },
+  {
+   "id": "CW_021",
+   "name": null,
+   "status": "unconfirmed",
+   "typed": false,
+   "role": "curtain",
+   "width_m": 3.6,
+   "height_m": 2.4,
+   "sections": null,
+   "transoms": null,
+   "sashes": null,
+   "handing": null,
+   "panes": null,
+   "panes_m": null,
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/library-v001/curtain-types.json (user project)",
+    "fbx": "CW_021",
+    "occurrences": 4,
+    "bbox_m": [
+     3.6000006280457626,
+     0.10000034835869956,
+     2.400000069556274
+    ],
+    "counts": {
+     "panels": 3,
+     "mullions": 15,
+     "windows": 1,
+     "doors": 0
+    }
+   },
+   "note": "не типизирован: особое членение (3 панели, 15 импостов, 1 окно)"
+  },
+  {
+   "id": "CW_022",
+   "name": null,
+   "status": "unconfirmed",
+   "typed": false,
+   "role": "curtain",
+   "width_m": 8.5,
+   "height_m": 1.425,
+   "sections": null,
+   "transoms": null,
+   "sashes": null,
+   "handing": null,
+   "panes": null,
+   "panes_m": null,
+   "variant_of": null,
+   "source": {
+    "object": "SOSH1150",
+    "file": "jobs/REVIT-OPENINGS/outputs/library-v001/curtain-types.json (user project)",
+    "fbx": "CW_022",
+    "occurrences": 3,
+    "bbox_m": [
+     8.500001664107828,
+     3.4999991534920305,
+     1.4247981642697702
+    ],
+    "counts": {
+     "panels": 44,
+     "mullions": 129,
+     "windows": 0,
+     "doors": 0
+    }
+   },
+   "note": "не типизирован: неоднозначные наложения панелей в исходнике; габарит по bbox, не проверен"
+  },
+  {
+   "id": "KPP1-W01",
+   "name": null,
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 1.18,
+   "height_m": 1.8,
+   "sections": 1,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 1,
+   "panes_m": [
+    [
+     0.05,
+     0.05,
+     1.13,
+     1.75
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "tec26-kpp1",
+    "file": "jobs/KPP1/outputs/revit-twin-v003/spec-revit-twin-v013.json (spec v0.3, Revit path)",
+    "revit": "ADSK_Витраж_Без разрезки_Импосты 50х100 frame wall with MEP_Окно AGS68 windows",
+    "occurrences": 18,
+    "glass_m": [
+     1.08,
+     1.7
+    ],
+    "across_level": null
+   },
+   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68"
+  },
+  {
+   "id": "KPP1-W02",
+   "name": null,
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 1.18,
+   "height_m": 5.45,
+   "sections": 1,
+   "transoms": 3,
+   "sashes": null,
+   "handing": null,
+   "panes": 4,
+   "panes_m": [
+    [
+     0.05,
+     0.05,
+     1.13,
+     0.875
+    ],
+    [
+     0.05,
+     0.925,
+     1.13,
+     2.0
+    ],
+    [
+     0.05,
+     2.05,
+     1.13,
+     3.75
+    ],
+    [
+     0.05,
+     3.8,
+     1.13,
+     5.4
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "tec26-kpp1",
+    "file": "jobs/KPP1/outputs/revit-twin-v003/spec-revit-twin-v013.json (spec v0.3, Revit path)",
+    "revit": "ADSK_Витраж_Без разрезки_Импосты 50х100 frame wall with MEP_Окно AGS68 windows",
+    "occurrences": 1,
+    "glass_m": [
+     1.08,
+     5.35
+    ],
+    "across_level": "L1"
+   },
+   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68"
+  },
+  {
+   "id": "KPP1-W03",
+   "name": null,
+   "status": "unconfirmed",
+   "typed": true,
+   "role": "window",
+   "width_m": 2.0,
+   "height_m": 1.8,
+   "sections": 2,
+   "transoms": 0,
+   "sashes": null,
+   "handing": null,
+   "panes": 2,
+   "panes_m": [
+    [
+     0.05,
+     0.05,
+     0.975,
+     1.75
+    ],
+    [
+     1.025,
+     0.05,
+     1.95,
+     1.75
+    ]
+   ],
+   "variant_of": null,
+   "source": {
+    "object": "tec26-kpp1",
+    "file": "jobs/KPP1/outputs/revit-twin-v003/spec-revit-twin-v013.json (spec v0.3, Revit path)",
+    "revit": "ADSK_Витраж_Без разрезки_Импосты 50х100 frame wall with MEP_Окно AGS68 windows",
+    "occurrences": 1,
+    "glass_m": [
+     1.9,
+     1.7
+    ],
+    "across_level": null
+   },
+   "note": "кандидат из KPP1-spec: проём = стена-рамка (дыра с рамой), стекло = окна AGS68"
+  }
+ ]
+}
