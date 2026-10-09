@@ -37,4 +37,4 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user d
   module without it, ask with numbers (depth, length, floors) in `jobs/<object>/questions.md`,
   continue.
 - An opening on a niche wall refers to that wall's index, not the main facade's.
-- If the inward shell offset self-intersects in the niche, stop and ask (proposed safeguard).
+- If the inward shell offset self-intersects in the niche, stop and ask (user decision 2026-10-09).

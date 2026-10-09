@@ -37,4 +37,4 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; extractor `src/dt_
 - An opening never runs across the corner vertex: it belongs to one wall. A corner window is two
   openings with two planes (`opening-plane`).
 - Elements on a dropped small kink are still measured on the real facet.
-- If the inward shell offset self-intersects at a corner, stop and ask (proposed safeguard).
+- If the inward shell offset self-intersects at a corner, stop and ask (user decision 2026-10-09).
