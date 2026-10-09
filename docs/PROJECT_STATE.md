@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Current goal
 
@@ -55,7 +55,18 @@ and kept out of the comparison verdict; KPP1 still match. #4 (PRs #41-#44): `lib
 46 entries — 37 confirmed and named by the user (W01-W07, D01-D03, KPP1-W01..03, WT-01..24 of `Win_Typical.max`;
 `confirmations.json`; WT-01 / WT-08 role `balcony_block`), the rest unconfirmed: SOSH1150 size variants,
 CW_021 / CW_022 / D04 not typed. Fields = columns of the row under the fanlight (lower opaque panels excluded);
-leftover #45 (opaque upper fanlight over a glazed lower band). Human tickets: #2 (move `Unreal/`), #4 (window
+leftover #45 (opaque upper fanlight over a glazed lower band).
+PRs #46-#49 (2026-10-09, two Codex review rounds each): #46 relief in section (user decision: a
+projection or groove with depth and height both <= 0.10 m is relief, not a question); KPP1 spec v021
+equals v020, all 83 rows of `jobs/KPP1/questions.md` gone, no open contour question. #47 benchmark
+checkers `src/twinqa/geometry/` + `tools/qa/check_geometry.py` (bbox, levels, storey areas,
+silhouettes, mesh, budget, opening planes, ID ranges; UCX_ meshes left out), B01 `tolerances.json`
+and README; open edges are reported, never block (user decision); working on synthetic boxes only,
+issue #14 stays open until the first green run on the etalon. #48 patterns `opening-plane`,
+`typical-floor-repeat`, `non-90-corner`, `contour-niche` approved by the user (status draft until a
+benchmark proves them; the 95 % plane cover stays a proposal until B01). #49 choices page
+`docs/domain/conflict-choices-2026-10-09.md` for C7, C8, C10, C24, C25 (C3 decided earlier) waits
+for the user's decisions. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -136,7 +147,10 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 done for KPP1 (two paths match); next per the user: B01 etalon (#12); #4: the WT types wait for the user's acceptance and names; extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. User: B01 etalon in 3ds Max (#12, `benchmark/bench-b01-box/README.md`); decisions on the choices
+   page (C7, C8, C10, C24, C25). Claude, after #12: spec of B01 (#13), etalon against itself and the
+   first green run (#14), then the engine `from_spec.py`; extractor follow-ups #21-#24, #28, #34, #37,
+   #45 when they block a benchmark (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
