@@ -14,7 +14,8 @@ KEYS = {"id", "name", "status", "typed", "role", "width_m", "height_m", "section
         "panes", "panes_m", "variant_of", "source"}
 
 
-CONFIRMED = {"W01", "W02", "W03", "W04", "W05", "W06", "W07", "D01", "D02", "D03", "KPP1-W01", "KPP1-W02", "KPP1-W03"}
+CONFIRMED = {"W01", "W02", "W03", "W04", "W05", "W06", "W07", "D01", "D02", "D03", "KPP1-W01", "KPP1-W02", "KPP1-W03",
+             *(f"WT-{n:02d}" for n in range(1, 25))}
 
 
 def test_every_entry_has_the_agreed_fields():
@@ -62,6 +63,9 @@ def test_kpp1_candidates_come_from_the_spec():
     ([], (None, None)),
     # two leaves under a full-width fanlight: two fields, not one (Win_Typical entrance door)
     ([[0.12, 0.18, 0.49, 2.13], [0.64, 0.18, 1.35, 2.13], [0.07, 2.3, 1.41, 3.0]], (2, 1)),
+    # user rule 2026-10-09: fields of the row under the fanlight; a fanlight in three parts over two fields adds none
+    ([[0.05, 0.05, 0.95, 2.0], [1.05, 0.05, 1.95, 2.0], [0.05, 2.1, 0.6, 2.7], [0.7, 2.1, 1.3, 2.7], [1.4, 2.1, 1.95, 2.7]],
+     (2, 1)),
 ])
 def test_layout_counts_sections_and_transoms(panes, expected):
     assert layout(panes) == expected
@@ -77,10 +81,15 @@ def test_a_missing_confirmations_file_stops_the_build(tmp_path):
     assert not out.exists()
 
 
-def test_max_window_file_types_are_unconfirmed_and_named_without_project():
-    # user decision 2026-10-09: Win_Typical.max read only; same fields; names form + size, no project
+def test_max_window_file_types_are_named_without_project():
+    # user decisions 2026-10-09: Win_Typical.max read only; same fields; names form + size, no project;
+    # all 24 confirmed, WT-01 / WT-08 balcony blocks
     wt = [t for t in DOC["types"] if t["id"].startswith("WT-")]
-    assert len(wt) == 24 and all(t["status"] == "unconfirmed" for t in wt)
+    assert len(wt) == 24 and all(t["status"] == "confirmed" for t in wt)
+    assert {t["id"]: t["role"] for t in wt if t["role"] == "balcony_block"} == {"WT-01": "balcony_block", "WT-08": "balcony_block"}
+    assert [t["name"] for t in wt if t["id"] in ("WT-01", "WT-08", "WT-23")] == [
+        "Балконный блок трёхпольный с фрамугой 2374×2714", "Балконный блок двухпольный с фрамугой 1474×2714",
+        "Дверь остеклённая двухпольная с фрамугой 1474×3060"]
     for t in wt:
         assert t["source"]["max_object"] and t["name"].endswith(f"{round(t['width_m'] * 1000)}×{round(t['height_m'] * 1000)}")
         assert "А101" not in t["name"] and "A101" not in t["name"] and "створ" not in t["name"]

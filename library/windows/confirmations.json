@@ -2,19 +2,274 @@
  "schema": "window-type-confirmations/1",
  "note": "User decisions on library/windows/window_types.json, applied by tools/library/build_window_types.py over the sources. Names follow the user's rule: type by form + size, no project number, no sash words while sashes are null.",
  "decisions": [
-  {"id": "W01", "status": "confirmed", "name": "Окно трёхпольное 3600×2900", "by": "user", "date": "2026-10-09"},
-  {"id": "W02", "status": "confirmed", "name": "Окно двухпольное 2050×2850", "by": "user", "date": "2026-10-09"},
-  {"id": "W03", "status": "confirmed", "name": "Окно однопольное узкое 850×2850", "by": "user", "date": "2026-10-09"},
-  {"id": "W04", "status": "confirmed", "name": "Витраж двухпольный с фрамугой 2100×2800", "by": "user", "date": "2026-10-09"},
-  {"id": "W05", "status": "confirmed", "name": "Витраж шестипольный 5500×3880", "by": "user", "date": "2026-10-09"},
-  {"id": "W06", "status": "confirmed", "name": "Витраж двухпольный 2100×2800", "by": "user", "date": "2026-10-09"},
-  {"id": "W07", "status": "confirmed", "name": "Витраж трёхпольный с фрамугой 3150×2800", "by": "user", "date": "2026-10-09"},
-  {"id": "D01", "status": "confirmed", "name": "Дверь остеклённая однопольная 1110×2100", "by": "user", "date": "2026-10-09"},
-  {"id": "D02", "status": "confirmed", "name": "Дверь остеклённая двупольная неравнопольная 1650×2100", "by": "user", "date": "2026-10-09"},
-  {"id": "D03", "status": "confirmed", "name": "Дверной блок с боковым полем и фрамугой 2775×2800", "by": "user", "date": "2026-10-09"},
-  {"id": "D04", "status": "unconfirmed", "name": null, "by": "user", "date": "2026-10-09", "note": "не тип: в исходнике нет места на фасаде"},
-  {"id": "KPP1-W01", "status": "confirmed", "name": "Окно однопольное 1180×1800", "by": "user", "date": "2026-10-09"},
-  {"id": "KPP1-W02", "status": "confirmed", "name": "Витраж однопольный 4 стекла по высоте 1180×5450", "by": "user", "date": "2026-10-09"},
-  {"id": "KPP1-W03", "status": "confirmed", "name": "Окно двухпольное 2000×1800", "by": "user", "date": "2026-10-09"}
+  {
+   "id": "W01",
+   "status": "confirmed",
+   "name": "Окно трёхпольное 3600×2900",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "W02",
+   "status": "confirmed",
+   "name": "Окно двухпольное 2050×2850",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "W03",
+   "status": "confirmed",
+   "name": "Окно однопольное узкое 850×2850",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "W04",
+   "status": "confirmed",
+   "name": "Витраж двухпольный с фрамугой 2100×2800",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "W05",
+   "status": "confirmed",
+   "name": "Витраж шестипольный 5500×3880",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "W06",
+   "status": "confirmed",
+   "name": "Витраж двухпольный 2100×2800",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "W07",
+   "status": "confirmed",
+   "name": "Витраж трёхпольный с фрамугой 3150×2800",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "D01",
+   "status": "confirmed",
+   "name": "Дверь остеклённая однопольная 1110×2100",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "D02",
+   "status": "confirmed",
+   "name": "Дверь остеклённая двупольная неравнопольная 1650×2100",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "D03",
+   "status": "confirmed",
+   "name": "Дверной блок с боковым полем и фрамугой 2775×2800",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "D04",
+   "status": "unconfirmed",
+   "name": null,
+   "by": "user",
+   "date": "2026-10-09",
+   "note": "не тип: в исходнике нет места на фасаде"
+  },
+  {
+   "id": "KPP1-W01",
+   "status": "confirmed",
+   "name": "Окно однопольное 1180×1800",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "KPP1-W02",
+   "status": "confirmed",
+   "name": "Витраж однопольный 4 стекла по высоте 1180×5450",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "KPP1-W03",
+   "status": "confirmed",
+   "name": "Окно двухпольное 2000×1800",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-01",
+   "status": "confirmed",
+   "name": "Балконный блок трёхпольный с фрамугой 2374×2714",
+   "by": "user",
+   "date": "2026-10-09",
+   "note": "kind balcony_block (user)"
+  },
+  {
+   "id": "WT-02",
+   "status": "confirmed",
+   "name": "Окно четырёхпольное с фрамугой 3287×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-03",
+   "status": "confirmed",
+   "name": "Окно однопольное с фрамугой 974×1944",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-04",
+   "status": "confirmed",
+   "name": "Окно двухпольное с фрамугой 1684×1944",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-05",
+   "status": "confirmed",
+   "name": "Окно трёхпольное с фрамугой 2474×1944",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-06",
+   "status": "confirmed",
+   "name": "Окно двухпольное с фрамугой 2014×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-07",
+   "status": "confirmed",
+   "name": "Окно трёхпольное с фрамугой 2514×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-08",
+   "status": "confirmed",
+   "name": "Балконный блок двухпольный с фрамугой 1474×2714",
+   "by": "user",
+   "date": "2026-10-09",
+   "note": "kind balcony_block (user)"
+  },
+  {
+   "id": "WT-09",
+   "status": "confirmed",
+   "name": "Дверь остеклённая двухпольная с фрамугой 1474×2247",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-10",
+   "status": "confirmed",
+   "name": "Окно трёхпольное с фрамугой 2514×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-11",
+   "status": "confirmed",
+   "name": "Окно двухпольное с фрамугой 1694×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-12",
+   "status": "confirmed",
+   "name": "Окно однопольное с фрамугой 867×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-13",
+   "status": "confirmed",
+   "name": "Дверь остеклённая двухпольная с глухой фрамугой 1474×3060",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-14",
+   "status": "confirmed",
+   "name": "Дверь остеклённая однопольная с глухой фрамугой 948×3060",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-15",
+   "status": "confirmed",
+   "name": "Дверь остеклённая трёхпольная с глухой фрамугой 2303×3060",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-16",
+   "status": "confirmed",
+   "name": "Дверь остеклённая однопольная 949×2247",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-17",
+   "status": "confirmed",
+   "name": "Окно однопольное 868×1824",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-18",
+   "status": "confirmed",
+   "name": "Окно двухпольное 1695×1824",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-19",
+   "status": "confirmed",
+   "name": "Окно трёхпольное 2514×1824",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-20",
+   "status": "confirmed",
+   "name": "Окно четырёхпольное с фрамугой 3354×1944",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-21",
+   "status": "confirmed",
+   "name": "Окно четырёхпольное с фрамугой 3330×2614",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-22",
+   "status": "confirmed",
+   "name": "Дверь остеклённая однопольная с фрамугой 949×3060",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-23",
+   "status": "confirmed",
+   "name": "Дверь остеклённая двухпольная с фрамугой 1474×3060",
+   "by": "user",
+   "date": "2026-10-09"
+  },
+  {
+   "id": "WT-24",
+   "status": "confirmed",
+   "name": "Дверь остеклённая трёхпольная с фрамугой 2303×3060",
+   "by": "user",
+   "date": "2026-10-09"
+  }
  ]
 }

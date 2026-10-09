@@ -1312,10 +1312,10 @@
   },
   {
    "id": "WT-01",
-   "name": "Дверь остеклённая трёхпольная с фрамугой 2374×2714",
-   "status": "unconfirmed",
+   "name": "Балконный блок трёхпольный с фрамугой 2374×2714",
+   "status": "confirmed",
    "typed": true,
-   "role": "door",
+   "role": "balcony_block",
    "width_m": 2.374,
    "height_m": 2.714,
    "sections": 3,
@@ -1387,12 +1387,17 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09",
+    "note": "kind balcony_block (user)"
+   }
   },
   {
    "id": "WT-02",
    "name": "Окно четырёхпольное с фрамугой 3287×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 3.287,
@@ -1460,12 +1465,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-03",
    "name": "Окно однопольное с фрамугой 974×1944",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 0.974,
@@ -1497,12 +1506,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-04",
    "name": "Окно двухпольное с фрамугой 1684×1944",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 1.684,
@@ -1546,12 +1559,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-05",
    "name": "Окно трёхпольное с фрамугой 2474×1944",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.474,
@@ -1607,12 +1624,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-06",
    "name": "Окно двухпольное с фрамугой 2014×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.014,
@@ -1656,12 +1677,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-07",
    "name": "Окно трёхпольное с фрамугой 2514×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.514,
@@ -1717,14 +1742,18 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-08",
-   "name": "Дверь остеклённая двухпольная с фрамугой 1474×2714",
-   "status": "unconfirmed",
+   "name": "Балконный блок двухпольный с фрамугой 1474×2714",
+   "status": "confirmed",
    "typed": true,
-   "role": "door",
+   "role": "balcony_block",
    "width_m": 1.474,
    "height_m": 2.714,
    "sections": 2,
@@ -1778,12 +1807,17 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09",
+    "note": "kind balcony_block (user)"
+   }
   },
   {
    "id": "WT-09",
    "name": "Дверь остеклённая двухпольная с фрамугой 1474×2247",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 1.474,
@@ -1827,12 +1861,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-10",
    "name": "Окно трёхпольное с фрамугой 2514×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.514,
@@ -1888,12 +1926,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-11",
    "name": "Окно двухпольное с фрамугой 1694×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 1.694,
@@ -1937,12 +1979,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-12",
    "name": "Окно однопольное с фрамугой 867×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 0.867,
@@ -1974,12 +2020,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-13",
    "name": "Дверь остеклённая двухпольная с глухой фрамугой 1474×3060",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 1.474,
@@ -2018,12 +2068,16 @@
      2.995
     ]
    ],
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-14",
    "name": "Дверь остеклённая однопольная с глухой фрамугой 948×3060",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 0.948,
@@ -2056,12 +2110,16 @@
      2.995
     ]
    ],
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-15",
    "name": "Дверь остеклённая трёхпольная с глухой фрамугой 2303×3060",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 2.303,
@@ -2112,12 +2170,16 @@
      2.995
     ]
    ],
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-16",
    "name": "Дверь остеклённая однопольная 949×2247",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 0.949,
@@ -2143,12 +2205,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-17",
    "name": "Окно однопольное 868×1824",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 0.868,
@@ -2174,12 +2240,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-18",
    "name": "Окно двухпольное 1695×1824",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 1.695,
@@ -2211,12 +2281,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-19",
    "name": "Окно трёхпольное 2514×1824",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 2.514,
@@ -2254,12 +2328,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-20",
    "name": "Окно четырёхпольное с фрамугой 3354×1944",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 3.354,
@@ -2327,12 +2405,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-21",
    "name": "Окно четырёхпольное с фрамугой 3330×2614",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "window",
    "width_m": 3.33,
@@ -2400,12 +2482,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-22",
    "name": "Дверь остеклённая однопольная с фрамугой 949×3060",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 0.949,
@@ -2437,12 +2523,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-23",
    "name": "Дверь остеклённая двухпольная с фрамугой 1474×3060",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 1.474,
@@ -2480,12 +2570,16 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   },
   {
    "id": "WT-24",
    "name": "Дверь остеклённая трёхпольная с фрамугой 2303×3060",
-   "status": "unconfirmed",
+   "status": "confirmed",
    "typed": true,
    "role": "door",
    "width_m": 2.303,
@@ -2535,7 +2629,11 @@
     "occurrences": null
    },
    "opaque_m": null,
-   "same_as": null
+   "same_as": null,
+   "decision": {
+    "by": "user",
+    "date": "2026-10-09"
+   }
   }
  ]
 }

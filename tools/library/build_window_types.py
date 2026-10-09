@@ -55,12 +55,13 @@ def layout(panes):
     for a, b in columns:
         rows = _clusters([(p[1], p[3]) for p in panes if p[0] >= a - GAP_M and p[2] <= b + GAP_M])
         transoms = max(transoms, len(rows) - 1)
-    # fields: the most columns in one horizontal band, so a full-width transom above does not merge
-    # the fields below it (an entrance door with a fanlight over two leaves)
+    # fields: the columns of the main row — the tallest horizontal band, the row under the fanlight —
+    # not the columns over the whole height (user rule 2026-10-09: a full-width fanlight never merges the
+    # leaves under it, and a fanlight's own division never adds fields)
     bands = _clusters([(p[1], p[3]) for p in panes])
-    sections = max(len(_clusters([(p[0], p[2]) for p in panes if p[1] >= a - GAP_M and p[3] <= b + GAP_M]))
-                   for a, b in bands)
-    return max(sections, len(columns)), transoms
+    a, b = max(bands, key=lambda band: band[1] - band[0])
+    sections = len(_clusters([(p[0], p[2]) for p in panes if p[1] >= a - GAP_M and p[3] <= b + GAP_M]))
+    return sections, transoms
 
 
 def entry(id_, name, role, width, height, panes, *, source, typed=True, note=None, variant_of=None, **extra):
@@ -86,17 +87,21 @@ def max_types(source, path):
     out, prefix = [], source["id_prefix"]
     for n, o in enumerate(source["objects"], 1):
         door = "Дверь" in o["object"] or "Д_" in o["object"]
+        balcony = door and "Балкон" in o["object"]       # a balcony door and window in one frame (user 2026-10-09)
         fields = o["glass_m"] + o["opaque_m"]
         sections, transoms = layout(fields)
         words = FIELDS.get(sections, f"{sections}-польн")
-        if door:
+        if balcony:
+            base = f"Балконный блок {words[:-2]}ый"
+        elif door:
             base = f"Дверь {'остеклённая ' if o['glass_m'] else ''}{words[:-2]}ая"
         else:
             base = f"Окно {words}"
         extra = " с глухой фрамугой" if o["opaque_m"] else (" с фрамугой" if transoms else "")
         name = f"{base}{extra} {_mm(o['width_m'])}×{_mm(o['height_m'])}"
         out.append(entry(
-            f"{prefix}-{n:02d}", name, "door" if door else "window", o["width_m"], o["height_m"], o["glass_m"],
+            f"{prefix}-{n:02d}", name, "balcony_block" if balcony else "door" if door else "window",
+            o["width_m"], o["height_m"], o["glass_m"],
             source={"object": Path(source["source"]["file"]).name, "file": Path(path).as_posix(),
                     "max_object": o["object"], "occurrences": None},
             opaque_m=o["opaque_m"] or None))
