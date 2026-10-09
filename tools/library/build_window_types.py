@@ -4,13 +4,16 @@
         --library-v001 <curtain-types.json> --kpp1-twin <twin-data.json> --kpp1-spec <spec.json> \
         --output library/windows/window_types.json
 
+Pattern: none — library tooling, not a building node (REVIEW_CHECKLIST Q1: new-case).
+
 Sources (read only; the user's .blend is not opened):
 - SOSH1150 typology v003 (`jobs/REVIT-OPENINGS/outputs/openings-v003/type-map.json` in the user's
   project folder): 11 types and 6 size variants with their pane layouts;
 - the untyped curtain assemblies CW_021 / CW_022 from `library-v001/curtain-types.json`;
 - KPP1 facade windows from the Revit spec (spec v0.3) and their pane layout from the Revit export.
 
-User decision 2026-10-09: every entry is `unconfirmed` until the user confirms and names it;
+User decision 2026-10-09: every entry is `unconfirmed` until the user confirms and names it — the
+user's decisions are kept in library/windows/confirmations.json and applied here;
 handing is null; CW_021, CW_022 and D04 are kept as rows marked not typed. Sections are the
 vertical fields of a type, transoms the horizontal divisions of its most divided field, both from
 the pane layout; opening sashes are not in the sources (null).
@@ -115,6 +118,20 @@ def kpp1(twin_index, spec_path):
     return out
 
 
+def confirm(types, confirmations):
+    """Apply the user's decisions (status, name) to the built entries; an unknown id is an error."""
+    by_id = {t["id"]: t for t in types}
+    for d in confirmations["decisions"]:
+        if d["id"] not in by_id:
+            raise SystemExit(f"confirmation for unknown type {d['id']}")
+        t = by_id[d["id"]]
+        t["status"] = d["status"]
+        if d.get("name"):
+            t["name"] = d["name"]
+        t["decision"] = {"by": d["by"], "date": d["date"], **({"note": d["note"]} if d.get("note") else {})}
+    return types
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--type-map", type=Path, required=True)
@@ -122,20 +139,25 @@ def main(argv=None):
     ap.add_argument("--kpp1-twin", type=Path, required=True)
     ap.add_argument("--kpp1-spec", type=Path, required=True)
     ap.add_argument("--output", type=Path, required=True)
+    ap.add_argument("--confirmations", type=Path, default=Path(__file__).resolve().parents[2] / "library" / "windows" / "confirmations.json")
     args = ap.parse_args(argv)
+    if not args.confirmations.exists():                 # never drop the user's decisions silently (PR #42 review 1)
+        raise SystemExit(f"confirmations file not found: {args.confirmations}")
     types = (sosh(json.loads(args.type_map.read_text(encoding="utf-8")),
                   json.loads(args.library_v001.read_text(encoding="utf-8")))
              + kpp1(args.kpp1_twin, args.kpp1_spec))
+    types = confirm(types, json.loads(args.confirmations.read_text(encoding="utf-8")))
     doc = {"schema": "window-types/1",
-           "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). Every entry is unconfirmed until "
-                   "the user confirms and names it (user decision 2026-10-09); handing is null; sashes are not in "
+           "note": "Machine-readable window type list (HARNESS_PLAN §6, issue #4). An entry is unconfirmed until "
+                   "the user confirms and names it (library/windows/confirmations.json); handing is null; sashes are not in "
                    "the sources. Sizes are the rough opening with its frame (spec v0.3); panes_m are glass "
                    "rectangles [x0, z0, x1, z1] from the bottom left of the opening. Built by "
                    "tools/library/build_window_types.py.",
            "types": types}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(doc, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"window types: {len(types)} ({sum(not t['typed'] for t in types)} not typed) -> {args.output}")
+    print(f"window types: {len(types)} ({sum(t['status'] == 'confirmed' for t in types)} confirmed, "
+          f"{sum(not t['typed'] for t in types)} not typed) -> {args.output}")
 
 
 if __name__ == "__main__":

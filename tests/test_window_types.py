@@ -14,13 +14,27 @@ KEYS = {"id", "name", "status", "typed", "role", "width_m", "height_m", "section
         "panes", "panes_m", "variant_of", "source"}
 
 
-def test_every_entry_is_unconfirmed_with_the_agreed_fields():
+CONFIRMED = {"W01", "W02", "W03", "W04", "W05", "W06", "W07", "D01", "D02", "D03", "KPP1-W01", "KPP1-W02", "KPP1-W03"}
+
+
+def test_every_entry_has_the_agreed_fields():
     ids = [t["id"] for t in DOC["types"]]
     assert len(ids) == len(set(ids)) == 22
     for t in DOC["types"]:
         assert KEYS <= set(t), t["id"]
-        assert t["status"] == "unconfirmed" and t["handing"] is None and t["sashes"] is None, t["id"]
+        assert t["status"] in ("confirmed", "unconfirmed") and t["handing"] is None and t["sashes"] is None, t["id"]
         assert t["width_m"] > 0 and t["height_m"] > 0, t["id"]
+
+
+def test_only_the_users_confirmations_are_confirmed():
+    # user decision 2026-10-09: the atlas types W01-W07, D01-D03 and the three KPP1 candidates, named by form + size
+    confirmed = {t["id"]: t for t in DOC["types"] if t["status"] == "confirmed"}
+    assert set(confirmed) == CONFIRMED
+    for t in confirmed.values():
+        assert t["name"] and t["decision"]["by"] == "user" and t["typed"], t["id"]
+        size = f"{round(t['width_m'] * 1000)}×{round(t['height_m'] * 1000)}"
+        assert t["name"].endswith(size) or t["id"] == "D01", (t["id"], t["name"], size)   # D01 2095 mm named 2100
+        assert "створ" not in t["name"] and "KPP" not in t["name"] and "КПП" not in t["name"], t["name"]
 
 
 def test_school_typology_is_complete():
@@ -49,3 +63,13 @@ def test_kpp1_candidates_come_from_the_spec():
 ])
 def test_layout_counts_sections_and_transoms(panes, expected):
     assert layout(panes) == expected
+
+
+def test_a_missing_confirmations_file_stops_the_build(tmp_path):
+    # PR #42 review 1: the user's decisions are never dropped silently
+    import build_window_types as b
+    out = tmp_path / "window_types.json"
+    with pytest.raises(SystemExit, match="confirmations file not found"):
+        b.main(["--type-map", "x", "--library-v001", "x", "--kpp1-twin", "x", "--kpp1-spec", "x",
+                "--output", str(out), "--confirmations", str(tmp_path / "missing.json")])
+    assert not out.exists()
