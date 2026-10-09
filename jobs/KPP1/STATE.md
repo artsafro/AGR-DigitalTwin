@@ -210,7 +210,7 @@ Same v005 dump (`outputs/spec-v001/dump.json`), extractor of `main` at e5c5e47, 
 `bench-k01-kpp1`: `outputs/spec-v020/` (local). `dt spec merge-questions` into `questions.md`:
 the 58 questions of v001 are `gone v020` (closed by the rules of #31, #36, #40), 25 are new and
 open, none answered. All 25 are one kind: horizontal projections 0.09 m deep and 0.075 m high,
-3-5 m long (L0 12, L1 13; high 16, normal 9) — the top and bottom rails of the facade panel
+1.33-5.24 m long (L0 12, L1 13; high 16, normal 9) — the top and bottom rails of the facade panel
 frames at 1.125-1.2 / 3.0-3.075 / 4.775-4.85 / 6.65-6.725 m. The relief rule (#31) covered bumps
 with both plan sizes <= 0.10 m only.
 
