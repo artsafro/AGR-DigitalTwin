@@ -36,6 +36,5 @@ spec v0.3 (#36); window library `library/windows/window_types.json` (#4).
 - Edges from the wall faces, never from frames or sills; a plane at the back of the reveal was
   rejected (visible slits).
 - A long plane must not cross a belt or another window row.
-- `window_type` is the library type, not the material ID. Never guess an ID under `plane_conflict`.
-- A grille gets no plane (`vent-grille`).
+- `window_type` is the library type, not the ID; no guessed ID under `plane_conflict`; a grille gets no plane.
 - Window instance front goes to the opening's outward normal; a blanket 180° flip was an error.

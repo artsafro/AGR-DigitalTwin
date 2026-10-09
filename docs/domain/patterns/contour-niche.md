@@ -16,8 +16,7 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user d
 
 ## How to build
 
-- The niche walls are contour walls (`wall-from-contour`); each inner corner has its own angle
-  (`non-90-corner`).
+- Niche walls are contour walls (`wall-from-contour`); inner corners per `non-90-corner`.
 - Where the niche exists on some floors only, the contours of neighbouring floors differ; close
   the step at the level line with a horizontal face over the contour difference (soffit or
   floor of the niche). Build it only from the spec contours, never from a guess.
