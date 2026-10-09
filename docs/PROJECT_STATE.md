@@ -48,8 +48,10 @@ attributes (#36). Review-3 leftovers: #37. The box route of #10 (`revit.py`) was
 `depth_m` only as an exception (> 0.10 m off the default); glass without a reveal is a size question.
 KPP1 comparison v003 (`jobs/KPP1/spec-compare-v003.md`): **match** on every criterion (openings 21 + 11
 pairs within 5 mm) — first case "two paths match" in `docs/cases.md` (a comparison result, not a
-model acceptance). Open for the user: the 0.20 / 0.10 m thresholds (author's) and vent grilles.
-Human tickets: #2 (move `Unreal/`), #4 (window
+model acceptance). PR #40 (user decisions 2026-10-09): the 0.20 / 0.10 m thresholds live in
+`spec_extract` of the benchmark tolerances (`dt spec extract --tolerances`); vent grilles are openings of
+kind `grille` (pattern `vent-grille`: npm_min texture, mid geometry; mesh classifier pending), reported
+and kept out of the comparison verdict; KPP1 still match. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -130,7 +132,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. Claude: harness week 1 done for KPP1 (two paths match); next per the user: B01 etalon (#12), window library (#4), vent grilles; extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
+0. Claude: harness week 1 done for KPP1 (two paths match); next per the user: B01 etalon (#12), window library (#4); extractor follow-ups #21-#24, #34, #37 and the drainage issue (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
