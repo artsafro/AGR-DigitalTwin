@@ -213,3 +213,9 @@ def test_rectilinear_contours_build_without_t_junctions(contour):
     soup = from_dump(dump)
     _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
     assert counts.max() <= 2 and t_junctions(dump) == 0
+
+
+def test_floor_records_in_any_order_build_the_same_model():
+    # Codex review 2 of PR #50
+    reversed_floors = edited(lambda d: d.update({"floors": d["floors"][::-1]}))
+    assert build(reversed_floors, INPUTS) == build(spec(), INPUTS)

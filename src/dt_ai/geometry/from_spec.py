@@ -11,7 +11,9 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
   opening's own `material_id`, else its window type, else the object's default opening ID (never
   under `plane_conflict`). Seating is conflict C24 (open), so it is a required input: `spec_depth`
   puts the plane at the opening depth (`depth_m` or `opening_depth_default_m`), `half_depth` at
-  half of it. Grilles stay texture (`vent-grille`);
+  half of it. The reveals end at the plane: their part behind an opaque NPM plane is hidden and
+  is not built (docs/domain/geometry.md, hidden parts of reveals), and a reveal running past the
+  plane would leave an edge of three faces. Grilles stay texture (`vent-grille`);
 - the roof plane at the top input level inside the parapet, parapet inner walls and cap.
 
 Topology: quads only, welded, no T-junctions. Wall cuts run at every contour vertex and opening
@@ -88,13 +90,13 @@ def _cuts(values, lo, hi):
 
 
 def _contour(spec: Spec):
-    floors = spec.expanded_floors()
+    names = [lv.name for lv in spec.levels]
+    floors = sorted(spec.expanded_floors(), key=lambda f: names.index(f.level))   # records may come in any order
     contours = {tuple(map(tuple, (p[:2] for p in f.contour))) for f in floors}
     if any(len(p) == 3 for f in floors for p in f.contour):
         raise BuildError("rounded corners are not built yet (pattern non-90-corner)")
     if len(contours) != 1:
         raise BuildError("floors have different contours; steps between floors are not built yet (contour-niche)")
-    names = [lv.name for lv in spec.levels]
     if [f.level for f in floors] != names[:-1]:
         raise BuildError(f"floors {[f.level for f in floors]} must cover every level below the top: {names[:-1]}")
     if spec.attachments:
