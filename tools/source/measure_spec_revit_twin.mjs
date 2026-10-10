@@ -6,7 +6,9 @@
 // Calls the TwinPack commands of the revit-http add-in (docs/agents/CAPABILITIES.md):
 // twin_floor_manifest (bands, levels, coordinates), then twin_export_floor for every band with
 // exterior elements (floor.json + reference.obj in <out-folder>/band-<n>/), and writes
-// <out-folder>/twin-data.json, the index `dt spec extract --dump` reads. The document's
+// <out-folder>/twin-data.json, the index `dt spec extract --dump` reads; it also holds the document's
+// Levels and Roofs (MH2, pattern markup-helpers: object.json `revit_levels` turns them into LEVEL_
+// helpers, see src/dt_ai/spec/markup.py). The document's
 // modified flag is recorded before and after. Server: REVIT_MCP_SERVER_DIR, default the
 // workstation install.
 import fs from 'node:fs';
@@ -40,9 +42,29 @@ for (const b of bands) {
   const r = await call('twin_export_floor', {band: b.band, outDir: abs, wallFunctions: WALL_FUNCTIONS});
   index.push({band: b.band, level: b.level, elevation: b.elevation, bottom: b.bottom, top: b.top, dir, counts: r.counts});
 }
+// Levels and Roofs (read only): names, elevations; roof type, base level, offset, volume, area in metres
+const FT = 0.3048;
+const levels = (await call('list_levels')).levels.map(l => ({id: l.id, name: l.name, elevation_m: l.elevationMeters}));
+const byId = Object.fromEntries(levels.map(l => [l.id, l]));
+const roofs = [];
+const roofList = [];                                   // every page (review 1 of PR #69)
+for (let offset = 0; offset !== null && offset !== undefined;) {
+  const page = await call('list_elements', {category: 'OST_Roofs', onlyInstances: true, offset, limit: 200});
+  roofList.push(...page.elements);
+  offset = page.hasMore ? page.nextOffset : null;
+}
+for (const r of roofList) {
+  const info = await call('get_element_info', {id: r.id});
+  const p = name => info.parameters.find(q => q.name === name);
+  const base = byId[info.levelId];
+  roofs.push({id: r.id, type: r.name, base_level: base?.name ?? null, base_level_m: base?.elevation_m ?? null,
+              offset_m: p('Смещение от уровня')?.value == null ? null : p('Смещение от уровня').value * FT,  // never 0 by default
+              volume_m3: p('Объем')?.value == null ? null : p('Объем').value * FT ** 3,
+              area_m2: p('Площадь')?.value == null ? null : p('Площадь').value * FT ** 2});
+}
 const after = await call('get_document_info');
 fs.writeFileSync(path.join(out, 'twin-data.json'), JSON.stringify({
   kind: 'revit-twin', source: 'revit', document: before.title, path: before.pathName,
   modified_before: before.isModified, modified_after: after.isModified, coordinates: manifest.coordinates,
-  bands: index}, null, 1));
+  bands: index, revit_levels: levels, revit_roofs: roofs}, null, 1));
 console.log(`MEASURE-SPEC-REVIT-TWIN ${index.length} bands -> ${out}; modified ${before.isModified} -> ${after.isModified}`);
