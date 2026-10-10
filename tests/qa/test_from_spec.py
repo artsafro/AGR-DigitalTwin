@@ -127,11 +127,71 @@ def test_what_this_step_cannot_build_is_an_error_not_a_guess(change, message):
         build(Spec.model_validate(data), INPUTS)
 
 
-def test_different_floor_contours_are_an_error():
-    data = json.loads(json.dumps(FIXTURE))
-    data["floors"][1] = {"level": "L1", "contour": [[0, 0], [8, 0], [8, 10], [0, 10]], "openings": []}
-    with pytest.raises(BuildError, match="different contours"):
-        build(Spec.model_validate(data), INPUTS)
+# pattern floor-step: a contour per floor; at each step a ledge (up, roof ID) or a soffit (down, facade ID)
+
+
+def stepped(lower, upper, openings_l1=()):
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": lower, "openings": [d["floors"][0]["openings"][0]]},
+                       {"level": "L1", "contour": upper, "openings": list(openings_l1)}]
+    return edited(edit)
+
+
+def horizontal(soup, z, mid, up):
+    c = soup.corners()
+    n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+    sel = (soup.material_ids == mid) & np.all(np.abs(c[:, :, 2] - z) < 1e-9, axis=1) & ((n[:, 2] > 0) == up)
+    return float(np.linalg.norm(n[sel], axis=1).sum() / 2)
+
+
+def topology_ok(dump):
+    soup = from_dump(dump)
+    _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
+    loops = checks.check_mesh(soup, TOL, checks.load_ranges())["details"]["open_loops"]
+    return counts.max() <= 2 and t_junctions(dump) == 0 and [lp["kind"] for lp in loops] == ["bottom"]
+
+
+def test_ledge_where_the_floor_below_reaches_out():
+    s = stepped([[0, 0], [10, 0], [10, 10], [0, 10]], [[4, 0], [10, 0], [10, 10], [4, 10]])
+    dump = build(s, INPUTS)
+    soup = from_dump(dump)
+    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(40.0)      # ledge 4 x 10 m at L1
+    assert horizontal(soup, 3.3, FACADE, False) == 0.0
+    assert topology_ok(dump)
+
+
+def test_soffit_where_the_floor_above_overhangs():
+    # user 2026-10-10: the soffit under an overhang takes the facade ID
+    s = stepped([[4, 0], [10, 0], [10, 10], [4, 10]], [[0, 0], [10, 0], [10, 10], [0, 10]])
+    dump = build(s, INPUTS)
+    soup = from_dump(dump)
+    assert horizontal(soup, 3.3, FACADE, False) == pytest.approx(40.0)
+    assert horizontal(soup, 3.3, ROOF, True) == 0.0
+    assert topology_ok(dump)
+
+
+def test_window_on_the_wall_above_the_ledge():
+    window = {"wall": 3, "x_m": 4.0, "sill_m": 0.9, "w_m": 1.5, "h_m": 1.5, "kind": "window"}   # wall 3: (4,10)->(4,0)
+    s = stepped([[0, 0], [10, 0], [10, 10], [0, 10]], [[4, 0], [10, 0], [10, 10], [4, 10]], [window])
+    dump = build(s, INPUTS)
+    soup = from_dump(dump)
+    planes = soup.corners()[soup.material_ids == PLANE]
+    assert np.allclose(planes[planes[:, :, 2].min(1) > 3.3][:, :, 0], 4.2)   # npm_min: full 0.2 m depth, inward +x
+    assert topology_ok(dump)
+
+
+def test_l_shaped_upper_floor_over_a_rectangle():
+    s = stepped([[0, 0], [10, 0], [10, 10], [0, 10]], [[0, 0], [10, 0], [10, 4], [4, 4], [4, 10], [0, 10]])
+    dump = build(s, INPUTS)
+    assert horizontal(from_dump(dump), 3.3, ROOF, True) == pytest.approx(36.0)
+    assert topology_ok(dump)
+
+
+def test_step_model_passes_the_checks_against_itself():
+    s = stepped([[0, 0], [10, 0], [10, 10], [0, 10]], [[4, 0], [10, 0], [10, 10], [4, 10]])
+    soup = from_dump(build(s, INPUTS))
+    report = checks.run(soup, soup, s, TOL)
+    assert report["passed"], report["failed"] + report["not_measured"]
 
 
 # Codex review 1 of PR #50
@@ -362,3 +422,74 @@ def test_runner_exit_code_precedence(tmp_path, monkeypatch, tol_change, code):
     argv = ["--etalon", str(etalon), "--object", str(bench / "object.json"), "--tolerances", str(tmp_path / "t.json"),
             "--output", str(tmp_path / "run"), "--blender", "blender"]
     assert run_benchmark.main(argv) == code
+
+
+# Codex review 1 of PR #55: unsupported floor-step inputs are errors, not broken geometry
+
+SQ = [[0, 0], [10, 0], [10, 10], [0, 10]]
+
+
+def test_openings_of_two_floors_overlapping_on_one_wall_line_are_an_error():
+    o0 = {"wall": 0, "x_m": 2.0, "sill_m": 2.5, "w_m": 1.5, "h_m": 2.0, "kind": "window",
+          "level_from": "L0", "level_to": "L1"}
+    o1 = {"wall": 0, "x_m": 2.0, "sill_m": 0.2, "w_m": 1.5, "h_m": 1.0, "kind": "window"}
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": [o0]},
+                       {"level": "L1", "contour": SQ, "openings": [o1]}]
+    with pytest.raises(BuildError, match="touch or overlap"):
+        build(edited(edit), INPUTS)
+
+
+def test_frame_across_a_level_onto_a_shorter_upper_wall_is_an_error():
+    o0 = {"wall": 0, "x_m": 2.0, "sill_m": 2.8, "w_m": 1.5, "h_m": 1.2, "kind": "window",
+          "level_from": "L0", "level_to": "L1"}
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": [o0]},
+                       {"level": "L1", "contour": [[3, 0], [10, 0], [10, 10], [3, 10]], "openings": []}]
+    with pytest.raises(BuildError, match="no wall of floor 1 holds"):
+        build(edited(edit), INPUTS)
+
+
+@pytest.mark.parametrize("upper", [[[10, 3], [20, 3], [20, 7], [10, 7]], [[10, 10], [20, 10], [20, 20], [10, 20]]])
+def test_floors_meeting_only_along_an_edge_or_at_a_corner_are_an_error(upper):
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                       {"level": "L1", "contour": upper, "openings": []}]
+    with pytest.raises(BuildError, match="do not meet over area only"):
+        build(edited(edit), INPUTS)
+
+
+def test_upper_floor_overhanging_past_one_wall_is_built():
+    s = stepped(SQ, [[0, 0], [10, 0], [10, 10], [6, 10], [6, 14], [0, 14]])
+    dump = build(s, INPUTS)
+    assert horizontal(from_dump(dump), 3.3, FACADE, False) == pytest.approx(24.0) and topology_ok(dump)
+
+
+
+def test_shifted_wall_origins_still_catch_overlapping_openings():
+    # Codex review 2 of PR #55: lower wall 0 starts at x=3, upper at x=0; physical spans overlap
+    o0 = {"wall": 0, "x_m": 1.0, "sill_m": 2.5, "w_m": 1.5, "h_m": 2.0, "kind": "window", "level_from": "L0", "level_to": "L1"}
+    o1 = {"wall": 0, "x_m": 4.0, "sill_m": 0.2, "w_m": 1.5, "h_m": 1.0, "kind": "window"}
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": [[3, 0], [10, 0], [10, 10], [3, 10]], "openings": [o0]},
+                       {"level": "L1", "contour": SQ, "openings": [o1]}]
+    with pytest.raises(BuildError, match="touch or overlap"):
+        build(edited(edit), INPUTS)
+
+
+def test_opposite_u_shapes_meeting_in_two_areas_are_built():
+    # Codex review 2 of PR #55: the floors overlap in two separate rails (60 m2)
+    lower = [[0, 0], [10, 0], [10, 10], [7, 10], [7, 3], [3, 3], [3, 10], [0, 10]]
+    upper = [[0, 0], [3, 0], [3, 7], [7, 7], [7, 0], [10, 0], [10, 10], [0, 10]]
+    dump = build(stepped(lower, upper), INPUTS)
+    assert topology_ok(dump)
+
+
+
+def test_overlap_areas_touching_at_a_corner_are_an_error():
+    # Codex review 3 of PR #55: two 4 m2 overlaps touching at (2, 2) would leave a non-manifold vertex
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": [[0, 0], [4, 0], [4, 2], [2, 2], [2, 4], [0, 4]], "openings": []},
+                       {"level": "L1", "contour": [[2, 0], [4, 0], [4, 4], [0, 4], [0, 2], [2, 2]], "openings": []}]
+    with pytest.raises(BuildError, match="do not meet over area only"):
+        build(edited(edit), INPUTS)
