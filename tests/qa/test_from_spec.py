@@ -590,3 +590,22 @@ def test_window_close_to_a_steep_oblique_corner_is_a_clear_error():
         d["floors"][0]["openings"] = [{"wall": 2, "x_m": 0.001, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
     with pytest.raises(BuildError, match="strip lines closer than 0.1 mm"):
         build(edited(edit), INPUTS)
+
+
+
+def test_inputs_at_the_limit_that_would_break_under_the_weld_are_errors():
+    # Codex review 3 of PR #58: both built "valid" raw quads that collapse or leave a hole at 0.1 mm
+    def window_case(d):
+        d["floors"][0]["contour"] = [[.00005, 0], [10.00005, 0], [10.00005, 6], [9.00005, 7], [.00005, 7]]
+        d["floors"][0]["openings"] = [{"wall": 2, "x_m": .0001414213562373095, "sill_m": 0.9, "w_m": 0.5,
+                                       "h_m": 1.5, "kind": "window"}]
+        d["roof"] = {"parapet_h_m": 0.0}
+
+    def step_case(d):
+        d["floors"] = [{"level": "L0", "contour": [[0, 0], [10, 0], [10, 6], [9.9999, 9], [0, 9]], "openings": []},
+                       {"level": "L1", "contour": [[0, 0], [10, 0], [10, 5.9999], [9.9999, 8.9999], [0, 8.9999]],
+                        "openings": []}]
+        d["roof"] = {"parapet_h_m": 0.0}
+    for edit in (window_case, step_case):
+        with pytest.raises(BuildError):
+            build(edited(edit), INPUTS)

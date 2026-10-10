@@ -354,7 +354,37 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         for k in range(len(left) - 1):
             mesh.quad([[x0, left[k], z], [x1, right[k], z], [x1, right[k + 1], z], [x0, left[k + 1], z]],
                       tr["mid"], [0, 0, tr["up"]])
+    _hold(mesh, bottom)
     return mesh.dump(spec.levels)
+
+
+CHECK_WELD_M = 1e-4   # the benchmark checkers' weld (tolerances weld_m): the built mesh must hold under it
+
+
+def _hold(mesh, bottom):
+    """The built mesh, welded as the checkers weld it, must still be the model (reviews of PR #58): no
+    quad collapses, no edge of more than two faces, no open edge but the bottom ring. Else BuildError:
+    an input at the 0.1 mm limit is refused rather than returned broken."""
+    v = np.asarray(mesh.vertices)
+    keys = np.round(v / CHECK_WELD_M).astype(np.int64)
+    _, cell = np.unique(keys, axis=0, return_inverse=True)
+    cell = cell.reshape(-1)
+    uses = {}
+    for ids, _ in mesh.faces:
+        c = [int(cell[i]) for i in ids]
+        if len(set(c)) != 4:
+            raise BuildError("a quad collapses under the checkers' 0.1 mm weld; the input is at the limit, not built")
+        for i in range(4):
+            e = tuple(sorted((c[i], c[(i + 1) % 4])))
+            uses[e] = uses.get(e, 0) + 1
+    zc = {}
+    for i, c in enumerate(cell):
+        zc[int(c)] = v[i, 2]
+    for (a, b), n in uses.items():
+        if n > 2:
+            raise BuildError("an edge of more than two faces under the checkers' weld; not built")
+        if n == 1 and not (abs(zc[a] - bottom) <= CHECK_WELD_M and abs(zc[b] - bottom) <= CHECK_WELD_M):
+            raise BuildError(f"an open edge at {zc[a]:.4f} m: a face piece below the 0.1 mm limit was lost; not built")
 
 
 def _r(v):
