@@ -197,6 +197,17 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
 - Near-parallel faces closer than 5 mm (profile), on faces JSON or FBX via
   `tools/blender/export_faces.py`. Hits need classifying (embed vs defect).
 
+### Engine — `src/dt_ai/geometry/from_spec.py`
+- Status: WORKING on synthetic specs only (2026-10-09, `tests/qa/test_from_spec.py`): the B01 fixture
+  spec builds a model that passes all benchmark checks against the synthetic box; no real etalon yet.
+- `build(spec, BuildInputs)` -> mesh dump (format of `measure_spec_blender.py`): walls by contour,
+  holes with reveals and planes, roof, parapet; quads, welded, no T-junctions, no Shell (C23);
+  plane seat by profile (C24, user 2026-10-10: `npm_min` half depth, `mid` full depth).
+  Build inputs not in the spec (parapet thickness, material IDs) are required arguments.
+- Not yet: rounded or non-90 corners, different floor contours, attachments, corner, touching or
+  roof-level openings, cross-level openings in a typical template, writing a Blender
+  scene / FBX (errors, never guesses).
+
 ### Benchmark geometry checks — `tools/qa/check_geometry.py`
 - Status: WORKING on synthetic boxes only (2026-10-09, `tests/qa/test_geometry_checks.py`); no
   real etalon yet (B01, issue #12). Logic in `src/twinqa/geometry/`.

@@ -12,13 +12,13 @@ for the checkers, `spec_extract` for the extractor).
 The numbers are the user's; the extractor reads whatever is modelled. The synthetic test box
 (`tests/qa/test_geometry_checks.py`, same numbers as `tests/fixtures/spec-b01-v0.3.json`) is one
 choice: levels 0 / 3.3 / 6.6 m, parapet 0.6 m, one 1.5 x 1.5 m window per storey on one wall,
-sill 0.9 m, recessed 0.2 m.
+sill 0.9 m, opening depth 0.2 m (plane and reveals at 0.1 m).
 
 - 3ds Max, metres, on a grid; `etalon.max` plus `etalon.fbx` (large files by link).
 - Level helpers `LEVEL_L0`, `LEVEL_L1`, `LEVEL_roof` (any object type; its world Z is the level);
   `LEVEL_roof` is the top of the roof covering, not the parapet top.
-- Walls over the full storey height; each window a hole with reveals and an opening plane at the
-  reveal depth; roof plane, parapet inner faces and cap. Quads only; separate meshes may meet on
+- Walls over the full storey height; each window a hole with reveals and an opening plane at half
+  the 0.2 m opening depth (0.1 m, `npm_min`, C24 decided 2026-10-10), reveals ending at it; roof plane, parapet inner faces and cap. Quads only; separate meshes may meet on
   shared edges. The shell need not be closed (user decision 2026-10-09): open edges go to the
   report, never block.
 - Material IDs by group (`standards/material_id_ranges.yaml`, ADR 0001): facade 1-5, reveals
