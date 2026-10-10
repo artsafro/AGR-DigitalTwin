@@ -14,7 +14,12 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
   of the opening's extrusion; `mid` at half of it, where the detailed window is built from the plane. The reveals end at the plane: their part behind an opaque NPM plane is hidden and
   is not built (docs/domain/geometry.md, hidden parts of reveals), and a reveal running past the
   plane would leave an edge of three faces. Grilles stay texture (`vent-grille`);
-- the roof plane at the top input level inside the parapet, parapet inner walls and cap;
+- every slab inset (pattern roof-inset-plane, user rule 2026-10-10): the body has a hole at the slab's
+  level (the foot of the faces around it) and the slab is a separate plate at level + `slab_gap_m`,
+  its outline the hole grown by `slab_embed_m` (mitred) into the faces around it; slabs are the roof
+  inside a parapet and the walkable part of every terrace. A roof without a parapet stays solid (no
+  faces to inset it into);
+- parapet inner walls and cap;
 - a contour per floor (pattern floor-step): walls of each floor by its own contour, and at each
   level line a ledge facing up (roof ID) where the floor below reaches out and a soffit facing down
   (facade ID, user 2026-10-10) where the floor above overhangs;
@@ -62,11 +67,14 @@ class BuildInputs:
     roof_id: int
     opening_id: int                       # default plane ID when the opening has none of its own
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
+    slab_gap_m: float | None = None       # inset slab plate above its level (pattern roof-inset-plane)
+    slab_embed_m: float | None = None     # inset slab plate outline beyond the hole, into the faces around it
 
     @classmethod
     def from_object(cls, obj_cfg: dict) -> "BuildInputs":
         """The `build` block of object.json: {"parapet_thickness_m", "ids": {"facade", "reveal", "roof",
-        "opening"}, "opening_ids_by_type"?}. Missing values are an error, never a default."""
+        "opening"}, "slab_inset": {"gap_m", "embed_m"}, "opening_ids_by_type"?}. Missing values are an error,
+        never a default."""
         b = obj_cfg.get("build")
         if not b:
             raise BuildError(f"object {obj_cfg.get('id', '?')}: object.json has no build block (parapet thickness, IDs)")
@@ -74,7 +82,8 @@ class BuildInputs:
             ids = b["ids"]
             by_type = {int(k): int(v) for k, v in (b.get("opening_ids_by_type") or {}).items()}
             return cls(float(b["parapet_thickness_m"]), int(ids["facade"]), int(ids["reveal"]), int(ids["roof"]),
-                       int(ids["opening"]), by_type or None)
+                       int(ids["opening"]), by_type or None,
+                       float(b["slab_inset"]["gap_m"]), float(b["slab_inset"]["embed_m"]))
         except (KeyError, TypeError, ValueError) as exc:
             raise BuildError(f"object.json build block: {exc!r}") from exc
 
@@ -245,9 +254,13 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
 
     # horizontal faces: roof plane (inside the inset), cap (between contour and inset); at each floor step
     # (pattern floor-step) a ledge facing up (roof ID) and a soffit facing down (facade ID, user 2026-10-10)
-    faces = [(inner, roof, inputs.roof_id, 1)]
+    slabs = []                                          # inset slabs: (hole polygon, level z, where)
+    faces = []
     if t > 0:
+        slabs.append((inner, roof, "the roof"))
         faces.append((outer.difference(inner), top, inputs.roof_id, 1))
+    else:
+        faces.append((inner, roof, inputs.roof_id, 1))      # no parapet: nothing to inset the roof into
     names = [lv.name for lv in spec.levels]
     terraces = {names.index(tr.level): tr.parapet_h_m for tr in spec.terraces}
     tp_walls, tp_solids, tp_tops = [], [], []
@@ -258,7 +271,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
                 raise BuildError("a terrace parapet needs parapet_thickness_m in the build inputs")
             walk, band, pw = _terrace(ledge, polys[k + 1], elev[k + 1], elev[k + 1] + terraces[k + 1],
                                       inputs.parapet_thickness_m, spec.levels[k + 1].name)
-            faces.append((walk, elev[k + 1], inputs.roof_id, 1))
+            slabs += [(part, elev[k + 1], f"the terrace at {spec.levels[k + 1].name}") for part in shapely.get_parts(walk)]
             faces.append((band, elev[k + 1] + terraces[k + 1], inputs.roof_id, 1))
             tp_walls += pw
             tp_solids.append((band, elev[k + 1], elev[k + 1] + terraces[k + 1]))
@@ -366,6 +379,33 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
                         continue
                     mesh.quad([P(sa, za), P(sb, zb), Q(sb, zb), Q(sa, za)], inputs.reveal_id, face)
 
+    _quads(mesh, traps, face_ys)
+    joints = [bottom]
+    if slabs:
+        gap, embed = inputs.slab_gap_m, inputs.slab_embed_m
+        if gap is None or embed is None or gap <= 0 or embed <= 0:
+            raise BuildError("inset slabs need slab_gap_m and slab_embed_m > 0 in the build inputs (object.json "
+                             "build.slab_inset)")
+    for hole, z, where in slabs:                        # pattern roof-inset-plane: a separate plate, not welded
+        plate = orient(hole.buffer(embed, join_style="mitre", mitre_limit=1e6), sign=1.0)
+        if plate.geom_type != "Polygon" or not plate.buffer(-MIN_FEATURE_M).contains(hole):
+            raise BuildError(f"{where}: the inset plate is no single polygon around its hole; not built")
+        zp = round(z + gap, 9)
+        pxs = sorted({_r(x) for x, _ in plate.exterior.coords})
+        if any(x1 - x0 < MIN_FEATURE_M - FEATURE_TOL for x0, x1 in zip(pxs, pxs[1:])):
+            raise BuildError(f"{where}: inset plate corners closer than 0.1 mm in x; not built")
+        ptraps = _trapezoids([(plate, zp, inputs.roof_id, 1)], pxs)
+        _quads(mesh, ptraps, _propagate(ptraps, [], {}))   # cuts carried across, no T-junction in the plate
+        joints += [z, zp]
+    _hold(mesh, joints)
+    return mesh.dump(spec.levels)
+
+
+CHECK_WELD_M = 1e-4   # the benchmark checkers' weld (tolerances weld_m): the built mesh must hold under it
+
+
+def _quads(mesh, traps, face_ys):
+    """Quads of the trapezoids, split at the cuts on their vertical sides (paired left to right)."""
     for tr in traps:
         left = [tr["a"]] + sorted(y for y in face_ys[(tr["z"], tr["x0"])] if tr["a"] + SNAP_M < y < tr["b"] - SNAP_M) + [tr["b"]]
         right = [tr["c"]] + sorted(y for y in face_ys[(tr["z"], tr["x1"])] if tr["c"] + SNAP_M < y < tr["d"] - SNAP_M) + [tr["d"]]
@@ -377,17 +417,13 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         for k in range(len(left) - 1):
             mesh.quad([[x0, left[k], z], [x1, right[k], z], [x1, right[k + 1], z], [x0, left[k + 1], z]],
                       tr["mid"], [0, 0, tr["up"]])
-    _hold(mesh, bottom)
-    return mesh.dump(spec.levels)
 
 
-CHECK_WELD_M = 1e-4   # the benchmark checkers' weld (tolerances weld_m): the built mesh must hold under it
-
-
-def _hold(mesh, bottom):
+def _hold(mesh, joints):
     """The built mesh, welded as the checkers weld it, must still be the model (reviews of PR #58): no
-    quad collapses, no edge of more than two faces, no open edge but the bottom ring. Else BuildError:
-    an input at the 0.1 mm limit is refused rather than returned broken."""
+    quad collapses, no edge of more than two faces, no open edge but the bottom ring and the inset slab
+    joints (flat at a joint height). Else BuildError: an input at the 0.1 mm limit is refused rather
+    than returned broken."""
     v = np.asarray(mesh.vertices)
     keys = np.round(v / CHECK_WELD_M).astype(np.int64)
     _, cell = np.unique(keys, axis=0, return_inverse=True)
@@ -406,7 +442,7 @@ def _hold(mesh, bottom):
     for (a, b), n in uses.items():
         if n > 2:
             raise BuildError("an edge of more than two faces under the checkers' weld; not built")
-        if n == 1 and not (abs(zc[a] - bottom) <= CHECK_WELD_M and abs(zc[b] - bottom) <= CHECK_WELD_M):
+        if n == 1 and not any(abs(zc[a] - j) <= CHECK_WELD_M and abs(zc[b] - j) <= CHECK_WELD_M for j in joints):
             raise BuildError(f"an open edge at {zc[a]:.4f} m: a face piece below the 0.1 mm limit was lost; not built")
 
 

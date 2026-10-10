@@ -21,7 +21,8 @@ from twinqa.scene import find_blender
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
-INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE)
+INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE,
+                     slab_gap_m=0.005, slab_embed_m=0.02)
 
 
 def spec(**changes):
@@ -59,7 +60,7 @@ def test_b01_spec_builds_a_model_that_passes_every_check_against_the_synthetic_e
     assert by_id(report)["silhouettes"]["value"] == 1.0
 
 
-def test_model_is_all_quads_welded_and_open_only_at_the_bottom():
+def test_model_is_all_quads_welded_and_open_only_at_the_bottom_and_the_roof_inset():
     dump = build(spec(), INPUTS)
     body = dump["meshes"][0]
     assert set(body["polygon_sizes"]) == {4} and len(body["triangles"]) == 2 * len(body["polygon_sizes"])
@@ -69,7 +70,8 @@ def test_model_is_all_quads_welded_and_open_only_at_the_bottom():
     assert counts.max() <= 2                                   # no fin
     assert t_junctions(dump) == 0
     open_z = soup.vertices[np.unique(ids, return_index=True)[1]][edges[counts == 1].ravel(), 2]
-    assert np.allclose(open_z, 0.0)                            # only the bottom ring is open
+    # only the bottom ring and the inset roof joint: the hole at 6.6, the plate 5 mm above it (user 2026-10-10)
+    assert set(np.round(open_z, 6).tolist()) == {0.0, 6.6, 6.605}
     assert {lv["name"] for lv in dump["helpers"]} == {"LEVEL_L0", "LEVEL_L1", "LEVEL_roof"}
 
 
@@ -148,7 +150,8 @@ def topology_ok(dump):
     soup = from_dump(dump)
     _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
     loops = checks.check_mesh(soup, TOL, checks.load_ranges())["details"]["open_loops"]
-    return counts.max() <= 2 and t_junctions(dump) == 0 and [lp["kind"] for lp in loops] == ["bottom"]
+    # open only at the bottom and at the inset slab joints (pattern roof-inset-plane, user rule 2026-10-10)
+    return counts.max() <= 2 and t_junctions(dump) == 0 and all(lp["allowed"] for lp in loops)         and [lp["kind"] for lp in loops].count("bottom") == 1
 
 
 def test_ledge_where_the_floor_below_reaches_out():
