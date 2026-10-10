@@ -766,7 +766,9 @@ def test_extractor_asks_about_anything_else_standing_on_a_terrace():
         m["material_ids"] += [FACADE, FACADE]
     spec, report = extract_spec(d, SYNTH_OBJECT)
     assert [t.level for t in spec.terraces] == ["L1"]
-    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+    kinds = [(q["kind"], q["levels"]) for q in report["questions"]]
+    assert ("ledge-structure", ["L1"]) in kinds                  # (its open foot is a second hole under the plate,
+    assert [k for k, _ in kinds] in (["ledge-structure"], ["ledge-structure", "plate-params"])  # also asked)
 
 
 def test_inner_face_cover_does_not_depend_on_extra_points_on_its_line():
@@ -921,7 +923,8 @@ def test_the_extractor_reads_the_plate_parameters_back():
     s = Spec.model_validate({**terraced(west_ledge).model_dump(), "plate_gap_m": 0.008, "plate_overlap_m": 0.03})
     spec, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
     assert (spec.plate_gap_m, spec.plate_overlap_m) == (0.008, 0.03) and report["questions"] == []
-    assert report["plates"] == {"roof": [{"gap_m": 0.008, "overlap_m": 0.03}], "L1": [{"gap_m": 0.008, "overlap_m": 0.03}]}
+    one = {"plates": [{"gap_m": 0.008, "overlap_m": 0.03}], "problems": []}
+    assert report["plates"] == {"roof": one, "L1": one}
     soup = from_dump(build(s, INPUTS))
     assert checks.run(soup, soup, spec, TOL)["passed"]
 
@@ -936,3 +939,55 @@ def test_plates_that_disagree_are_a_question():
     spec, report = extract_spec(d, SYNTH_OBJECT)
     assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("plate-params", ["L1", "roof"])] or \
         [(q["kind"], q["levels"]) for q in report["questions"]] == [("plate-params", ["roof", "L1"])]
+
+
+# Codex review 1 of PR #64
+
+
+def _moved(d, pick, to):
+    m = d["meshes"][0]
+    for i, p in enumerate(m["vertices"]):
+        if pick(p):
+            m["vertices"][i] = to(p)
+    return d
+
+
+def _kinds(d):
+    from dt_ai.spec import extract_spec
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    return spec, [(q["kind"], q["levels"]) for q in report["questions"]], report
+
+
+def test_plates_that_disagree_between_themselves_are_asked_whatever_the_median():
+    d = _moved(build(terraced(west_ledge), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.3056])
+    _, kinds, _ = _kinds(d)
+    assert kinds == [("plate-params", ["L1", "roof"])]
+
+
+def test_an_uneven_or_unflat_or_holeless_plate_is_asked_not_dropped():
+    # the roof plate's east edge 3 mm further out: uneven overlap
+    d = _moved(build(spec(), INPUTS), lambda p: abs(p[2] - 6.605) < 1e-9 and p[0] > 9, lambda p: [p[0] + 0.003, p[1], p[2]])
+    spec_, kinds, report = _kinds(d)
+    assert kinds == [("plate-params", ["roof"])] and report["plates"]["roof"]["problems"] == ["a plate that overlaps its hole unevenly"]
+    # the roof plate tilted by 0.5 mm: no flat plate
+    d = _moved(build(spec(), INPUTS), lambda p: abs(p[2] - 6.605) < 1e-9 and p[0] > 5, lambda p: [p[0], p[1], 6.6055])
+    _, kinds, report = _kinds(d)
+    assert kinds == [("plate-params", ["roof"])] and report["plates"]["roof"]["problems"] == ["a plate that is not flat"]
+
+
+def test_split_plates_are_each_flat_on_their_own():
+    s = Spec.model_validate({**_split_terrace().model_dump(), "plate_gap_m": 0.0052})
+    d = _moved(build(_split_terrace(), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9 and p[0] > 5,
+               lambda p: [p[0], p[1], 3.3054])
+    spec_, kinds, report = _kinds(d)
+    assert [t.level for t in spec_.terraces] == ["L1"] and kinds == []
+    assert sorted(p["gap_m"] for p in report["plates"]["L1"]["plates"]) == [0.005, 0.0054]
+    assert by_id(checks.run(from_dump(d), from_dump(d), s, TOL))["mesh"]["status"] == "pass"
+
+
+def test_a_terrace_builds_under_a_roof_without_a_parapet():
+    for edit in (west_ledge, ):
+        s = Spec.model_validate({**terraced(edit).model_dump(), "roof": {"parapet_h_m": 0.0}})
+        assert topology_ok(build(s, INPUTS))
+    s = Spec.model_validate({**_split_terrace().model_dump(), "roof": {"parapet_h_m": 0.0}})
+    assert topology_ok(build(s, INPUTS))

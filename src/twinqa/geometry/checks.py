@@ -166,7 +166,7 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
                 elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
                     kind, level = "roof-foot", name
         segs = [welded[list(ends[e]), :2] for e in edges]
-        out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4),
+        out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4), "_z": float(z.mean()),
                     "closed": closed, "_segs": segs})
     shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
     lo, hi = tol["roof_inset_embed_m"]
@@ -192,7 +192,7 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
             grown = a_[0].buffer(embed, join_style="mitre", mitre_limit=1e6)
             even = float(grown.exterior.hausdorff_distance(b_.exterior)) <= tol["weld_m"]
             if even and lo - tol["weld_m"] <= embed <= hi + tol["weld_m"]:
-                pl["embed_m"] = round(embed, 4)
+                pl["embed_m"], pl["_embed"] = round(embed, 4), embed
                 paired |= {id(f), id(pl)}
         for lp in planes + feet:
             if id(lp) not in paired:
@@ -280,12 +280,15 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None) -> 
     if plate is not None:
         gap_s, overlap_s = plate
         for lp in loops:
-            if lp["kind"] == "roof-plane" and lp["allowed"]:
-                gap = lp["z"] - model.levels[lp["level"]]
+            if lp["kind"] == "roof-plane" and lp["allowed"]:   # raw values, rounded only in the report
+                gap = lp["_z"] - model.levels[lp["level"]]       # (review 1 of PR #64)
                 lp["gap_m"] = round(gap, 4)
-                if abs(gap - gap_s) > tol["plate_tol_m"] or abs(lp["embed_m"] - overlap_s) > tol["plate_tol_m"]:
+                if abs(gap - gap_s) > tol["plate_tol_m"] or abs(lp["_embed"] - overlap_s) > tol["plate_tol_m"]:
                     plate_off.append({"level": lp["level"], "gap_m": round(gap, 4), "overlap_m": lp["embed_m"]})
     bad_loops = [lp for lp in loops if not lp["allowed"]]
+    for lp in loops:
+        lp.pop("_z", None)
+        lp.pop("_embed", None)
     non_manifold = int((counts > 2).sum())
     fan_v = fan_vertices(model.triangles, ids, side_edges, tri_open)
     boundary_n = int(boundary.sum())

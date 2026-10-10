@@ -305,6 +305,10 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     for _, a, b, *_ in walls:
         if abs(b[0] - a[0]) <= KEY_M:
             wall_ys.setdefault(_r(a[0]), set()).update({_r(a[1]), _r(b[1])})
+    for band, *_ in tp_solids:                        # a terrace parapet's ends cut the walls along y it meets
+        for ring in [g.exterior for g in shapely.get_parts(band)]:  # (its walkable part, inset, no longer does)
+            for x, y in ring.coords:
+                wall_ys.setdefault(_r(x), set()).add(_r(y))
     for o in openings:
         for s_ in (o["s0"], o["s1"]):
             if s_ <= KEY_M or s_ >= o["length"] - KEY_M:

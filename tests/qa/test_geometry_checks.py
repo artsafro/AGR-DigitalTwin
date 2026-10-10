@@ -445,3 +445,11 @@ def test_open_fans_and_the_inset_roof_are_one_fan_each():
     for dump in (box_dump(),):
         mesh = by_id(run(dump))["mesh"]
         assert mesh["status"] == "pass" and mesh["value"]["non_manifold_vertices"] == 0
+
+
+@pytest.mark.parametrize("spec_gap, gap, spec_overlap, overlap, ok", [
+    (0.006, 0.00654, 0.02, 0.02, False), (0.005, 0.00549, 0.02, 0.02, True), (0.005, 0.005, 0.02, 0.02049, True)])
+def test_plates_are_compared_unrounded(spec_gap, gap, spec_overlap, overlap, ok):
+    # Codex review 1 of PR #64: the raw gap / overlap against plate_tol_m, rounding only in the report
+    report = run(box_dump(roof_inset=gap, roof_embed=overlap), box_dump(), spec=plates(spec_gap, spec_overlap))
+    assert (by_id(report)["mesh"]["status"] == "pass") == ok
