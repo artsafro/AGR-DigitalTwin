@@ -475,30 +475,35 @@ def _flat_region(v, tris, z, region):
 
 
 def _vertical_near(p, line, z0, z1):
-    """Vertical triangles (of p, a triangle array) between z0 and z1 whose centre lies on line (5 mm)."""
+    """Vertical triangles (of p, a triangle array) between z0 and z1 lying along line: every vertex within
+    10 mm of it, so a face standing across the line is not taken for a face on it (review 3 of PR #61)."""
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
-    c = p.mean(axis=1)
     upright = np.abs(n[:, 2]) <= 0.01 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
     inside = (p[:, :, 2].min(axis=1) >= z0 - EVENT_MIN_M) & (p[:, :, 2].max(axis=1) <= z1 + EVENT_MIN_M)
-    return upright & inside & shapely.contains_xy(line.buffer(SAME_CONTOUR_M), c[:, 0], c[:, 1])
+    if not len(p):
+        return upright
+    # 2 x 5 mm: the line stops 5 mm short of the ledge outline, where the face's end vertices stand
+    near = shapely.distance(line, shapely.points(p[:, :, :2].reshape(-1, 2))).reshape(-1, 3).max(axis=1) <= 2 * SAME_CONTOUR_M
+    return upright & inside & near
 
 
 def _wall_cover(v, tris, line, z0, z1):
-    """Area of line x (z0..z1) actually covered by vertical faces: per straight piece of the line, the faces
-    on it are unrolled to (along, z) and united, so faces covering one place twice never make up for a
-    place covered by none (Codex review 2 of PR #61)."""
+    """Area of line x (z0..z1) actually covered by vertical faces: per straight piece of the line
+    (collinear pieces merged), the faces lying on it are unrolled to (along, z), united and clipped to the
+    piece, so faces covering one place twice never make up for a place covered by none (review 2 of PR
+    #61) and a face crossing a piece's end still counts on both sides (review 3)."""
     p = v[tris]
     p = p[_vertical_near(p, line, z0, z1)]
     total = 0.0
-    for piece in shapely.get_parts(line):
-        c = np.asarray(piece.coords)
+    for piece in shapely.get_parts(shapely.line_merge(line) if line.geom_type == "MultiLineString" else line):
+        c = np.asarray(piece.simplify(1e-9).coords)
         for a, b in zip(c[:-1], c[1:]):
             length = float(np.linalg.norm(b - a))
             if length <= SAME_CONTOUR_M:
                 continue
             u = (b - a) / length
-            seg = LineString([a, b]).buffer(SAME_CONTOUR_M, cap_style="flat")
-            on = p[shapely.contains_xy(seg, *p.mean(axis=1)[:, :2].T)]
+            off = np.abs((p[:, :, 0] - a[0]) * u[1] - (p[:, :, 1] - a[1]) * u[0]).max(axis=1)
+            on = p[off <= SAME_CONTOUR_M]
             flat2d = [Polygon(np.column_stack([(t[:, :2] - a) @ u, t[:, 2]])) for t in on]
             cover = shapely.unary_union([f for f in flat2d if f.area > 0]) if len(on) else Polygon()
             total += cover.intersection(shapely.box(0, z0, length, z1)).area

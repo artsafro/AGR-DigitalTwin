@@ -762,3 +762,33 @@ def test_extractor_asks_about_anything_else_standing_on_a_terrace():
     spec, report = extract_spec(d, SYNTH_OBJECT)
     assert [t.level for t in spec.terraces] == ["L1"]
     assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+
+
+def test_inner_face_cover_does_not_depend_on_extra_points_on_its_line():
+    # Codex review 3 of PR #61: a collinear point on the inner line (a walkable part split in two) must not
+    # drop the faces that cross it
+    from shapely.geometry import LineString
+    from dt_ai.spec.mesh import _wall_cover
+    v = np.array([[0.3, 0.3, 3.3], [0.3, 9.7, 3.3], [0.3, 9.7, 3.9], [0.3, 0.3, 3.9]])
+    tris = np.array([[0, 1, 2], [0, 2, 3]])
+    whole = _wall_cover(v, tris, LineString([(0.3, 0.3), (0.3, 9.7)]), 3.3, 3.9)
+    split = _wall_cover(v, tris, LineString([(0.3, 0.3), (0.3, 5.0), (0.3, 9.7)]), 3.3, 3.9)
+    assert whole == pytest.approx(9.4 * 0.6) and split == pytest.approx(whole)
+
+
+def test_a_fin_across_the_parapet_inner_face_is_a_question():
+    # Codex review 3 of PR #61: a face standing across the inner line is not the parapet
+    from dt_ai.spec import extract_spec
+    d, m, v = _west_terrace_dump()
+    west = lambda t: np.all(np.abs(t[:, 0] - 0.3) < 1e-6) and t[:, 1].min() >= 0.3 - 1e-6         and t[:, 1].max() <= 9.7 + 1e-6 and t[:, 2].min() >= 3.3 - 1e-6 and t[:, 2].max() <= 3.9 + 1e-6  # noqa: E731
+    _drop(m, v, west)                                       # the west inner face, rebuilt in two at y = 5
+    n = len(m["vertices"])
+    m["vertices"] += [[0.3, y, z] for y in (0.3, 5.0, 9.7) for z in (3.3, 3.9)]
+    for a in (0, 2):
+        m["triangles"] += [[n + a, n + a + 1, n + a + 3], [n + a, n + a + 3, n + a + 2]]
+        m["material_ids"] += [ROOF, ROOF]
+    m["vertices"] += [[0.1, 5.0, 3.6], [0.5, 5.0, 3.6]]   # a fin welded at (0.3, 5, 3.9), across the face
+    m["triangles"] += [[n + 3, n + 6, n + 7]]
+    m["material_ids"] += [ROOF]
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
