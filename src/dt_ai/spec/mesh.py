@@ -100,7 +100,7 @@ def _apply(m, pts):
 
 def _levels(dump, obj_cfg, m):
     helpers = [h for h in dump.get("helpers", []) if h["name"].startswith(LEVEL_PREFIX)]
-    bad = [h["name"] for h in helpers if not LEVEL_NAME.match(h["name"]) or LEVEL_COUNTER.search(h["name"])]
+    bad = [h["name"] for h in helpers if not LEVEL_NAME.fullmatch(h["name"]) or LEVEL_COUNTER.search(h["name"])]
     if bad:
         raise SpecError(f"level helper names {bad} break the pattern markup-helpers: LEVEL_<name>, no copy "
                         "suffix (.001, 001), no spaces; rename them in the source")
@@ -115,9 +115,11 @@ def _levels(dump, obj_cfg, m):
         z = _apply(m, [h["location"] for h in helpers])[:, 2]
         levels = [{"name": h["name"][len(LEVEL_PREFIX):], "elev_m": round(float(e), 4)}
                   for h, e in zip(helpers, z)]
-        zs = sorted(float(e) for e in z)
-        if any(b - a < LEVEL_SAME_M for a, b in zip(zs, zs[1:])):
-            raise SpecError("two level helpers at one height: one level given twice (pattern markup-helpers)")
+        at = sorted(zip((float(e) for e in z), (h["name"] for h in helpers)))
+        near = [f"{a[1]} {a[0]:.4f} m / {b[1]} {b[0]:.4f} m" for a, b in zip(at, at[1:]) if b[0] - a[0] < LEVEL_SAME_M]
+        if near:
+            raise SpecError(f"level helpers at one height (within {LEVEL_SAME_M * 1000:.0f} mm): {near}; one level "
+                            "given twice (pattern markup-helpers)")
     elif given:
         levels = [{"name": lv["name"], "elev_m": float(lv["elev_m"])} for lv in given]
     else:

@@ -430,6 +430,7 @@ def test_blender_dump_to_spec(tmp_path):
     (["LEVEL_L0", "LEVEL_L1", "LEVEL_roof001"], "copy suffix"),    # a 3ds Max counter
     (["LEVEL_L0", "LEVEL_L 1", "LEVEL_roof"], "copy suffix"),      # a space
     (["LEVEL_L0", "LEVEL_L1", "LEVEL_L1"], "more than once"),
+    (["LEVEL_L0", "LEVEL_L1", "LEVEL_roof\n"], "copy suffix"),     # a trailing newline (review 2 of PR #68)
 ])
 def test_level_helper_names_follow_the_pattern(names, message):
     dump = box_building()
@@ -442,7 +443,7 @@ def test_level_helper_names_follow_the_pattern(names, message):
 def test_two_level_helpers_at_one_height_are_an_error():
     dump = box_building()
     dump["helpers"].append({"name": "LEVEL_L1b", "location": [0.0, 0.0, 3.3]})
-    with pytest.raises(SpecError, match="one level given twice"):
+    with pytest.raises(SpecError, match=r"LEVEL_L1 3\.3000 m / LEVEL_L1b 3\.3000 m"):
         extract_spec(dump, OBJECT)
 
 
