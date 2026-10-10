@@ -530,3 +530,31 @@ def test_oblique_contours_build_without_t_junctions(contour):
         d["floors"][0]["contour"] = contour
     dump = build(edited(edit), INPUTS)
     assert topology_ok(dump)
+
+
+
+# Codex review 1 of PR #58: inputs that would weld into collapsed quads are errors
+
+
+@pytest.mark.parametrize("contour, window", [
+    ([[0, 0], [10, 0], [10, 6], [7.878679656440357, 8.121320343559642], [0, 8.121320343559642]], None),
+    ([[0, 0], [10, 0], [10, 3], [10.000002, 6], [10.000002, 9], [0, 9]],
+     {"wall": 2, "x_m": 0.5, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}),
+    ([[0, 0], [10, 0], [10, 0.00001], [0, 10]],
+     {"wall": 3, "x_m": 1.0, "sill_m": 0.9, "w_m": 0.2, "h_m": 1.5, "kind": "window"}),
+])
+def test_near_degenerate_inputs_build_clean_or_stop(contour, window):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+        d["floors"][0]["openings"] = [window] if window else []
+        d["roof"] = {"parapet_h_m": 0.0}
+    try:
+        dump = build(edited(edit), INPUTS)
+    except BuildError:
+        return
+    soup = from_dump(dump)
+    c = soup.corners()
+    area = np.linalg.norm(np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0]), axis=1) / 2
+    assert area.min() > 1e-9 and topology_ok(dump)
+    if window:
+        assert PLANE in set(soup.material_ids.tolist())     # never a window silently turned into facade

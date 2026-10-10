@@ -41,6 +41,7 @@ from shapely.geometry.polygon import orient
 from dt_ai.spec.model import Spec
 
 KEY_M = 1e-6          # vertices on one 1 µm grid are one vertex
+MIN_FEATURE_M = 1e-4  # no edge, cut gap or strip narrower than 0.1 mm is built: below it is noise, an error
 BUILT_KINDS = ("window", "door", None)
 SEAT_SHARE = {"npm_min": 1.0, "mid": 0.5}   # plane seat as a share of the opening depth (C24 final, user 2026-10-10)
 
@@ -128,6 +129,11 @@ def _contours(spec: Spec):
         pts = np.asarray(f.contour, float)
         if Polygon(pts).exterior.is_ccw is False:
             raise BuildError(f"floor {f.level}: contour must be counter-clockwise (spec contract)")
+        for i in range(len(pts)):
+            d = pts[(i + 1) % len(pts)] - pts[i]
+            if np.linalg.norm(d) < MIN_FEATURE_M or any(KEY_M < abs(c) < MIN_FEATURE_M for c in d):
+                raise BuildError(f"floor {f.level} wall {i} is shorter than 0.1 mm or off an axis by less than "
+                                 "0.1 mm; not built (Codex review 1 of PR #58)")
         contours.append(pts)
     return floors, contours
 
@@ -269,7 +275,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
             if s_ <= KEY_M or s_ >= o["length"] - KEY_M:
                 raise BuildError(f"{o['where']}: the opening reaches the wall end; corner openings are not built yet")
             x, y = o["a"] + o["u"] * s_
-            if abs(o["u"][0]) > KEY_M:
+            if abs(o["u"][0]) * o["length"] > KEY_M:    # the same test as the walls: not along y
                 xs.add(float(x))
             else:
                 wall_ys.setdefault(_r(x), set()).add(_r(y))
@@ -277,6 +283,8 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
             raise BuildError(f"{o['where']}: the opening must lie between the bottom level and below the roof level")
     _check_openings_on_walls(openings, contours, elev, top)
     xs = sorted({_r(v) for v in xs})
+    if any(x1 - x0 < MIN_FEATURE_M for x0, x1 in zip(xs, xs[1:])):
+        raise BuildError("two cut lines closer than 0.1 mm; not built (Codex review 1 of PR #58)")
     traps = _trapezoids(faces, xs)
     face_ys = _propagate(traps, walls, wall_ys)
     zs_all = _cuts(elev + [top] + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
@@ -284,12 +292,12 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     def along_cuts(a, b):
         length = float(np.linalg.norm(b - a))
         u = (b - a) / length
-        if abs(u[0]) <= KEY_M:                          # along y: the registry
+        if abs(b[0] - a[0]) <= KEY_M:                   # along y (one test everywhere): the registry
             cuts = [abs(y - a[1]) for y in wall_ys.get(_r(a[0]), ())
                     if min(a[1], b[1]) - KEY_M <= y <= max(a[1], b[1]) + KEY_M]
         else:                                           # any other direction: where the strips cross it
             cuts = [(x - a[0]) / u[0] for x in xs if min(a[0], b[0]) - KEY_M <= x <= max(a[0], b[0]) + KEY_M]
-        return sorted({round(v, 9) for v in cuts + [0.0, length] if -KEY_M <= v <= length + KEY_M}), u, length
+        return _settle(cuts, length, f"wall ({a[0]:.3f}, {a[1]:.3f}) -> ({b[0]:.3f}, {b[1]:.3f})"), u, length
 
     mesh = _Mesh()
     for kind, a, b, z_lo, z_hi in walls:
@@ -334,6 +342,8 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         right = [tr["c"]] + sorted(y for y in face_ys[(tr["z"], tr["x1"])] if tr["c"] + SNAP_M < y < tr["d"] - SNAP_M) + [tr["d"]]
         if len(left) != len(right):
             raise BuildError(f"cuts at {tr['z']} m between x {tr['x0']} and {tr['x1']} do not pair up; not built yet")
+        if any(q - p < MIN_FEATURE_M for side in (left, right) for p, q in zip(side, side[1:])):
+            raise BuildError(f"cuts at {tr['z']} m between x {tr['x0']} and {tr['x1']} closer than 0.1 mm; not built")
         x0, x1, z = tr["x0"], tr["x1"], tr["z"]
         for k in range(len(left) - 1):
             mesh.quad([[x0, left[k], z], [x1, right[k], z], [x1, right[k + 1], z], [x0, left[k + 1], z]],
@@ -343,6 +353,20 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
 
 def _r(v):
     return round(float(v), 9)
+
+
+def _settle(cuts, length, where):
+    """Cuts along a wall: ends included, a cut within 0.1 mm of an end taken as the end, and no two cuts
+    closer than 0.1 mm (they would weld into a collapsed quad, Codex review 1 of PR #58)."""
+    inner = sorted(round(v, 9) for v in cuts if MIN_FEATURE_M <= v <= length - MIN_FEATURE_M)
+    out = [0.0]
+    for v in inner + [round(length, 9)]:
+        if v - out[-1] < SNAP_M:
+            continue
+        if v - out[-1] < MIN_FEATURE_M:
+            raise BuildError(f"{where}: cuts closer than 0.1 mm; not built")
+        out.append(v)
+    return out
 
 
 SNAP_M = 1e-7          # a cut carried across faces and back lands within this of where it started
