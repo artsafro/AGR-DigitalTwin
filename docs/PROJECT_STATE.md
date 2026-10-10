@@ -115,6 +115,12 @@ B02, B02t all 8/8 etalon and engine model, two loops per slab. #60 merged: plan 
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
 plate within `plate_tol_m` 0.5 mm. B01 / B02 / B02t read 5 / 20 mm on every slab, 8/8.
+#65 merged: inset slabs around shafts (a shaft's foot = an inner outline of the hole, the plate's hole
+around it an inner outline of the plate; one to one per outline). #66 merged: ledges for `ledge-structure`
+are taken between final contours minus the raw section shape (no false question from door recesses or
+relief; found on KPP1). KPP1 v006 (option a, flat inset roof around the vent shaft) built by the job
+scripts: QA and SINTEZ as v005, spec v029 0 questions, comparison v030 with Revit match — PR #67, user
+acceptance open. K01 as a full benchmark needs a material-ID scheme for KPP1 and a `geometry` block.
 Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -195,9 +201,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: decisions on the choices page (C7, C8, C10, C25). Claude (user order 2026-10-10): KPP1 to the
-   inset rule by its build scripts (option a: a new version v006 with an inset roof), K01 run; then markup
-   helpers MH1-MH3; issue #56; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v006 acceptance (PR #67); how K01 gets
+   material IDs and geometry thresholds. Claude: PR #67 reviews; then markup helpers MH1-MH3; issue #56;
+   extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
