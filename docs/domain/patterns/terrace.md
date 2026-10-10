@@ -1,6 +1,6 @@
 # Terrace (`terrace`)
 
-Status: draft. Source: user decisions 2026-10-10 (a terrace = a floor-step ledge with a parapet
+Status: proven on benchmark `bench-b02t-terrace` (user 2026-10-10). Source: user decisions 2026-10-10; benchmark `bench-b02t-terrace` (a terrace = a floor-step ledge with a parapet
 from the spec; thickness = the build input `parapet_thickness_m`; PR A engine, PR B extractor +
 etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 
@@ -18,6 +18,16 @@ etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 - Cap: the band at the top (roof ID); walkable terrace: the ledge minus the band (roof ID).
 - The floor-above wall cells behind the parapet's ends are hidden and not built.
 
+## How the extractor reads it (`src/dt_ai/spec/mesh.py`, `_terrace`)
+
+- A storey with exactly two section shapes: the lower one from the level up to the parapet top equals
+  the floor below's contour (within 5 mm), the upper one runs from there to the storey top and lies
+  inside it. The upper shape is the storey contour; `parapet_h_m` = parapet top − the level.
+- Structure, not a height difference: up-facing faces at the level (walkable) and at the parapet top
+  (cap) inside the ledge must cover the ledge within 2 % (`TERRACE_COVER`). Else the storey stays
+  "contour unclear" (no guess); `contour_at_m` still overrides.
+- A spec with terraces is written as v0.4; the report gives walkable, cap and ledge areas per level.
+
 ## Profiles
 
 - Same in `npm_min` and `mid`.
@@ -31,4 +41,3 @@ etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 
 - No step under the level, a ledge with no outer edge, or a parapet leaving no walkable part: BuildError.
 - A terrace parapet the spec does not give stays a question (`questions.md`), never a guess.
-- The extractor does not read terrace parapets yet (PR B): until then they come out as questions.

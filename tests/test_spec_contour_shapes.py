@@ -363,3 +363,58 @@ def test_close_vertex_rows_do_not_hide_an_element():
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     q = only_question(dump_of(b))
     assert (q["wall"], q["depth_m"], q["length_m"], q["facade_share"]) == (0, 0.2, 1.0, 0.1)
+
+
+def test_lower_walls_reaching_above_the_level_are_no_terrace():
+    # pattern terrace (PR B): the lower floor's walls go on 0.6 m above LEVEL_L1 but there is no walkable
+    # part at the level (the ledge top is at 3.9): a height difference, not a parapet -> still unclear
+    upper = [[4, 0], [10, 0], [10, 10], [4, 10]]
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 3.9, extra_z=(3.3,))
+    walls(b, upper, 3.9, 6.6)
+    flat(b, Polygon(SQUARE10).difference(Polygon(upper)), 3.9, up=True)
+    flat(b, Polygon(upper), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends and the tallest"):
+        extract_spec(dump_of(b), OBJECT)
+
+
+WEST = [[4, 0], [10, 0], [10, 10], [4, 10]]
+LEDGE = Polygon(SQUARE10).difference(Polygon(WEST))
+
+
+def stepped_shell(walk=None, cap=None):
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 3.9, extra_z=(3.3,), extra_u={0: [0.05, 4], 2: [6, 9.95]})
+    walls(b, WEST, 3.9, 6.6)
+    if walk is not None:
+        flat(b, walk, 3.3)
+    if cap is not None:
+        flat(b, cap, 3.9)
+    flat(b, Polygon(WEST), 6.6)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    return dump_of(b)
+
+
+@pytest.mark.parametrize("walk, cap", [
+    (shapely.box(0, 0, 2, 10), shapely.box(0, 0, 2, 10)),    # areas add up to the ledge, but one half is covered twice
+    (shapely.box(0, 0, 0.05, 10), LEDGE),                       # a sliver at the level under a full ceiling, no inner face
+])
+def test_area_sums_alone_never_make_a_terrace(walk, cap):
+    # Codex review 1 of PR #61: coverage in plan, no overlap and the parapet's inner face, not area sums
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends and the tallest"):
+        extract_spec(stepped_shell(walk, cap), OBJECT)
+
+
+def test_a_parapet_on_part_of_a_ledge_is_a_question():
+    # Codex review 1 of PR #61: structure on a ledge that is no terrace never disappears silently
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 3.3, extra_u={0: [0.3, 4], 2: [6, 9.7]})
+    walls(b, WEST, 3.3, 6.6)
+    b.box((0, 0, 3.3), (0.3, 10, 3.9))
+    flat(b, LEDGE.difference(shapely.box(0, 0, 0.3, 10)), 3.3)
+    flat(b, Polygon(WEST), 6.6)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, report = extract_spec(dump_of(b), OBJECT)
+    assert spec.terraces == []
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]

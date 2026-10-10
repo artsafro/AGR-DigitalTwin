@@ -18,4 +18,4 @@ Status: draft / proven on benchmark / in work. A pattern changes only with the u
 | Vent grille | `vent-grille` | inset grille: an opening of kind `grille`; texture in `npm_min`, geometry in `mid` | draft |
 | Inset roof plane | `roof-inset-plane` | the roof covering as a separate plane embedded into the parapet, +2-10 mm: no height; its joint = two open loops (hole A, plane B) | draft |
 | Floor step | `floor-step` | a contour per floor; at the step a ledge (up, roof ID) or a soffit (down, facade ID) | draft |
-| Terrace | `terrace` | a floor-step ledge with a parapet from the spec (`terraces`, v0.4): outer face, inner face, cap, walkable part | draft |
+| Terrace | `terrace` | a floor-step ledge with a parapet from the spec (`terraces`, v0.4): outer face, inner face, cap, walkable part | proven on benchmark (`bench-b02t-terrace`, user 2026-10-10) |

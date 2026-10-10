@@ -680,3 +680,115 @@ def test_terrace_on_a_ledge_in_two_parts():
     assert topology_ok(dump)
     assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(2 * (0.3 * 10 + 2 * 0.3 * 1.7))   # two caps
     assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(2 * 1.7 * 9.4)                    # two walkable parts
+
+
+# Terrace PR B: the extractor reads the terrace parapet back (engine model -> spec, round trip)
+
+SYNTH_OBJECT = {"id": "bench-synth-terrace", "frame": {"to_object": np.eye(4).tolist()}}
+
+
+def split_ledge(d):
+    d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                   {"level": "L1", "contour": [[2, 0], [8, 0], [8, 10], [2, 10]], "openings": []}]
+
+
+@pytest.mark.parametrize("edit, h", [(west_ledge, 0.3), (west_ledge, 0.6), (west_ledge, 1.2), (split_ledge, 0.6)])
+def test_extractor_reads_the_terrace_parapet_back(edit, h):
+    from dt_ai.spec import extract_spec
+    s = terraced(edit, h)
+    spec, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
+    assert spec.spec_version == "0.4" and [t.model_dump() for t in spec.terraces] == [{"level": "L1", "parapet_h_m": h}]
+    assert [f.contour for f in spec.expanded_floors()] == [f.contour for f in s.expanded_floors()]
+    assert report["questions"] == []
+    t = report["floors"]["L1"]["terrace"]
+    assert t["walkable_m2"] + t["cap_m2"] == pytest.approx(t["ledge_m2"])
+
+
+def test_extractor_reads_no_terrace_on_a_plain_step():
+    from dt_ai.spec import extract_spec
+    spec, report = extract_spec(build(edited(west_ledge), INPUTS), SYNTH_OBJECT)
+    assert spec.terraces == [] and spec.spec_version == "0.3" and "terrace" not in report["floors"]["L1"]
+
+
+def test_b02_terrace_spec_round_trip():
+    from dt_ai.spec import extract_spec
+    data = json.loads((ROOT / "benchmark/bench-b02t-terrace/spec.json").read_text(encoding="utf-8"))
+    s = Spec.model_validate(data)
+    spec, report = extract_spec(build(s, INPUTS), {**SYNTH_OBJECT, "id": s.id})
+    keep = lambda x: {k: v for k, v in x.model_dump().items() if k != "frame"}   # noqa: E731
+    assert keep(spec) == keep(s) and report["questions"] == []
+
+
+def _west_terrace_dump():
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    m.pop("polygons", None)
+    m.pop("polygon_sizes", None)
+    return d, m, np.asarray(m["vertices"], float)
+
+
+def _drop(m, v, where):
+    keep = [i for i, t in enumerate(m["triangles"]) if not where(v[t])]
+    m["triangles"] = [m["triangles"][i] for i in keep]
+    m["material_ids"] = [m["material_ids"][i] for i in keep]
+
+
+def test_extractor_wants_the_whole_parapet_inner_face_not_its_area():
+    # Codex review 2 of PR #61: the west inner face is missing; copies of the south one make up its area
+    from dt_ai.spec import SpecError, extract_spec
+    d, m, v = _west_terrace_dump()
+    west = lambda t: np.all(np.abs(t[:, 0] - 0.3) < 1e-6) and t[:, 2].max() <= 3.9 + 1e-6   # noqa: E731
+    _drop(m, v, west)                                       # 9.4 x 0.6 = 5.64 m2 gone
+    for xa, xb in ((0.3, 4.0), (0.3, 4.0), (0.3, 2.3)):    # 2.22 + 2.22 + 1.2 = 5.64 m2 more on the south face
+        n = len(m["vertices"])
+        m["vertices"] += [[xa, 0.3, 3.3], [xb, 0.3, 3.3], [xb, 0.3, 3.9], [xa, 0.3, 3.9]]
+        m["triangles"] += [[n, n + 2, n + 1], [n, n + 3, n + 2]]
+        m["material_ids"] += [ROOF, ROOF]
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)
+
+
+def test_extractor_asks_about_anything_else_standing_on_a_terrace():
+    # Codex review 2 of PR #61: a block on the walkable part is no parapet and never disappears silently
+    from dt_ai.spec import extract_spec
+    d, m, v = _west_terrace_dump()
+    n = len(m["vertices"])
+    x0, y0, x1, y1, z0, z1 = 0.3, 0.3, 0.8, 0.8, 3.3, 4.3          # welded at the walkable corner
+    m["vertices"] += [[x, y, z] for z in (z0, z1) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+    quads = [(4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    for a, b, c, e in quads:
+        m["triangles"] += [[n + a, n + b, n + c], [n + a, n + c, n + e]]
+        m["material_ids"] += [FACADE, FACADE]
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    assert [t.level for t in spec.terraces] == ["L1"]
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+
+
+def test_inner_face_cover_does_not_depend_on_extra_points_on_its_line():
+    # Codex review 3 of PR #61: a collinear point on the inner line (a walkable part split in two) must not
+    # drop the faces that cross it
+    from shapely.geometry import LineString
+    from dt_ai.spec.mesh import _wall_cover
+    v = np.array([[0.3, 0.3, 3.3], [0.3, 9.7, 3.3], [0.3, 9.7, 3.9], [0.3, 0.3, 3.9]])
+    tris = np.array([[0, 1, 2], [0, 2, 3]])
+    whole = _wall_cover(v, tris, LineString([(0.3, 0.3), (0.3, 9.7)]), 3.3, 3.9)
+    split = _wall_cover(v, tris, LineString([(0.3, 0.3), (0.3, 5.0), (0.3, 9.7)]), 3.3, 3.9)
+    assert whole == pytest.approx(9.4 * 0.6) and split == pytest.approx(whole)
+
+
+def test_a_fin_across_the_parapet_inner_face_is_a_question():
+    # Codex review 3 of PR #61: a face standing across the inner line is not the parapet
+    from dt_ai.spec import extract_spec
+    d, m, v = _west_terrace_dump()
+    west = lambda t: np.all(np.abs(t[:, 0] - 0.3) < 1e-6) and t[:, 1].min() >= 0.3 - 1e-6         and t[:, 1].max() <= 9.7 + 1e-6 and t[:, 2].min() >= 3.3 - 1e-6 and t[:, 2].max() <= 3.9 + 1e-6  # noqa: E731
+    _drop(m, v, west)                                       # the west inner face, rebuilt in two at y = 5
+    n = len(m["vertices"])
+    m["vertices"] += [[0.3, y, z] for y in (0.3, 5.0, 9.7) for z in (3.3, 3.9)]
+    for a in (0, 2):
+        m["triangles"] += [[n + a, n + a + 1, n + a + 3], [n + a, n + a + 3, n + a + 2]]
+        m["material_ids"] += [ROOF, ROOF]
+    m["vertices"] += [[0.1, 5.0, 3.6], [0.5, 5.0, 3.6]]   # a fin welded at (0.3, 5, 3.9), across the face
+    m["triangles"] += [[n + 3, n + 6, n + 7]]
+    m["material_ids"] += [ROOF]
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
