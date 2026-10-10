@@ -70,10 +70,17 @@ for the user's decisions. PR #50 (2026-10-10, three Codex review rounds): engine
 `src/dt_ai/geometry/from_spec.py` builds a quad, welded mesh dump from a spec (walls by contour,
 holes with reveals and planes, roof, parapet; unsupported shapes are errors); the B01 fixture spec
 passes all 8 benchmark checks against the synthetic box — first spec -> model -> checkers loop,
-synthetic only. C24 decided (user, 2026-10-10): plane seat by profile, `npm_min` half the opening
-depth, `mid` full depth, no reveal behind the plane. B01 modeller brief: Claude Docs
-https://claude.ai/code/artifact/62e3769e-f61e-4c7c-96ee-7682fea85a5f. Human tickets: #2 (move `Unreal/`), #4 (window
-library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
+synthetic only. PR #51 (2026-10-10): `tools/qa/run_benchmark.py` runs etalon FBX -> spec -> engine ->
+`tools/export/export_mesh_blender.py` -> FBX readback -> checks; first green B01 run on the user's
+etalon (files in `data/benchmark/bench-b01-box/`, hashes in `etalon.json`, `docs/cases.md`); #12-#14
+closed. PR #52: C24 final (user, 2026-10-10, replaces the same-day reversed rule) — one opening depth
+per building, `depth_m` only as an exception; `npm_min` plane = back polygon at the full depth, `mid`
+at half; the extractor takes the depth from the opening plane (else the reveal, never the glass) and
+asks about a plane or glass flush with the facade; the checker wants the profile's seat ±2 cm. B01
+etalon moved to 0.2 m (run-v003 green); KPP1 v025 still matches Revit. Modeller briefs (Claude
+Docs): B01 https://claude.ai/code/artifact/62e3769e-f61e-4c7c-96ee-7682fea85a5f, B02
+https://claude.ai/code/artifact/e332aa9d-b0ae-4084-b70b-735eda67f741. Human tickets: #2 (move `Unreal/`),
+#4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
 ## Repository
@@ -153,10 +160,11 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: B01 etalon in 3ds Max (#12, `benchmark/bench-b01-box/README.md`); decisions on the choices
-   page (C7, C8, C10, C25). Claude: Blender/FBX writer and a CLI so the chain runs from the etalon
-   FBX to the checker report; after #12: spec of B01 (#13), etalon against itself, first green run (#14); extractor follow-ups #21-#24, #28, #34, #37,
-   #45 when they block a benchmark (one writing agent, one branch per ticket, Codex review per PR).
+0. User: B02 etalon by the brief (`data/benchmark/bench-b02-corner-niche/`); decisions on the choices
+   page (C7, C8, C10, C25). Claude: engine for non-90 corners and different floor contours (B02:
+   oblique wall, contour niche, terrace + upper block), then the B02 run; extractor follow-ups
+   #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
+   Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
 2. Claude: KPP1 — real `run_all.sh` run on a new version to confirm the merged runner;
