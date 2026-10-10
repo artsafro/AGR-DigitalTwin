@@ -35,7 +35,8 @@ etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 ## Check
 
 - `floor_areas`, `silhouettes`, `mesh` (quads, no open loop but the bottom ring; a terrace may also
-  carry an inset covering, pattern `roof-inset-plane`); walkable + cap = the ledge area.
+  carry no other loop: the walkable part is an inset plate, pattern `roof-inset-plane`, required);
+  walkable + cap = the ledge area.
 
 ## Traps
 

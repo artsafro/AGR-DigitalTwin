@@ -15,9 +15,10 @@ Brief (Claude Docs): https://claude.ai/code/artifact/95f7af8a-f484-4d9e-80ce-2a0
 outside git in `data/benchmark/bench-b02t-terrace/`, hashes in `etalon.json`; `spec.json` extracted
 from it: the B02 spec plus `terraces: [{"level": "L1", "parapet_h_m": 0.6}]`, spec v0.4.
 
-Status 2026-10-10: **waiting for the inset PR** — on etalon v2 the checker does not know the terrace
-joint yet and the extractor finds no walkable part at the level (no tolerance is relaxed). Etalon v1
-(welded terrace), run-v002: spec as the brief, 0 questions (L1 contour rule "terrace: parapet
+Status 2026-10-10 (etalon v2, run-inset-v001): spec unchanged, 0 questions (the walkable part read
+from the inset plate 5 mm above the level); etalon against itself 8/8 and the engine model's FBX
+readback 8/8, both with two loops per slab (roof 6.600 / 6.605, terrace 3.300 / 3.305, embed 20 mm).
+Etalon v1 (welded terrace), run-v002: spec as the brief, 0 questions (L1 contour rule "terrace: parapet
 0.600 m from the level"; walkable 45.42 + cap 6.48 = ledge 51.9 m2); etalon against itself 8/8; the
 engine builds B02t and its FBX readback passes 8/8 against the etalon.
 
