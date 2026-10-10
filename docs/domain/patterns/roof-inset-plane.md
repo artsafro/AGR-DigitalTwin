@@ -22,7 +22,9 @@ etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `t
    Both are building parameters of the spec (user 2026-10-10), default 5 mm / 20 mm as in the etalons;
    the pattern allows a gap of 2-10 mm (`roof_inset_gap_m`) and an overlap of 10-50 mm
    (`roof_inset_embed_m`). A level may hold several slabs (a ledge in parts): each A pairs with exactly
-   one B overlapping it.
+   one B overlapping it. A shaft through a slab stands in the hole as a part of its own: its foot is an
+   inner outline of A, and the plate's hole around it an inner outline of B, shrunk by the same overlap
+   (loops of a level read as regions by even-odd).
 3. No height of the spec comes from contour B: levels are the `LEVEL_` helpers; the parapet is measured
    from the level.
 4. Required, not only allowed: the roof with a parapet and every terrace must carry the joint; a solid

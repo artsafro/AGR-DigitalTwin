@@ -303,7 +303,7 @@ def test_two_inset_planes_on_one_roof_are_not_allowed():
     patch = ([[3, 3, 6.605], [4, 3, 6.605], [4, 4, 6.605], [3, 4, 6.605]], ROOF)
     report = run(box_dump(roof_inset=0.005, extra=[patch]), box_dump(roof_inset=0.005))
     assert by_id(report)["mesh"]["status"] == "fail"
-    assert [k for k, _, ok in loops_of(report) if not ok] == ["other"]           # the extra plate, no hole under it
+    assert "other" in [k for k, _, ok in loops_of(report) if not ok]          # the extra plate: no slab joint
 
 
 def test_open_bottom_ring_is_allowed():
@@ -460,3 +460,48 @@ def test_plates_exactly_at_the_tolerance_pass(gap, overlap):
     # Codex review 2 of PR #64: plate_tol_m itself passes despite floating-point roundoff
     report = run(box_dump(roof_inset=gap, roof_embed=overlap), box_dump(), spec=plates(0.005, 0.02))
     assert by_id(report)["mesh"]["status"] == "pass"
+
+
+def shaft_roof(inner_overlap=0.02):
+    """box_dump with a vent shaft 2 x 2 m through the inset roof: shaft walls from the roof level up to
+    7.5 m (their foot = an inner outline of the hole), the plate with a hole around the shaft, shrunk by
+    inner_overlap (synthetic)."""
+    import shapely
+    dump = box_dump(roof_inset=0.005)
+    body = dump["meshes"][0]
+    v = np.asarray(body["vertices"], float)
+    keep = [k for k, t in enumerate(body["triangles"]) if not np.all(np.abs(v[t][:, 2] - 6.605) < 1e-9)]
+    body["triangles"] = [body["triangles"][k] for k in keep]
+    body["material_ids"] = [body["material_ids"][k] for k in keep]
+    body.pop("polygon_sizes", None)
+    tris = []
+    plate = shapely.Polygon([(0.28, 0.28), (9.72, 0.28), (9.72, 9.72), (0.28, 9.72)],
+                            [[(4 + inner_overlap, 4 + inner_overlap), (6 - inner_overlap, 4 + inner_overlap),
+                              (6 - inner_overlap, 6 - inner_overlap), (4 + inner_overlap, 6 - inner_overlap)]])
+    for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(plate)):
+        a, b, c = list(tri.exterior.coords)[:3]
+        if (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0:
+            b, c = c, b
+        tris.append(([[*a, 6.605], [*b, 6.605], [*c, 6.605]], ROOF))
+    sq = [(4, 4), (6, 4), (6, 6), (4, 6)]
+    for (x0, y0), (x1, y1) in zip(sq, sq[1:] + sq[:1]):     # shaft walls facing out of the shaft, into the roof
+        tris += [([[x1, y1, 6.6], [x0, y0, 6.6], [x0, y0, 7.5]], ROOF), ([[x1, y1, 6.6], [x0, y0, 7.5], [x1, y1, 7.5]], ROOF)]
+    tris += [([[4, 4, 7.5], [6, 4, 7.5], [6, 6, 7.5]], ROOF), ([[4, 4, 7.5], [6, 6, 7.5], [4, 6, 7.5]], ROOF)]
+    pts = [p for t, _ in tris for p in t]
+    n = len(body["vertices"])
+    body["vertices"] += pts
+    body["triangles"] += [[n + 3 * i, n + 3 * i + 1, n + 3 * i + 2] for i in range(len(tris))]
+    body["material_ids"] += [m for _, m in tris]
+    body["polygon_sizes"] = [3] * len(body["triangles"])
+    return dump
+
+
+@pytest.mark.parametrize("inner, ok", [(0.02, True), (0.03, False)])
+def test_a_shaft_through_an_inset_roof_is_an_inner_outline_of_its_joint(inner, ok):
+    # KPP1 (user 2026-10-10, flat inset roof around its vent shaft): the shaft's foot is an inner outline
+    # of the hole, the plate's hole around the shaft an inner outline of the plate, the same overlap
+    report = run(shaft_roof(inner), shaft_roof(0.02))
+    mesh = by_id(report)["mesh"]
+    assert (mesh["status"] == "pass") == ok, loops_of(report)
+    if ok:
+        assert sorted(k for k, *_ in loops_of(report)) == ["roof-foot", "roof-foot", "roof-plane", "roof-plane"]

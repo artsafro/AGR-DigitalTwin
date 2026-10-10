@@ -558,12 +558,16 @@ def _inset_plates(v, extra, z0, region):
 
 
 def _holes(v, tris, z):
-    """Closed outlines of the body's open edges lying flat at height z (the holes of inset slabs)."""
+    """The holes of inset slabs at height z: regions bounded by the body's open edges lying flat there,
+    by even-odd, so a shaft's foot is an inner outline of its hole (KPP1, user 2026-10-10)."""
     e = np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1)
     edges, count = np.unique(e, axis=0, return_counts=True)
     once = edges[count == 1]
     once = once[np.abs(v[once][:, :, 2] - z).max(axis=1) <= WELD_M]
-    return list(polygonize([LineString(v[pair][:, :2]) for pair in once]))
+    area = Polygon()
+    for ring in polygonize([LineString(v[pair][:, :2]) for pair in once]):
+        area = area.symmetric_difference(Polygon(ring.exterior))
+    return [g for g in shapely.get_parts(area) if g.geom_type == "Polygon" and g.area > WELD_M ** 2]
 
 
 def _plate_params(v, body, extra, z, region):
@@ -572,7 +576,8 @@ def _plate_params(v, body, extra, z, region):
     level, and how far it overlaps the one hole of the body it lies over, outline to outline, evenly all
     round as the checker wants it (review 1 of PR #64). A slab with no readable plate is a problem too."""
     plates, bad = _inset_plates(v, extra, z, region)
-    holes = _holes(v, body, z)
+    # the hole's outlines from every part: a shaft standing in the hole is a part of its own (KPP1)
+    holes = _holes(v, body if extra is None or not len(extra) else np.vstack([body, extra]), z)
     out, problems = [], ["a plate that is not flat"] * bad
     for part, gap in plates:
         inside = [h for h in holes if part.buffer(-WELD_M).contains(h)]

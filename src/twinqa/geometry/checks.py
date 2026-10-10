@@ -170,30 +170,46 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
                     "closed": closed, "_segs": segs})
     shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
     lo, hi = tol["roof_inset_embed_m"]
+    w = tol["weld_m"]
     for name in {lp["level"] for lp in out if lp["level"]}:
         planes = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-plane"]
         feet = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-foot"]
-        # one slab = exactly two closed loops, A (foot) and B (plate): every A has exactly one B around it
-        # and every B exactly one A inside it; a level may hold several slabs (a ledge in parts)
-        polys = {id(lp): shape(lp) for lp in planes + feet}
+        # one slab = the hole A (outer foot loop, and an inner one per shaft) and the plate B (its outline,
+        # and an inner one around each shaft): regions by even-odd of the loops of a level, so a shaft's
+        # loops are the region's inner outlines (KPP1, user 2026-10-10); every A region lies under exactly
+        # one B region and every B region over exactly one A; B is A grown by one even overlap, outer
+        # outline out and inner outlines in; a level may hold several slabs (a ledge in parts)
+        rings = {id(lp): shape(lp) for lp in planes + feet}
+        good_feet = [lp for lp in feet if len(rings[id(lp)]) == 1]
+        good_planes = [lp for lp in planes if len(rings[id(lp)]) == 1]
+
+        def regions(loops):
+            area = shapely.Polygon()
+            for lp in loops:
+                area = area.symmetric_difference(rings[id(lp)][0])
+            return [g for g in shapely.get_parts(area) if g.geom_type == "Polygon" and g.area > w * w]
+
+        def owners(region, loops):
+            edge = region.boundary.buffer(w)
+            return [lp for lp in loops if edge.contains(rings[id(lp)][0].exterior)]
+
+        a_regions, b_regions = regions(good_feet), regions(good_planes)
         paired = set()
-        for f in feet:
-            a_ = polys[id(f)]
-            around = [pl for pl in planes if len(a_) == 1 and len(polys[id(pl)]) == 1
-                      and polys[id(pl)][0].buffer(-tol["weld_m"]).contains(a_[0])]
-            if len(around) != 1:
+        for b_ in b_regions:
+            under = [a_ for a_ in a_regions if b_.buffer(-w).contains(a_)]
+            if len(under) != 1 or sum(1 for g in b_regions if g.buffer(-w).contains(under[0])) != 1:
                 continue
-            pl = around[0]
-            if sum(1 for g in feet if len(polys[id(g)]) == 1 and polys[id(pl)][0].contains(polys[id(g)][0])) != 1:
-                continue
-            b_ = polys[id(pl)][0]
-            embed = float(a_[0].exterior.distance(b_.exterior))
+            a_ = under[0]
+            embed = float(a_.boundary.distance(b_.boundary))
             # sharp corners keep their full mitre (no clipping); evenness within the weld tolerance
-            grown = a_[0].buffer(embed, join_style="mitre", mitre_limit=1e6)
-            even = float(grown.exterior.hausdorff_distance(b_.exterior)) <= tol["weld_m"]
-            if even and lo - tol["weld_m"] <= embed <= hi + tol["weld_m"]:
-                pl["embed_m"], pl["_embed"] = round(embed, 4), embed
-                paired |= {id(f), id(pl)}
+            grown = a_.buffer(embed, join_style="mitre", mitre_limit=1e6)
+            even = (grown.geom_type == "Polygon" and len(grown.interiors) == len(b_.interiors)
+                    and float(grown.boundary.hausdorff_distance(b_.boundary)) <= w)
+            if even and lo - w <= embed <= hi + w:
+                for pl in owners(b_, good_planes):
+                    pl["embed_m"], pl["_embed"] = round(embed, 4), embed
+                    paired.add(id(pl))
+                paired |= {id(f) for f in owners(a_, good_feet)}
         for lp in planes + feet:
             if id(lp) not in paired:
                 lp["kind"] = "other"
