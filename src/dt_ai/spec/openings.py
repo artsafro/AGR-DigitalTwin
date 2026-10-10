@@ -35,8 +35,9 @@ PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within 
 # defaults of the extraction thresholds; a benchmark's tolerances.json (spec_extract) gives the values
 # in use (user decision 2026-10-09)
 DEPTH_EXCEPTION_M = 0.10  # a measured depth further than this from the spec default is written (#36)
-# the depth is the way from the facade to the back polygon of the opening (plane, else glass); a back
-# polygon not deeper than this is flush with the facade: relief or a drawing, not an opening — a question
+# the depth is the way from the facade to the back polygon of the opening (the opening plane; without one, the
+# reveal), never the glass position; an opening with a plane or glass not deeper than this is flush with the
+# facade: relief or a drawing, not an opening — a question
 # (C24 final, user decision 2026-10-10)
 FLUSH_M = 0.01
 GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
@@ -579,8 +580,11 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
             if not matches:
                 holes.append(g)
         for h in holes:
-            ids = {pl["material_id"] for pl in plane_items if pl["level"] == li and _overlap(h, pl)}
-            h["back"] = bool(ids) or bool(h.get("glass_z"))   # a back polygon: an opening plane or glass
+            over = [pl for pl in plane_items if pl["level"] == li and _overlap(h, pl)]
+            ids = {pl["material_id"] for pl in over}
+            if over:                                 # depth = facade -> back polygon, the opening plane (C24 final,
+                h["depth"] = max(pl["depth"] for pl in over)   # 2026-10-10); glass never sets the depth
+            h["back"] = bool(over) or bool(h.get("glass_z"))   # a back polygon or glass: the flush check applies
             if ids:                                  # two planes with different ids: no id is invented
                 h["material_id"] = ids.pop() if len(ids) == 1 else None
                 h["plane_conflict"] = len(ids) > 0
