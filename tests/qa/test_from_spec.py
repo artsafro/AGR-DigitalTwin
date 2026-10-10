@@ -5,6 +5,7 @@ the spec is tests/fixtures/spec-b01-v0.3.json. Build inputs the spec does not ca
 thickness, material IDs) are given explicitly, as `jobs/<object>/materials.json` will.
 """
 import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +15,9 @@ from dt_ai.geometry.from_spec import BuildError, BuildInputs, build
 from dt_ai.spec.model import Spec
 from test_geometry_checks import FACADE, PLANE, REVEAL, ROOF, TOL, box_dump
 from twinqa.geometry import checks
+import run_benchmark
 from twinqa.geometry.mesh import edge_uses, from_dump, weld
+from twinqa.scene import find_blender
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
@@ -230,3 +233,89 @@ def test_checker_wants_the_plane_at_the_profiles_seat():
     assert "opening_planes" in report["failed"]
     mid = edited(lambda d: d.update({"profile": "mid"}))
     assert by_id(checks.run(from_dump(half), from_dump(half), mid, TOL))["opening_planes"]["status"] == "pass"
+# The chain from an etalon FBX to the checker report (tools/qa/run_benchmark.py), synthetic etalon
+
+
+@pytest.mark.blender
+@pytest.mark.skipif(find_blender() is None, reason="Blender not installed")
+def test_chain_from_a_synthetic_etalon_fbx_to_a_green_report(tmp_path):
+    src = tmp_path / "etalon-src.json"
+    src.write_text(json.dumps({**box_dump(), "source": "etalon.fbx"}), encoding="utf-8")
+    base = [find_blender(), "--background", "--factory-startup", "--disable-autoexec", "--python-exit-code", "1"]
+    subprocess.run(base + ["--python", str(ROOT / "tools/export/export_mesh_blender.py"), "--", str(src),
+                           str(tmp_path / "etalon.blend"), str(tmp_path / "etalon.fbx")], check=True, capture_output=True)
+    bench = ROOT / "benchmark/bench-b01-box"
+    argv = ["--etalon", str(tmp_path / "etalon.fbx"), "--object", str(bench / "object.json"),
+            "--tolerances", str(bench / "tolerances.json"), "--output", str(tmp_path / "run")]
+    assert run_benchmark.main(argv) == 0
+    summary = json.loads((tmp_path / "run/summary.json").read_text(encoding="utf-8"))
+    assert summary["steps"]["spec"] == {"status": "done", "questions": 0}
+    assert summary["steps"]["etalon_self"]["passed"] and summary["steps"]["model_check"]["passed"]
+    spec = json.loads((tmp_path / "run/spec.json").read_text(encoding="utf-8"))
+    assert [lv["elev_m"] for lv in spec["levels"]] == pytest.approx([0.0, 3.3, 6.6], abs=1e-3)
+    assert run_benchmark.main(argv) == 2                       # the run folder is never reused
+
+
+def test_build_inputs_come_from_object_json_and_are_never_defaulted():
+    obj = json.loads((ROOT / "benchmark/bench-b01-box/object.json").read_text(encoding="utf-8"))
+    assert BuildInputs.from_object(obj) == INPUTS
+    with pytest.raises(BuildError, match="no build block"):
+        BuildInputs.from_object({"id": "x"})
+    with pytest.raises(BuildError, match="build block"):
+        BuildInputs.from_object({"id": "x", "build": {"parapet_thickness_m": 0.3, "ids": {"facade": 1}}})
+
+
+# Codex review 1 of PR #51
+
+
+def export(tmp_path, mesh, name="x"):
+    src = tmp_path / f"{name}.json"
+    src.write_text(json.dumps({"meshes": [mesh], "helpers": []}), encoding="utf-8")
+    base = [find_blender(), "--background", "--factory-startup", "--disable-autoexec", "--python-exit-code", "1"]
+    done = subprocess.run(base + ["--python", str(ROOT / "tools/export/export_mesh_blender.py"), "--", str(src),
+                                  str(tmp_path / f"{name}.blend"), str(tmp_path / f"{name}.fbx")],
+                          capture_output=True, text=True)
+    return done.returncode, done.stdout + done.stderr
+
+
+CONCAVE = {"name": "q", "vertices": [[0, 0, 0], [2, 0, 0], [2, 2, 0], [1.5, 0.5, 0]]}
+
+
+@pytest.mark.blender
+@pytest.mark.skipif(find_blender() is None, reason="Blender not installed")
+@pytest.mark.parametrize("mesh, ok, message", [
+    ({**CONCAVE, "triangles": [[0, 1, 3], [1, 2, 3]], "material_ids": [1, 1], "polygon_sizes": [4]}, True, ""),
+    ({**CONCAVE, "triangles": [[0, 1, 2], [0, 2, 3]], "material_ids": [1, 0], "polygon_sizes": [4]}, False, "id 0"),
+    ({**CONCAVE, "triangles": [[0, 1, 2], [0, 2, 3]], "material_ids": [6]}, False, "material ids for 2 triangles"),
+    ({**CONCAVE, "triangles": [[0, 1, 2], [0, 2, 3]], "material_ids": [1, 6], "polygon_sizes": [4]}, False, "has ids"),
+])
+def test_exporter_rebuilds_polygons_exactly_or_refuses(tmp_path, mesh, ok, message):
+    code, log = export(tmp_path, mesh)
+    assert (code == 0) == ok, log[-400:]
+    assert message in log
+    if ok:                                                     # a non-fan quad stays two triangles, none lost
+        dump = tmp_path / "x-dump.json"
+        subprocess.run([find_blender(), "--background", "--factory-startup", "--disable-autoexec", "--python-exit-code",
+                        "1", "--python", str(ROOT / "tools/source/measure_spec_blender.py"), "--",
+                        str(tmp_path / "x.fbx"), str(dump)], check=True, capture_output=True)
+        assert sum(len(m["triangles"]) for m in json.loads(dump.read_text(encoding="utf-8"))["meshes"]) == 2
+
+
+@pytest.mark.parametrize("bad", ["object", "tolerances", "object-list"])
+def test_runner_input_errors_stop_with_a_summary_and_exit_2(tmp_path, bad, monkeypatch):
+    monkeypatch.setattr(run_benchmark, "blender_run", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no run")))
+    etalon = tmp_path / "etalon.fbx"
+    etalon.write_bytes(b"x")
+    bench = ROOT / "benchmark/bench-b01-box"
+    broken = tmp_path / "broken.json"
+    broken.write_text({"object": "{", "object-list": "[]"}.get(bad, json.dumps({"profile": "npm_min"})), encoding="utf-8")
+    argv = ["--etalon", str(etalon), "--object", str(broken if bad.startswith("object") else bench / "object.json"),
+            "--tolerances", str(broken if bad == "tolerances" else bench / "tolerances.json"),
+            "--output", str(tmp_path / "run"), "--blender", "blender"]
+    assert run_benchmark.main(argv) == 2
+    assert "stopped" in json.loads((tmp_path / "run/summary.json").read_text(encoding="utf-8"))
+
+
+def test_runner_refuses_a_step_that_left_no_file(tmp_path):
+    with pytest.raises(RuntimeError, match="model.blend"):
+        run_benchmark.produced(tmp_path / "model.blend")

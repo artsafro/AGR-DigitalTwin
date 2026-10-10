@@ -25,7 +25,8 @@ ends, nor each other, nor the roof level, no attachments; anything else is a Bui
 
 Output: a mesh dump in the format of tools/source/measure_spec_blender.py (one mesh `body` with
 vertices, triangles, material ids, polygon sizes, plus LEVEL_<name> helpers), so the benchmark
-checkers read the built model exactly as they read an etalon.
+checkers read the built model exactly as they read an etalon; `polygons` (the quads) let
+tools/export/export_mesh_blender.py write it as a Blender scene and FBX.
 """
 from dataclasses import dataclass
 
@@ -53,6 +54,21 @@ class BuildInputs:
     opening_id: int                       # default plane ID when the opening has none of its own
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
 
+    @classmethod
+    def from_object(cls, obj_cfg: dict) -> "BuildInputs":
+        """The `build` block of object.json: {"parapet_thickness_m", "ids": {"facade", "reveal", "roof",
+        "opening"}, "opening_ids_by_type"?}. Missing values are an error, never a default."""
+        b = obj_cfg.get("build")
+        if not b:
+            raise BuildError(f"object {obj_cfg.get('id', '?')}: object.json has no build block (parapet thickness, IDs)")
+        try:
+            ids = b["ids"]
+            by_type = {int(k): int(v) for k, v in (b.get("opening_ids_by_type") or {}).items()}
+            return cls(float(b["parapet_thickness_m"]), int(ids["facade"]), int(ids["reveal"]), int(ids["roof"]),
+                       int(ids["opening"]), by_type or None)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise BuildError(f"object.json build block: {exc!r}") from exc
+
 
 class _Mesh:
     def __init__(self):
@@ -79,7 +95,7 @@ class _Mesh:
             tris += [[ids[0], ids[1], ids[2]], [ids[0], ids[2], ids[3]]]
             mids += [mid, mid]
         body = {"name": "body", "vertices": self.vertices, "triangles": tris, "material_ids": mids,
-                "polygon_sizes": [4] * len(self.faces)}
+                "polygon_sizes": [4] * len(self.faces), "polygons": [ids for ids, _ in self.faces]}
         return {"source": "from_spec", "units": "m", "meshes": [body],
                 "helpers": [{"name": f"LEVEL_{lv.name}", "location": [0.0, 0.0, lv.elev_m]} for lv in levels]}
 

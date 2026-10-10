@@ -208,6 +208,13 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   roof-level openings, cross-level openings in a typical template, writing a Blender
   scene / FBX (errors, never guesses).
 
+### Benchmark run — `tools/qa/run_benchmark.py`
+- Status: WORKING on a synthetic etalon FBX (2026-10-10, `tests/qa/test_from_spec.py`, Blender 5.1):
+  etalon FBX -> spec -> engine model -> `tools/export/export_mesh_blender.py` (.blend + FBX, slot
+  index + 1 = material id, LEVEL_ empties) -> FBX readback -> etalon self-check and model report.
+- `uv run python tools/qa/run_benchmark.py --etalon <fbx> --object <object.json> --tolerances <t.json> --output <new folder>`;
+  exit 0 both pass / 1 a check fails / 2 a step stops or a check is not measured.
+
 ### Benchmark geometry checks — `tools/qa/check_geometry.py`
 - Status: WORKING on synthetic boxes only (2026-10-09, `tests/qa/test_geometry_checks.py`); no
   real etalon yet (B01, issue #12). Logic in `src/twinqa/geometry/`.
