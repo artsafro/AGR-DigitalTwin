@@ -206,6 +206,8 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   Build inputs not in the spec (parapet thickness, material IDs) are required arguments.
 - Floor steps (pattern floor-step, 2026-10-10): a contour per floor, ledge (roof ID) / soffit (facade ID).
 - Oblique walls (pattern non-90-corner, 2026-10-10): trapezoid strips for horizontal faces; B02 green end to end.
+- Terraces (pattern terrace, spec v0.4 `terraces`, 2026-10-10): a parapet on a floor-step ledge (outer / inner
+  face, cap, walkable part); the extractor does not read them yet.
 - Not yet: rounded corners, an x-extreme sharp corner (triangle), terraces as walkable roofs, attachments, corner, touching or
   roof-level openings, cross-level openings in a typical template, writing a Blender
   scene / FBX (errors, never guesses).

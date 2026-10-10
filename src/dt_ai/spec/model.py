@@ -88,22 +88,40 @@ class Roof(SpecPart):
     parapet_h_m: NonNegative
 
 
+class Terrace(SpecPart):
+    """A ledge at a floor step used as a terrace, with a parapet (upstand) along its outer edges
+    (spec v0.4, pattern terrace, user decision 2026-10-10). The height is measured from the level."""
+    level: str
+    parapet_h_m: Positive
+
+
 class Spec(SpecPart):
     id: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)+$")
     # 0.2: openings across levels (level_from / level_to); 0.3: opening = hole with frame, glass_w /
     # glass_h, depth_m only as an exception to opening_depth_default_m (#36)
-    spec_version: Literal["0.1", "0.2", "0.3"] = "0.3"
+    # 0.4: terraces with a parapet at floor steps (pattern terrace, user decision 2026-10-10)
+    spec_version: Literal["0.1", "0.2", "0.3", "0.4"] = "0.3"
     profile: Literal["npm_min", "mid"]
     frame: Frame
     levels: list[Level] = Field(min_length=2)
     floors: list[Floor] = Field(min_length=1)
     roof: Roof | None = None
+    terraces: list[Terrace] = []
     attachments: list[dict] = []
     opening_depth_default_m: NonNegative = 0.2
 
     @model_validator(mode="after")
     def consistent(self):
         names = [lv.name for lv in self.levels]
+        if self.terraces and self.spec_version != "0.4":
+            raise ValueError("terraces need spec_version 0.4")
+        seen = set()
+        for tr in self.terraces:
+            if tr.level not in names[1:-1]:
+                raise ValueError(f"terrace at {tr.level}: a terrace lies at a level between the first and the roof")
+            if tr.level in seen:
+                raise ValueError(f"terrace at {tr.level} is given twice")
+            seen.add(tr.level)
         if len(set(names)) != len(names):
             raise ValueError("level names must be unique")
         if [lv.elev_m for lv in self.levels] != sorted(lv.elev_m for lv in self.levels):
@@ -123,7 +141,7 @@ class Spec(SpecPart):
                     raise ValueError("openings across levels need spec_version 0.2")
                 if self.spec_version in ("0.1", "0.2") and o.depth_m is None:
                     raise ValueError(f"spec {self.spec_version}: every opening has depth_m (optional from 0.3)")
-                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version != "0.3":
+                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version not in ("0.3", "0.4"):
                     raise ValueError("glass_w / glass_h need spec_version 0.3")
         full = {f.level for f in self.floors if f.contour is not None}
         owner = {}

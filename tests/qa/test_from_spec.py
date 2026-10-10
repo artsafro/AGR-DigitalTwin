@@ -609,3 +609,60 @@ def test_inputs_at_the_limit_that_would_break_under_the_weld_are_errors():
     for edit in (window_case, step_case):
         with pytest.raises(BuildError):
             build(edited(edit), INPUTS)
+
+
+# pattern terrace (spec v0.4, user decisions 2026-10-10): a parapet along a ledge's outer edges
+
+
+def terraced(spec_data_edit, h=0.6):
+    def edit(d):
+        spec_data_edit(d)
+        d["spec_version"] = "0.4"
+        d["terraces"] = [{"level": "L1", "parapet_h_m": h}]
+    return edited(edit)
+
+
+def west_ledge(d):
+    d["floors"] = [{"level": "L0", "contour": SQ, "openings": [d["floors"][0]["openings"][0]]},
+                   {"level": "L1", "contour": [[4, 0], [10, 0], [10, 10], [4, 10]], "openings": []}]
+
+
+def test_terrace_parapet_on_a_ledge():
+    s = terraced(west_ledge)
+    dump = build(s, INPUTS)
+    soup = from_dump(dump)
+    assert topology_ok(dump)
+    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(40 - 5.22)        # walkable part
+    assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(5.22)             # cap: 0.3 x 10 + 2 x 0.3 x 3.7
+    c = soup.corners()
+    hidden = (soup.material_ids == FACADE) & np.all(np.abs(c[:, :, 0] - 4) < 1e-9, axis=1) \
+        & (c[:, :, 2].mean(1) > 3.3) & (c[:, :, 2].mean(1) < 3.9) \
+        & ((c[:, :, 1].mean(1) < 0.3) | (c[:, :, 1].mean(1) > 9.7))
+    assert not hidden.any()                                                      # upper wall behind the parapet ends
+    report = checks.run(soup, soup, s, TOL)
+    assert report["passed"], report["failed"] + report["not_measured"]
+
+
+def test_b02_with_a_terrace_parapet_builds_and_closes():
+    data = json.loads((ROOT / "benchmark/bench-b02-corner-niche/spec.json").read_text(encoding="utf-8"))
+    data.update({"spec_version": "0.4", "terraces": [{"level": "L1", "parapet_h_m": 0.6}]})
+    dump = build(Spec.model_validate(data), INPUTS)
+    soup = from_dump(dump)
+    assert topology_ok(dump)
+    ledge = 6 * 9 - 3.5 * 0.6
+    assert horizontal(soup, 3.3, ROOF, True) + horizontal(soup, 3.9, ROOF, True) == pytest.approx(ledge)
+
+
+def test_terrace_errors():
+    with pytest.raises(BuildError, match="does not reach out"):
+        build(terraced(lambda d: None), INPUTS)                                  # no step under the terrace
+    with pytest.raises(BuildError, match="parapet_thickness_m"):
+        build(terraced(west_ledge), BuildInputs(**{**INPUTS.__dict__, "parapet_thickness_m": 0.0}))
+    data = json.loads(json.dumps(FIXTURE))
+    data["terraces"] = [{"level": "L1", "parapet_h_m": 0.6}]
+    with pytest.raises(ValueError, match="spec_version 0.4"):
+        Spec.model_validate(data)
+    data["spec_version"] = "0.4"
+    data["terraces"] = [{"level": "roof", "parapet_h_m": 0.6}]
+    with pytest.raises(ValueError, match="between the first and the roof"):
+        Spec.model_validate(data)
