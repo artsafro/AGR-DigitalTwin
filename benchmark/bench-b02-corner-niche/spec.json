@@ -141,6 +141,7 @@
   "roof": {
     "parapet_h_m": 0.6
   },
+  "terraces": [],
   "attachments": [],
   "opening_depth_default_m": 0.2
 }

@@ -12,7 +12,9 @@ The roof covering is an inset plane 5 mm above the parapet inner faces' foot (6.
 separate element is normal (pattern `roof-inset-plane`): it sets no height, the parapet reads 0.6 m
 from `LEVEL_roof`, and its outline with the parapet foot under it is the one allowed open joint.
 
-Status 2026-10-10 (run-v010): spec equal to the brief (parapet 0.6), 0 questions; etalon against
+Status 2026-10-10 (run-inset-v001, the engine builds the roof as an inset plate too): spec unchanged, 0
+questions; etalon against itself 8/8 and the engine model 8/8, both with the roof joint 6.600 / 6.605,
+embed 20 mm. Before (run-v010): spec equal to the brief (parapet 0.6), 0 questions; etalon against
 itself 8/8; the engine (floor-step, non-90-corner) builds B02 and its FBX readback passes 8/8 against
 the etalon (bbox, levels, areas 0.0; silhouettes, opening planes 1.0; only the bottom ring open).
 

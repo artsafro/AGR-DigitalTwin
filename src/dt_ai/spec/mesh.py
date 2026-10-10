@@ -56,6 +56,7 @@ DOOR_W_M = (0.7, 3.0)
 DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
 RELIEF_M = 0.10
 DOOR_HOST_M = 0.02        # a source door is a facade door when its ends lie within half its host + this of the contour
+SLAB_GAP_M = (0.002, 0.010)  # an inset slab plate lies this far above its level (pattern roof-inset-plane)
 TERRACE_COVER = 0.02      # terrace: the walkable part at the level and the parapet cap together cover the ledge
                           # within this share of its area (pattern terrace, user plan 2026-10-10)
 
@@ -526,7 +527,32 @@ def _ledge_faces(v, tris, ledge, z0, z1, cap=None, inner_line=None, zt=None):
     return p[keep]
 
 
-def _terrace(v, tris, groups, closed, z0, z1, below):
+def _inset_plate(v, extra, z0, region):
+    """The plan region of an inset slab plate over a level (pattern roof-inset-plane, user rule 2026-10-10):
+    up-facing flat triangles of the parts outside the body at one height SLAB_GAP_M above z0 (within the
+    checkers' 0.1 mm weld, so the extractor accepts no gap the checker rejects: review 1 of PR #63),
+    inside region."""
+    if extra is None or not len(extra):
+        return Polygon(), None
+    p = v[extra]
+    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
+    z = p[:, :, 2]
+    lo, hi = SLAB_GAP_M
+    flat = (z.max(axis=1) - z.min(axis=1) < WELD_M) & (n[:, 2] > 0)         & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)
+    flat &= shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
+    if not flat.any():
+        return Polygon(), None
+    # the whole plate is flat as the checker welds it: no triangle and no slope across triangles beyond
+    # WELD_M (reviews 2 and 3 of PR #63); a plate that is not is no inset plate
+    near = (n[:, 2] > 0) & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)         & shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
+    if float(z[near].max() - z[near].min()) > WELD_M:
+        return Polygon(), None
+    zp = float(np.median(z[flat].mean(axis=1)))
+    tri = [Polygon(t[:, :2]) for t in p[flat]]
+    return shapely.unary_union([t for t in tri if t.area > 0]), round(zp - z0, 4)
+
+
+def _terrace(v, tris, groups, closed, z0, z1, below, extra=None):
     """Pattern terrace (user plan 2026-10-10): a storey whose lowest section shape is the floor below's
     contour, from the level up to a parapet top, with the storey's own wall shape above it to the
     storey top. Structure, not a height difference (Codex review 1 of PR #61): the walkable part at the
@@ -548,8 +574,14 @@ def _terrace(v, tris, groups, closed, z0, z1, below):
         return None
     walk, cap = _flat_region(v, tris, z0, ledge), _flat_region(v, tris, zt, ledge)
     limit = TERRACE_COVER * ledge.area
-    if (walk.area <= HOLE_MIN_M2 or cap.area <= HOLE_MIN_M2 or walk.intersection(cap).area > limit
-            or ledge.symmetric_difference(walk.union(cap)).area > limit):
+    if cap.area <= HOLE_MIN_M2 or walk.intersection(cap).area > limit:
+        return None
+    # an inset walkable plate (user rule 2026-10-10): a separate plate SLAB_GAP_M above the level, its edge
+    # under the parapet; the walkable part is the plate where no cap covers it
+    plate, gap = _inset_plate(v, extra, z0, ledge)
+    if gap is not None:
+        walk = walk.union(plate.intersection(ledge).difference(cap))
+    if walk.area <= HOLE_MIN_M2 or ledge.symmetric_difference(walk.union(cap)).area > limit:
         return None
     inner_line = walk.boundary.difference(ledge.boundary.buffer(SAME_CONTOUR_M))
     h = zt - z0
@@ -558,11 +590,11 @@ def _terrace(v, tris, groups, closed, z0, z1, below):
     face = _wall_cover(v, tris, inner_line, z0, zt)
     if abs(face - inner_line.length * h) > TERRACE_COVER * inner_line.length * h:
         return None
-    return high, zt, cap, inner_line, {"walkable_m2": round(walk.area, 3), "cap_m2": round(cap.area, 3), "ledge_m2": round(ledge.area, 3),
+    return high, zt, cap, inner_line, {"walkable_inset_gap_m": gap, "walkable_m2": round(walk.area, 3), "cap_m2": round(cap.area, 3), "ledge_m2": round(ledge.area, 3),
                       "inner_face_m2": round(face, 3)}
 
 
-def _level_contour(v, tris, z0, z1, name, at_m=None, below=None):
+def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
     """Level contour = walls over the full storey height (user decisions 2026-10-08). Accepted only
     when one section shape is at both storey ends and is also the tallest; otherwise the exterior
     shell cannot tell the wall from a plinth, cornice or belt, so the extractor stops with the
@@ -598,7 +630,7 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None):
     top = next(g for g in groups if closed[-1][:2] in g["spans"])
     at_ends = closed[0][0] - z0 < EVENT_MIN_M and z1 - closed[-1][1] < EVENT_MIN_M
     tallest = max(g["height"] for g in groups)
-    terrace = None if at_m is not None else _terrace(v, tris, groups, closed, z0, z1, below)
+    terrace = None if at_m is not None else _terrace(v, tris, groups, closed, z0, z1, below, extra)
     if terrace is not None:
         base, zt, cap, inner_line, areas = terrace
         rule = f"terrace: parapet {zt - z0:.3f} m from the level"
@@ -1061,7 +1093,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
         poly, rep, dev, ms, dr = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
-                                                below=polys[-1] if polys else None)
+                                                below=polys[-1] if polys else None,
+                                                extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
         mouths.append(ms)
         doors.append(dr)
         rep["area_m2"] = round(poly.area, 3)

@@ -21,7 +21,8 @@ from twinqa.scene import find_blender
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
-INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE)
+INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE,
+                     slab_gap_m=0.005, slab_embed_m=0.02)
 
 
 def spec(**changes):
@@ -59,7 +60,7 @@ def test_b01_spec_builds_a_model_that_passes_every_check_against_the_synthetic_e
     assert by_id(report)["silhouettes"]["value"] == 1.0
 
 
-def test_model_is_all_quads_welded_and_open_only_at_the_bottom():
+def test_model_is_all_quads_welded_and_open_only_at_the_bottom_and_the_roof_inset():
     dump = build(spec(), INPUTS)
     body = dump["meshes"][0]
     assert set(body["polygon_sizes"]) == {4} and len(body["triangles"]) == 2 * len(body["polygon_sizes"])
@@ -69,7 +70,8 @@ def test_model_is_all_quads_welded_and_open_only_at_the_bottom():
     assert counts.max() <= 2                                   # no fin
     assert t_junctions(dump) == 0
     open_z = soup.vertices[np.unique(ids, return_index=True)[1]][edges[counts == 1].ravel(), 2]
-    assert np.allclose(open_z, 0.0)                            # only the bottom ring is open
+    # only the bottom ring and the inset roof joint: the hole at 6.6, the plate 5 mm above it (user 2026-10-10)
+    assert set(np.round(open_z, 6).tolist()) == {0.0, 6.6, 6.605}
     assert {lv["name"] for lv in dump["helpers"]} == {"LEVEL_L0", "LEVEL_L1", "LEVEL_roof"}
 
 
@@ -148,7 +150,8 @@ def topology_ok(dump):
     soup = from_dump(dump)
     _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
     loops = checks.check_mesh(soup, TOL, checks.load_ranges())["details"]["open_loops"]
-    return counts.max() <= 2 and t_junctions(dump) == 0 and [lp["kind"] for lp in loops] == ["bottom"]
+    # open only at the bottom and at the inset slab joints (pattern roof-inset-plane, user rule 2026-10-10)
+    return counts.max() <= 2 and t_junctions(dump) == 0 and all(lp["allowed"] for lp in loops)         and [lp["kind"] for lp in loops].count("bottom") == 1
 
 
 def test_ledge_where_the_floor_below_reaches_out():
@@ -632,7 +635,8 @@ def test_terrace_parapet_on_a_ledge():
     dump = build(s, INPUTS)
     soup = from_dump(dump)
     assert topology_ok(dump)
-    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(40 - 5.22)        # walkable part
+    assert horizontal(soup, 3.3, ROOF, True) == 0.0                              # the hole (user rule 2026-10-10)
+    assert horizontal(soup, 3.305, ROOF, True) == pytest.approx(3.74 * 9.44)     # walkable plate: 3.7 x 9.4 + 20 mm
     assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(5.22)             # cap: 0.3 x 10 + 2 x 0.3 x 3.7
     c = soup.corners()
     hidden = (soup.material_ids == FACADE) & np.all(np.abs(c[:, :, 0] - 4) < 1e-9, axis=1) \
@@ -650,7 +654,9 @@ def test_b02_with_a_terrace_parapet_builds_and_closes():
     soup = from_dump(dump)
     assert topology_ok(dump)
     ledge = 6 * 9 - 3.5 * 0.6
-    assert horizontal(soup, 3.3, ROOF, True) + horizontal(soup, 3.9, ROOF, True) == pytest.approx(ledge)
+    assert horizontal(soup, 3.3, ROOF, True) == 0.0 and horizontal(soup, 3.9, ROOF, True) == pytest.approx(6.48)
+    assert horizontal(soup, 3.305, ROOF, True) == pytest.approx(46.0096)        # 45.42 m2 walkable grown 20 mm, as B02t
+    assert ledge == pytest.approx(45.42 + 6.48)
 
 
 def test_terrace_errors():
@@ -679,7 +685,7 @@ def test_terrace_on_a_ledge_in_two_parts():
     soup = from_dump(dump)
     assert topology_ok(dump)
     assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(2 * (0.3 * 10 + 2 * 0.3 * 1.7))   # two caps
-    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(2 * 1.7 * 9.4)                    # two walkable parts
+    assert horizontal(soup, 3.305, ROOF, True) == pytest.approx(2 * 1.74 * 9.44)                # two walkable plates
 
 
 # Terrace PR B: the extractor reads the terrace parapet back (engine model -> spec, round trip)
@@ -792,3 +798,117 @@ def test_a_fin_across_the_parapet_inner_face_is_a_question():
     m["material_ids"] += [ROOF]
     spec, report = extract_spec(d, SYNTH_OBJECT)
     assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+
+
+# Codex review 1 of PR #63: every slab inset, only where the spec implies one, inputs in range
+
+
+def _split_terrace():
+    def split(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                       {"level": "L1", "contour": [[2, 0], [8, 0], [8, 10], [2, 10]], "openings": []}]
+    return terraced(split)
+
+
+def test_an_inset_slab_never_hides_a_solid_one_on_its_level():
+    s = _split_terrace()
+    d = build(s, INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    east_plate = [i for i, t in enumerate(m["triangles"]) if np.all(np.abs(v[t][:, 2] - 3.305) < 1e-9) and v[t][:, 0].min() > 7]
+    for i in east_plate:                                    # the east plate put down on the level: a solid slab
+        for k in m["triangles"][i]:
+            m["vertices"][k] = [m["vertices"][k][0], m["vertices"][k][1], 3.3]
+    m.pop("polygons", None)
+    mesh = by_id(checks.run(from_dump(d), from_dump(build(s, INPUTS)), s, TOL))["mesh"]
+    assert mesh["status"] == "fail" and mesh["details"]["slabs_not_inset"] == ["L1"] and "L1" in mesh["details"]["solid_slab_m2"]
+
+
+def test_a_slab_joint_the_spec_implies_no_slab_for_is_not_allowed():
+    s = _split_terrace()
+    plain = Spec.model_validate({**s.model_dump(), "terraces": []})
+    soup = from_dump(build(s, INPUTS))
+    mesh = by_id(checks.run(soup, soup, plain, TOL))["mesh"]
+    assert mesh["status"] == "fail" and mesh["value"]["open_loops_not_allowed"] == 4
+
+
+@pytest.mark.parametrize("gap, embed", [(0.001, 0.02), (0.012, 0.02), (0.005, 0.009), (0.005, 0.051)])
+def test_inset_inputs_outside_the_pattern_are_build_errors(gap, embed):
+    with pytest.raises(BuildError, match="outside the pattern"):
+        build(spec(), BuildInputs(**{**INPUTS.__dict__, "slab_gap_m": gap, "slab_embed_m": embed}))
+
+
+@pytest.mark.parametrize("dz", [0.001, 0.0105])
+def test_the_extractor_reads_no_terrace_plate_the_checker_rejects(dz):
+    from dt_ai.spec import SpecError, extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    for i, p in enumerate(v):
+        if abs(p[2] - 3.305) < 1e-9:
+            m["vertices"][i] = [p[0], p[1], 3.3 + dz]
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)
+
+
+def test_a_lower_terrace_cap_at_a_slab_level_is_no_solid_slab():
+    # Codex review 2 of PR #63: the parapet cap of an L1 terrace 3.3 m high lies at the roof level, off the roof
+    s = terraced(west_ledge, h=3.3)
+    soup = from_dump(build(s, INPUTS))
+    report = checks.run(soup, soup, s, TOL)
+    assert report["passed"], [(c["id"], c["details"].get("solid_slab_m2")) for c in report["checks"] if c["status"] != "pass"]
+
+
+def test_the_extractor_wants_the_plate_flat_as_the_checker_welds_it():
+    # Codex review 2 of PR #63: half the plate 0.5 mm higher is no flat plate (the checker sees other loops)
+    from dt_ai.spec import SpecError, extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    for i, p in enumerate(m["vertices"]):
+        if abs(p[2] - 3.305) < 1e-9 and p[0] > 3:
+            m["vertices"][i] = [p[0], p[1], 3.3055]
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)
+
+
+# Codex review 3 of PR #63
+
+
+def test_a_solid_slab_is_found_whatever_its_triangulation():
+    # a closed solid slab under a split terrace whose two top triangles have their centres off the ledges
+    s = _split_terrace()
+    d = build(s, INPUTS)
+    lo_, hi_ = 0.29, 9.71
+    box = {"name": "slab", "vertices": [[x, y, z] for z in (3.2, 3.3) for x, y in ((lo_, lo_), (hi_, lo_), (hi_, hi_), (lo_, hi_))],
+           "triangles": [[4, 5, 6], [4, 6, 7], [0, 2, 1], [0, 3, 2], [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5],
+                         [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7]],
+           "material_ids": [ROOF] * 12, "polygon_sizes": [3] * 12}
+    d["meshes"].append(box)
+    d["meshes"][0].pop("polygons", None)
+    mesh = by_id(checks.run(from_dump(d), from_dump(build(s, INPUTS)), s, TOL))["mesh"]
+    assert mesh["status"] == "fail" and "L1" in mesh["details"]["solid_slab_m2"]
+
+
+def test_a_plate_sloping_across_its_strips_is_no_inset_plate():
+    # four strips, each nearly flat, rising 0.15 mm over the plate: not flat as the checker welds it
+    from dt_ai.spec import SpecError, extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    _drop(m, v, lambda t: np.all(np.abs(t[:, 2] - 3.305) < 1e-9))
+    xs = np.linspace(0.28, 4.02, 5)
+    n = len(m["vertices"])
+    m["vertices"] += [[x, y, 3.305 + 0.0375e-3 * i] for i, x in enumerate(xs) for y in (0.28, 9.72)]
+    for i in range(4):
+        a, b, c_, e = n + 2 * i, n + 2 * i + 2, n + 2 * i + 3, n + 2 * i + 1
+        m["triangles"] += [[a, b, c_], [a, c_, e]]
+        m["material_ids"] += [ROOF, ROOF]
+    m.pop("polygons", None)
+    m.pop("polygon_sizes", None)
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)
+
+
+def test_a_plate_wider_than_the_faces_around_it_is_a_build_error():
+    with pytest.raises(BuildError, match="reaches out of the building outline"):
+        build(spec(), BuildInputs(**{**INPUTS.__dict__, "parapet_thickness_m": 0.01}))
