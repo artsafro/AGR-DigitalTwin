@@ -7,14 +7,17 @@ the upper block's wall X = 6, which is removed between 3.3 and 3.9 m. Nothing el
 Patterns: terrace (plus the B02 patterns).
 
 Etalon: hand-made in 3ds Max by the user (2026-10-10); never produced by the engine — the engine is
-checked only against a hand-made etalon (HARNESS_PLAN §5). The walkable terrace is welded to the
-parapet inner faces (no inset plane); the roof covering is inset as in B02.
+checked only against a hand-made etalon (HARNESS_PLAN §5). Every horizontal slab is inset (user rule
+2026-10-10): the roof as in B02, and since etalon v2 the walkable terrace too — a hole in the body at
+`LEVEL_L1` 3.300 and a separate plate at 3.305.
 
 Brief (Claude Docs): https://claude.ai/code/artifact/95f7af8a-f484-4d9e-80ce-2a0f50ece086. Etalon files
 outside git in `data/benchmark/bench-b02t-terrace/`, hashes in `etalon.json`; `spec.json` extracted
 from it: the B02 spec plus `terraces: [{"level": "L1", "parapet_h_m": 0.6}]`, spec v0.4.
 
-Status 2026-10-10 (run-v002): spec as the brief, 0 questions (L1 contour rule "terrace: parapet
+Status 2026-10-10: **waiting for the inset PR** — on etalon v2 the checker does not know the terrace
+joint yet and the extractor finds no walkable part at the level (no tolerance is relaxed). Etalon v1
+(welded terrace), run-v002: spec as the brief, 0 questions (L1 contour rule "terrace: parapet
 0.600 m from the level"; walkable 45.42 + cap 6.48 = ledge 51.9 m2); etalon against itself 8/8; the
 engine builds B02t and its FBX readback passes 8/8 against the etalon.
 
