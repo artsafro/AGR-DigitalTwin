@@ -111,6 +111,10 @@ implies and fails a solid slab inside a slab region; the extractor reads inset t
 0.1 mm); pattern `roof-inset-plane` = "Inset slab", proven on B01 / B02 / B02t. B01 (user's inset v2),
 B02, B02t all 8/8 etalon and engine model, two loops per slab. #60 merged: plan for markup helpers
 (HARNESS_PLAN §14, backlog MH1-MH3). PSU275 delivery-v003 predates the inset rule (user: mark, do not touch).
+#64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
+0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
+hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
+plate within `plate_tol_m` 0.5 mm. B01 / B02 / B02t read 5 / 20 mm on every slab, 8/8.
 Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -191,10 +195,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: decisions on the choices page (C7, C8, C10, C25). Claude (user order 2026-10-10): plate
-   parameters in the spec (`plate_gap_m` / `plate_overlap_m`, defaults 0.005 / 0.02; extractor reads,
-   checker compares), pattern wording "the plate overlaps the hole by plate_overlap_m"; KPP1 to the inset
-   rule and K01 rerun; then markup helpers MH1-MH3; issue #56; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25). Claude (user order 2026-10-10): KPP1 to the
+   inset rule by its build scripts (option a: a new version v006 with an inset roof), K01 run; then markup
+   helpers MH1-MH3; issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
