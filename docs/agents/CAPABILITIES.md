@@ -205,7 +205,8 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   plane seat by profile (C24 final, user 2026-10-10: `npm_min` full opening depth, `mid` half).
   Build inputs not in the spec (parapet thickness, material IDs) are required arguments.
 - Floor steps (pattern floor-step, 2026-10-10): a contour per floor, ledge (roof ID) / soffit (facade ID).
-- Not yet: rounded or non-90 corners, terraces as walkable roofs, attachments, corner, touching or
+- Oblique walls (pattern non-90-corner, 2026-10-10): trapezoid strips for horizontal faces; B02 green end to end.
+- Not yet: rounded corners, an x-extreme sharp corner (triangle), terraces as walkable roofs, attachments, corner, touching or
   roof-level openings, cross-level openings in a typical template, writing a Blender
   scene / FBX (errors, never guesses).
 

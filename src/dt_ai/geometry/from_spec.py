@@ -126,11 +126,6 @@ def _contours(spec: Spec):
     contours = []
     for f in floors:
         pts = np.asarray(f.contour, float)
-        for i in range(len(pts)):
-            d = pts[(i + 1) % len(pts)] - pts[i]
-            if min(abs(d[0]), abs(d[1])) > KEY_M:
-                raise BuildError(f"floor {f.level} wall {i} is not axis-parallel; corners other than 90° are not "
-                                 "built yet (non-90-corner)")
         if Polygon(pts).exterior.is_ccw is False:
             raise BuildError(f"floor {f.level}: contour must be counter-clockwise (spec contract)")
         contours.append(pts)
@@ -237,94 +232,187 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     inner = orient(inner, sign=1.0)
     in_pts = np.asarray(inner.exterior.coords)[:-1]
 
-    # global cut lines: every contour (all floors) / inset vertex and opening edge, propagated through
-    # the roof, the cap and the faces at the floor steps
-    xs = set(in_pts[:, 0]) | {float(x) for pts in contours for x in pts[:, 0]}
-    ys = set(in_pts[:, 1]) | {float(y) for pts in contours for y in pts[:, 1]}
+    # horizontal faces: roof plane (inside the inset), cap (between contour and inset); at each floor step
+    # (pattern floor-step) a ledge facing up (roof ID) and a soffit facing down (facade ID, user 2026-10-10)
+    faces = [(inner, roof, inputs.roof_id, 1)]
+    if t > 0:
+        faces.append((outer.difference(inner), top, inputs.roof_id, 1))
+    for k in range(len(polys) - 1):
+        faces.append((polys[k].difference(polys[k + 1]), elev[k + 1], inputs.roof_id, 1))
+        faces.append((polys[k + 1].difference(polys[k]), elev[k + 1], inputs.facade_id, -1))
+    faces = [(g, z, mid, up) for poly, z, mid, up in faces for g in shapely.get_parts(poly)
+             if g.geom_type == "Polygon" and g.area > KEY_M]
+
+    # walls: (start, direction, length, z range, ID); the outer walls of every floor and the parapet's inner walls
+    walls = []
+    for k, pts in enumerate(contours):
+        z_lo, z_hi = elev[k], (elev[k + 1] if k < len(contours) - 1 else top)
+        for w in range(len(pts)):
+            a, b = pts[w], pts[(w + 1) % len(pts)]
+            walls.append(("outer", a, b, z_lo, z_hi))
+    if t > 0:
+        for w in range(len(in_pts)):
+            walls.append(("inner", in_pts[w], in_pts[(w + 1) % len(in_pts)], roof, top))
+
+    # cut lines (pattern non-90-corner): vertical strips at every vertex x of every outline; walls along y
+    # (x = const) take their cuts from a registry kept in step with the horizontal faces they touch
+    xs = {float(x) for pts in contours for x in pts[:, 0]} | set(in_pts[:, 0])
+    for g, *_ in faces:
+        for ring in [g.exterior, *g.interiors]:
+            xs |= {float(x) for x, _ in ring.coords}
+    wall_ys = {}                                      # x -> set of y cuts of the walls along y at that x
+    for _, a, b, *_ in walls:
+        if abs(b[0] - a[0]) <= KEY_M:
+            wall_ys.setdefault(_r(a[0]), set()).update({_r(a[1]), _r(b[1])})
     for o in openings:
         for s_ in (o["s0"], o["s1"]):
             if s_ <= KEY_M or s_ >= o["length"] - KEY_M:
                 raise BuildError(f"{o['where']}: the opening reaches the wall end; corner openings are not built yet")
             x, y = o["a"] + o["u"] * s_
-            (xs if abs(o["u"][0]) > 0.5 else ys).add(x if abs(o["u"][0]) > 0.5 else y)
+            if abs(o["u"][0]) > KEY_M:
+                xs.add(float(x))
+            else:
+                wall_ys.setdefault(_r(x), set()).add(_r(y))
         if o["z1"] >= roof - KEY_M or o["z0"] < bottom - KEY_M:
             raise BuildError(f"{o['where']}: the opening must lie between the bottom level and below the roof level")
     _check_openings_on_walls(openings, contours, elev, top)
-    xs, ys = sorted(round(v, 9) for v in xs), sorted(round(v, 9) for v in ys)
+    xs = sorted({_r(v) for v in xs})
+    traps = _trapezoids(faces, xs)
+    face_ys = _propagate(traps, walls, wall_ys)
     zs_all = _cuts(elev + [top] + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
 
+    def along_cuts(a, b):
+        length = float(np.linalg.norm(b - a))
+        u = (b - a) / length
+        if abs(u[0]) <= KEY_M:                          # along y: the registry
+            cuts = [abs(y - a[1]) for y in wall_ys.get(_r(a[0]), ())
+                    if min(a[1], b[1]) - KEY_M <= y <= max(a[1], b[1]) + KEY_M]
+        else:                                           # any other direction: where the strips cross it
+            cuts = [(x - a[0]) / u[0] for x in xs if min(a[0], b[0]) - KEY_M <= x <= max(a[0], b[0]) + KEY_M]
+        return sorted({round(v, 9) for v in cuts + [0.0, length] if -KEY_M <= v <= length + KEY_M}), u, length
+
     mesh = _Mesh()
-    for k, pts in enumerate(contours):
-        z_lo, z_hi = elev[k], (elev[k + 1] if k < len(contours) - 1 else top)
-        zs = [z for z in zs_all if z_lo - KEY_M <= z <= z_hi + KEY_M]
-        n = len(pts)
-        for w in range(n):
-            a, b = pts[w], pts[(w + 1) % n]
-            length = float(np.linalg.norm(b - a))
-            u = (b - a) / length
-            out_n = np.array([u[1], -u[0], 0.0])
-            along = xs if abs(u[0]) > 0.5 else ys
-            coord = 0 if abs(u[0]) > 0.5 else 1
-            ss = sorted({round(abs(v - a[coord]), 9) for v in along
-                         if min(a[coord], b[coord]) - KEY_M <= v <= max(a[coord], b[coord]) + KEY_M})
-            P = lambda s, z, a=a, u=u: [*(a + u * s), z]  # noqa: E731
-            holes = [(o, span) for o in openings if (span := _on_line(o, a, u)) is not None]
-
-            def hole_at(s, z, holes=holes):
-                return next((o for o, (h0, h1) in holes if h0 < s < h1 and o["z0"] < z < o["z1"]), None)
-
-            eps = 1e-4
-            for s0, s1 in zip(ss, ss[1:]):
-                for z0, z1 in zip(zs, zs[1:]):
-                    sm, zm = (s0 + s1) / 2, (z0 + z1) / 2
-                    o = hole_at(sm, zm)
-                    if o is None:
-                        mesh.quad([P(s0, z0), P(s1, z0), P(s1, z1), P(s0, z1)], inputs.facade_id, out_n)
-                        continue
-                    d = o["depth"]
-                    Q = lambda s, z, a=a, u=u, d=d, out_n=out_n: [*(a + u * s - out_n[:2] * d), z]  # noqa: E731
-                    mesh.quad([Q(s0, z0), Q(s1, z0), Q(s1, z1), Q(s0, z1)], o["id"], out_n)
-                    # a reveal on each side of the cell that borders the wall, facing into the opening
-                    for (sa, za), (sb, zb), outside, face in (
-                            ((s0, z0), (s1, z0), (sm, z0 - eps), [0, 0, 1]),
-                            ((s0, z1), (s1, z1), (sm, z1 + eps), [0, 0, -1]),
-                            ((s0, z0), (s0, z1), (s0 - eps, zm), [u[0], u[1], 0]),
-                            ((s1, z0), (s1, z1), (s1 + eps, zm), [-u[0], -u[1], 0])):
-                        if hole_at(*outside) is o:
-                            continue
-                        mesh.quad([P(sa, za), P(sb, zb), Q(sb, zb), Q(sa, za)], inputs.reveal_id, face)
-
-    if t > 0:
-        # parapet inner walls along the inset contour, roof to top
-        m = len(in_pts)
-        for w in range(m):
-            a, b = in_pts[w], in_pts[(w + 1) % m]
-            length = float(np.linalg.norm(b - a))
-            u = (b - a) / length
-            coord = 0 if abs(u[0]) > 0.5 else 1
-            along = xs if coord == 0 else ys
-            ss = sorted({round(abs(v - a[coord]), 9) for v in along
-                         if min(a[coord], b[coord]) - KEY_M <= v <= max(a[coord], b[coord]) + KEY_M})
+    for kind, a, b, z_lo, z_hi in walls:
+        ss, u, length = along_cuts(a, b)
+        if kind == "inner":
             facing = np.array([-u[1], u[0], 0.0])           # into the roof
             for s0, s1 in zip(ss, ss[1:]):
                 p0, p1 = a + u * s0, a + u * s1
                 mesh.quad([[*p0, roof], [*p1, roof], [*p1, top], [*p0, top]], inputs.roof_id, facing)
-    # horizontal faces on the cut grid: the roof plane (inside the inset) and cap (between contour and
-    # inset); at each floor step (pattern floor-step) a ledge facing up where the floor below reaches out
-    # (roof ID) and a soffit facing down where the floor above overhangs (facade ID, user 2026-10-10)
-    ring = outer.difference(inner) if t > 0 else None
-    for x0, x1 in zip(xs, xs[1:]):
-        for y0, y1 in zip(ys, ys[1:]):
-            c = Point((x0 + x1) / 2, (y0 + y1) / 2)
-            cell = lambda z: [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]]  # noqa: E731
-            if inner.contains(c):
-                mesh.quad(cell(roof), inputs.roof_id, [0, 0, 1])
-            elif ring is not None and ring.contains(c):
-                mesh.quad(cell(top), inputs.roof_id, [0, 0, 1])
-            for k in range(len(polys) - 1):
-                below, above = polys[k].contains(c), polys[k + 1].contains(c)
-                if below and not above:
-                    mesh.quad(cell(elev[k + 1]), inputs.roof_id, [0, 0, 1])
-                elif above and not below:
-                    mesh.quad(cell(elev[k + 1]), inputs.facade_id, [0, 0, -1])
+            continue
+        zs = [z for z in zs_all if z_lo - KEY_M <= z <= z_hi + KEY_M]
+        out_n = np.array([u[1], -u[0], 0.0])
+        P = lambda s, z, a=a, u=u: [*(a + u * s), z]  # noqa: E731
+        holes = [(o, span) for o in openings if (span := _on_line(o, a, u)) is not None]
+
+        def hole_at(s, z, holes=holes):
+            return next((o for o, (h0, h1) in holes if h0 < s < h1 and o["z0"] < z < o["z1"]), None)
+
+        eps = 1e-4
+        for s0, s1 in zip(ss, ss[1:]):
+            for z0, z1 in zip(zs, zs[1:]):
+                sm, zm = (s0 + s1) / 2, (z0 + z1) / 2
+                o = hole_at(sm, zm)
+                if o is None:
+                    mesh.quad([P(s0, z0), P(s1, z0), P(s1, z1), P(s0, z1)], inputs.facade_id, out_n)
+                    continue
+                d = o["depth"]
+                Q = lambda s, z, a=a, u=u, d=d, out_n=out_n: [*(a + u * s - out_n[:2] * d), z]  # noqa: E731
+                mesh.quad([Q(s0, z0), Q(s1, z0), Q(s1, z1), Q(s0, z1)], o["id"], out_n)
+                # a reveal on each side of the cell that borders the wall, facing into the opening
+                for (sa, za), (sb, zb), outside, face in (
+                        ((s0, z0), (s1, z0), (sm, z0 - eps), [0, 0, 1]),
+                        ((s0, z1), (s1, z1), (sm, z1 + eps), [0, 0, -1]),
+                        ((s0, z0), (s0, z1), (s0 - eps, zm), [u[0], u[1], 0]),
+                        ((s1, z0), (s1, z1), (s1 + eps, zm), [-u[0], -u[1], 0])):
+                    if hole_at(*outside) is o:
+                        continue
+                    mesh.quad([P(sa, za), P(sb, zb), Q(sb, zb), Q(sa, za)], inputs.reveal_id, face)
+
+    for tr in traps:
+        left = [tr["a"]] + sorted(y for y in face_ys[(tr["z"], tr["x0"])] if tr["a"] + SNAP_M < y < tr["b"] - SNAP_M) + [tr["b"]]
+        right = [tr["c"]] + sorted(y for y in face_ys[(tr["z"], tr["x1"])] if tr["c"] + SNAP_M < y < tr["d"] - SNAP_M) + [tr["d"]]
+        if len(left) != len(right):
+            raise BuildError(f"cuts at {tr['z']} m between x {tr['x0']} and {tr['x1']} do not pair up; not built yet")
+        x0, x1, z = tr["x0"], tr["x1"], tr["z"]
+        for k in range(len(left) - 1):
+            mesh.quad([[x0, left[k], z], [x1, right[k], z], [x1, right[k + 1], z], [x0, left[k + 1], z]],
+                      tr["mid"], [0, 0, tr["up"]])
     return mesh.dump(spec.levels)
+
+
+def _r(v):
+    return round(float(v), 9)
+
+
+SNAP_M = 1e-7          # a cut carried across faces and back lands within this of where it started
+
+
+def _snap_add(target, values):
+    """Add values to a set of cuts, snapping each to an existing cut within SNAP_M."""
+    have = sorted(target)
+    for v in values:
+        i = int(np.searchsorted(have, v))
+        if any(0 <= j < len(have) and abs(have[j] - v) <= SNAP_M for j in (i - 1, i)):
+            continue
+        target.add(v)
+        have.insert(i, v)
+
+
+def _trapezoids(faces, xs):
+    """Every horizontal face cut into trapezoids by the vertical strips between consecutive xs: two
+    vertical sides (x0: a..b, x1: c..d) and two straight edges. A piece that is no such trapezoid (a
+    triangle where two edges meet inside the strip's side) is a BuildError."""
+    out = []
+    for poly, z, mid, up in faces:
+        minx, miny, maxx, maxy = poly.bounds
+        for x0, x1 in zip(xs, xs[1:]):
+            if x1 <= minx + KEY_M or x0 >= maxx - KEY_M:
+                continue
+            piece = poly.intersection(shapely.box(x0, miny - 1, x1, maxy + 1))
+            for part in shapely.get_parts(piece):
+                if part.geom_type != "Polygon" or part.area <= KEY_M:
+                    continue
+                pts = np.asarray(part.exterior.coords)[:-1]
+                lefts = sorted({_r(y) for x, y in pts if abs(x - x0) <= 1e-7})
+                rights = sorted({_r(y) for x, y in pts if abs(x - x1) <= 1e-7})
+                if len(lefts) < 2 or len(rights) < 2:
+                    raise BuildError(f"the face at {z} m between x {x0} and {x1} narrows to a point; "
+                                     "a triangle is not built yet")
+                a, b, c, d = lefts[0], lefts[-1], rights[0], rights[-1]
+                if abs(part.area - ((b - a) + (d - c)) / 2 * (x1 - x0)) > 1e-6:
+                    raise BuildError(f"the face at {z} m between x {x0} and {x1} is no trapezoid; not built yet")
+                out.append({"z": _r(z), "x0": x0, "x1": x1, "a": a, "b": b, "c": c, "d": d, "mid": mid, "up": up,
+                            "side_pts": (lefts[1:-1], rights[1:-1])})
+    return out
+
+
+def _propagate(traps, walls, wall_ys, rounds=200):
+    """Cuts on the vertical sides of the trapezoids, kept in step until nothing changes (no T-junction):
+    a side takes the cuts of the walls along y that stand on it and the ends of every other side on the
+    same line and height; a trapezoid carries its cuts across by their share of the side; a wall along y
+    takes back every cut of the faces at its foot and top within its length."""
+    face_ys = {}
+    for tr in traps:
+        for key, lo, hi, mids in (((tr["z"], tr["x0"]), tr["a"], tr["b"], tr["side_pts"][0]),
+                                  ((tr["z"], tr["x1"]), tr["c"], tr["d"], tr["side_pts"][1])):
+            face_ys.setdefault(key, set()).update({lo, hi, *mids})
+    ywalls = [(_r(a[0]), min(a[1], b[1]), max(a[1], b[1]), _r(z_lo), _r(z_hi))
+              for _, a, b, z_lo, z_hi in walls if abs(b[0] - a[0]) <= KEY_M]
+    for _ in range(rounds):
+        before = sum(len(v) for v in face_ys.values()) + sum(len(v) for v in wall_ys.values())
+        for x, y0, y1, z_lo, z_hi in ywalls:            # walls -> the faces at their foot and top
+            for z in (z_lo, z_hi):
+                if (z, x) in face_ys:
+                    _snap_add(face_ys[(z, x)], [y for y in wall_ys.get(x, ()) if y0 - KEY_M <= y <= y1 + KEY_M])
+        for tr in traps:                                # across each trapezoid by share of its side
+            left, right = face_ys[(tr["z"], tr["x0"])], face_ys[(tr["z"], tr["x1"])]
+            a, b, c, d = tr["a"], tr["b"], tr["c"], tr["d"]
+            _snap_add(right, [_r(c + (y - a) * (d - c) / (b - a)) for y in list(left) if a + SNAP_M < y < b - SNAP_M])
+            _snap_add(left, [_r(a + (y - c) * (b - a) / (d - c)) for y in list(right) if c + SNAP_M < y < d - SNAP_M])
+        for x, y0, y1, z_lo, z_hi in ywalls:            # faces -> the walls standing on them
+            for z in (z_lo, z_hi):
+                _snap_add(wall_ys.setdefault(x, set()), [y for y in face_ys.get((z, x), ()) if y0 - KEY_M <= y <= y1 + KEY_M])
+        if sum(len(v) for v in face_ys.values()) + sum(len(v) for v in wall_ys.values()) == before:
+            return face_ys
+    raise BuildError("cuts between faces and walls do not settle; not built yet")

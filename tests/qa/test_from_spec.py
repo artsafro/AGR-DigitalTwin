@@ -118,7 +118,7 @@ def test_grille_gets_no_hole():
 
 @pytest.mark.parametrize("change, message", [
     ({"contour": [[0, 0], [10, 0], [10, 10, {"r": 1.0}], [0, 10]]}, "rounded corners"),
-    ({"contour": [[0, 0], [10, 0], [12, 10], [0, 10]]}, "not axis-parallel"),
+    ({"contour": [[0, 0], [10, 0], [12, 10], [0, 10]]}, "triangle is not built yet"),   # an x-extreme sharp corner
 ])
 def test_what_this_step_cannot_build_is_an_error_not_a_guess(change, message):
     data = json.loads(json.dumps(FIXTURE))
@@ -493,3 +493,40 @@ def test_overlap_areas_touching_at_a_corner_are_an_error():
                        {"level": "L1", "contour": [[2, 0], [4, 0], [4, 4], [0, 4], [0, 2], [2, 2]], "openings": []}]
     with pytest.raises(BuildError, match="do not meet over area only"):
         build(edited(edit), INPUTS)
+
+
+# pattern non-90-corner: oblique walls; horizontal faces cut into trapezoids by vertical strips
+
+
+def b02_spec():
+    data = json.loads((ROOT / "benchmark/bench-b02-corner-niche/spec.json").read_text(encoding="utf-8"))
+    return Spec.model_validate(data)
+
+
+def test_b02_spec_builds_with_its_oblique_wall_niche_and_step():
+    dump = build(b02_spec(), INPUTS)
+    assert topology_ok(dump)
+    soup = from_dump(dump)
+    planes = soup.corners()[soup.material_ids == PLANE]
+    oblique = planes[planes[:, :, 2].min(1) > 3.3]
+    n = np.cross(oblique[:, 1] - oblique[:, 0], oblique[:, 2] - oblique[:, 0])
+    assert np.allclose(n[:, :2] / np.linalg.norm(n[:, :2], axis=1)[:, None], [0.7071068, 0.7071068], atol=1e-6)
+
+
+def test_b02_model_passes_the_checks_against_itself():
+    s = b02_spec()
+    soup = from_dump(build(s, INPUTS))
+    report = checks.run(soup, soup, s, TOL)
+    assert report["passed"], report["failed"] + report["not_measured"]
+
+
+@pytest.mark.parametrize("contour", [
+    [[0, 0], [10, 0], [10, 6], [7, 9], [0, 9]],                      # one 45° corner cut
+    [[0, 0], [10, 0], [12, 6], [12, 9], [0, 9]],                     # a wall leaning out, obtuse corners
+    [[0, 0], [10, 0], [10, 10], [5, 7], [0, 10]],                    # a V notch in the north wall
+])
+def test_oblique_contours_build_without_t_junctions(contour):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+    dump = build(edited(edit), INPUTS)
+    assert topology_ok(dump)
