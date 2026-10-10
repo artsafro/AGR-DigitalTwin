@@ -9,11 +9,13 @@ Steps (docs/HARNESS_PLAN.md §5, §8, §9), every output in the new run folder:
 3. model-dump.json    dt_ai.geometry.from_spec.build with the `build` block of object.json
 4. model.blend/.fbx   tools/export/export_mesh_blender.py
 5. model-readback.json  measure_spec_blender.py on model.fbx: the checks read the exported file, not memory
-6. etalon-self.json   the checks of the etalon against itself (a failure here is the etalon's or a threshold's)
-   report.json        the checks of the model readback against the etalon
+   etalon-self.json   right after step 2: the checks of the etalon against itself (a failure here is the
+                      etalon's or a threshold's); written even when the engine cannot build the spec
+6. report.json        the checks of the model readback against the etalon
 summary.json holds every step's status. Pattern: none — benchmark tooling, not a building node
-(REVIEW_CHECKLIST Q1: new-case). Exit 0 both reports pass, 1 a check fails, 2 a step stops,
-a check is not measured, or the input is wrong. The run folder must not exist (never overwritten).
+(REVIEW_CHECKLIST Q1: new-case). Exit 0 both reports pass; 1 a check fails (a failure is a definite
+result, so it wins over a check left unmeasured elsewhere); 2 a step stops, no check fails but one is
+not measured, or the input is wrong. The run folder must not exist (never overwritten).
 """
 import argparse
 import json
@@ -74,6 +76,10 @@ def run(etalon, obj_path, tol_path, out, blender):
         write(out / "spec.json", spec.model_dump(exclude_none=True))
         write(out / "spec.report.json", report)
         steps["spec"] = {"status": "done", "questions": len(report["questions"])}
+        etalon_soup = from_dump(etalon_dump, spec.frame.to_object)
+        self_check = checks.run(etalon_soup, etalon_soup, spec, geometry)   # before the engine: an etalon is
+        write(out / "etalon-self.json", self_check)                        # checked even when it cannot be built
+        steps["etalon_self"] = {k: self_check[k] for k in ("passed", "failed", "not_measured")}
         model_dump = build(Spec.model_validate(spec.model_dump()), BuildInputs.from_object(obj))
         write(out / "model-dump.json", model_dump)
         steps["model"] = "done"
@@ -84,17 +90,13 @@ def run(etalon, obj_path, tol_path, out, blender):
         produced(out / "model-readback.json")
         readback = read_json((out / "model-readback.json").read_bytes())
         steps["readback"] = "done"
-        etalon_soup = from_dump(etalon_dump, spec.frame.to_object)
-        self_check = checks.run(etalon_soup, etalon_soup, spec, geometry)
         model_check = checks.run(from_dump(readback), etalon_soup, spec, geometry)
     except (SpecError, BuildError, RuntimeError, subprocess.TimeoutExpired, OSError, ValueError, KeyError,
             TypeError) as exc:
         summary["stopped"] = f"{type(exc).__name__}: {exc}"
         return summary
-    write(out / "etalon-self.json", self_check)
     write(out / "report.json", model_check)
-    for name, r in (("etalon_self", self_check), ("model_check", model_check)):
-        steps[name] = {k: r[k] for k in ("passed", "failed", "not_measured")}
+    steps["model_check"] = {k: model_check[k] for k in ("passed", "failed", "not_measured")}
     return summary
 
 
