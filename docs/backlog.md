@@ -48,6 +48,26 @@ the pattern `markup-helpers` (written or extended) and its test.
   extractor reads the `AXIS_<letter>` / `AXIS_<digit>` grid and binds openings to axes, not absolute
   coordinates; named anchors `TERRACE_<n>`, `ENTRANCE_<name>` as hints to patterns (smaller gray zone).
 
+## Intake — "study the sources" (after the plan is approved; owner Claude, code parts Codex)
+
+Plan: `docs/HARNESS_PLAN.md` §15 (user decision 2026-10-11). One PR each, extending the skill
+`analyze-architectural-source` (no parallel skill); intake reads only, never changes or exports sources.
+
+- **IN1** Skeleton: formats of `jobs/<JOB>/intake/sources.json`, `picture.md` (facts with source and
+  confidence measured / read_from_drawing / estimated / unknown; contradictions listed, not resolved),
+  `questions.md`, `spec-draft.json` (`null` without a source, `confidence` per block); `dt intake check`.
+- **IN2** Intake on the existing adapters (FBX mesh dump, Revit twin): inventory, picture, contradictions,
+  implementation proposal. Test: K01 KPP1 (Revit + FBX).
+- **IN3** PDF adapter: text, vector dimensions, page rasters. Test: one real PDF.
+- **IN4** Images: agent reading, scale anchors (a user-confirmed dimension or a brick / panel module);
+  nothing measured, no spec and no engine run before an anchor is confirmed. Test: B02 from Max screenshots.
+- **IN5** DWG through the AutoCAD MCP. Test: one real facade DWG.
+- **IN6** SketchUp adapter on intake (after H2). Test: one real SKP.
+- **IN7** 3ds Max through the MCP, read only. Test: one real MAX.
+- **IN8** Acceptance cases: K01 full (Revit + FBX + PDF) matches the existing specs within the K01
+  tolerances, Revit / mesh contradictions listed; B02 images give an estimated spec-draft and the anchor
+  question.
+
 ## QA (default owner Codex)
 
 - **Q1** Validator: NPM embedded atlas pixel rules (PNG inside FBX), units.
