@@ -474,14 +474,50 @@ def _flat_region(v, tris, z, region):
     return shapely.unary_union(tri).intersection(region) if tri else Polygon()
 
 
-def _ledge_faces(v, tris, ledge, z0, z1):
-    """Storey triangles standing on a ledge: centre inside the ledge (off its outline) and above the level."""
+def _vertical_near(p, line, z0, z1):
+    """Vertical triangles (of p, a triangle array) between z0 and z1 whose centre lies on line (5 mm)."""
+    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
+    c = p.mean(axis=1)
+    upright = np.abs(n[:, 2]) <= 0.01 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+    inside = (p[:, :, 2].min(axis=1) >= z0 - EVENT_MIN_M) & (p[:, :, 2].max(axis=1) <= z1 + EVENT_MIN_M)
+    return upright & inside & shapely.contains_xy(line.buffer(SAME_CONTOUR_M), c[:, 0], c[:, 1])
+
+
+def _wall_cover(v, tris, line, z0, z1):
+    """Area of line x (z0..z1) actually covered by vertical faces: per straight piece of the line, the faces
+    on it are unrolled to (along, z) and united, so faces covering one place twice never make up for a
+    place covered by none (Codex review 2 of PR #61)."""
+    p = v[tris]
+    p = p[_vertical_near(p, line, z0, z1)]
+    total = 0.0
+    for piece in shapely.get_parts(line):
+        c = np.asarray(piece.coords)
+        for a, b in zip(c[:-1], c[1:]):
+            length = float(np.linalg.norm(b - a))
+            if length <= SAME_CONTOUR_M:
+                continue
+            u = (b - a) / length
+            seg = LineString([a, b]).buffer(SAME_CONTOUR_M, cap_style="flat")
+            on = p[shapely.contains_xy(seg, *p.mean(axis=1)[:, :2].T)]
+            flat2d = [Polygon(np.column_stack([(t[:, :2] - a) @ u, t[:, 2]])) for t in on]
+            cover = shapely.unary_union([f for f in flat2d if f.area > 0]) if len(on) else Polygon()
+            total += cover.intersection(shapely.box(0, z0, length, z1)).area
+    return total
+
+
+def _ledge_faces(v, tris, ledge, z0, z1, cap=None, inner_line=None, zt=None):
+    """Storey triangles standing on a ledge: centre inside the ledge (off its outline) and above the level.
+    On a terrace the parapet itself (its cap and inner face) is left out (Codex review 2 of PR #61)."""
     p = v[tris]
     c = p.mean(axis=1)
     inner = ledge.buffer(-SAME_CONTOUR_M)
     if inner.is_empty:
         return p[:0]
     keep = (c[:, 2] > z0 + EVENT_MIN_M) & (c[:, 2] < z1 - EVENT_MIN_M) & shapely.contains_xy(inner, c[:, 0], c[:, 1])
+    if cap is not None:
+        on_cap = (np.abs(p[:, :, 2] - zt).max(axis=1) < EVENT_MIN_M) & shapely.contains_xy(
+            cap.buffer(SAME_CONTOUR_M), c[:, 0], c[:, 1])
+        keep &= ~on_cap & ~_vertical_near(p, inner_line, z0, zt)
     return p[keep]
 
 
@@ -514,16 +550,10 @@ def _terrace(v, tris, groups, closed, z0, z1, below):
     h = zt - z0
     if inner_line.length <= SAME_CONTOUR_M:
         return None
-    p = v[tris]
-    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
-    c = p.mean(axis=1)
-    up = np.abs(n[:, 2]) <= 0.01 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
-    band = up & (c[:, 2] > z0) & (c[:, 2] < zt) & (p[:, :, 2].min(axis=1) >= z0 - EVENT_MIN_M)         & (p[:, :, 2].max(axis=1) <= zt + EVENT_MIN_M)
-    near = shapely.contains_xy(inner_line.buffer(SAME_CONTOUR_M), c[:, 0], c[:, 1])
-    face = float(np.linalg.norm(n[band & near], axis=1).sum() / 2)
+    face = _wall_cover(v, tris, inner_line, z0, zt)
     if abs(face - inner_line.length * h) > TERRACE_COVER * inner_line.length * h:
         return None
-    return high, zt, {"walkable_m2": round(walk.area, 3), "cap_m2": round(cap.area, 3), "ledge_m2": round(ledge.area, 3),
+    return high, zt, cap, inner_line, {"walkable_m2": round(walk.area, 3), "cap_m2": round(cap.area, 3), "ledge_m2": round(ledge.area, 3),
                       "inner_face_m2": round(face, 3)}
 
 
@@ -565,7 +595,7 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None):
     tallest = max(g["height"] for g in groups)
     terrace = None if at_m is not None else _terrace(v, tris, groups, closed, z0, z1, below)
     if terrace is not None:
-        base, zt, areas = terrace
+        base, zt, cap, inner_line, areas = terrace
         rule = f"terrace: parapet {zt - z0:.3f} m from the level"
     elif at_m is not None:
         base = next((g for g in groups if any(a <= at_m <= b for a, b in g["spans"])), None)
@@ -588,8 +618,9 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None):
     if terrace is not None:                    # the parapet shape is the terrace, not a question
         report["terrace"] = {"parapet_h_m": round(zt - z0, 3), **areas}
         others = []
-    elif below is not None:                    # anything standing on a ledge that is no terrace: a question
-        on = _ledge_faces(v, tris, below.difference(base["poly"]), z0, z1)
+    if below is not None:                      # anything else standing on a ledge: a question
+        on = _ledge_faces(v, tris, below.difference(base["poly"]), z0, z1,
+                          *((cap, inner_line, zt) if terrace is not None else ()))
         if len(on):
             c = on.reshape(-1, 3)
             report["ledge_structure"] = {"triangles": int(len(on)), "heights_m": [round(z0, 3), round(float(c[:, 2].max()), 3)],

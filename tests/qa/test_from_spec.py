@@ -717,3 +717,48 @@ def test_b02_terrace_spec_round_trip():
     spec, report = extract_spec(build(s, INPUTS), {**SYNTH_OBJECT, "id": s.id})
     keep = lambda x: {k: v for k, v in x.model_dump().items() if k != "frame"}   # noqa: E731
     assert keep(spec) == keep(s) and report["questions"] == []
+
+
+def _west_terrace_dump():
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    m.pop("polygons", None)
+    m.pop("polygon_sizes", None)
+    return d, m, np.asarray(m["vertices"], float)
+
+
+def _drop(m, v, where):
+    keep = [i for i, t in enumerate(m["triangles"]) if not where(v[t])]
+    m["triangles"] = [m["triangles"][i] for i in keep]
+    m["material_ids"] = [m["material_ids"][i] for i in keep]
+
+
+def test_extractor_wants_the_whole_parapet_inner_face_not_its_area():
+    # Codex review 2 of PR #61: the west inner face is missing; copies of the south one make up its area
+    from dt_ai.spec import SpecError, extract_spec
+    d, m, v = _west_terrace_dump()
+    west = lambda t: np.all(np.abs(t[:, 0] - 0.3) < 1e-6) and t[:, 2].max() <= 3.9 + 1e-6   # noqa: E731
+    _drop(m, v, west)                                       # 9.4 x 0.6 = 5.64 m2 gone
+    for xa, xb in ((0.3, 4.0), (0.3, 4.0), (0.3, 2.3)):    # 2.22 + 2.22 + 1.2 = 5.64 m2 more on the south face
+        n = len(m["vertices"])
+        m["vertices"] += [[xa, 0.3, 3.3], [xb, 0.3, 3.3], [xb, 0.3, 3.9], [xa, 0.3, 3.9]]
+        m["triangles"] += [[n, n + 2, n + 1], [n, n + 3, n + 2]]
+        m["material_ids"] += [ROOF, ROOF]
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)
+
+
+def test_extractor_asks_about_anything_else_standing_on_a_terrace():
+    # Codex review 2 of PR #61: a block on the walkable part is no parapet and never disappears silently
+    from dt_ai.spec import extract_spec
+    d, m, v = _west_terrace_dump()
+    n = len(m["vertices"])
+    x0, y0, x1, y1, z0, z1 = 0.3, 0.3, 0.8, 0.8, 3.3, 4.3          # welded at the walkable corner
+    m["vertices"] += [[x, y, z] for z in (z0, z1) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1))]
+    quads = [(4, 5, 6, 7), (0, 1, 5, 4), (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+    for a, b, c, e in quads:
+        m["triangles"] += [[n + a, n + b, n + c], [n + a, n + c, n + e]]
+        m["material_ids"] += [FACADE, FACADE]
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    assert [t.level for t in spec.terraces] == ["L1"]
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
