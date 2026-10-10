@@ -109,6 +109,10 @@ class Spec(SpecPart):
     terraces: list[Terrace] = []
     attachments: list[dict] = []
     opening_depth_default_m: NonNegative = 0.2
+    # pattern roof-inset-plane (user 2026-10-10): every slab is a separate plate plate_gap_m above its level
+    # that overlaps its hole by plate_overlap_m; building parameters, the etalons' 5 mm / 20 mm by default
+    plate_gap_m: Positive = 0.005
+    plate_overlap_m: Positive = 0.02
 
     @model_validator(mode="after")
     def consistent(self):

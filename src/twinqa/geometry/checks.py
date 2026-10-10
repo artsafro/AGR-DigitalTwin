@@ -234,7 +234,7 @@ def fan_vertices(triangles, ids, side_edges, skip) -> list[int]:
     return sorted(v for v, roots in fans.items() if len(roots) > 1)
 
 
-def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None) -> dict:
+def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None) -> dict:
     """Edge- and vertex-manifold (one face fan per vertex, issue #57), no n-gons, no overlapping faces, and open edges only where the pattern
     roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
     inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
@@ -275,6 +275,16 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None) -> dict:
             if area > tol["weld_m"] ** 2:
                 solid[name] = round(area, 4)
         not_inset = [name for name in slabs if name not in inset or name in solid]
+    # the plates match the building's plate_gap_m / plate_overlap_m (spec, user 2026-10-10) within plate_tol_m
+    plate_off = []
+    if plate is not None:
+        gap_s, overlap_s = plate
+        for lp in loops:
+            if lp["kind"] == "roof-plane" and lp["allowed"]:
+                gap = lp["z"] - model.levels[lp["level"]]
+                lp["gap_m"] = round(gap, 4)
+                if abs(gap - gap_s) > tol["plate_tol_m"] or abs(lp["embed_m"] - overlap_s) > tol["plate_tol_m"]:
+                    plate_off.append({"level": lp["level"], "gap_m": round(gap, 4), "overlap_m": lp["embed_m"]})
     bad_loops = [lp for lp in loops if not lp["allowed"]]
     non_manifold = int((counts > 2).sum())
     fan_v = fan_vertices(model.triangles, ids, side_edges, tri_open)
@@ -289,11 +299,12 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None) -> dict:
     details = {"non_manifold_edges": non_manifold, "non_manifold_vertices": len(fan_v),
                "non_manifold_vertex_points": [[round(float(c), 4) for c in model.vertices[ids == v][0]] for v in fan_v[:20]],
                "boundary_edges": boundary_n, "open_loops": loops, "slabs": None if slabs is None else list(slabs), "slabs_not_inset": not_inset,
-               "solid_slab_m2": solid,
+               "solid_slab_m2": solid, "plates_off_spec": plate_off,
                "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
     ok = (non_manifold <= tol["non_manifold_edges_max"] and not fan_v and not bad_loops and not not_inset
+          and not plate_off
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
     if not ngon_measured and ok:
         return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes matching its triangles"},
@@ -402,7 +413,8 @@ def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = 
     ranges = ranges or load_ranges()
     checks = [check_bbox(model, etalon, tol), check_levels(model, etalon, spec, tol),
               check_floor_areas(model, etalon, spec, tol), check_silhouettes(model, etalon, tol),
-              check_mesh(model, tol, ranges, slabs(spec)), check_budget(model, tol),
+              check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m)),
+              check_budget(model, tol),
               check_opening_planes(model, spec, tol, ranges), check_material_ids(model, tol, ranges)]
     return {"passed": all(c["status"] == "pass" for c in checks),
             "failed": [c["id"] for c in checks if c["status"] == "fail"],

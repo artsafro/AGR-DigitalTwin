@@ -14,6 +14,7 @@ import numpy as np
 import shapely
 from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.geometry.polygon import orient
+from shapely.ops import polygonize
 
 from dt_ai.spec import floors as fl
 from dt_ai.spec import openings as op
@@ -57,6 +58,7 @@ DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the store
 RELIEF_M = 0.10
 DOOR_HOST_M = 0.02        # a source door is a facade door when its ends lie within half its host + this of the contour
 SLAB_GAP_M = (0.002, 0.010)  # an inset slab plate lies this far above its level (pattern roof-inset-plane)
+PLATE_SAME_M = 0.0005    # the inset plates of one building share plate_gap_m / plate_overlap_m within this
 TERRACE_COVER = 0.02      # terrace: the walkable part at the level and the parapet cap together cover the ledge
                           # within this share of its area (pattern terrace, user plan 2026-10-10)
 
@@ -550,6 +552,31 @@ def _inset_plate(v, extra, z0, region):
     zp = float(np.median(z[flat].mean(axis=1)))
     tri = [Polygon(t[:, :2]) for t in p[flat]]
     return shapely.unary_union([t for t in tri if t.area > 0]), round(zp - z0, 4)
+
+
+def _holes(v, tris, z):
+    """Closed outlines of the body's open edges lying flat at height z (the holes of inset slabs)."""
+    e = np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1)
+    edges, count = np.unique(e, axis=0, return_counts=True)
+    once = edges[count == 1]
+    once = once[np.abs(v[once][:, :, 2] - z).max(axis=1) <= WELD_M]
+    return list(polygonize([LineString(v[pair][:, :2]) for pair in once]))
+
+
+def _plate_params(v, body, extra, z, region):
+    """(plate_gap_m, plate_overlap_m) of every inset plate over level z inside region (pattern
+    roof-inset-plane, user 2026-10-10): its height above the level, and how far it overlaps the one hole
+    of the body it lies over (outline to outline, as the checker measures it)."""
+    plate, gap = _inset_plate(v, extra, z, region)
+    if gap is None:
+        return []
+    holes = _holes(v, body, z)
+    out = []
+    for part in shapely.get_parts(plate):
+        inside = [h for h in holes if part.buffer(-WELD_M).contains(h)]
+        if len(inside) == 1:
+            out.append((round(gap, 4), round(float(inside[0].exterior.distance(part.exterior)), 4)))
+    return out
 
 
 def _terrace(v, tris, groups, closed, z0, z1, below, extra=None):
@@ -1168,6 +1195,29 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     written, report["floor_classes"] = fl.collapse(levels, floors)
     terraces = [{"level": n, "parapet_h_m": rep["terrace"]["parapet_h_m"]}
                 for n, rep in report["floors"].items() if "terrace" in rep]
+    # inset plates (pattern roof-inset-plane, user 2026-10-10): plate_gap_m / plate_overlap_m are building
+    # parameters read from the source; plates that disagree are a question, none leaves the defaults
+    extra = np.vstack(others) if others else None
+    plates = {}
+    if roof_stats["parapet"]:
+        plates[levels[-1]["name"]] = _plate_params(v, body, extra, levels[-1]["elev_m"], polys[-1])
+    for t in terraces:
+        k = names.index(t["level"])
+        plates[t["level"]] = _plate_params(v, body, extra, levels[k]["elev_m"], polys[k - 1].difference(polys[k]))
+    measured = [p for ps in plates.values() for p in ps]
+    report["plates"] = {name: [{"gap_m": g, "overlap_m": o} for g, o in ps] for name, ps in plates.items()}
+    plate = {}
+    if measured:
+        gap, overlap = float(np.median([g for g, _ in measured])), float(np.median([o for _, o in measured]))
+        plate = {"plate_gap_m": round(gap, 4), "plate_overlap_m": round(overlap, 4)}
+        off = [name for name, ps in plates.items()
+               if any(abs(g - gap) > PLATE_SAME_M or abs(o - overlap) > PLATE_SAME_M for g, o in ps)]
+        if off:
+            questions.append({"priority": "high", "kind": "plate-params", "levels": off, "wall": None,
+                              "depth_m": None, "length_m": None, "facade_share": None, "heights_m": None, "at": None})
+            questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
+            for n, q in enumerate(questions, 1):
+                q["n"] = n
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
                 # the parapet is measured from the input roof level, never from the roof plane: an inset
@@ -1177,5 +1227,5 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                 roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0},
                 # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
                 **({"spec_version": "0.4", "terraces": terraces} if terraces else {}),
-                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
+                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2), **plate)
     return spec, report

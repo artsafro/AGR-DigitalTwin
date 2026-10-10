@@ -143,5 +143,7 @@
   },
   "terraces": [],
   "attachments": [],
-  "opening_depth_default_m": 0.2
+  "opening_depth_default_m": 0.2,
+  "plate_gap_m": 0.005,
+  "plate_overlap_m": 0.02
 }

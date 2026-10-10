@@ -21,8 +21,7 @@ from twinqa.scene import find_blender
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
-INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE,
-                     slab_gap_m=0.005, slab_embed_m=0.02)
+INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE)
 
 
 def spec(**changes):
@@ -835,7 +834,7 @@ def test_a_slab_joint_the_spec_implies_no_slab_for_is_not_allowed():
 @pytest.mark.parametrize("gap, embed", [(0.001, 0.02), (0.012, 0.02), (0.005, 0.009), (0.005, 0.051)])
 def test_inset_inputs_outside_the_pattern_are_build_errors(gap, embed):
     with pytest.raises(BuildError, match="outside the pattern"):
-        build(spec(), BuildInputs(**{**INPUTS.__dict__, "slab_gap_m": gap, "slab_embed_m": embed}))
+        build(Spec.model_validate({**spec().model_dump(), "plate_gap_m": gap, "plate_overlap_m": embed}), INPUTS)
 
 
 @pytest.mark.parametrize("dz", [0.001, 0.0105])
@@ -912,3 +911,28 @@ def test_a_plate_sloping_across_its_strips_is_no_inset_plate():
 def test_a_plate_wider_than_the_faces_around_it_is_a_build_error():
     with pytest.raises(BuildError, match="reaches out of the building outline"):
         build(spec(), BuildInputs(**{**INPUTS.__dict__, "parapet_thickness_m": 0.01}))
+
+
+# plate_gap_m / plate_overlap_m: building parameters in the spec (user 2026-10-10)
+
+
+def test_the_extractor_reads_the_plate_parameters_back():
+    from dt_ai.spec import extract_spec
+    s = Spec.model_validate({**terraced(west_ledge).model_dump(), "plate_gap_m": 0.008, "plate_overlap_m": 0.03})
+    spec, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
+    assert (spec.plate_gap_m, spec.plate_overlap_m) == (0.008, 0.03) and report["questions"] == []
+    assert report["plates"] == {"roof": [{"gap_m": 0.008, "overlap_m": 0.03}], "L1": [{"gap_m": 0.008, "overlap_m": 0.03}]}
+    soup = from_dump(build(s, INPUTS))
+    assert checks.run(soup, soup, spec, TOL)["passed"]
+
+
+def test_plates_that_disagree_are_a_question():
+    from dt_ai.spec import extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    for i, p in enumerate(m["vertices"]):
+        if abs(p[2] - 3.305) < 1e-9:                    # the terrace plate 8 mm up, the roof plate stays at 5 mm
+            m["vertices"][i] = [p[0], p[1], 3.308]
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("plate-params", ["L1", "roof"])] or \
+        [(q["kind"], q["levels"]) for q in report["questions"]] == [("plate-params", ["roof", "L1"])]

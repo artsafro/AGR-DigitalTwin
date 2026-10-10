@@ -15,8 +15,8 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
   is not built (docs/domain/geometry.md, hidden parts of reveals), and a reveal running past the
   plane would leave an edge of three faces. Grilles stay texture (`vent-grille`);
 - every slab inset (pattern roof-inset-plane, user rule 2026-10-10): the body has a hole at the slab's
-  level (the foot of the faces around it) and the slab is a separate plate at level + `slab_gap_m`,
-  its outline the hole grown by `slab_embed_m` (mitred) into the faces around it; slabs are the roof
+  level (the foot of the faces around it) and the slab is a separate plate at level + the spec's
+  `plate_gap_m` that overlaps the hole by `plate_overlap_m` (mitred) under the faces around it; slabs are the roof
   inside a parapet and the walkable part of every terrace. A roof without a parapet stays solid (no
   faces to inset it into);
 - parapet inner walls and cap;
@@ -69,14 +69,11 @@ class BuildInputs:
     roof_id: int
     opening_id: int                       # default plane ID when the opening has none of its own
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
-    slab_gap_m: float | None = None       # inset slab plate above its level (pattern roof-inset-plane)
-    slab_embed_m: float | None = None     # inset slab plate outline beyond the hole, into the faces around it
 
     @classmethod
     def from_object(cls, obj_cfg: dict) -> "BuildInputs":
         """The `build` block of object.json: {"parapet_thickness_m", "ids": {"facade", "reveal", "roof",
-        "opening"}, "slab_inset": {"gap_m", "embed_m"}, "opening_ids_by_type"?}. Missing values are an error,
-        never a default."""
+        "opening"}, "opening_ids_by_type"?}. Missing values are an error, never a default."""
         b = obj_cfg.get("build")
         if not b:
             raise BuildError(f"object {obj_cfg.get('id', '?')}: object.json has no build block (parapet thickness, IDs)")
@@ -84,8 +81,7 @@ class BuildInputs:
             ids = b["ids"]
             by_type = {int(k): int(v) for k, v in (b.get("opening_ids_by_type") or {}).items()}
             return cls(float(b["parapet_thickness_m"]), int(ids["facade"]), int(ids["reveal"]), int(ids["roof"]),
-                       int(ids["opening"]), by_type or None,
-                       float(b["slab_inset"]["gap_m"]), float(b["slab_inset"]["embed_m"]))
+                       int(ids["opening"]), by_type or None)
         except (KeyError, TypeError, ValueError) as exc:
             raise BuildError(f"object.json build block: {exc!r}") from exc
 
@@ -385,10 +381,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     _quads(mesh, traps, face_ys)
     joints = [bottom]
     if slabs:
-        gap, embed = inputs.slab_gap_m, inputs.slab_embed_m
-        if gap is None or embed is None:
-            raise BuildError("inset slabs need slab_gap_m and slab_embed_m in the build inputs (object.json "
-                             "build.slab_inset)")
+        gap, embed = spec.plate_gap_m, spec.plate_overlap_m      # building parameters (user 2026-10-10)
         if not (SLAB_GAP_M[0] <= gap <= SLAB_GAP_M[1] and SLAB_EMBED_M[0] <= embed <= SLAB_EMBED_M[1]):
             raise BuildError(f"inset slab gap {gap} m / embed {embed} m outside the pattern's {SLAB_GAP_M} / "
                              f"{SLAB_EMBED_M} m (roof-inset-plane); not built (Codex review 1 of PR #63)")

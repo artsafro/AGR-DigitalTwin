@@ -33,10 +33,6 @@
   "opening_depth_default_m": 0.2,
   "build": {
     "parapet_thickness_m": 0.3,
-    "slab_inset": {
-      "gap_m": 0.005,
-      "embed_m": 0.02
-    },
     "ids": {
       "facade": 1,
       "reveal": 6,
@@ -44,5 +40,5 @@
       "opening": 11
     }
   },
-  "build_note": "Build inputs the spec does not carry (engine from_spec): parapet wall thickness and material IDs of the B02 and B02t briefs (standards/material_id_ranges.yaml); slab_inset: every slab (roof in a parapet, terrace) is a separate plate gap_m above its level, its outline the hole grown by embed_m (pattern roof-inset-plane, user rule 2026-10-10; the etalon's 5 mm / 20 mm)"
+  "build_note": "Build inputs the spec does not carry (engine from_spec): parapet wall thickness and material IDs of the B02 and B02t briefs (standards/material_id_ranges.yaml)"
 }
