@@ -45,12 +45,11 @@ the pattern `markup-helpers` (written or extended) and its test.
   in the pattern; a checker flags suffixes (`.001`, `001`, spaces) and duplicates. Test: rebuild
   B01 by hand in Blender, run the chain, 8/8 closes the route. Later: a script that places
   `LEVEL_*` Empties in a Blender scene from `spec.json`.
-- **MH2** Revit route: generate `LEVEL_<name>` (elevation) from `Levels` and `AXIS_<name>` (line)
-  from `Grids` through TwinPack. Test: on KPP1 the Revit helpers match the ones taken from mesh
-  v022 within the level tolerance.
-- **MH3** Axes and anchors: the extractor reads the `AXIS_<letter>` / `AXIS_<digit>` grid and binds
-  openings to axes, not absolute coordinates; named anchors `TERRACE_<n>`, `ENTRANCE_<name>` as
-  hints to patterns (smaller gray zone).
+- **MH2** Revit route, levels: generate `LEVEL_<name>` (elevation) from `Levels` through TwinPack.
+  Test: on KPP1 the Revit helpers match the ones taken from mesh v022 within the level tolerance.
+- **MH3** Axes and anchors: generate `AXIS_<name>` (line) from Revit `Grids` through TwinPack; the
+  extractor reads the `AXIS_<letter>` / `AXIS_<digit>` grid and binds openings to axes, not absolute
+  coordinates; named anchors `TERRACE_<n>`, `ENTRANCE_<name>` as hints to patterns (smaller gray zone).
 
 ## QA (default owner Codex)
 
