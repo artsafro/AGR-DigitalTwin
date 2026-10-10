@@ -5,6 +5,7 @@ the spec is tests/fixtures/spec-b01-v0.3.json. Build inputs the spec does not ca
 thickness, material IDs) are given explicitly, as `jobs/<object>/materials.json` will.
 """
 import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +15,9 @@ from dt_ai.geometry.from_spec import BuildError, BuildInputs, build
 from dt_ai.spec.model import Spec
 from test_geometry_checks import FACADE, PLANE, REVEAL, ROOF, TOL, box_dump
 from twinqa.geometry import checks
+import run_benchmark
 from twinqa.geometry.mesh import edge_uses, from_dump, weld
+from twinqa.scene import find_blender
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
@@ -220,3 +223,35 @@ def test_floor_records_in_any_order_build_the_same_model():
     # Codex review 2 of PR #50
     reversed_floors = edited(lambda d: d.update({"floors": d["floors"][::-1]}))
     assert build(reversed_floors, INPUTS) == build(spec(), INPUTS)
+
+
+# The chain from an etalon FBX to the checker report (tools/qa/run_benchmark.py), synthetic etalon
+
+
+@pytest.mark.blender
+@pytest.mark.skipif(find_blender() is None, reason="Blender not installed")
+def test_chain_from_a_synthetic_etalon_fbx_to_a_green_report(tmp_path):
+    src = tmp_path / "etalon-src.json"
+    src.write_text(json.dumps({**box_dump(), "source": "etalon.fbx"}), encoding="utf-8")
+    base = [find_blender(), "--background", "--factory-startup", "--disable-autoexec", "--python-exit-code", "1"]
+    subprocess.run(base + ["--python", str(ROOT / "tools/export/export_mesh_blender.py"), "--", str(src),
+                           str(tmp_path / "etalon.blend"), str(tmp_path / "etalon.fbx")], check=True, capture_output=True)
+    bench = ROOT / "benchmark/bench-b01-box"
+    argv = ["--etalon", str(tmp_path / "etalon.fbx"), "--object", str(bench / "object.json"),
+            "--tolerances", str(bench / "tolerances.json"), "--output", str(tmp_path / "run")]
+    assert run_benchmark.main(argv) == 0
+    summary = json.loads((tmp_path / "run/summary.json").read_text(encoding="utf-8"))
+    assert summary["steps"]["spec"] == {"status": "done", "questions": 0}
+    assert summary["steps"]["etalon_self"]["passed"] and summary["steps"]["model_check"]["passed"]
+    spec = json.loads((tmp_path / "run/spec.json").read_text(encoding="utf-8"))
+    assert [lv["elev_m"] for lv in spec["levels"]] == pytest.approx([0.0, 3.3, 6.6], abs=1e-3)
+    assert run_benchmark.main(argv) == 2                       # the run folder is never reused
+
+
+def test_build_inputs_come_from_object_json_and_are_never_defaulted():
+    obj = json.loads((ROOT / "benchmark/bench-b01-box/object.json").read_text(encoding="utf-8"))
+    assert BuildInputs.from_object(obj) == INPUTS
+    with pytest.raises(BuildError, match="no build block"):
+        BuildInputs.from_object({"id": "x"})
+    with pytest.raises(BuildError, match="build block"):
+        BuildInputs.from_object({"id": "x", "build": {"parapet_thickness_m": 0.3, "ids": {"facade": 1}}})
