@@ -7,6 +7,7 @@ decide nothing, and a storey with no closed section is an error, not a guess. An
 the full height becomes a question. Levels are input (LEVEL_<name> helpers or the object's levels from Revit), never guessed;
 the roof plane must lie at the top input level. Decisions: docs/HARNESS_PLAN.md §3-§4 (2026-10-08).
 """
+import re
 from collections import defaultdict
 from itertools import product
 
@@ -21,6 +22,11 @@ from dt_ai.spec import openings as op
 from dt_ai.spec.model import Spec
 
 LEVEL_PREFIX = "LEVEL_"
+# pattern markup-helpers (user 2026-10-10): LEVEL_<name>, the name a letter then letters, digits or "_";
+# no DCC copy suffix (".001", a trailing 3-digit counter as Max's Point001), no spaces, each name once
+LEVEL_NAME = re.compile(r"^LEVEL_[A-Za-z][A-Za-z0-9_]*$")
+LEVEL_COUNTER = re.compile(r"\d{3}$")
+LEVEL_SAME_M = 0.001      # two level helpers closer than this in height are one level given twice
 SAME_CONTOUR_M = 0.005    # sections closer than this (Hausdorff) are one contour; < the 1 cm acceptance
 WELD_M = 1e-4             # vertices closer than WELD_M / 2 on every axis are always welded
 SIMPLIFY_M = 0.0005       # numeric noise only; kinks and arcs are decided by angle below
@@ -94,6 +100,14 @@ def _apply(m, pts):
 
 def _levels(dump, obj_cfg, m):
     helpers = [h for h in dump.get("helpers", []) if h["name"].startswith(LEVEL_PREFIX)]
+    bad = [h["name"] for h in helpers if not LEVEL_NAME.match(h["name"]) or LEVEL_COUNTER.search(h["name"])]
+    if bad:
+        raise SpecError(f"level helper names {bad} break the pattern markup-helpers: LEVEL_<name>, no copy "
+                        "suffix (.001, 001), no spaces; rename them in the source")
+    names = [h["name"] for h in helpers]
+    twice = sorted({n for n in names if names.count(n) > 1})
+    if twice:
+        raise SpecError(f"level helpers {twice} are given more than once (pattern markup-helpers)")
     given = obj_cfg.get("levels")
     if helpers and given:
         raise SpecError("levels given twice: LEVEL_ helpers in the source and levels in object.json")
@@ -101,6 +115,9 @@ def _levels(dump, obj_cfg, m):
         z = _apply(m, [h["location"] for h in helpers])[:, 2]
         levels = [{"name": h["name"][len(LEVEL_PREFIX):], "elev_m": round(float(e), 4)}
                   for h, e in zip(helpers, z)]
+        zs = sorted(float(e) for e in z)
+        if any(b - a < LEVEL_SAME_M for a, b in zip(zs, zs[1:])):
+            raise SpecError("two level helpers at one height: one level given twice (pattern markup-helpers)")
     elif given:
         levels = [{"name": lv["name"], "elev_m": float(lv["elev_m"])} for lv in given]
     else:
@@ -318,6 +335,9 @@ def _drop_small_kinks(points):
 
 
 def _contour_points(poly):
+    if poly.is_empty or poly.geom_type != "Polygon" or len(poly.exterior.coords) < 4:
+        raise SpecError("a level contour vanished (its parts are all relief, <= 0.10 m): the source is too small - "
+                        "check its units (pattern markup-helpers: scene Unit Scale 1.0, metres)")
     poly = orient(poly.simplify(SIMPLIFY_M, preserve_topology=True), sign=1.0)
     pts = _drop_small_kinks(_rounded_corners(np.array(poly.exterior.coords)[:-1]))
     out = [[round(float(x), 3) + 0.0, round(float(y), 3) + 0.0] + ([{"r": round(r, 3)}] if r else [])

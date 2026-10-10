@@ -19,5 +19,34 @@
     "2026-10-10: reveals and opening planes moved from 0.1 to 0.2 m (8 vertices) by Claude at the user's request, for the final C24 rule (npm_min plane at the full 0.2 m opening depth); saved in place, FBX re-exported",
     "2026-10-10: the roof remade as an inset plate by the user (universal inset rule, user 2026-10-10): hole in the body at LEVEL_roof 6.600, plate at 6.605 grown 20 mm under the parapet inner faces; saved in place, FBX re-exported by Claude; the spec is unchanged"
   ],
-  "spec": "spec.json beside this file, extracted from etalon.fbx by tools/qa/run_benchmark.py (run-v002)"
+  "spec": "spec.json beside this file, extracted from etalon.fbx by tools/qa/run_benchmark.py (run-v002)",
+  "blender_v001": {
+    "folder": "data/benchmark/bench-b01-box/blender-v001/",
+    "by": "Claude in Blender 5.1.2, by hand from the B01 brief numbers (user decision 2026-10-10, MH1: the Blender route of the markup helpers); not the engine",
+    "files": {
+      "etalon.blend": {
+        "sha256": "d5832209d189206144b0a66f7327f13f5c33e8713d728c83ff37b05cf6a77de1",
+        "bytes": 110273
+      },
+      "etalon.fbx": {
+        "sha256": "9edf3b8be8944b8f1e7827147d7374a546c32641cb1e9713c13106ca1eaf4357",
+        "bytes": 41756,
+        "exported": "Up Z, Forward Y, scale 1, Apply Unit Scale, FBX Units Scale (export_fbx.py ... Z)"
+      },
+      "etalon-upY.fbx": {
+        "sha256": "985308bbb885d20428b1cc626bb1b6ca4c9c3bfada687fe1708476b3af3a0f40",
+        "bytes": 42188,
+        "exported": "Blender's default Y up, otherwise the same"
+      },
+      "b01_blender_etalon.py": {
+        "sha256": "5e524a6e93470e224465e6fb435c80d2b0737e52e1de33632bc16a61fbbc46fb",
+        "bytes": 5024
+      },
+      "export_fbx.py": {
+        "sha256": "c16eeb67a7e931c66cb41d0ba3b4d9d922d0c5690eaa795bedc6ddf7e4012b8a",
+        "bytes": 440
+      }
+    },
+    "result": "Both exports: chain 8/8 etalon-self and 8/8 engine model, 0 questions; the Up Z spec equals the Max etalon's spec (Y up: plate_gap_m 0.004999 from the axis turn's float noise); helpers LEVEL_L0 / L1 / roof read at 0 / 3.3 / 6.6"
+  }
 }
