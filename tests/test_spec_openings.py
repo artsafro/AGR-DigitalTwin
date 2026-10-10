@@ -392,3 +392,19 @@ def planed(reveal_depth, plane_at):
 def test_depth_is_the_back_polygon_position(reveal_depth, plane_at, depth_m, flush):
     o, kinds = planed(reveal_depth, plane_at)
     assert o.depth_m == depth_m and ("opening-flush" in kinds) == flush
+
+
+
+@pytest.mark.parametrize("glass_y", [0.0, 0.6])
+def test_glass_position_never_sets_the_depth(glass_y):
+    # Codex review 2 of PR #52: a 0.2 m reveal without a plane gives 0.2 m wherever the glass sits
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 6.6, [(0, 2.0, 3.5, 0.9, 2.4, 0.0)])
+    reveal(b, 2.0, 3.5, 0.9, 2.4, 0.2)
+    flat(b, Polygon(SQUARE10), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(pane("glass", 2.1, 3.4, 1.0, 2.3, y=glass_y).dump())
+    spec, _ = extract_spec(d, {**OBJECT, "opening_depth_default_m": 0.6})
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.depth_m == 0.2

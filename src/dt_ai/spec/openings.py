@@ -474,7 +474,7 @@ def _reveal(o, recesses, contour):
     x0, x1 = float(along.min()), float(along.max())
     if x0 > o["x0"] + MATCH_M or x1 < o["x1"] - MATCH_M:
         return None                              # the recess does not hold the glass
-    depth = float(max(((pts - a) @ n).max(), o["depth"]))
+    depth = float(((pts - a) @ n).max())         # the reveal alone; the glass position never sets it (C24 final)
     return x0, x1, min(run["z0"], o["z0"]), max(run["z1"], o["z1"]), depth
 
 
@@ -571,7 +571,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
         for g in [g for g in glass if g["level"] == li]:
             matches = [h for h in holes if _overlap(h, g)]
             for h in matches:
-                h["source"], h["depth"] = "hole+glass", max(h["depth"], g["depth"])
+                h["source"] = "hole+glass"             # the hole's reveal keeps the depth; glass never sets it
                 h["parts"] = h.get("parts", 0) + g["parts"]
                 h["glass_z"] = h.get("glass_z", []) + g["glass_z"]
                 h["glass_world"] = h.get("glass_world", []) + g["glass_world"]
