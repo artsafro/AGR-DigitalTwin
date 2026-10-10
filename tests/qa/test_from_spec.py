@@ -869,3 +869,46 @@ def test_the_extractor_wants_the_plate_flat_as_the_checker_welds_it():
             m["vertices"][i] = [p[0], p[1], 3.3055]
     with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
         extract_spec(d, SYNTH_OBJECT)
+
+
+# Codex review 3 of PR #63
+
+
+def test_a_solid_slab_is_found_whatever_its_triangulation():
+    # a closed solid slab under a split terrace whose two top triangles have their centres off the ledges
+    s = _split_terrace()
+    d = build(s, INPUTS)
+    lo_, hi_ = 0.29, 9.71
+    box = {"name": "slab", "vertices": [[x, y, z] for z in (3.2, 3.3) for x, y in ((lo_, lo_), (hi_, lo_), (hi_, hi_), (lo_, hi_))],
+           "triangles": [[4, 5, 6], [4, 6, 7], [0, 2, 1], [0, 3, 2], [0, 1, 5], [0, 5, 4], [1, 2, 6], [1, 6, 5],
+                         [2, 3, 7], [2, 7, 6], [3, 0, 4], [3, 4, 7]],
+           "material_ids": [ROOF] * 12, "polygon_sizes": [3] * 12}
+    d["meshes"].append(box)
+    d["meshes"][0].pop("polygons", None)
+    mesh = by_id(checks.run(from_dump(d), from_dump(build(s, INPUTS)), s, TOL))["mesh"]
+    assert mesh["status"] == "fail" and "L1" in mesh["details"]["solid_slab_m2"]
+
+
+def test_a_plate_sloping_across_its_strips_is_no_inset_plate():
+    # four strips, each nearly flat, rising 0.15 mm over the plate: not flat as the checker welds it
+    from dt_ai.spec import SpecError, extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    _drop(m, v, lambda t: np.all(np.abs(t[:, 2] - 3.305) < 1e-9))
+    xs = np.linspace(0.28, 4.02, 5)
+    n = len(m["vertices"])
+    m["vertices"] += [[x, y, 3.305 + 0.0375e-3 * i] for i, x in enumerate(xs) for y in (0.28, 9.72)]
+    for i in range(4):
+        a, b, c_, e = n + 2 * i, n + 2 * i + 2, n + 2 * i + 3, n + 2 * i + 1
+        m["triangles"] += [[a, b, c_], [a, c_, e]]
+        m["material_ids"] += [ROOF, ROOF]
+    m.pop("polygons", None)
+    m.pop("polygon_sizes", None)
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)
+
+
+def test_a_plate_wider_than_the_faces_around_it_is_a_build_error():
+    with pytest.raises(BuildError, match="reaches out of the building outline"):
+        build(spec(), BuildInputs(**{**INPUTS.__dict__, "parapet_thickness_m": 0.01}))

@@ -259,7 +259,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     slabs = []                                          # inset slabs: (hole polygon, level z, where)
     faces = []
     if t > 0:
-        slabs.append((inner, roof, "the roof"))
+        slabs.append((inner, roof, "the roof", outer))
         faces.append((outer.difference(inner), top, inputs.roof_id, 1))
     else:
         faces.append((inner, roof, inputs.roof_id, 1))      # no parapet: nothing to inset the roof into
@@ -273,7 +273,8 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
                 raise BuildError("a terrace parapet needs parapet_thickness_m in the build inputs")
             walk, band, pw = _terrace(ledge, polys[k + 1], elev[k + 1], elev[k + 1] + terraces[k + 1],
                                       inputs.parapet_thickness_m, spec.levels[k + 1].name)
-            slabs += [(part, elev[k + 1], f"the terrace at {spec.levels[k + 1].name}") for part in shapely.get_parts(walk)]
+            slabs += [(part, elev[k + 1], f"the terrace at {spec.levels[k + 1].name}", polys[k])
+                      for part in shapely.get_parts(walk)]
             faces.append((band, elev[k + 1] + terraces[k + 1], inputs.roof_id, 1))
             tp_walls += pw
             tp_solids.append((band, elev[k + 1], elev[k + 1] + terraces[k + 1]))
@@ -391,8 +392,11 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         if not (SLAB_GAP_M[0] <= gap <= SLAB_GAP_M[1] and SLAB_EMBED_M[0] <= embed <= SLAB_EMBED_M[1]):
             raise BuildError(f"inset slab gap {gap} m / embed {embed} m outside the pattern's {SLAB_GAP_M} / "
                              f"{SLAB_EMBED_M} m (roof-inset-plane); not built (Codex review 1 of PR #63)")
-    for hole, z, where in slabs:                        # pattern roof-inset-plane: a separate plate, not welded
+    for hole, z, where, enclosure in slabs:             # pattern roof-inset-plane: a separate plate, not welded
         plate = orient(hole.buffer(embed, join_style="mitre", mitre_limit=1e6), sign=1.0)
+        if not enclosure.buffer(-MIN_FEATURE_M).contains(plate):
+            raise BuildError(f"{where}: the inset plate ({embed} m beyond the hole) reaches out of the building "
+                             "outline: the faces around it are thinner than the embed; not built (review 3 of PR #63)")
         if plate.geom_type != "Polygon" or not plate.buffer(-MIN_FEATURE_M).contains(hole):
             raise BuildError(f"{where}: the inset plate is no single polygon around its hole; not built")
         zp = round(z + gap, 9)

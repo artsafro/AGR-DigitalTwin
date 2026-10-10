@@ -266,10 +266,14 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None) -> dict:
             lz = model.levels.get(name)
             flat = up & (np.abs(c[:, :, 2] - lz).max(axis=1) <= tol["weld_m"]) if lz is not None else up & False
             region = slabs[name] if isinstance(slabs, dict) else None
-            if region is not None:                     # only inside the slab's own region: a cap of a lower
-                flat &= shapely.contains_xy(region.buffer(-tol["weld_m"]), mid[:, 0], mid[:, 1])  # terrace may lie there
-            if flat.any():
-                solid[name] = round(float(np.linalg.norm(n[flat], axis=1).sum() / 2), 4)
+            if region is None:
+                area = float(np.linalg.norm(n[flat], axis=1).sum() / 2)
+            else:                                      # only the part inside the slab's own region counts (a cap
+                inner = region.buffer(-tol["weld_m"])  # of a lower terrace may lie there), whatever the
+                area = sum(shapely.Polygon(t[:, :2]).intersection(inner).area   # triangulation (review 3 of PR #63)
+                           for t in c[flat] if shapely.Polygon(t[:, :2]).area > 0)
+            if area > tol["weld_m"] ** 2:
+                solid[name] = round(area, 4)
         not_inset = [name for name in slabs if name not in inset or name in solid]
     bad_loops = [lp for lp in loops if not lp["allowed"]]
     non_manifold = int((counts > 2).sum())

@@ -542,9 +542,13 @@ def _inset_plate(v, extra, z0, region):
     flat &= shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
     if not flat.any():
         return Polygon(), None
+    # the whole plate is flat as the checker welds it: no triangle and no slope across triangles beyond
+    # WELD_M (reviews 2 and 3 of PR #63); a plate that is not is no inset plate
+    near = (n[:, 2] > 0) & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)         & shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
+    if float(z[near].max() - z[near].min()) > WELD_M:
+        return Polygon(), None
     zp = float(np.median(z[flat].mean(axis=1)))
-    on = flat & (np.abs(z.mean(axis=1) - zp) < WELD_M)    # flat as the checker welds it (review 2 of PR #63)
-    tri = [Polygon(t[:, :2]) for t in p[on]]
+    tri = [Polygon(t[:, :2]) for t in p[flat]]
     return shapely.unary_union([t for t in tri if t.area > 0]), round(zp - z0, 4)
 
 
