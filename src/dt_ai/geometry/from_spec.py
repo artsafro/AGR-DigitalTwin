@@ -166,7 +166,7 @@ def _openings(spec, floors, contours, inputs):
     for i, a in enumerate(out):
         for b in out[i + 1:]:
             span = _on_line(b, a["a"], a["u"])              # b on a's wall line, in a's coordinates
-            if (span is not None and a["s0"] <= span[1] + KEY_M and span[0] <= a["s1"] + KEY_M and b["s0"] <= a["s1"] + KEY_M
+            if (span is not None and a["s0"] <= span[1] + KEY_M and span[0] <= a["s1"] + KEY_M
                     and a["z0"] <= b["z1"] + KEY_M and b["z0"] <= a["z1"] + KEY_M):   # any floors
                 raise BuildError(f"openings touch or overlap ({a['where']}, {b['where']}); not built yet")
     return out
@@ -185,12 +185,14 @@ def _on_line(o, a, u):
 
 
 def _check_steps(floors, polys):
-    """Two floors must meet over one area: floors touching only along an edge or at a corner (a floor
-    beside the one below, walls back to back) are not built (Codex review 1 of PR #55)."""
+    """Two floors must meet over area only: floors touching along an edge or at a corner (a floor beside
+    the one below, walls back to back), alone or next to an overlap, are not built (reviews of PR #55).
+    Several separate overlap areas (opposite U shapes) are fine."""
     for k in range(len(polys) - 1):
         meet = polys[k].intersection(polys[k + 1])
-        if meet.is_empty or meet.geom_type != "Polygon" or meet.area <= KEY_M:
-            raise BuildError(f"floors {floors[k].level} and {floors[k + 1].level} do not meet over one area "
+        parts = list(shapely.get_parts(meet))
+        if meet.is_empty or meet.area <= KEY_M or any(p.geom_type != "Polygon" for p in parts):
+            raise BuildError(f"floors {floors[k].level} and {floors[k + 1].level} do not meet over area only "
                              f"({meet.geom_type}); edge- or corner-only contact is not built yet (floor-step)")
 
 

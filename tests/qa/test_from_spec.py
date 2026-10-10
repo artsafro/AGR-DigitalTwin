@@ -455,7 +455,7 @@ def test_floors_meeting_only_along_an_edge_or_at_a_corner_are_an_error(upper):
     def edit(d):
         d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
                        {"level": "L1", "contour": upper, "openings": []}]
-    with pytest.raises(BuildError, match="do not meet over one area"):
+    with pytest.raises(BuildError, match="do not meet over area only"):
         build(edited(edit), INPUTS)
 
 
@@ -463,3 +463,23 @@ def test_upper_floor_overhanging_past_one_wall_is_built():
     s = stepped(SQ, [[0, 0], [10, 0], [10, 10], [6, 10], [6, 14], [0, 14]])
     dump = build(s, INPUTS)
     assert horizontal(from_dump(dump), 3.3, FACADE, False) == pytest.approx(24.0) and topology_ok(dump)
+
+
+
+def test_shifted_wall_origins_still_catch_overlapping_openings():
+    # Codex review 2 of PR #55: lower wall 0 starts at x=3, upper at x=0; physical spans overlap
+    o0 = {"wall": 0, "x_m": 1.0, "sill_m": 2.5, "w_m": 1.5, "h_m": 2.0, "kind": "window", "level_from": "L0", "level_to": "L1"}
+    o1 = {"wall": 0, "x_m": 4.0, "sill_m": 0.2, "w_m": 1.5, "h_m": 1.0, "kind": "window"}
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": [[3, 0], [10, 0], [10, 10], [3, 10]], "openings": [o0]},
+                       {"level": "L1", "contour": SQ, "openings": [o1]}]
+    with pytest.raises(BuildError, match="touch or overlap"):
+        build(edited(edit), INPUTS)
+
+
+def test_opposite_u_shapes_meeting_in_two_areas_are_built():
+    # Codex review 2 of PR #55: the floors overlap in two separate rails (60 m2)
+    lower = [[0, 0], [10, 0], [10, 10], [7, 10], [7, 3], [3, 3], [3, 10], [0, 10]]
+    upper = [[0, 0], [3, 0], [3, 7], [7, 7], [7, 0], [10, 0], [10, 10], [0, 10]]
+    dump = build(stepped(lower, upper), INPUTS)
+    assert topology_ok(dump)
