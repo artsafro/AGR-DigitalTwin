@@ -202,7 +202,7 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   spec builds a model that passes all benchmark checks against the synthetic box; no real etalon yet.
 - `build(spec, BuildInputs)` -> mesh dump (format of `measure_spec_blender.py`): walls by contour,
   holes with reveals and planes, roof, parapet; quads, welded, no T-junctions, no Shell (C23);
-  plane seating is a required input (C24 open).
+  plane seat by profile (C24, user 2026-10-10: `npm_min` half depth, `mid` full depth).
   Build inputs not in the spec (parapet thickness, material IDs) are required arguments.
 - Not yet: rounded or non-90 corners, different floor contours, attachments, corner, touching or
   roof-level openings, cross-level openings in a typical template, writing a Blender

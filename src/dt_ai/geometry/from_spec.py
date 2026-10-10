@@ -9,9 +9,9 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
   (wall thickness is open, conflict C23);
 - every window / door / untyped opening as a hole with reveals and a plane closing them, ID by the
   opening's own `material_id`, else its window type, else the object's default opening ID (never
-  under `plane_conflict`). Seating is conflict C24 (open), so it is a required input: `spec_depth`
-  puts the plane at the opening depth (`depth_m` or `opening_depth_default_m`), `half_depth` at
-  half of it. The reveals end at the plane: their part behind an opaque NPM plane is hidden and
+  under `plane_conflict`). Seating by profile (conflict C24, user decision 2026-10-10): `npm_min`
+  at half of the opening depth (`depth_m` or `opening_depth_default_m`), `mid` at the full
+  depth. The reveals end at the plane: their part behind an opaque NPM plane is hidden and
   is not built (docs/domain/geometry.md, hidden parts of reveals), and a reveal running past the
   plane would leave an edge of three faces. Grilles stay texture (`vent-grille`);
 - the roof plane at the top input level inside the parapet, parapet inner walls and cap.
@@ -37,7 +37,7 @@ from dt_ai.spec.model import Spec
 
 KEY_M = 1e-6          # vertices on one 1 µm grid are one vertex
 BUILT_KINDS = ("window", "door", None)
-SEATS = {"spec_depth": 1.0, "half_depth": 0.5}   # conflict C24 is open: the caller chooses
+SEAT_SHARE = {"npm_min": 0.5, "mid": 1.0}   # plane seat as a share of the opening depth (C24, user 2026-10-10)
 
 
 class BuildError(ValueError):
@@ -51,7 +51,6 @@ class BuildInputs:
     reveal_id: int
     roof_id: int
     opening_id: int                       # default plane ID when the opening has none of its own
-    plane_seat: str                       # "spec_depth" or "half_depth" (C24 open, no default)
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
 
 
@@ -132,7 +131,7 @@ def _openings(spec, floors, inputs):
             else:
                 mid = inputs.opening_id
             z0 = elev[f.level] + o.sill_m
-            depth = (spec.opening_depth_default_m if o.depth_m is None else o.depth_m) * SEATS[inputs.plane_seat]
+            depth = (spec.opening_depth_default_m if o.depth_m is None else o.depth_m) * SEAT_SHARE[spec.profile]
             if depth <= KEY_M:
                 raise BuildError(f"floor {f.level} wall {o.wall} x {o.x_m}: depth 0 has no reveal to build")
             out.append({"wall": o.wall, "s0": o.x_m, "s1": o.x_m + o.w_m, "z0": z0, "z1": z0 + o.h_m, "id": mid,
@@ -147,8 +146,6 @@ def _openings(spec, floors, inputs):
 
 def build(spec: Spec, inputs: BuildInputs) -> dict:
     """Mesh dump of the spec's exterior (see module docstring)."""
-    if inputs.plane_seat not in SEATS:
-        raise BuildError(f"plane_seat must be one of {sorted(SEATS)} (conflict C24 is open)")
     pts, floors = _contour(spec)
     openings = _openings(spec, floors, inputs)
     bottom, roof = spec.levels[0].elev_m, spec.levels[-1].elev_m

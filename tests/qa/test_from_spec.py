@@ -18,8 +18,7 @@ from twinqa.geometry.mesh import edge_uses, from_dump, weld
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
-INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE,
-                     plane_seat="spec_depth")
+INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE)
 
 
 def spec(**changes):
@@ -182,12 +181,14 @@ def test_cross_level_opening_in_a_typical_template_is_asked_not_copied():
         build(edited(edit), INPUTS)
 
 
-def test_seating_is_a_required_choice():
-    with pytest.raises(BuildError, match="C24"):
-        build(spec(), BuildInputs(**{**INPUTS.__dict__, "plane_seat": "mid"}))
-    half = from_dump(build(spec(), BuildInputs(**{**INPUTS.__dict__, "plane_seat": "half_depth"})))
-    planes = half.corners()[half.material_ids == PLANE]
-    assert np.allclose(planes[:, :, 1], 0.1)                   # wall 0 at y = 0, half of 0.2 m
+@pytest.mark.parametrize("profile, seat", [("npm_min", 0.1), ("mid", 0.2)])
+def test_plane_seat_follows_the_profile(profile, seat):
+    # C24, user decision 2026-10-10: npm_min at half of the opening depth (0.2 m), mid at the full depth
+    soup = from_dump(build(edited(lambda d: d.update({"profile": profile})), INPUTS))
+    c = soup.corners()
+    planes, reveals = c[soup.material_ids == PLANE], c[soup.material_ids == REVEAL]
+    assert np.allclose(planes[:, :, 1], seat)                  # wall 0 at y = 0
+    assert np.isclose(reveals[:, :, 1].max(), seat)            # no reveal behind the plane
 
 
 def test_planes_face_out_and_reversed_planes_fail_the_checker():

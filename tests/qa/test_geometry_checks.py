@@ -1,8 +1,9 @@
 """Benchmark geometry checks (twinqa.geometry, HARNESS_PLAN §5) on SYNTHETIC B01-like boxes.
 
 The box below is synthetic test data, not the user's etalon (issue #12): 10 x 10 m, levels
-0 / 3.3 / 6.6, parapet 0.6 m, one 1.5 x 1.5 m window per storey on wall 0, recessed 0.2 m with an
-opening plane — the numbers of tests/fixtures/spec-b01-v0.3.json. The synthetic mesh is closed and welded:
+0 / 3.3 / 6.6, parapet 0.6 m, one 1.5 x 1.5 m window per storey on wall 0 with reveals and an
+opening plane at 0.1 m — the numbers of tests/fixtures/spec-b01-v0.3.json (opening depth 0.2 m,
+npm_min plane at half of it: C24, user decision 2026-10-10). The synthetic mesh is closed and welded:
 global height cuts on every wall, per-wall cuts at the opening edges, fans on the bottom and roof.
 """
 import json
@@ -25,7 +26,7 @@ WINDOWS = [(0, 2.0, 3.5, 0.9, 2.4), (0, 2.0, 3.5, 4.2, 5.7)]
 FACADE, REVEAL, PLANE, ROOF = 1, 6, 11, 21
 
 
-def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth=0.2, planes=True,
+def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth=0.1, planes=True,
              levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=()):
     """Mesh dump of a closed box with recessed windows and a parapet (synthetic)."""
     faces = []  # (points, material id)

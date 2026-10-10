@@ -12,7 +12,7 @@ geometry before UV and textures).
 | C7 | Two-sided alpha planes | VPM alpha planes (P5/P6 era), shared plane tools | A: rule per profile |
 | C8 | Alpha in textures | VPM Diffuse with cut-outs | A: rule per profile (YAML already says so) |
 | C10 | Texel density formula | V009 (Q2) | A: division, as the page image |
-| C24 | Window plane seating | `opening-plane` in real objects | C: mid-reveal in `npm_min`, measured in `mid` |
+| C24 | Window plane seating | — | decided 2026-10-10: by profile (`npm_min` half depth, `mid` full depth) |
 | C25 | Infill recess behind the frame | `mid` windows only | B: a window-type parameter, default from the library |
 
 ## C3 — UCX triangle budget (decided)
@@ -78,7 +78,9 @@ within 2 cm of the edges); that tolerance is itself a proposal, tuned after B01.
 - **C (recommended):** `npm_min` mid-reveal + 10 mm. `mid` measured from the source (Revit family
   offset, glass position in the mesh), mid-reveal as fallback, written in the report.
 
-Decision: _____
+Decision (user, 2026-10-10): by profile, not a separate parameter — `npm_min` at half of the
+opening depth, `mid` at the full opening depth; the reveal ends at the plane (no reveal behind an
+opaque plane). Engine: `src/dt_ai/geometry/from_spec.py`.
 
 ## C25 — Infill recess behind the frame (`mid`)
 
