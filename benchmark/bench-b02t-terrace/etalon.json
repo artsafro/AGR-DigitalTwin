@@ -1,0 +1,23 @@
+{
+  "bench": "bench-b02t-terrace",
+  "note": "The etalon files live outside git (.max/.fbx are LFS-routed and the LFS budget is out, H9): data/benchmark/bench-b02t-terrace/ of the main checkout. Check them against these hashes before a run.",
+  "files": {
+    "etalon.max": {
+      "sha256": "456420c1e4a021abe8167f8ad521a6f65b78a15ab677bff99b539e06e7e95e8d",
+      "bytes": 487424,
+      "made_with": "3ds Max 2024",
+      "by": "user, 2026-10-10 (from the B02 etalon by the B02t brief)"
+    },
+    "etalon.fbx": {
+      "sha256": "b773a00ac3c6f8a45172fd22ba59727159ead4a1849b82ec76f892f617d798d8",
+      "bytes": 52944,
+      "exported": "from etalon.max by Claude via 3dsmax-mcp, FBX units m, scale 1, no triangulation"
+    }
+  },
+  "history": [
+    "2026-10-10: delivered by the user; checked by Claude against the brief (mesh: quads, 0 non-manifold, open loops only the bottom ring and the inset roof joint; IDs 1/6/11/21; parapet outer face 13.32 m2 ID 1, inner face 12.6 m2 ID 21; walkable 45.42 + cap 6.48 = ledge 51.9 m2; upper wall removed behind the parapet ends)",
+    "2026-10-10: the walkable terrace remade as an inset plate by the user (universal inset rule, user 2026-10-10): hole in the body at LEVEL_L1 3.300 (22 edges), plate at 3.305 (22 edges); saved in place, FBX re-exported by Claude. Run-v002 (the welded v1) was green; v2 waits for the inset PR (checker, extractor, engine)"
+  ],
+  "spec": "spec.json beside this file, extracted from etalon.fbx by tools/qa/run_benchmark.py (run-v002): the B02 spec plus terraces [L1, 0.6], spec v0.4, 0 questions; unchanged by the inset (the terrace spec is the same)",
+  "brief": "https://claude.ai/code/artifact/95f7af8a-f484-4d9e-80ce-2a0f50ece086"
+}

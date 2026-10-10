@@ -56,6 +56,8 @@ DOOR_W_M = (0.7, 3.0)
 DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the storey floor (user, 2026-10-08)
 RELIEF_M = 0.10
 DOOR_HOST_M = 0.02        # a source door is a facade door when its ends lie within half its host + this of the contour
+TERRACE_COVER = 0.02      # terrace: the walkable part at the level and the parapet cap together cover the ledge
+                          # within this share of its area (pattern terrace, user plan 2026-10-10)
 
 
 class SpecError(ValueError):
@@ -462,7 +464,105 @@ def _span_text(spans):
     return ", ".join(f"{a:.3f}-{b:.3f}" for a, b in merged)
 
 
-def _level_contour(v, tris, z0, z1, name, at_m=None):
+def _flat_region(v, tris, z, region):
+    """The plan region (a polygon) of the up-facing horizontal triangles at height z, clipped to region."""
+    p = v[tris]
+    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
+    flat = (np.abs(p[:, :, 2] - z).max(axis=1) < EVENT_MIN_M) & (n[:, 2] > 0)
+    tri = [Polygon(t[:, :2]) for t in p[flat]]
+    tri = [t for t in tri if t.area > 0]
+    return shapely.unary_union(tri).intersection(region) if tri else Polygon()
+
+
+def _vertical_near(p, line, z0, z1):
+    """Vertical triangles (of p, a triangle array) between z0 and z1 lying along line: every vertex within
+    10 mm of it, so a face standing across the line is not taken for a face on it (review 3 of PR #61)."""
+    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
+    upright = np.abs(n[:, 2]) <= 0.01 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+    inside = (p[:, :, 2].min(axis=1) >= z0 - EVENT_MIN_M) & (p[:, :, 2].max(axis=1) <= z1 + EVENT_MIN_M)
+    if not len(p):
+        return upright
+    # 2 x 5 mm: the line stops 5 mm short of the ledge outline, where the face's end vertices stand
+    near = shapely.distance(line, shapely.points(p[:, :, :2].reshape(-1, 2))).reshape(-1, 3).max(axis=1) <= 2 * SAME_CONTOUR_M
+    return upright & inside & near
+
+
+def _wall_cover(v, tris, line, z0, z1):
+    """Area of line x (z0..z1) actually covered by vertical faces: per straight piece of the line
+    (collinear pieces merged), the faces lying on it are unrolled to (along, z), united and clipped to the
+    piece, so faces covering one place twice never make up for a place covered by none (review 2 of PR
+    #61) and a face crossing a piece's end still counts on both sides (review 3)."""
+    p = v[tris]
+    p = p[_vertical_near(p, line, z0, z1)]
+    total = 0.0
+    for piece in shapely.get_parts(shapely.line_merge(line) if line.geom_type == "MultiLineString" else line):
+        c = np.asarray(piece.simplify(1e-9).coords)
+        for a, b in zip(c[:-1], c[1:]):
+            length = float(np.linalg.norm(b - a))
+            if length <= SAME_CONTOUR_M:
+                continue
+            u = (b - a) / length
+            off = np.abs((p[:, :, 0] - a[0]) * u[1] - (p[:, :, 1] - a[1]) * u[0]).max(axis=1)
+            on = p[off <= SAME_CONTOUR_M]
+            flat2d = [Polygon(np.column_stack([(t[:, :2] - a) @ u, t[:, 2]])) for t in on]
+            cover = shapely.unary_union([f for f in flat2d if f.area > 0]) if len(on) else Polygon()
+            total += cover.intersection(shapely.box(0, z0, length, z1)).area
+    return total
+
+
+def _ledge_faces(v, tris, ledge, z0, z1, cap=None, inner_line=None, zt=None):
+    """Storey triangles standing on a ledge: centre inside the ledge (off its outline) and above the level.
+    On a terrace the parapet itself (its cap and inner face) is left out (Codex review 2 of PR #61)."""
+    p = v[tris]
+    c = p.mean(axis=1)
+    inner = ledge.buffer(-SAME_CONTOUR_M)
+    if inner.is_empty:
+        return p[:0]
+    keep = (c[:, 2] > z0 + EVENT_MIN_M) & (c[:, 2] < z1 - EVENT_MIN_M) & shapely.contains_xy(inner, c[:, 0], c[:, 1])
+    if cap is not None:
+        on_cap = (np.abs(p[:, :, 2] - zt).max(axis=1) < EVENT_MIN_M) & shapely.contains_xy(
+            cap.buffer(SAME_CONTOUR_M), c[:, 0], c[:, 1])
+        keep &= ~on_cap & ~_vertical_near(p, inner_line, z0, zt)
+    return p[keep]
+
+
+def _terrace(v, tris, groups, closed, z0, z1, below):
+    """Pattern terrace (user plan 2026-10-10): a storey whose lowest section shape is the floor below's
+    contour, from the level up to a parapet top, with the storey's own wall shape above it to the
+    storey top. Structure, not a height difference (Codex review 1 of PR #61): the walkable part at the
+    level and the parapet cap at its top cover the ledge in plan without overlapping, and the parapet's
+    inner face stands along the walkable part's edge off the ledge outline over the full parapet height.
+    Returns (wall group, parapet top, areas) or None when the storey is no such terrace."""
+    if below is None or len(groups) != 2:
+        return None
+    low = next(g for g in groups if closed[0][:2] in g["spans"])
+    high = next(g for g in groups if g is not low)
+    zt = max(b for _, b in low["spans"])
+    if (closed[0][0] - z0 >= EVENT_MIN_M or z1 - closed[-1][1] >= EVENT_MIN_M
+            or closed[-1][:2] not in high["spans"] or min(a for a, _ in high["spans"]) < zt - EVENT_MIN_M
+            or low["poly"].hausdorff_distance(below) >= SAME_CONTOUR_M
+            or not high["poly"].buffer(SAME_CONTOUR_M).within(low["poly"].buffer(2 * SAME_CONTOUR_M))):
+        return None
+    ledge = low["poly"].difference(high["poly"])
+    if ledge.area <= HOLE_MIN_M2:
+        return None
+    walk, cap = _flat_region(v, tris, z0, ledge), _flat_region(v, tris, zt, ledge)
+    limit = TERRACE_COVER * ledge.area
+    if (walk.area <= HOLE_MIN_M2 or cap.area <= HOLE_MIN_M2 or walk.intersection(cap).area > limit
+            or ledge.symmetric_difference(walk.union(cap)).area > limit):
+        return None
+    inner_line = walk.boundary.difference(ledge.boundary.buffer(SAME_CONTOUR_M))
+    h = zt - z0
+    if inner_line.length <= SAME_CONTOUR_M:
+        return None
+    face = _wall_cover(v, tris, inner_line, z0, zt)
+    if abs(face - inner_line.length * h) > TERRACE_COVER * inner_line.length * h:
+        return None
+    return high, zt, cap, inner_line, {"walkable_m2": round(walk.area, 3), "cap_m2": round(cap.area, 3), "ledge_m2": round(ledge.area, 3),
+                      "inner_face_m2": round(face, 3)}
+
+
+def _level_contour(v, tris, z0, z1, name, at_m=None, below=None):
     """Level contour = walls over the full storey height (user decisions 2026-10-08). Accepted only
     when one section shape is at both storey ends and is also the tallest; otherwise the exterior
     shell cannot tell the wall from a plinth, cornice or belt, so the extractor stops with the
@@ -498,7 +598,11 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
     top = next(g for g in groups if closed[-1][:2] in g["spans"])
     at_ends = closed[0][0] - z0 < EVENT_MIN_M and z1 - closed[-1][1] < EVENT_MIN_M
     tallest = max(g["height"] for g in groups)
-    if at_m is not None:
+    terrace = None if at_m is not None else _terrace(v, tris, groups, closed, z0, z1, below)
+    if terrace is not None:
+        base, zt, cap, inner_line, areas = terrace
+        rule = f"terrace: parapet {zt - z0:.3f} m from the level"
+    elif at_m is not None:
         base = next((g for g in groups if any(a <= at_m <= b for a, b in g["spans"])), None)
         if base is None:
             raise SpecError(f"level {name}: contour_at_m {at_m} m is not on a closed section of the storey")
@@ -515,13 +619,24 @@ def _level_contour(v, tris, z0, z1, name, at_m=None):
                         "object.json to a height of the wall shape (HARNESS_PLAN §4)")
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
+    others = [g for g in groups if g is not base]
+    if terrace is not None:                    # the parapet shape is the terrace, not a question
+        report["terrace"] = {"parapet_h_m": round(zt - z0, 3), **areas}
+        others = []
+    if below is not None:                      # anything else standing on a ledge: a question
+        on = _ledge_faces(v, tris, below.difference(base["poly"]), z0, z1,
+                          *((cap, inner_line, zt) if terrace is not None else ()))
+        if len(on):
+            c = on.reshape(-1, 3)
+            report["ledge_structure"] = {"triangles": int(len(on)), "heights_m": [round(z0, 3), round(float(c[:, 2].max()), 3)],
+                                         "at": [round(float(c[:, 0].mean()), 2), round(float(c[:, 1].mean()), 2)]}
     # door recesses leave the contour and become openings; relief is not a kink (#31)
     poly, relief = _relief(base["poly"])
     poly, doors = _door_recesses(closed, poly, z0, z1)
     report["door_recesses"], report["relief_parts"] = len(doors), relief
     # every other shape is not over the full height -> questions
     report["bridged_sections"] = sum(1 for _, _, m, _ in mouth_spans if m)
-    return poly, report, _deviations([g for g in groups if g is not base], poly), mouth_spans, doors
+    return poly, report, _deviations(others, poly), mouth_spans, doors
 
 
 def _measure(piece, section, contour_pts):
@@ -945,7 +1060,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     floors, polys, pieces, mouths, doors = [], [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev, ms, dr = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]))
+        poly, rep, dev, ms, dr = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
+                                                below=polys[-1] if polys else None)
         mouths.append(ms)
         doors.append(dr)
         rep["area_m2"] = round(poly.area, 3)
@@ -995,6 +1111,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     stats = {"section_relief_parts": 0}
     questions = (_questions(levels, floors, polys, pieces, stats) + op.break_questions(breaks, levels) + suspects
                  + _source_questions(dump, levels))
+    for name, rep in report["floors"].items():        # structure on a ledge that is no terrace (review 1 of PR #61)
+        if "ledge_structure" in rep:
+            q = rep["ledge_structure"]
+            questions.append({"priority": "high", "kind": "ledge-structure", "levels": [name], "wall": None,
+                              "depth_m": None, "length_m": None, "facade_share": None,
+                              "heights_m": q["heights_m"], "at": q["at"]})
     names = [lv["name"] for lv in levels]
     questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
     for n, q in enumerate(questions, 1):
@@ -1011,6 +1133,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],
                       "plane_vs_top_level_m": round(roof_z - levels[-1]["elev_m"], 3)}
     written, report["floor_classes"] = fl.collapse(levels, floors)
+    terraces = [{"level": n, "parapet_h_m": rep["terrace"]["parapet_h_m"]}
+                for n, rep in report["floors"].items() if "terrace" in rep]
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
                 # the parapet is measured from the input roof level, never from the roof plane: an inset
@@ -1018,5 +1142,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                 # surface reaches the wall top at the outer wall line has no parapet (reviews of PR #54)
                 levels=levels, floors=written,
                 roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0},
+                # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
+                **({"spec_version": "0.4", "terraces": terraces} if terraces else {}),
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
     return spec, report

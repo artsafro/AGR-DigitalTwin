@@ -194,8 +194,38 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
     return out
 
 
+def fan_vertices(triangles, ids, side_edges, skip) -> list[int]:
+    """Non-manifold vertices (issue #57): welded vertices whose faces form more than one fan, i.e. two
+    face groups meet only at that point (no shared edge through it). An open fan (a boundary vertex)
+    is one fan. Triangles in `skip` are left out."""
+    tri = np.flatnonzero(~skip)
+    tri_ids = ids[triangles[tri]]
+    parent = {}
+
+    def find(x):
+        parent.setdefault(x, x)
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    by_edge = {}
+    for t, row in zip(tri, side_edges[tri]):
+        for k in range(3):
+            by_edge.setdefault(int(row[k]), []).append((int(t), k))
+    for faces in by_edge.values():
+        for (t0, k0), (t1, _) in zip(faces, faces[1:]):
+            for v in (int(ids[triangles[t0][k0]]), int(ids[triangles[t0][(k0 + 1) % 3]])):
+                parent[find((v, t1))] = find((v, t0))
+    fans = {}
+    for t, row in zip(tri, tri_ids):
+        for v in row:
+            fans.setdefault(int(v), set()).add(find((int(v), int(t))))
+    return sorted(v for v, roots in fans.items() if len(roots) > 1)
+
+
 def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
-    """Edge-manifold, no n-gons, no overlapping faces, and open edges only where the pattern
+    """Edge- and vertex-manifold (one face fan per vertex, issue #57), no n-gons, no overlapping faces, and open edges only where the pattern
     roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
     inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
     open_part_groups are left out of the open-edge rule."""
@@ -210,6 +240,7 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
     loops = open_loops(model, ids, counts, side_edges, tri_open, tol, ranges)
     bad_loops = [lp for lp in loops if not lp["allowed"]]
     non_manifold = int((counts > 2).sum())
+    fan_v = fan_vertices(model.triangles, ids, side_edges, tri_open)
     boundary_n = int(boundary.sum())
     corners = model.corners()
     faces = [{"object": "model", "index": i, "points": c.tolist()} for i, c in enumerate(corners)]
@@ -218,16 +249,18 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
         ngons, ngon_measured = None, False
     else:
         ngons, ngon_measured = int((model.polygon_sizes > 4).sum()), True
-    details = {"non_manifold_edges": non_manifold, "boundary_edges": boundary_n, "open_loops": loops,
+    details = {"non_manifold_edges": non_manifold, "non_manifold_vertices": len(fan_v),
+               "non_manifold_vertex_points": [[round(float(c), 4) for c in model.vertices[ids == v][0]] for v in fan_v[:20]],
+               "boundary_edges": boundary_n, "open_loops": loops,
                "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
-    ok = (non_manifold <= tol["non_manifold_edges_max"] and not bad_loops
+    ok = (non_manifold <= tol["non_manifold_edges_max"] and not fan_v and not bad_loops
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
     if not ngon_measured and ok:
         return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes matching its triangles"},
                       measured=False)
-    return result("mesh", ok, {"non_manifold": non_manifold, "boundary": boundary_n,
+    return result("mesh", ok, {"non_manifold": non_manifold, "non_manifold_vertices": len(fan_v), "boundary": boundary_n,
                                "open_loops_not_allowed": len(bad_loops), "overlaps": len(overlaps), "ngons": ngons},
                   None, details)
 

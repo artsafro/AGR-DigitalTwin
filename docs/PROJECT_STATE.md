@@ -95,6 +95,15 @@ parapet). Etalon B02t delivered (`data/benchmark/bench-b02t-terrace/`, FBX expor
 IDs and areas match the brief: walkable 45.42 + cap 6.48 = ledge 51.9 m2). Modeller brief B02t
 https://claude.ai/code/artifact/95f7af8a-f484-4d9e-80ce-2a0f50ece086. Plan for markup helpers
 (LEVEL_, AXIS_, anchors): PR #60 (HARNESS_PLAN §14, backlog MH1-MH3), after the terrace.
+#61 terrace PR B merged (3 Codex rounds, findings fixed with regressions): the extractor reads a terrace
+parapet (two section shapes, the lower = the floor below; walkable + cap cover the ledge in plan without
+overlap; the parapet inner face covers its line over the full height; anything else on a ledge is a
+`ledge-structure` question) into spec v0.4; bench `bench-b02t-terrace` (etalon hand-made by the user);
+pattern `terrace` proven on benchmark (user). Harness rule (user): an etalon never comes from the engine.
+#62 merged, #57 closed: non-manifold vertices fail the mesh check. User rule 2026-10-10: every slab
+(roof in a parapet, terrace) is inset — hole at the level + plate at level + 5 mm, outline the hole
+grown 20 mm as in the etalons; the user remade B01 (inset roof) and B02t v2 (inset terrace); B02t
+waits for the inset PR (engine + checker + extractor).
 Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -175,9 +184,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: decisions on the choices page (C7, C8, C10, C25). Claude: terrace PR B (extractor reads the
-   terrace parapet, bench `bench-b02t-terrace`), then PR #60 and markup helpers MH1-MH3; issues #56,
-   #57; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25). Claude: inset-slab PR (engine, checker
+   requires the joint per slab, extractor reads inset terraces; B01 / B02 / B02t reruns), then PR #60
+   and markup helpers MH1-MH3; issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
