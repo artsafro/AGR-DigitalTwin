@@ -14,7 +14,7 @@ from `LEVEL_roof`, and its outline with the parapet foot under it is the one all
 
 Status 2026-10-10 (run-v003): spec equal to the brief (parapet 0.6), 0 questions; etalon against itself 8/8
 (open loops: bottom ring, roof plane outline, parapet foot — all allowed). The
-engine does not build B02 yet (different floor contours, oblique walls): the run stops at the model
+engine builds floor steps (pattern floor-step) but not oblique walls yet: the run stops at the model
 step until it does.
 
 Run and checks: as `benchmark/bench-b01-box/README.md`, with this folder's `object.json` and
