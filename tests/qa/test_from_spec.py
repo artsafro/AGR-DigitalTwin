@@ -336,3 +336,29 @@ def test_etalon_self_check_runs_even_when_the_engine_cannot_build(tmp_path, monk
     summary = json.loads((tmp_path / "run/summary.json").read_text(encoding="utf-8"))
     assert summary["steps"]["etalon_self"]["passed"] and "not built yet" in summary["stopped"]
     assert (tmp_path / "run/etalon-self.json").is_file() and "model_check" not in summary["steps"]
+
+
+
+@pytest.mark.parametrize("tol_change, code", [
+    ({"triangles_max": 0}, 1),                                     # a failure
+    ({"opening_plane_kinds": []}, 2),                              # not measured only
+    ({"triangles_max": 0, "opening_plane_kinds": []}, 1),          # Codex review 1 of PR #53: a failure wins
+])
+def test_runner_exit_code_precedence(tmp_path, monkeypatch, tol_change, code):
+    def fake_blender(blender, script, *args, **kw):
+        if script == run_benchmark.EXPORT:
+            for out in args[1:]:
+                Path(out).write_bytes(b"x")
+        else:
+            src = box_dump() if "etalon" in Path(args[-1]).name else build(spec(), INPUTS)
+            Path(args[-1]).write_text(json.dumps({**src, "source": "etalon.fbx"}), encoding="utf-8")
+    monkeypatch.setattr(run_benchmark, "blender_run", fake_blender)
+    bench = ROOT / "benchmark/bench-b01-box"
+    tol = json.loads((bench / "tolerances.json").read_text(encoding="utf-8"))
+    tol["geometry"].update(tol_change)
+    (tmp_path / "t.json").write_text(json.dumps(tol), encoding="utf-8")
+    etalon = tmp_path / "etalon.fbx"
+    etalon.write_bytes(b"x")
+    argv = ["--etalon", str(etalon), "--object", str(bench / "object.json"), "--tolerances", str(tmp_path / "t.json"),
+            "--output", str(tmp_path / "run"), "--blender", "blender"]
+    assert run_benchmark.main(argv) == code
