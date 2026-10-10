@@ -6,6 +6,10 @@ the upper block's wall X = 6, which is removed between 3.3 and 3.9 m. Nothing el
 
 Patterns: terrace (plus the B02 patterns).
 
+Etalon: hand-made in 3ds Max by the user (2026-10-10); never produced by the engine — the engine is
+checked only against a hand-made etalon (HARNESS_PLAN §5). The walkable terrace is welded to the
+parapet inner faces (no inset plane); the roof covering is inset as in B02.
+
 Brief (Claude Docs): https://claude.ai/code/artifact/95f7af8a-f484-4d9e-80ce-2a0f50ece086. Etalon files
 outside git in `data/benchmark/bench-b02t-terrace/`, hashes in `etalon.json`; `spec.json` extracted
 from it: the B02 spec plus `terraces: [{"level": "L1", "parapet_h_m": 0.6}]`, spec v0.4.

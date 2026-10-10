@@ -1,6 +1,6 @@
 # Terrace (`terrace`)
 
-Status: draft. Source: user decisions 2026-10-10; benchmark `bench-b02t-terrace` (a terrace = a floor-step ledge with a parapet
+Status: proven on benchmark `bench-b02t-terrace` (user 2026-10-10). Source: user decisions 2026-10-10; benchmark `bench-b02t-terrace` (a terrace = a floor-step ledge with a parapet
 from the spec; thickness = the build input `parapet_thickness_m`; PR A engine, PR B extractor +
 etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 
