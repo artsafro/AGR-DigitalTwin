@@ -37,4 +37,4 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; extractor `src/dt_
   openings with two planes (`opening-plane`).
 - Elements on a dropped small kink are still measured on the real facet.
 - If the inward shell offset self-intersects at a corner, stop and ask (user decision 2026-10-09).
-- An x-extreme corner between two non-vertical walls leaves a strip triangle: BuildError for now.
+- BuildError for now: an x-extreme corner between non-vertical walls; strip lines < 0.1 mm apart in x.

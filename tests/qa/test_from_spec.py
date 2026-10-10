@@ -558,3 +558,35 @@ def test_near_degenerate_inputs_build_clean_or_stop(contour, window):
     assert area.min() > 1e-9 and topology_ok(dump)
     if window:
         assert PLANE in set(soup.material_ids.tolist())     # never a window silently turned into facade
+
+
+
+@pytest.mark.parametrize("contour, wall, x_m", [
+    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 0.0001),               # exactly 0.1 mm from the start (review 2 of #58)
+    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 8.9999),               # exactly 0.1 mm from the end
+])
+def test_windows_at_the_0_1_mm_limit_are_built(contour, wall, x_m):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+        d["floors"][0]["openings"] = [{"wall": wall, "x_m": x_m, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+        d["roof"] = {"parapet_h_m": 0.0}
+    dump = build(edited(edit), INPUTS)
+    assert topology_ok(dump) and PLANE in set(from_dump(dump).material_ids.tolist())
+
+
+def test_window_closer_than_0_1_mm_to_a_wall_end_is_an_error():
+    def edit(d):
+        d["floors"][0]["openings"] = [{"wall": 0, "x_m": 0.00005, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+    with pytest.raises(BuildError, match="closer than 0.1 mm to the wall end"):
+        build(edited(edit), INPUTS)
+
+
+
+def test_window_close_to_a_steep_oblique_corner_is_a_clear_error():
+    # Codex review 2 of PR #58: 1 mm along a steep oblique wall is 0.03 mm in x; the strips would put
+    # vertices closer than the checkers' 0.1 mm weld, so this is a BuildError, not merged geometry
+    def edit(d):
+        d["floors"][0]["contour"] = [[0, 0], [10, 0], [10, 6], [9.9, 9], [0, 9]]
+        d["floors"][0]["openings"] = [{"wall": 2, "x_m": 0.001, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+    with pytest.raises(BuildError, match="strip lines closer than 0.1 mm"):
+        build(edited(edit), INPUTS)
