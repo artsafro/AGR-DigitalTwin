@@ -330,3 +330,21 @@ def test_a_low_real_parapet_does_not_depend_on_the_roof_plane(gap):
     d["meshes"].append(roof.dump())
     spec, _ = extract_spec(d, OBJECT)
     assert spec.roof.parapet_h_m == 0.025
+
+
+
+@pytest.mark.parametrize("wall_top, parapet", [(6.65, 0.05), (6.652, 0.052)])
+def test_drainage_roof_touching_one_wall_top_keeps_the_upstand_elsewhere(wall_top, parapet):
+    # Codex review 3 of PR #54: level wall tops, a roof rising 6.55 -> 6.65 m across x; the low edge
+    # has an upstand, so there is a parapet, measured from LEVEL_roof
+    b = Mesh("Body")
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], wall_top), (*SQUARE10[a], wall_top))
+    rise = lambda x: 6.55 + 0.01 * x  # noqa: E731
+    b.quad((0, 0, rise(0)), (10, 0, rise(10)), (10, 10, rise(10)), (0, 10, rise(0)))
+    for x in (0,):                                             # the gap between wall top and the low roof edge
+        b.quad((x, 0, rise(0)), (x, 10, rise(0)), (x, 10, wall_top), (x, 0, wall_top))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, _ = extract_spec(dump_of(b), OBJECT)
+    assert spec.roof.parapet_h_m == pytest.approx(parapet, abs=1e-6)
