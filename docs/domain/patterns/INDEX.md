@@ -19,3 +19,4 @@ Status: draft / proven on benchmark / in work. A pattern changes only with the u
 | Inset slab | `roof-inset-plane` | every slab (roof in a parapet, terrace walkable) is a separate plate embedded into the faces around its hole, +2-10 mm: no height; its joint = two open loops (hole A, plate B), required (user 2026-10-10) | proven on benchmark (B01, B02, B02t) |
 | Floor step | `floor-step` | a contour per floor; at the step a ledge (up, roof ID) or a soffit (down, facade ID) | draft |
 | Terrace | `terrace` | a floor-step ledge with a parapet from the spec (`terraces`, v0.4): outer face, inner face, cap, walkable part | proven on benchmark (`bench-b02t-terrace`, user 2026-10-10) |
+| Markup helpers | `markup-helpers` | levels from `LEVEL_<name>` helpers only (name rule, no copy suffixes, once each); per-source routes: Max Point, Blender Empty (MH1), Revit Levels (MH2) | draft |

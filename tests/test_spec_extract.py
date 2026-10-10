@@ -420,3 +420,39 @@ def test_blender_dump_to_spec(tmp_path):
     assert [lv.elev_m for lv in spec.levels] == pytest.approx([0.0, 3.3, 6.6], abs=1e-4)
     assert spec.roof.parapet_h_m == pytest.approx(0.6, abs=0.01)
     assert report["attachment_parts_ignored"] == 1
+
+
+# pattern markup-helpers (user 2026-10-10): level helper names
+
+
+@pytest.mark.parametrize("names, message", [
+    (["LEVEL_L0", "LEVEL_L1.001", "LEVEL_roof"], "copy suffix"),   # Blender's duplicate suffix
+    (["LEVEL_L0", "LEVEL_L1", "LEVEL_roof001"], "copy suffix"),    # a 3ds Max counter
+    (["LEVEL_L0", "LEVEL_L 1", "LEVEL_roof"], "copy suffix"),      # a space
+    (["LEVEL_L0", "LEVEL_L1", "LEVEL_L1"], "more than once"),
+    (["LEVEL_L0", "LEVEL_L1", "LEVEL_roof\n"], "copy suffix"),     # a trailing newline (review 2 of PR #68)
+])
+def test_level_helper_names_follow_the_pattern(names, message):
+    dump = box_building()
+    for h, n in zip(dump["helpers"], names):
+        h["name"] = n
+    with pytest.raises(SpecError, match=message):
+        extract_spec(dump, OBJECT)
+
+
+def test_two_level_helpers_at_one_height_are_an_error():
+    dump = box_building()
+    dump["helpers"].append({"name": "LEVEL_L1b", "location": [0.0, 0.0, 3.3]})
+    with pytest.raises(SpecError, match=r"LEVEL_L1 3\.3000 m / LEVEL_L1b 3\.3000 m"):
+        extract_spec(dump, OBJECT)
+
+
+def test_a_model_in_the_wrong_units_stops_with_a_units_hint():
+    # MH1 (2026-10-10): a centimetre Blender scene exports the box 100x smaller; its contours vanish as relief
+    dump = box_building()
+    for m in dump["meshes"]:
+        m["vertices"] = [[x / 100, y / 100, z / 100] for x, y, z in m["vertices"]]
+    for h in dump["helpers"]:
+        h["location"] = [c / 100 for c in h["location"]]
+    with pytest.raises(SpecError, match="check its units"):
+        extract_spec(dump, OBJECT)

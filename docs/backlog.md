@@ -40,11 +40,8 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
 Plan: `docs/HARNESS_PLAN.md` §14 (user decision 2026-10-10). One PR each, in this order, each with
 the pattern `markup-helpers` (written or extended) and its test.
 
-- **MH1** Blender route: Empty → FBX Null. Record in the pattern: export `Up Z` or read `UpAxis`
-  from the FBX; `Unit Scale 1.0` + `Apply Scalings: FBX Units Scale`; `.001` suffixes. Name regex
-  in the pattern; a checker flags suffixes (`.001`, `001`, spaces) and duplicates. Test: rebuild
-  B01 by hand in Blender, run the chain, 8/8 closes the route. Later: a script that places
-  `LEVEL_*` Empties in a Blender scene from `spec.json`.
+- **MH1b** (MH1 done: Blender route closed on the Blender B01 etalon, pattern `markup-helpers`) — later:
+  a script that places `LEVEL_*` Empties in a Blender scene from `spec.json`.
 - **MH2** Revit route, levels: generate `LEVEL_<name>` (elevation) from `Levels` through TwinPack.
   Test: on KPP1 the Revit helpers match the ones taken from mesh v022 within the level tolerance.
 - **MH3** Axes and anchors: generate `AXIS_<name>` (line) from Revit `Grids` through TwinPack; the
