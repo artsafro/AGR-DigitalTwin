@@ -538,12 +538,12 @@ def _inset_plate(v, extra, z0, region):
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
     z = p[:, :, 2]
     lo, hi = SLAB_GAP_M
-    flat = (z.max(axis=1) - z.min(axis=1) < EVENT_MIN_M) & (n[:, 2] > 0)         & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)
+    flat = (z.max(axis=1) - z.min(axis=1) < WELD_M) & (n[:, 2] > 0)         & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)
     flat &= shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
     if not flat.any():
         return Polygon(), None
     zp = float(np.median(z[flat].mean(axis=1)))
-    on = flat & (np.abs(z.mean(axis=1) - zp) < EVENT_MIN_M)
+    on = flat & (np.abs(z.mean(axis=1) - zp) < WELD_M)    # flat as the checker welds it (review 2 of PR #63)
     tri = [Polygon(t[:, :2]) for t in p[on]]
     return shapely.unary_union([t for t in tri if t.area > 0]), round(zp - z0, 4)
 

@@ -849,3 +849,23 @@ def test_the_extractor_reads_no_terrace_plate_the_checker_rejects(dz):
             m["vertices"][i] = [p[0], p[1], 3.3 + dz]
     with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
         extract_spec(d, SYNTH_OBJECT)
+
+
+def test_a_lower_terrace_cap_at_a_slab_level_is_no_solid_slab():
+    # Codex review 2 of PR #63: the parapet cap of an L1 terrace 3.3 m high lies at the roof level, off the roof
+    s = terraced(west_ledge, h=3.3)
+    soup = from_dump(build(s, INPUTS))
+    report = checks.run(soup, soup, s, TOL)
+    assert report["passed"], [(c["id"], c["details"].get("solid_slab_m2")) for c in report["checks"] if c["status"] != "pass"]
+
+
+def test_the_extractor_wants_the_plate_flat_as_the_checker_welds_it():
+    # Codex review 2 of PR #63: half the plate 0.5 mm higher is no flat plate (the checker sees other loops)
+    from dt_ai.spec import SpecError, extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    for i, p in enumerate(m["vertices"]):
+        if abs(p[2] - 3.305) < 1e-9 and p[0] > 3:
+            m["vertices"][i] = [p[0], p[1], 3.3055]
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)

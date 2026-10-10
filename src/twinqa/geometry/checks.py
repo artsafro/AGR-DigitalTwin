@@ -261,9 +261,13 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None) -> dict:
         c = model.corners()
         n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
         up = n[:, 2] > 0.99 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+        mid = c.mean(axis=1)
         for name in slabs:
             lz = model.levels.get(name)
             flat = up & (np.abs(c[:, :, 2] - lz).max(axis=1) <= tol["weld_m"]) if lz is not None else up & False
+            region = slabs[name] if isinstance(slabs, dict) else None
+            if region is not None:                     # only inside the slab's own region: a cap of a lower
+                flat &= shapely.contains_xy(region.buffer(-tol["weld_m"]), mid[:, 0], mid[:, 1])  # terrace may lie there
             if flat.any():
                 solid[name] = round(float(np.linalg.norm(n[flat], axis=1).sum() / 2), 4)
         not_inset = [name for name in slabs if name not in inset or name in solid]
@@ -373,10 +377,20 @@ def check_opening_planes(model: Soup, spec: Spec, tol: dict, ranges: dict) -> di
                   {"openings": rows}, measured=bool(rows))
 
 
-def slabs(spec: Spec) -> list[str]:
-    """Levels whose slab must be inset (user rule 2026-10-10): the roof when it has a parapet, every terrace."""
-    roof = [spec.levels[-1].name] if spec.roof and spec.roof.parapet_h_m > 0 else []
-    return roof + [t.level for t in spec.terraces]
+def slabs(spec: Spec) -> dict:
+    """Slabs that must be inset (user rule 2026-10-10), level name -> plan region: the roof inside the top
+    floor's contour when it has a parapet, every terrace on its ledge (the floor below minus its own floor)."""
+    floors = spec.expanded_floors()
+    contour = {f.level: shapely.Polygon(f.contour) for f in floors}
+    names = [lv.name for lv in spec.levels]
+    out = {}
+    if spec.roof and spec.roof.parapet_h_m > 0 and floors:
+        out[names[-1]] = contour[floors[-1].level]
+    for t in spec.terraces:
+        k = names.index(t.level)
+        if names[k - 1] in contour and t.level in contour:
+            out[t.level] = contour[names[k - 1]].difference(contour[t.level])
+    return out
 
 
 def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None) -> dict:
