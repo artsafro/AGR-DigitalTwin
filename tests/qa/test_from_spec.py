@@ -1015,3 +1015,18 @@ def test_a_perforated_plate_is_asked_not_read():
     _, kinds, report = _kinds(d)
     assert kinds == [("plate-params", ["roof"])]
     assert report["plates"]["roof"]["problems"] == ["a plate that overlaps its hole unevenly"]
+
+
+def test_plate_parameters_keep_their_precision_and_the_agreement_limit():
+    # Codex review 3 of PR #64: split terrace plates 5.051 mm and a roof plate 4.561 mm (spread 0.49 mm) agree;
+    # the spec keeps the median to the micron, so the same geometry passes against it
+    d = build(_split_terrace(), INPUTS)
+    d = _moved(d, lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.305051])
+    d = _moved(d, lambda p: abs(p[2] - 6.605) < 1e-9, lambda p: [p[0], p[1], 6.604561])
+    spec_, kinds, _ = _kinds(d)
+    assert kinds == [] and spec_.plate_gap_m == pytest.approx(0.005051, abs=1e-7)
+    assert by_id(checks.run(from_dump(d), from_dump(d), spec_, TOL))["mesh"]["status"] == "pass"
+    # exactly 0.5 mm apart (roof 5 mm, terrace 4.5 mm): agreeing
+    d = _moved(build(terraced(west_ledge), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.3045])
+    _, kinds, _ = _kinds(d)
+    assert kinds == []

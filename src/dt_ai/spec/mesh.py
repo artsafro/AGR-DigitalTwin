@@ -1232,9 +1232,12 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     asked = sorted({name for name, pr in problems.items() if pr}, key=names.index)
     if measured:
         gaps, overlaps = [g for g, _ in measured], [o for _, o in measured]
-        plate = {"plate_gap_m": round(float(np.median(gaps)), 4),
-                 "plate_overlap_m": round(float(np.median(overlaps)), 4)}
-        if max(gaps) - min(gaps) > PLATE_SAME_M or max(overlaps) - min(overlaps) > PLATE_SAME_M:
+        # to the micron only: a 0.1 mm rounding could push an agreeing plate off plate_tol_m (review 3 of PR
+        # #64); the limit itself agrees despite roundoff
+        plate = {"plate_gap_m": round(float(np.median(gaps)), 6),
+                 "plate_overlap_m": round(float(np.median(overlaps)), 6)}
+        same = PLATE_SAME_M + 1e-9
+        if max(gaps) - min(gaps) > same or max(overlaps) - min(overlaps) > same:
             asked = sorted(set(asked) | {name for name, ps in plates.items() if ps}, key=names.index)
     if asked:
         questions.append({"priority": "high", "kind": "plate-params", "levels": asked, "wall": None,
