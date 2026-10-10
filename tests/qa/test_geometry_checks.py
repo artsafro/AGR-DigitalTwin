@@ -392,3 +392,32 @@ def test_evenness_tolerance_is_the_weld_tolerance():
         if abs(v[2] - 6.605) < 1e-6 and v[0] > 9:
             v[0] += 0.0009
     assert by_id(run(dump, box_dump()))["mesh"]["status"] == "fail"
+
+
+# issue #57: a vertex where two face fans meet (no shared edge through it) is non-manifold
+
+
+def cube_faces(lo, hi, mid=FACADE):
+    (x0, y0, z0), (x1, y1, z1) = lo, hi
+    P = lambda x, y, z: [x, y, z]  # noqa: E731
+    return [([P(x0, y0, z0), P(x0, y1, z0), P(x1, y1, z0), P(x1, y0, z0)], mid),
+            ([P(x0, y0, z1), P(x1, y0, z1), P(x1, y1, z1), P(x0, y1, z1)], mid),
+            ([P(x0, y0, z0), P(x1, y0, z0), P(x1, y0, z1), P(x0, y0, z1)], mid),
+            ([P(x1, y0, z0), P(x1, y1, z0), P(x1, y1, z1), P(x1, y0, z1)], mid),
+            ([P(x1, y1, z0), P(x0, y1, z0), P(x0, y1, z1), P(x1, y1, z1)], mid),
+            ([P(x0, y1, z0), P(x0, y0, z0), P(x0, y0, z1), P(x0, y1, z1)], mid)]
+
+
+def test_two_fans_meeting_at_one_vertex_fail_the_mesh_check():
+    # a closed cube touching the parapet top only at its corner (10, 10, 7.2): every edge has two faces
+    report = run(box_dump(extra=cube_faces((10, 10, 7.2), (11, 11, 8.2))))
+    mesh = by_id(report)["mesh"]
+    assert mesh["status"] == "fail" and mesh["details"]["non_manifold_edges"] == 0
+    assert mesh["value"]["non_manifold_vertices"] == 1
+    assert mesh["details"]["non_manifold_vertex_points"] == [[10.0, 10.0, 7.2]]
+
+
+def test_open_fans_and_the_inset_roof_are_one_fan_each():
+    for dump in (box_dump(), box_dump(roof_inset=0.005)):
+        mesh = by_id(run(dump))["mesh"]
+        assert mesh["status"] == "pass" and mesh["value"]["non_manifold_vertices"] == 0
