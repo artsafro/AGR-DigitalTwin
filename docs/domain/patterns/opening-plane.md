@@ -14,7 +14,7 @@ spec v0.3 (#36); window library `library/windows/window_types.json` (#4).
 ## How to build
 
 - Hole: cuts only at the opening edges, on the facade's shared Z cuts (floor, sill, head, top);
-  reveals to the depth (engine function to come with `from_spec.py`).
+  reveals end at the plane seat of the profile (C24; `src/dt_ai/geometry/from_spec.py`).
 - One plane per opening, facing out along the wall's outward normal, ID from group `opening`
   (11-15, ADR 0001) by window type; identical types share one mesh with instance matrices.
 - Corner window: two planes at the corner angle with a shared welded corner edge.
