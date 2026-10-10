@@ -79,8 +79,16 @@ at half; the extractor takes the depth from the opening plane (else the reveal, 
 asks about a plane or glass flush with the facade; the checker wants the profile's seat ±2 cm. B01
 etalon moved to 0.2 m (run-v003 green); KPP1 v025 still matches Revit. Modeller briefs (Claude
 Docs): B01 https://claude.ai/code/artifact/62e3769e-f61e-4c7c-96ee-7682fea85a5f, B02
-https://claude.ai/code/artifact/e332aa9d-b0ae-4084-b70b-735eda67f741. Human tickets: #2 (move `Unreal/`),
-#4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
+https://claude.ai/code/artifact/e332aa9d-b0ae-4084-b70b-735eda67f741. PRs #53-#58 (2026-10-10, Codex
+review rounds each): #53 B02 etalon checked (spec equal to the brief), runner checks the etalon before
+the engine; #54 pattern `roof-inset-plane` (parapet from LEVEL_roof, structural parapet presence;
+open edges = bottom ring + per inset roof exactly contour A + B, B embedded 10-50 mm, gap 2-10 mm);
+#55 pattern `floor-step` (contour per floor, ledge roof ID / soffit facade ID); #58 pattern
+`non-90-corner` (oblique walls, trapezoid strips; the engine refuses anything that would break under
+the checkers' 0.1 mm weld). **B02 green end to end** (engine model 8/8 against the etalon). Issues
+#56 (checker: horizontal face orientation), #57 (checker: non-manifold vertices). Next: terrace
+with a parapet from the spec (PR A: pattern + contract + engine; PR B: extractor + etalon B02t).
+Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
 ## Repository
@@ -160,9 +168,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: B02 etalon by the brief (`data/benchmark/bench-b02-corner-niche/`); decisions on the choices
-   page (C7, C8, C10, C25). Claude: engine for non-90 corners and different floor contours (B02:
-   oblique wall, contour niche, terrace + upper block), then the B02 run; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25); etalon B02t (B02 with a terrace parapet)
+   when PR A lands. Claude: terrace PR A (pattern `terrace`, spec `terraces`, engine), then PR B
+   (extractor, B02t run); issues #56, #57; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
