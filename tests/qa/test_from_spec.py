@@ -483,3 +483,13 @@ def test_opposite_u_shapes_meeting_in_two_areas_are_built():
     upper = [[0, 0], [3, 0], [3, 7], [7, 7], [7, 0], [10, 0], [10, 10], [0, 10]]
     dump = build(stepped(lower, upper), INPUTS)
     assert topology_ok(dump)
+
+
+
+def test_overlap_areas_touching_at_a_corner_are_an_error():
+    # Codex review 3 of PR #55: two 4 m2 overlaps touching at (2, 2) would leave a non-manifold vertex
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": [[0, 0], [4, 0], [4, 2], [2, 2], [2, 4], [0, 4]], "openings": []},
+                       {"level": "L1", "contour": [[2, 0], [4, 0], [4, 4], [0, 4], [0, 2], [2, 2]], "openings": []}]
+    with pytest.raises(BuildError, match="do not meet over area only"):
+        build(edited(edit), INPUTS)

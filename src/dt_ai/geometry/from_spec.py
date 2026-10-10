@@ -187,11 +187,13 @@ def _on_line(o, a, u):
 def _check_steps(floors, polys):
     """Two floors must meet over area only: floors touching along an edge or at a corner (a floor beside
     the one below, walls back to back), alone or next to an overlap, are not built (reviews of PR #55).
-    Several separate overlap areas (opposite U shapes) are fine."""
+    Several separate overlap areas (opposite U shapes) are fine; overlap areas touching each other at a
+    point or along a line are not (a non-manifold vertex, review 3 of PR #55)."""
     for k in range(len(polys) - 1):
         meet = polys[k].intersection(polys[k + 1])
         parts = list(shapely.get_parts(meet))
-        if meet.is_empty or meet.area <= KEY_M or any(p.geom_type != "Polygon" for p in parts):
+        touching = any(parts[i].distance(parts[j]) <= KEY_M for i in range(len(parts)) for j in range(i + 1, len(parts)))
+        if meet.is_empty or meet.area <= KEY_M or any(p.geom_type != "Polygon" for p in parts) or touching:
             raise BuildError(f"floors {floors[k].level} and {floors[k + 1].level} do not meet over area only "
                              f"({meet.geom_type}); edge- or corner-only contact is not built yet (floor-step)")
 
