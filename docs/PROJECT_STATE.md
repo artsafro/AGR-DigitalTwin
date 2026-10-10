@@ -104,6 +104,13 @@ pattern `terrace` proven on benchmark (user). Harness rule (user): an etalon nev
 (roof in a parapet, terrace) is inset — hole at the level + plate at level + 5 mm, outline the hole
 grown 20 mm as in the etalons; the user remade B01 (inset roof) and B02t v2 (inset terrace); B02t
 waits for the inset PR (engine + checker + extractor).
+#63 merged (3 Codex rounds, findings fixed with regressions): the engine builds every slab (roof in a
+parapet, each terrace part) as a plate 5 mm above its level, outline the hole + 20 mm, refusing
+out-of-range or out-of-outline plates; the checker requires a paired hole + plate per slab the spec
+implies and fails a solid slab inside a slab region; the extractor reads inset terrace plates (flat within
+0.1 mm); pattern `roof-inset-plane` = "Inset slab", proven on B01 / B02 / B02t. B01 (user's inset v2),
+B02, B02t all 8/8 etalon and engine model, two loops per slab. #60 merged: plan for markup helpers
+(HARNESS_PLAN §14, backlog MH1-MH3). PSU275 delivery-v003 predates the inset rule (user: mark, do not touch).
 Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -184,9 +191,10 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: decisions on the choices page (C7, C8, C10, C25). Claude: inset-slab PR (engine, checker
-   requires the joint per slab, extractor reads inset terraces; B01 / B02 / B02t reruns), then PR #60
-   and markup helpers MH1-MH3; issue #56; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25). Claude (user order 2026-10-10): plate
+   parameters in the spec (`plate_gap_m` / `plate_overlap_m`, defaults 0.005 / 0.02; extractor reads,
+   checker compares), pattern wording "the plate overlaps the hole by plate_overlap_m"; KPP1 to the inset
+   rule and K01 rerun; then markup helpers MH1-MH3; issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
