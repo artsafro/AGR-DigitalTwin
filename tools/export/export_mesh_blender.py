@@ -25,22 +25,41 @@ dump = json.loads(source.read_text(encoding="utf-8"))
 
 
 def polygons(mesh):
-    """(polygon vertex lists, material id per polygon)."""
-    tris, mids = mesh["triangles"], mesh.get("material_ids") or [0] * len(mesh["triangles"])
+    """(polygon vertex lists, material id per polygon). Anything that cannot be rebuilt exactly is an
+    error: one material id per triangle, none 0, one id per polygon, and a polygon from
+    `polygon_sizes` only when its triangles form a fan (else the triangles are written as they are)."""
+    name, tris = mesh["name"], mesh["triangles"]
+    mids = mesh.get("material_ids")
+    if mids is None or len(mids) != len(tris):
+        raise SystemExit(f"{name}: {0 if mids is None else len(mids)} material ids for {len(tris)} triangles")
+    if any(m < 1 for m in mids):
+        raise SystemExit(f"{name}: material id 0 (unassigned) has no slot; assign every face first")
     if "polygons" in mesh:
-        out, k = [], 0
-        for poly in mesh["polygons"]:
-            out.append((list(poly), mids[k]))
-            k += max(len(poly) - 2, 0)
-        return out
-    sizes = mesh.get("polygon_sizes")
-    if not sizes or sum(max(n - 2, 0) for n in sizes) != len(tris):
-        return [(list(t), m) for t, m in zip(tris, mids)]
+        groups = [list(p) for p in mesh["polygons"]]
+    else:
+        sizes = mesh.get("polygon_sizes")
+        groups = None
+        if sizes and sum(max(n - 2, 0) for n in sizes) == len(tris):
+            groups, k = [], 0
+            for n in sizes:
+                fan = tris[k:k + n - 2]
+                if any(t[0] != fan[0][0] or (i and t[1] != fan[i - 1][2]) for i, t in enumerate(fan)):
+                    groups = None                       # not a fan: keep the triangles as they are
+                    break
+                groups.append([fan[0][0], fan[0][1]] + [t[2] for t in fan])
+                k += n - 2
+        if groups is None:
+            groups = [list(t) for t in tris]
     out, k = [], 0
-    for n in sizes:
-        fan = tris[k:k + n - 2]
-        out.append(([fan[0][0], fan[0][1]] + [t[2] for t in fan], mids[k]))
-        k += n - 2
+    for poly in groups:
+        n = max(len(poly) - 2, 0)
+        ids = set(mids[k:k + n])
+        if len(ids) != 1 or len(set(poly)) != len(poly):
+            raise SystemExit(f"{name}: polygon {len(out)} has ids {sorted(ids)} / repeated vertices {poly}")
+        out.append((poly, ids.pop()))
+        k += n
+    if k != len(tris):
+        raise SystemExit(f"{name}: polygons cover {k} of {len(tris)} triangles")
     return out
 
 
@@ -50,8 +69,6 @@ scene.unit_settings.system, scene.unit_settings.scale_length = "METRIC", 1.0
 materials = {}
 for m in dump["meshes"]:
     polys = polygons(m)
-    if any(mid < 1 for _, mid in polys):
-        raise SystemExit(f"{m['name']}: material id 0 (unassigned) has no slot; assign every face first")
     data = bpy.data.meshes.new(m["name"])
     data.from_pydata([tuple(v) for v in m["vertices"]], [], [p for p, _ in polys])
     top = max(mid for _, mid in polys)
@@ -61,7 +78,8 @@ for m in dump["meshes"]:
         data.materials.append(materials[n])
     for poly, (_, mid) in zip(data.polygons, polys):
         poly.material_index = mid - 1
-    data.validate(clean_customdata=False)
+    if data.validate(clean_customdata=False) or len(data.polygons) != len(polys):
+        raise SystemExit(f"{m['name']}: Blender rejected or changed polygons ({len(data.polygons)} of {len(polys)})")
     data.update()
     obj = bpy.data.objects.new(m["name"], data)
     scene.collection.objects.link(obj)

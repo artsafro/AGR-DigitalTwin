@@ -4,7 +4,8 @@ Box 10 x 10 m, 2 storeys, 2 windows, flat roof with a parapet.
 
 Patterns: wall-from-contour, opening-plane, typical-floor-repeat, parapet.
 
-Etalon: issue #12 (user); spec: #13; checkers: #14. Thresholds: `tolerances.json` (`geometry`
+Etalon: issue #12 (user) — files outside git in `data/benchmark/bench-b01-box/`, hashes in
+`etalon.json`; spec: #13 (`spec.json`, extracted from the etalon); checkers: #14. Thresholds: `tolerances.json` (`geometry`
 for the checkers, `spec_extract` for the extractor).
 
 ## What the etalon carries (#12)

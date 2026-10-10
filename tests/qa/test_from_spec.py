@@ -255,3 +255,59 @@ def test_build_inputs_come_from_object_json_and_are_never_defaulted():
         BuildInputs.from_object({"id": "x"})
     with pytest.raises(BuildError, match="build block"):
         BuildInputs.from_object({"id": "x", "build": {"parapet_thickness_m": 0.3, "ids": {"facade": 1}}})
+
+
+# Codex review 1 of PR #51
+
+
+def export(tmp_path, mesh, name="x"):
+    src = tmp_path / f"{name}.json"
+    src.write_text(json.dumps({"meshes": [mesh], "helpers": []}), encoding="utf-8")
+    base = [find_blender(), "--background", "--factory-startup", "--disable-autoexec", "--python-exit-code", "1"]
+    done = subprocess.run(base + ["--python", str(ROOT / "tools/export/export_mesh_blender.py"), "--", str(src),
+                                  str(tmp_path / f"{name}.blend"), str(tmp_path / f"{name}.fbx")],
+                          capture_output=True, text=True)
+    return done.returncode, done.stdout + done.stderr
+
+
+CONCAVE = {"name": "q", "vertices": [[0, 0, 0], [2, 0, 0], [2, 2, 0], [1.5, 0.5, 0]]}
+
+
+@pytest.mark.blender
+@pytest.mark.skipif(find_blender() is None, reason="Blender not installed")
+@pytest.mark.parametrize("mesh, ok, message", [
+    ({**CONCAVE, "triangles": [[0, 1, 3], [1, 2, 3]], "material_ids": [1, 1], "polygon_sizes": [4]}, True, ""),
+    ({**CONCAVE, "triangles": [[0, 1, 2], [0, 2, 3]], "material_ids": [1, 0], "polygon_sizes": [4]}, False, "id 0"),
+    ({**CONCAVE, "triangles": [[0, 1, 2], [0, 2, 3]], "material_ids": [6]}, False, "material ids for 2 triangles"),
+    ({**CONCAVE, "triangles": [[0, 1, 2], [0, 2, 3]], "material_ids": [1, 6], "polygon_sizes": [4]}, False, "has ids"),
+])
+def test_exporter_rebuilds_polygons_exactly_or_refuses(tmp_path, mesh, ok, message):
+    code, log = export(tmp_path, mesh)
+    assert (code == 0) == ok, log[-400:]
+    assert message in log
+    if ok:                                                     # a non-fan quad stays two triangles, none lost
+        dump = tmp_path / "x-dump.json"
+        subprocess.run([find_blender(), "--background", "--factory-startup", "--disable-autoexec", "--python-exit-code",
+                        "1", "--python", str(ROOT / "tools/source/measure_spec_blender.py"), "--",
+                        str(tmp_path / "x.fbx"), str(dump)], check=True, capture_output=True)
+        assert sum(len(m["triangles"]) for m in json.loads(dump.read_text(encoding="utf-8"))["meshes"]) == 2
+
+
+@pytest.mark.parametrize("bad", ["object", "tolerances"])
+def test_runner_input_errors_stop_with_a_summary_and_exit_2(tmp_path, bad, monkeypatch):
+    monkeypatch.setattr(run_benchmark, "blender_run", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no run")))
+    etalon = tmp_path / "etalon.fbx"
+    etalon.write_bytes(b"x")
+    bench = ROOT / "benchmark/bench-b01-box"
+    broken = tmp_path / "broken.json"
+    broken.write_text("{" if bad == "object" else json.dumps({"profile": "npm_min"}), encoding="utf-8")
+    argv = ["--etalon", str(etalon), "--object", str(broken if bad == "object" else bench / "object.json"),
+            "--tolerances", str(broken if bad == "tolerances" else bench / "tolerances.json"),
+            "--output", str(tmp_path / "run"), "--blender", "blender"]
+    assert run_benchmark.main(argv) == 2
+    assert "stopped" in json.loads((tmp_path / "run/summary.json").read_text(encoding="utf-8"))
+
+
+def test_runner_refuses_a_step_that_left_no_file(tmp_path):
+    with pytest.raises(RuntimeError, match="model.blend"):
+        run_benchmark.produced(tmp_path / "model.blend")

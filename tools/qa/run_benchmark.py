@@ -47,12 +47,21 @@ def write(path, value):
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def produced(*paths):
+    """A step is done only when every file it promised exists and is not empty."""
+    missing = [p.name for p in paths if not p.is_file() or p.stat().st_size == 0]
+    if missing:
+        raise RuntimeError(f"step reported success but left no {', '.join(missing)}")
+
+
 def run(etalon, obj_path, tol_path, out, blender):
-    obj, tolerances = read_json(obj_path.read_bytes()), read_json(tol_path.read_bytes())
     summary = {"etalon": str(etalon), "object": str(obj_path), "tolerances": str(tol_path), "steps": {}}
     steps = summary["steps"]
     try:
+        obj, tolerances = read_json(obj_path.read_bytes()), read_json(tol_path.read_bytes())
+        geometry = tolerances["geometry"]
         blender_run(blender, MEASURE, etalon, out / "etalon-dump.json")
+        produced(out / "etalon-dump.json")
         etalon_dump = read_json((out / "etalon-dump.json").read_bytes())
         steps["etalon_dump"] = "done"
         spec, report = extract_spec(etalon_dump, obj, tolerances.get("profile", "npm_min"), tolerances.get("spec_extract"))
@@ -63,17 +72,19 @@ def run(etalon, obj_path, tol_path, out, blender):
         write(out / "model-dump.json", model_dump)
         steps["model"] = "done"
         blender_run(blender, EXPORT, out / "model-dump.json", out / "model.blend", out / "model.fbx")
+        produced(out / "model.blend", out / "model.fbx")
         steps["export"] = "done"
         blender_run(blender, MEASURE, out / "model.fbx", out / "model-readback.json")
+        produced(out / "model-readback.json")
         readback = read_json((out / "model-readback.json").read_bytes())
         steps["readback"] = "done"
-    except (SpecError, BuildError, RuntimeError, subprocess.TimeoutExpired, OSError, ValueError) as exc:
+        etalon_soup = from_dump(etalon_dump, spec.frame.to_object)
+        self_check = checks.run(etalon_soup, etalon_soup, spec, geometry)
+        model_check = checks.run(from_dump(readback), etalon_soup, spec, geometry)
+    except (SpecError, BuildError, RuntimeError, subprocess.TimeoutExpired, OSError, ValueError, KeyError,
+            TypeError) as exc:
         summary["stopped"] = f"{type(exc).__name__}: {exc}"
         return summary
-    etalon_soup = from_dump(etalon_dump, spec.frame.to_object)
-    geometry = tolerances["geometry"]
-    self_check = checks.run(etalon_soup, etalon_soup, spec, geometry)
-    model_check = checks.run(from_dump(readback), etalon_soup, spec, geometry)
     write(out / "etalon-self.json", self_check)
     write(out / "report.json", model_check)
     for name, r in (("etalon_self", self_check), ("model_check", model_check)):
