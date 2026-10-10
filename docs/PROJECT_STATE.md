@@ -88,6 +88,13 @@ open edges = bottom ring + per inset roof exactly contour A + B, B embedded 10-5
 the checkers' 0.1 mm weld). **B02 green end to end** (engine model 8/8 against the etalon). Issues
 #56 (checker: horizontal face orientation), #57 (checker: non-manifold vertices). Next: terrace
 with a parapet from the spec (PR A: pattern + contract + engine; PR B: extractor + etalon B02t).
+#59 terrace PR A merged (2026-10-10, 3 Codex rounds, last two clean): pattern `terrace`, spec v0.4
+`terraces: [{level, parapet_h_m}]`, engine parapet along the ledge's outer edges (outer face facade
+ID, inner face / cap / walkable roof ID, thickness = `parapet_thickness_m`, every ledge part its own
+parapet). Etalon B02t delivered (`data/benchmark/bench-b02t-terrace/`, FBX exported by Claude; mesh,
+IDs and areas match the brief: walkable 45.42 + cap 6.48 = ledge 51.9 m2). Modeller brief B02t
+https://claude.ai/code/artifact/95f7af8a-f484-4d9e-80ce-2a0f50ece086. Plan for markup helpers
+(LEVEL_, AXIS_, anchors): PR #60 (HARNESS_PLAN §14, backlog MH1-MH3), after the terrace.
 Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -168,9 +175,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: decisions on the choices page (C7, C8, C10, C25); etalon B02t (B02 with a terrace parapet)
-   when PR A lands. Claude: terrace PR A (pattern `terrace`, spec `terraces`, engine), then PR B
-   (extractor, B02t run); issues #56, #57; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25). Claude: terrace PR B (extractor reads the
+   terrace parapet, bench `bench-b02t-terrace`), then PR #60 and markup helpers MH1-MH3; issues #56,
+   #57; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
