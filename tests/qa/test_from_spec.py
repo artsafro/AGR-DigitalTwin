@@ -680,3 +680,40 @@ def test_terrace_on_a_ledge_in_two_parts():
     assert topology_ok(dump)
     assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(2 * (0.3 * 10 + 2 * 0.3 * 1.7))   # two caps
     assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(2 * 1.7 * 9.4)                    # two walkable parts
+
+
+# Terrace PR B: the extractor reads the terrace parapet back (engine model -> spec, round trip)
+
+SYNTH_OBJECT = {"id": "bench-synth-terrace", "frame": {"to_object": np.eye(4).tolist()}}
+
+
+def split_ledge(d):
+    d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                   {"level": "L1", "contour": [[2, 0], [8, 0], [8, 10], [2, 10]], "openings": []}]
+
+
+@pytest.mark.parametrize("edit, h", [(west_ledge, 0.3), (west_ledge, 0.6), (west_ledge, 1.2), (split_ledge, 0.6)])
+def test_extractor_reads_the_terrace_parapet_back(edit, h):
+    from dt_ai.spec import extract_spec
+    s = terraced(edit, h)
+    spec, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
+    assert spec.spec_version == "0.4" and [t.model_dump() for t in spec.terraces] == [{"level": "L1", "parapet_h_m": h}]
+    assert [f.contour for f in spec.expanded_floors()] == [f.contour for f in s.expanded_floors()]
+    assert report["questions"] == []
+    t = report["floors"]["L1"]["terrace"]
+    assert t["walkable_m2"] + t["cap_m2"] == pytest.approx(t["ledge_m2"])
+
+
+def test_extractor_reads_no_terrace_on_a_plain_step():
+    from dt_ai.spec import extract_spec
+    spec, report = extract_spec(build(edited(west_ledge), INPUTS), SYNTH_OBJECT)
+    assert spec.terraces == [] and spec.spec_version == "0.3" and "terrace" not in report["floors"]["L1"]
+
+
+def test_b02_terrace_spec_round_trip():
+    from dt_ai.spec import extract_spec
+    data = json.loads((ROOT / "benchmark/bench-b02t-terrace/spec.json").read_text(encoding="utf-8"))
+    s = Spec.model_validate(data)
+    spec, report = extract_spec(build(s, INPUTS), {**SYNTH_OBJECT, "id": s.id})
+    keep = lambda x: {k: v for k, v in x.model_dump().items() if k != "frame"}   # noqa: E731
+    assert keep(spec) == keep(s) and report["questions"] == []

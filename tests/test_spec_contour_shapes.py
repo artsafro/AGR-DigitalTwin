@@ -363,3 +363,17 @@ def test_close_vertex_rows_do_not_hide_an_element():
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     q = only_question(dump_of(b))
     assert (q["wall"], q["depth_m"], q["length_m"], q["facade_share"]) == (0, 0.2, 1.0, 0.1)
+
+
+def test_lower_walls_reaching_above_the_level_are_no_terrace():
+    # pattern terrace (PR B): the lower floor's walls go on 0.6 m above LEVEL_L1 but there is no walkable
+    # part at the level (the ledge top is at 3.9): a height difference, not a parapet -> still unclear
+    upper = [[4, 0], [10, 0], [10, 10], [4, 10]]
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 3.9, extra_z=(3.3,))
+    walls(b, upper, 3.9, 6.6)
+    flat(b, Polygon(SQUARE10).difference(Polygon(upper)), 3.9, up=True)
+    flat(b, Polygon(upper), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends and the tallest"):
+        extract_spec(dump_of(b), OBJECT)
