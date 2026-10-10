@@ -1,6 +1,6 @@
 # Markup helpers (`markup-helpers`)
 
-Status: draft (MH1: the Blender route proven on `bench-b01-box`). Source: user decisions 2026-10-10
+Status: draft (MH1: the Blender route proven on `bench-b01-box`; MH2: the Revit route proven on KPP1). Source: user decisions 2026-10-10
 (HARNESS_PLAN §14, backlog MH1-MH3); pattern `roof-inset-plane` (technological elements set no level).
 
 ## Signs in the source
@@ -22,7 +22,13 @@ Status: draft (MH1: the Blender route proven on `bench-b01-box`). Source: user d
   (for other importers; the Blender readback was the same with All / None / FBX Units at Unit Scale 1.0).
   Y up (Blender's default) also reads right — the importer applies the file's `UpAxis` — but the axis
   turn leaves ~1-2 µm float noise (a plate gap read 0.004999); Z up reads exactly.
-- Revit (MH2): generated from `Levels` (and `Grids`, MH3) through TwinPack, not placed by hand.
+- Revit (MH2, `src/dt_ai/spec/markup.py`): generated, not placed by hand. `measure_spec_revit_twin.mjs` writes
+  the document's Levels and Roofs into twin-data.json; object.json `revit_levels` maps each Revit level to a
+  spec name or `null` (not a floor: structural, parapet, basement band) and names the roof type whose
+  covering top is `LEVEL_roof` = base level + offset + volume / area (user decisions 2026-10-10). A level
+  the table does not name is a `revit-level` question. object.json `levels` (kept for sources without
+  helpers) must agree with the generated helpers within 3 cm. Inset plates are not read from Revit (the
+  design has no inset; the inset is the model's joint). Grids -> `AXIS_<name>`: MH3.
 
 ## Profiles
 
@@ -36,6 +42,8 @@ Status: draft (MH1: the Blender route proven on `bench-b01-box`). Source: user d
 - `bench-b01-box` Blender etalon (`data/benchmark/bench-b01-box/blender-v001/`, made by Claude in Blender by
   hand from the B01 brief, user decision 2026-10-10): its spec equals the Max etalon's; the chain passes
   8/8 against itself and for the engine model (Up Z and Y up exports).
+- KPP1, Revit route (MH2, 2026-10-11): helpers L0 0.000, L1 3.900, roof 7.9093 (roof 1613791: 7.7 + 60.36 /
+  288.44); spec revit-twin v014 against the VPM FBX spec v030: levels 0 / 0 / 0.3 mm, verdict match.
 
 ## Traps
 

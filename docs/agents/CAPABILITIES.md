@@ -148,7 +148,8 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   `node tools/source/measure_spec_revit_twin.mjs <new-folder>` calls the TwinPack commands of the
   revit-http add-in (`twin_floor_manifest`, `twin_export_floor` with every wall function; not in the MCP
   tool list, called through `revitClient.callRevit`), writes `floor.json` + `reference.obj` per band and
-  `twin-data.json`; `dt spec extract --dump <twin-data.json>` reads it (`dt_ai.spec.revit_twin`): walls as
+  `twin-data.json` (with the document's Levels and Roofs since MH2: `list_levels`, `list_elements` OST_Roofs,
+  `get_element_info`; object.json `revit_levels` turns them into LEVEL_ helpers, `src/dt_ai/spec/markup.py`); `dt spec extract --dump <twin-data.json>` reads it (`dt_ai.spec.revit_twin`): walls as
   prisms on their location lines (any angle; curved walls from their real geometry), glass by material
   transparency, doors from records, attachments by the main-walls hull rule (user decision 2026-10-08). The
   document is not modified (flag checked before and after); files go only to the new folder.

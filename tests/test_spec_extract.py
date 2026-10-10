@@ -456,3 +456,54 @@ def test_a_model_in_the_wrong_units_stops_with_a_units_hint():
         h["location"] = [c / 100 for c in h["location"]]
     with pytest.raises(SpecError, match="check its units"):
         extract_spec(dump, OBJECT)
+
+
+# MH2 (pattern markup-helpers, user decisions 2026-10-10): level helpers generated from Revit Levels and roof
+
+REVIT_TABLE = {"levels": {"Level 0": "L0", "Level 1": "L1", "Structural": None},
+               "roof": {"type": "Covering"}}
+
+
+def revit_box(**over):
+    dump = box_building(helpers=False)
+    dump["source"] = "revit"
+    dump["revit_levels"] = [{"id": 1, "name": "Level 0", "elevation_m": 0.0}, {"id": 2, "name": "Level 1", "elevation_m": 3.3},
+                            {"id": 3, "name": "Structural", "elevation_m": 6.4}]
+    dump["revit_roofs"] = [{"id": 9, "type": "Covering", "base_level": "Structural", "base_level_m": 6.4, "offset_m": 0.0,
+                            "volume_m3": 20.0, "area_m2": 100.0}]                # 0.2 m covering: top 6.6
+    dump.update(over)
+    return dump
+
+
+def test_revit_levels_and_roof_covering_become_level_helpers():
+    spec, report = extract_spec(revit_box(), {**OBJECT, "revit_levels": REVIT_TABLE})
+    assert [(lv.name, lv.elev_m) for lv in spec.levels] == [("L0", 0.0), ("L1", 3.3), ("roof", 6.6)]
+    assert [h["name"] for h in report["level_helpers"]] == ["LEVEL_L0", "LEVEL_L1", "LEVEL_roof"]
+    assert "volume 20.0 / area 100.0" in report["level_helpers"][-1]["derived"]
+
+
+def test_a_revit_level_the_table_does_not_name_is_a_question():
+    dump = revit_box()
+    dump["revit_levels"].append({"id": 4, "name": "Mezzanine", "elevation_m": 1.5})
+    spec, report = extract_spec(dump, {**OBJECT, "revit_levels": REVIT_TABLE})
+    assert [lv.name for lv in spec.levels] == ["L0", "L1", "roof"]
+    assert [(q["kind"], q.get("revit_level")) for q in report["questions"]] == [("revit-level", "Mezzanine")]
+
+
+@pytest.mark.parametrize("given, ok", [
+    ([{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": 6.62}], True),
+    ([{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": 6.65}], False),
+    ([{"name": "L0", "elev_m": 0.0}, {"name": "roof", "elev_m": 6.6}], False),
+])
+def test_object_json_levels_must_agree_with_the_revit_helpers(given, ok):
+    obj = {**OBJECT, "revit_levels": REVIT_TABLE, "levels": given}
+    if ok:
+        extract_spec(revit_box(), obj)
+    else:
+        with pytest.raises(SpecError, match="disagree"):
+            extract_spec(revit_box(), obj)
+
+
+def test_the_roof_type_must_name_one_roof_element():
+    with pytest.raises(SpecError, match="need exactly one"):
+        extract_spec(revit_box(revit_roofs=[]), {**OBJECT, "revit_levels": REVIT_TABLE})

@@ -18,6 +18,7 @@ from shapely.geometry.polygon import orient
 from shapely.ops import polygonize
 
 from dt_ai.spec import floors as fl
+from dt_ai.spec.markup import MarkupError, revit_level_helpers
 from dt_ai.spec import openings as op
 from dt_ai.spec.model import Spec
 
@@ -26,6 +27,7 @@ LEVEL_PREFIX = "LEVEL_"
 # no DCC copy suffix (".001", a trailing 3-digit counter as Max's Point001), no spaces, each name once
 LEVEL_NAME = re.compile(r"^LEVEL_[A-Za-z][A-Za-z0-9_]*$")
 LEVEL_COUNTER = re.compile(r"\d{3}$")
+LEVEL_AGREE_M = 0.03      # generated Revit level helpers and object.json levels agree within this (HARNESS_PLAN §4)
 LEVEL_SAME_M = 0.001      # two level helpers closer than this in height are one level given twice
 SAME_CONTOUR_M = 0.005    # sections closer than this (Hausdorff) are one contour; < the 1 cm acceptance
 WELD_M = 1e-4             # vertices closer than WELD_M / 2 on every axis are always welded
@@ -1159,7 +1161,26 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json;
     thresholds: the `spec_extract` section of a benchmark's tolerances.json (defaults in openings.py)."""
     m = _matrix(obj_cfg, dump.get("source"))
+    # pattern markup-helpers, MH2: a Revit source's level helpers come from its Levels and roof through the
+    # object.json table; object.json `levels` (for sources without helpers) must then agree with them
+    given = None
+    if obj_cfg.get("revit_levels") and dump.get("source") == "revit":
+        try:
+            helpers, asked = revit_level_helpers(dump, obj_cfg["revit_levels"])
+        except MarkupError as exc:
+            raise SpecError(str(exc)) from exc
+        dump = {**dump, "helpers": helpers, "questions": [*dump.get("questions", []), *asked]}
+        given = obj_cfg.get("levels")
+        obj_cfg = {k: v for k, v in obj_cfg.items() if k != "levels"}
     levels = _levels(dump, obj_cfg, m)
+    if given is not None:
+        mine = {lv["name"]: lv["elev_m"] for lv in levels}
+        theirs = {lv["name"]: float(lv["elev_m"]) for lv in given}
+        off = {n: (mine.get(n), theirs.get(n)) for n in set(mine) | set(theirs)
+               if n not in mine or n not in theirs or abs(mine[n] - theirs[n]) > LEVEL_AGREE_M}
+        if off:
+            raise SpecError(f"Revit level helpers and object.json levels disagree (> {LEVEL_AGREE_M} m or missing): "
+                            f"{dict(sorted(off.items()))} (helper, object.json)")
     if dump.get("kind") == "revit-data":                 # the box route of #10, removed after #29
         raise SpecError("revit-data (bounding boxes, #10) is no longer read; export with "
                         "tools/source/measure_spec_revit_twin.mjs and pass its twin-data.json (#29)")
@@ -1178,7 +1199,10 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     body = tris[parts[0]]
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
-              "attachment_parts_ignored": len(parts) - 1, "floors": {}}
+              "attachment_parts_ignored": len(parts) - 1, "floors": {},
+              "level_helpers": [{"name": h["name"], "z": round(float(h["location"][2]), 4),
+                                 **({"derived": h["derived"]} if "derived" in h else {})}
+                                for h in dump.get("helpers", []) if h["name"].startswith(LEVEL_PREFIX)]}
     floors, polys, pieces, mouths, doors = [], [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
@@ -1272,10 +1296,11 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     # or that cannot be read, are a question; none read leaves the defaults (review 1 of PR #64)
     extra = np.vstack(others) if others else None
     plates, problems = {}, {}
-    if roof_stats["parapet"]:
+    inset = dump.get("source") != "revit"            # Revit holds the design; the inset is the model's joint
+    if inset and roof_stats["parapet"]:
         plates[levels[-1]["name"]], problems[levels[-1]["name"]] = _plate_params(
             v, body, extra, levels[-1]["elev_m"], polys[-1])
-    for t in terraces:
+    for t in terraces if inset else []:
         k = names.index(t["level"])
         plates[t["level"]], problems[t["level"]] = _plate_params(
             v, body, extra, levels[k]["elev_m"], polys[k - 1].difference(polys[k]))
