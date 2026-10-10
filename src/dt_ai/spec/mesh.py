@@ -736,7 +736,7 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
     report["door_recesses"], report["relief_parts"] = len(doors), relief
     # every other shape is not over the full height -> questions
     report["bridged_sections"] = sum(1 for _, _, m, _ in mouth_spans if m)
-    return poly, report, _deviations(others, poly), mouth_spans, doors, parapet
+    return poly, report, _deviations(others, poly), mouth_spans, doors, parapet, base["poly"]
 
 
 def _measure(piece, section, contour_pts):
@@ -1160,7 +1160,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     floors, polys, pieces, mouths, doors = [], [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev, ms, dr, parapet = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
+        poly, rep, dev, ms, dr, parapet, raw = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
                                                 below=polys[-1] if polys else None,
                                                 extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
         mouths.append(ms)
@@ -1169,7 +1169,9 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
         if polys:                                  # anything else standing on a ledge (both contours final)
-            on = _ledge_faces(v, body, polys[-1].difference(poly), lv["elev_m"], nxt["elev_m"], *parapet)
+            # neither the final contour (a door recess filled) nor the raw section shape (a relief left out of
+            # the contour) is ledge (review 1 of PR #66)
+            on = _ledge_faces(v, body, polys[-1].difference(poly.union(raw)), lv["elev_m"], nxt["elev_m"], *parapet)
             if len(on):
                 c = on.reshape(-1, 3)
                 rep["ledge_structure"] = {"triangles": int(len(on)),
