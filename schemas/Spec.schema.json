@@ -321,6 +321,27 @@
       ],
       "title": "Roof",
       "type": "object"
+    },
+    "Terrace": {
+      "additionalProperties": false,
+      "description": "A ledge at a floor step used as a terrace, with a parapet (upstand) along its outer edges\n(spec v0.4, pattern terrace, user decision 2026-10-10). The height is measured from the level.",
+      "properties": {
+        "level": {
+          "title": "Level",
+          "type": "string"
+        },
+        "parapet_h_m": {
+          "exclusiveMinimum": 0,
+          "title": "Parapet H M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "level",
+        "parapet_h_m"
+      ],
+      "title": "Terrace",
+      "type": "object"
     }
   },
   "additionalProperties": false,
@@ -388,10 +409,19 @@
       "enum": [
         "0.1",
         "0.2",
-        "0.3"
+        "0.3",
+        "0.4"
       ],
       "title": "Spec Version",
       "type": "string"
+    },
+    "terraces": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Terrace"
+      },
+      "title": "Terraces",
+      "type": "array"
     }
   },
   "required": [

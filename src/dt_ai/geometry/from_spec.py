@@ -17,7 +17,10 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
 - the roof plane at the top input level inside the parapet, parapet inner walls and cap;
 - a contour per floor (pattern floor-step): walls of each floor by its own contour, and at each
   level line a ledge facing up (roof ID) where the floor below reaches out and a soffit facing down
-  (facade ID, user 2026-10-10) where the floor above overhangs.
+  (facade ID, user 2026-10-10) where the floor above overhangs;
+- a terrace (pattern terrace, spec v0.4 `terraces`): on a ledge, a parapet along its outer edges -
+  outer face (facade ID), inner face and cap (roof ID), thickness `parapet_thickness_m` - and the
+  walkable rest of the ledge (roof ID); the wall cells of the floor above behind its ends are hidden.
 
 Topology: quads only, welded, no T-junctions. Wall cuts run at every contour vertex and opening
 edge, Z cuts at every level, sill, head, roof and parapet top, and cuts are propagated through the
@@ -245,9 +248,26 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     faces = [(inner, roof, inputs.roof_id, 1)]
     if t > 0:
         faces.append((outer.difference(inner), top, inputs.roof_id, 1))
+    names = [lv.name for lv in spec.levels]
+    terraces = {names.index(tr.level): tr.parapet_h_m for tr in spec.terraces}
+    tp_walls, tp_solids, tp_tops = [], [], []
     for k in range(len(polys) - 1):
-        faces.append((polys[k].difference(polys[k + 1]), elev[k + 1], inputs.roof_id, 1))
+        ledge = polys[k].difference(polys[k + 1])
+        if k + 1 in terraces:                           # pattern terrace: a parapet along the ledge's outer edges
+            if inputs.parapet_thickness_m <= 0:
+                raise BuildError("a terrace parapet needs parapet_thickness_m in the build inputs")
+            walk, band, pw = _terrace(ledge, polys[k + 1], elev[k + 1], elev[k + 1] + terraces[k + 1],
+                                      inputs.parapet_thickness_m, spec.levels[k + 1].name)
+            faces.append((walk, elev[k + 1], inputs.roof_id, 1))
+            faces.append((band, elev[k + 1] + terraces[k + 1], inputs.roof_id, 1))
+            tp_walls += pw
+            tp_solids.append((band, elev[k + 1], elev[k + 1] + terraces[k + 1]))
+            tp_tops.append(elev[k + 1] + terraces[k + 1])
+        else:
+            faces.append((ledge, elev[k + 1], inputs.roof_id, 1))
         faces.append((polys[k + 1].difference(polys[k]), elev[k + 1], inputs.facade_id, -1))
+    if set(terraces) - set(range(1, len(polys))):
+        raise BuildError("a terrace lies at a level with no floor step under it")
     faces = [(g, z, mid, up) for poly, z, mid, up in faces for g in shapely.get_parts(poly)
              if g.geom_type == "Polygon" and g.area > KEY_M]
 
@@ -261,6 +281,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     if t > 0:
         for w in range(len(in_pts)):
             walls.append(("inner", in_pts[w], in_pts[(w + 1) % len(in_pts)], roof, top))
+    walls += tp_walls
 
     # cut lines (pattern non-90-corner): vertical strips at every vertex x of every outline; walls along y
     # (x = const) take their cuts from a registry kept in step with the horizontal faces they touch
@@ -293,7 +314,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         raise BuildError("two strip lines closer than 0.1 mm in x (vertices would weld); not built yet")
     traps = _trapezoids(faces, xs)
     face_ys = _propagate(traps, walls, wall_ys)
-    zs_all = _cuts(elev + [top] + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
+    zs_all = _cuts(elev + [top] + tp_tops + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
 
     def along_cuts(a, b):
         length = float(np.linalg.norm(b - a))
@@ -309,10 +330,10 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     for kind, a, b, z_lo, z_hi in walls:
         ss, u, length = along_cuts(a, b)
         if kind == "inner":
-            facing = np.array([-u[1], u[0], 0.0])           # into the roof
+            facing = np.array([-u[1], u[0], 0.0])           # into the roof or the terrace
             for s0, s1 in zip(ss, ss[1:]):
                 p0, p1 = a + u * s0, a + u * s1
-                mesh.quad([[*p0, roof], [*p1, roof], [*p1, top], [*p0, top]], inputs.roof_id, facing)
+                mesh.quad([[*p0, z_lo], [*p1, z_lo], [*p1, z_hi], [*p0, z_hi]], inputs.roof_id, facing)
             continue
         zs = [z for z in zs_all if z_lo - KEY_M <= z <= z_hi + KEY_M]
         out_n = np.array([u[1], -u[0], 0.0])
@@ -327,6 +348,8 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
             for z0, z1 in zip(zs, zs[1:]):
                 sm, zm = (s0 + s1) / 2, (z0 + z1) / 2
                 o = hole_at(sm, zm)
+                if kind == "outer" and _inside_solid(a + u * sm, zm, tp_solids):
+                    continue                                # behind a terrace parapet: hidden, not built
                 if o is None:
                     mesh.quad([P(s0, z0), P(s1, z0), P(s1, z1), P(s0, z1)], inputs.facade_id, out_n)
                     continue
@@ -389,6 +412,46 @@ def _hold(mesh, bottom):
 
 def _r(v):
     return round(float(v), 9)
+
+
+def _segments(poly, keep):
+    """The edges of a polygon's CCW outlines (every part of a multipolygon) whose midpoint passes keep(point)."""
+    out = []
+    for part in shapely.get_parts(poly):
+        part = orient(part, sign=1.0)
+        for ring in [part.exterior, *part.interiors]:
+            c = np.asarray(ring.coords)
+            for p, q in zip(c[:-1], c[1:]):
+                if np.linalg.norm(q - p) > KEY_M and keep(Point((p + q) / 2)):
+                    out.append((p[:2].copy(), q[:2].copy()))
+    return out
+
+
+def _terrace(ledge, upper, z, z_top, t, level):
+    """Pattern terrace (user decision 2026-10-10): the walkable part, the parapet band (its cap) and the
+    parapet's walls on a ledge. The parapet runs along the ledge's outer edges (not along the walls of
+    the floor above); its outer face continues the walls below, its inner face is t inside."""
+    if ledge.is_empty or ledge.area <= KEY_M:
+        raise BuildError(f"terrace at {level}: the floor below does not reach out past the floor above")
+    upper_line = upper.boundary
+    outer = [(p, q) for p, q in _segments(ledge, lambda m: m.distance(upper_line) > KEY_M)]
+    if not outer:
+        raise BuildError(f"terrace at {level}: the ledge has no outer edge for a parapet")
+    lines = shapely.line_merge(shapely.MultiLineString([[tuple(p), tuple(q)] for p, q in outer]))
+    band = lines.buffer(t, cap_style="flat", join_style="mitre", mitre_limit=1e6).intersection(ledge)
+    walk = ledge.difference(band)
+    if band.area <= KEY_M or any(walk.intersection(part).area <= KEY_M for part in shapely.get_parts(ledge)):
+        raise BuildError(f"terrace at {level}: the parapet leaves a ledge part with no walkable terrace")
+    walls = [("terrace-outer", p, q, z, z_top) for p, q in outer]
+    for part in shapely.get_parts(walk):           # the parapet's inner face: walkable outline off the ledge's own
+        walls += [("inner", p, q, z, z_top) for p, q in _segments(part, lambda m: m.distance(ledge.boundary) > KEY_M)]
+    return walk, band, walls
+
+
+def _inside_solid(pt, zm, solids):
+    """A wall cell centre inside a terrace parapet: on the band (its outline included) between its foot and top."""
+    p = Point(float(pt[0]), float(pt[1]))
+    return any(z0 < zm < z1 and band.buffer(KEY_M).contains(p) for band, z0, z1 in solids)
 
 
 def _settle(cuts, length, where):
