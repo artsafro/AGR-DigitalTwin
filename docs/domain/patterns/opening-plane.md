@@ -26,15 +26,15 @@ spec v0.3 (#36); window library `library/windows/window_types.json` (#4).
 
 ## Check
 
-- `opening_planes` (`twinqa.geometry`): group `opening` faces facing the wall, inside the reveal,
-  covering the opening. Cover 95 % and a seat anywhere in the reveal are proposed by PR #47
-  (B01 `tolerances.json`), to be tuned with the user after B01. Also `material_ids`, `mesh`.
+- `opening_planes` (`twinqa.geometry`): group `opening` faces facing out, at the profile's seat
+  within `opening_plane_offset_m` (2 cm), covering >= 95 % (a proposal of PR #47, tuned after B01).
+  Also `material_ids`, `mesh`.
 
 ## Traps
 
-- Seat (C24, user 2026-10-10): `npm_min` at half the opening depth, `mid` at full; no reveal behind it.
-- Edges from the wall faces, never from frames or sills; a plane at the back of the reveal was
-  rejected (visible slits).
+- Seat (C24 final, 2026-10-10): `npm_min` back polygon at full depth; `mid` half, detailed window from it.
+- Edges from the wall faces, never from frames or sills; a plane that does not close its reveal
+  (a gap to the reveal's end) leaves visible slits: weld it to the reveal.
 - A long plane must not cross a belt or another window row.
 - `window_type` is the library type, not the ID; no guessed ID under `plane_conflict`; a grille gets no plane.
 - Window instance front goes to the opening's outward normal; a blanket 180° flip was an error.

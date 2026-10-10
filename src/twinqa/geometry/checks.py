@@ -12,6 +12,7 @@ import numpy as np
 import shapely
 import yaml
 
+from dt_ai.geometry.from_spec import SEAT_SHARE
 from dt_ai.spec.model import Spec
 from twinqa.clearance import near_parallel_overlaps
 from twinqa.geometry import measure
@@ -164,12 +165,14 @@ def opening_planes(spec: Spec, kinds) -> list[dict]:
                 continue
             rows.append({"level": floor.level, "index": k, "opening": o, "contour": floor.contour,
                          "z0": elev[floor.level] + o.sill_m,
-                         "depth": spec.opening_depth_default_m if o.depth_m is None else o.depth_m})
+                         "depth": spec.opening_depth_default_m if o.depth_m is None else o.depth_m,
+                         "seat": (spec.opening_depth_default_m if o.depth_m is None else o.depth_m) * SEAT_SHARE[spec.profile]})
     return rows
 
 
 def check_opening_planes(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
-    """In every spec opening a plane facing out of the wall, inside the reveal, of group `opening`, covering it."""
+    """In every spec opening a plane facing out of the wall, at the profile's seat (C24: npm_min the full
+    opening depth, mid half of it) within opening_plane_offset_m, of group `opening`, covering it."""
     g = ranges["groups"]["opening"]
     corners = model.corners()
     in_group = (model.material_ids >= g["first"]) & (model.material_ids <= g["last"])
@@ -185,7 +188,7 @@ def check_opening_planes(model: Soup, spec: Spec, tol: dict, ranges: dict) -> di
         s, t, z = rel @ u, rel @ n, corners[:, :, 2]
         facing = (n3[:, :2] @ n) / np.where(norm > 0, norm, 1) > 0.99   # the plane faces out of the wall
         inside = ((s.min(1) >= s0 - off) & (s.max(1) <= s1 + off) & (z.min(1) >= z0 - off) & (z.max(1) <= z1 + off)
-                  & (t.max(1) <= off) & (t.min(1) >= -(row["depth"] + off)))
+                  & (t.max(1) <= -row["seat"] + off) & (t.min(1) >= -row["seat"] - off))   # at the profile's seat (C24)
         hit = in_group & facing & inside
         rect = shapely.box(s0, z0, s1, z1)
         cover = 0.0

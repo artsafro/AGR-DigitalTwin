@@ -2,9 +2,21 @@
   "bench": "bench-b01-box",
   "note": "The etalon files live outside git (.max/.fbx are LFS-routed and the LFS budget is out, H9): data/benchmark/bench-b01-box/ of the main checkout. Check them against these hashes before a run.",
   "files": {
-    "etalon.max": {"sha256": "6840e64028ee71bb8cb4195eec709146723f9845de675617748ae0c0506643c4", "bytes": 479232, "made_with": "3ds Max 2024", "by": "user, 2026-10-10"},
-    "etalon.fbx": {"sha256": "4d624b78883be61c5323bfb685e6456c187ff132e2bb774d4457a4e44683114a", "bytes": 49216, "exported": "from etalon.max by Claude via 3dsmax-mcp, FBX units m, scale 1, no triangulation"}
+    "etalon.max": {
+      "sha256": "30dfedf2dc7970e3386e2d69c72338a72ae698280c397d245ceb04f98ddc093b",
+      "bytes": 479232,
+      "made_with": "3ds Max 2024",
+      "by": "user, 2026-10-10"
+    },
+    "etalon.fbx": {
+      "sha256": "0b328ef52d37128118258e775ccc52f9f6d513046dabd5ad65e6fd792b5e8047",
+      "bytes": 49232,
+      "exported": "from etalon.max by Claude via 3dsmax-mcp, FBX units m, scale 1, no triangulation"
+    }
   },
-  "history": "2026-10-10: material IDs remapped in etalon.max by Claude at the user's request (reveals 2->6, cap 3->21, parapet inner faces 4->21, roof 5->21); geometry unchanged",
-  "spec": "spec.json beside this file, extracted from etalon.fbx by tools/qa/run_benchmark.py (run-v001)"
+  "history": [
+    "2026-10-10: material IDs remapped in etalon.max by Claude at the user's request (reveals 2->6, cap 3->21, parapet inner faces 4->21, roof 5->21); geometry unchanged",
+    "2026-10-10: reveals and opening planes moved from 0.1 to 0.2 m (8 vertices) by Claude at the user's request, for the final C24 rule (npm_min plane at the full 0.2 m opening depth); saved in place, FBX re-exported"
+  ],
+  "spec": "spec.json beside this file, extracted from etalon.fbx by tools/qa/run_benchmark.py (run-v002)"
 }

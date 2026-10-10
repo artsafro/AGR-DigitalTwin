@@ -9,9 +9,9 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
   (wall thickness is open, conflict C23);
 - every window / door / untyped opening as a hole with reveals and a plane closing them, ID by the
   opening's own `material_id`, else its window type, else the object's default opening ID (never
-  under `plane_conflict`). Seating by profile (conflict C24, user decision 2026-10-10): `npm_min`
-  at half of the opening depth (`depth_m` or `opening_depth_default_m`), `mid` at the full
-  depth. The reveals end at the plane: their part behind an opaque NPM plane is hidden and
+  under `plane_conflict`). Seating by profile (conflict C24, final user decision 2026-10-10): `npm_min`
+  at the full opening depth (`depth_m` or `opening_depth_default_m`) — the plane is the back polygon
+  of the opening's extrusion; `mid` at half of it, where the detailed window is built from the plane. The reveals end at the plane: their part behind an opaque NPM plane is hidden and
   is not built (docs/domain/geometry.md, hidden parts of reveals), and a reveal running past the
   plane would leave an edge of three faces. Grilles stay texture (`vent-grille`);
 - the roof plane at the top input level inside the parapet, parapet inner walls and cap.
@@ -38,7 +38,7 @@ from dt_ai.spec.model import Spec
 
 KEY_M = 1e-6          # vertices on one 1 µm grid are one vertex
 BUILT_KINDS = ("window", "door", None)
-SEAT_SHARE = {"npm_min": 0.5, "mid": 1.0}   # plane seat as a share of the opening depth (C24, user 2026-10-10)
+SEAT_SHARE = {"npm_min": 1.0, "mid": 0.5}   # plane seat as a share of the opening depth (C24 final, user 2026-10-10)
 
 
 class BuildError(ValueError):

@@ -184,9 +184,9 @@ def test_cross_level_opening_in_a_typical_template_is_asked_not_copied():
         build(edited(edit), INPUTS)
 
 
-@pytest.mark.parametrize("profile, seat", [("npm_min", 0.1), ("mid", 0.2)])
+@pytest.mark.parametrize("profile, seat", [("npm_min", 0.2), ("mid", 0.1)])
 def test_plane_seat_follows_the_profile(profile, seat):
-    # C24, user decision 2026-10-10: npm_min at half of the opening depth (0.2 m), mid at the full depth
+    # C24 final, user decision 2026-10-10: npm_min at the full opening depth (0.2 m), mid at half of it
     soup = from_dump(build(edited(lambda d: d.update({"profile": profile})), INPUTS))
     c = soup.corners()
     planes, reveals = c[soup.material_ids == PLANE], c[soup.material_ids == REVEAL]
@@ -225,6 +225,14 @@ def test_floor_records_in_any_order_build_the_same_model():
     assert build(reversed_floors, INPUTS) == build(spec(), INPUTS)
 
 
+
+def test_checker_wants_the_plane_at_the_profiles_seat():
+    # C24 final: npm_min plane at the full depth (0.2 m) +- opening_plane_offset_m; a plane at half fails
+    half = box_dump(depth=0.1)
+    report = checks.run(from_dump(half), from_dump(box_dump()), spec(), TOL)
+    assert "opening_planes" in report["failed"]
+    mid = edited(lambda d: d.update({"profile": "mid"}))
+    assert by_id(checks.run(from_dump(half), from_dump(half), mid, TOL))["opening_planes"]["status"] == "pass"
 # The chain from an etalon FBX to the checker report (tools/qa/run_benchmark.py), synthetic etalon
 
 
