@@ -589,7 +589,7 @@ def _plate_params(v, body, extra, z, region):
         # even overlap all round, inner outlines shrunk by the same (review 2 of PR #64)
         overlap = float(hole.boundary.distance(part.boundary))
         grown = hole.buffer(overlap, join_style="mitre", mitre_limit=1e6)
-        if (len(grown.interiors) != len(part.interiors)
+        if (not (len(grown.interiors) == len(hole.interiors) == len(part.interiors))   # no shaft lost (PR #65)
                 or float(grown.boundary.hausdorff_distance(part.boundary)) > WELD_M):
             problems.append("a plate that overlaps its hole unevenly")
             continue

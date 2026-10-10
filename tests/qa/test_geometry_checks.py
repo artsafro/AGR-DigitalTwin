@@ -505,3 +505,39 @@ def test_a_shaft_through_an_inset_roof_is_an_inner_outline_of_its_joint(inner, o
     assert (mesh["status"] == "pass") == ok, loops_of(report)
     if ok:
         assert sorted(k for k, *_ in loops_of(report)) == ["roof-foot", "roof-foot", "roof-plane", "roof-plane"]
+
+
+@pytest.mark.parametrize("width", [0.03, 0.039])
+def test_a_plate_over_a_narrow_shaft_is_no_joint(width):
+    # Codex review 1 of PR #65: a shaft narrower than twice the overlap would vanish from the grown hole;
+    # a plate without a hole over it is not accepted
+    import shapely
+    dump = shaft_roof(0.02)
+    body = dump["meshes"][0]
+    v = np.asarray(body["vertices"], float)
+    keep = [k for k, t in enumerate(body["triangles"]) if v[t][:, 2].min() < 6.6 - 1e-9 or not (
+        np.all(v[t][:, 0] >= 4 - 1e-9) and np.all(v[t][:, 0] <= 6 + 1e-9) and np.all(v[t][:, 1] >= 4 - 1e-9)
+        and np.all(v[t][:, 1] <= 6 + 1e-9) and v[t][:, 2].max() > 6.61)]
+    keep = [k for k in keep if not np.all(np.abs(v[body["triangles"][k]][:, 2] - 6.605) < 1e-9)]
+    body["triangles"] = [body["triangles"][k] for k in keep]
+    body["material_ids"] = [body["material_ids"][k] for k in keep]
+    tris = []
+    plate = shapely.Polygon([(0.28, 0.28), (9.72, 0.28), (9.72, 9.72), (0.28, 9.72)])
+    for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(plate)):
+        a, b, c = list(tri.exterior.coords)[:3]
+        if (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0:
+            b, c = c, b
+        tris.append([[*a, 6.605], [*b, 6.605], [*c, 6.605]])
+    sq = [(4, 4), (4 + width, 4), (4 + width, 6), (4, 6)]
+    for (x0, y0), (x1, y1) in zip(sq, sq[1:] + sq[:1]):
+        tris += [[[x1, y1, 6.6], [x0, y0, 6.6], [x0, y0, 7.5]], [[x1, y1, 6.6], [x0, y0, 7.5], [x1, y1, 7.5]]]
+    tris += [[[4, 4, 7.5], [4 + width, 4, 7.5], [4 + width, 6, 7.5]], [[4, 4, 7.5], [4 + width, 6, 7.5], [4, 6, 7.5]]]
+    n = len(body["vertices"])
+    body["vertices"] += [p for t in tris for p in t]
+    body["triangles"] += [[n + 3 * i, n + 3 * i + 1, n + 3 * i + 2] for i in range(len(tris))]
+    body["material_ids"] += [ROOF] * len(tris)
+    body["polygon_sizes"] = [3] * len(body["triangles"])
+    assert by_id(run(dump, shaft_roof(0.02)))["mesh"]["status"] == "fail"
+    from dt_ai.spec import extract_spec
+    _, report = extract_spec(dump, {"id": "bench-synth-box", "frame": {"to_object": np.eye(4).tolist()}})
+    assert [q["kind"] for q in report["questions"]] == ["plate-params"]

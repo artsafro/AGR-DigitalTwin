@@ -203,7 +203,8 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
             embed = float(a_.boundary.distance(b_.boundary))
             # sharp corners keep their full mitre (no clipping); evenness within the weld tolerance
             grown = a_.buffer(embed, join_style="mitre", mitre_limit=1e6)
-            even = (grown.geom_type == "Polygon" and len(grown.interiors) == len(b_.interiors)
+            # every inner outline of A (a shaft) survives the overlap and has its own in B (review 1 of PR #65)
+            even = (grown.geom_type == "Polygon" and len(grown.interiors) == len(a_.interiors) == len(b_.interiors)
                     and float(grown.boundary.hausdorff_distance(b_.boundary)) <= w)
             if even and lo - w <= embed <= hi + w:
                 for pl in owners(b_, good_planes):
