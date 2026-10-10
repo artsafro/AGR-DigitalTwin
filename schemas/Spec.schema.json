@@ -385,6 +385,18 @@
       "title": "Opening Depth Default M",
       "type": "number"
     },
+    "plate_gap_m": {
+      "default": 0.005,
+      "exclusiveMinimum": 0,
+      "title": "Plate Gap M",
+      "type": "number"
+    },
+    "plate_overlap_m": {
+      "default": 0.02,
+      "exclusiveMinimum": 0,
+      "title": "Plate Overlap M",
+      "type": "number"
+    },
     "profile": {
       "enum": [
         "npm_min",

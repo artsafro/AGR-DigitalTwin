@@ -92,9 +92,14 @@ def _mesh(name, faces):
     return {"name": name, "vertices": verts, "triangles": tris, "material_ids": mids, "polygon_sizes": sizes}
 
 
-def run(model_dump, etalon_dump=None, tol=TOL):
+def run(model_dump, etalon_dump=None, tol=TOL, spec=None):
     etalon = from_dump(etalon_dump or box_dump())
-    return checks.run(from_dump(model_dump), etalon, SPEC, tol)
+    return checks.run(from_dump(model_dump), etalon, spec or SPEC, tol)
+
+
+def plates(gap=0.005, overlap=0.02):
+    """The synthetic spec with the building's inset plate parameters (user 2026-10-10)."""
+    return Spec.model_validate({**SPEC.model_dump(), "plate_gap_m": gap, "plate_overlap_m": overlap})
 
 
 def by_id(report):
@@ -290,7 +295,7 @@ def test_a_solid_roof_in_a_parapet_fails():
 
 @pytest.mark.parametrize("gap, ok", [(0.001, False), (0.002, True), (0.010, True), (0.012, False), (0.05, False)])
 def test_inset_gap_is_2_to_10_mm(gap, ok):
-    report = run(box_dump(roof_inset=gap), box_dump(roof_inset=gap))
+    report = run(box_dump(roof_inset=gap), box_dump(roof_inset=gap), spec=plates(gap=gap))
     assert (by_id(report)["mesh"]["status"] == "pass") == ok
 
 
@@ -333,8 +338,17 @@ def test_lone_foot_or_plane_is_not_a_joint():
                                        (0.05, True), (0.08, False)])
 def test_plane_is_embedded_into_the_parapet_by_an_even_offset(embed, ok):
     # user 2026-10-10: contour B outside contour A, the plane embedded into the parapet faces (B02: 20 mm)
-    report = run(box_dump(roof_inset=0.005, roof_embed=embed), box_dump())
+    report = run(box_dump(roof_inset=0.005, roof_embed=embed), box_dump(), spec=plates(overlap=max(embed, 0.001)))
     assert (by_id(report)["mesh"]["status"] == "pass") == ok
+
+
+@pytest.mark.parametrize("gap, overlap, ok", [(0.005, 0.02, True), (0.0054, 0.0204, True), (0.006, 0.02, False),
+                                              (0.005, 0.03, False)])
+def test_plates_match_the_building_parameters_of_the_spec(gap, overlap, ok):
+    # user 2026-10-10: plate_gap_m / plate_overlap_m are building parameters; the checker compares within plate_tol_m
+    report = run(box_dump(), box_dump(), spec=plates(gap, overlap))
+    mesh = by_id(report)["mesh"]
+    assert (mesh["status"] == "pass") == ok and bool(mesh["details"]["plates_off_spec"]) != ok
 
 
 def test_uneven_embed_is_no_joint():
@@ -431,3 +445,18 @@ def test_open_fans_and_the_inset_roof_are_one_fan_each():
     for dump in (box_dump(),):
         mesh = by_id(run(dump))["mesh"]
         assert mesh["status"] == "pass" and mesh["value"]["non_manifold_vertices"] == 0
+
+
+@pytest.mark.parametrize("spec_gap, gap, spec_overlap, overlap, ok", [
+    (0.006, 0.00654, 0.02, 0.02, False), (0.005, 0.00549, 0.02, 0.02, True), (0.005, 0.005, 0.02, 0.02049, True)])
+def test_plates_are_compared_unrounded(spec_gap, gap, spec_overlap, overlap, ok):
+    # Codex review 1 of PR #64: the raw gap / overlap against plate_tol_m, rounding only in the report
+    report = run(box_dump(roof_inset=gap, roof_embed=overlap), box_dump(), spec=plates(spec_gap, spec_overlap))
+    assert (by_id(report)["mesh"]["status"] == "pass") == ok
+
+
+@pytest.mark.parametrize("gap, overlap", [(0.0055, 0.02), (0.0045, 0.02), (0.005, 0.0195), (0.005, 0.0205)])
+def test_plates_exactly_at_the_tolerance_pass(gap, overlap):
+    # Codex review 2 of PR #64: plate_tol_m itself passes despite floating-point roundoff
+    report = run(box_dump(roof_inset=gap, roof_embed=overlap), box_dump(), spec=plates(0.005, 0.02))
+    assert by_id(report)["mesh"]["status"] == "pass"

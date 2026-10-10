@@ -21,8 +21,7 @@ from twinqa.scene import find_blender
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8"))
-INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE,
-                     slab_gap_m=0.005, slab_embed_m=0.02)
+INPUTS = BuildInputs(parapet_thickness_m=0.3, facade_id=FACADE, reveal_id=REVEAL, roof_id=ROOF, opening_id=PLANE)
 
 
 def spec(**changes):
@@ -767,7 +766,9 @@ def test_extractor_asks_about_anything_else_standing_on_a_terrace():
         m["material_ids"] += [FACADE, FACADE]
     spec, report = extract_spec(d, SYNTH_OBJECT)
     assert [t.level for t in spec.terraces] == ["L1"]
-    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+    kinds = [(q["kind"], q["levels"]) for q in report["questions"]]
+    assert ("ledge-structure", ["L1"]) in kinds                  # (its open foot is a second hole under the plate,
+    assert [k for k, _ in kinds] in (["ledge-structure"], ["ledge-structure", "plate-params"])  # also asked)
 
 
 def test_inner_face_cover_does_not_depend_on_extra_points_on_its_line():
@@ -835,7 +836,7 @@ def test_a_slab_joint_the_spec_implies_no_slab_for_is_not_allowed():
 @pytest.mark.parametrize("gap, embed", [(0.001, 0.02), (0.012, 0.02), (0.005, 0.009), (0.005, 0.051)])
 def test_inset_inputs_outside_the_pattern_are_build_errors(gap, embed):
     with pytest.raises(BuildError, match="outside the pattern"):
-        build(spec(), BuildInputs(**{**INPUTS.__dict__, "slab_gap_m": gap, "slab_embed_m": embed}))
+        build(Spec.model_validate({**spec().model_dump(), "plate_gap_m": gap, "plate_overlap_m": embed}), INPUTS)
 
 
 @pytest.mark.parametrize("dz", [0.001, 0.0105])
@@ -912,3 +913,120 @@ def test_a_plate_sloping_across_its_strips_is_no_inset_plate():
 def test_a_plate_wider_than_the_faces_around_it_is_a_build_error():
     with pytest.raises(BuildError, match="reaches out of the building outline"):
         build(spec(), BuildInputs(**{**INPUTS.__dict__, "parapet_thickness_m": 0.01}))
+
+
+# plate_gap_m / plate_overlap_m: building parameters in the spec (user 2026-10-10)
+
+
+def test_the_extractor_reads_the_plate_parameters_back():
+    from dt_ai.spec import extract_spec
+    s = Spec.model_validate({**terraced(west_ledge).model_dump(), "plate_gap_m": 0.008, "plate_overlap_m": 0.03})
+    spec, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
+    assert (spec.plate_gap_m, spec.plate_overlap_m) == (0.008, 0.03) and report["questions"] == []
+    one = {"plates": [{"gap_m": 0.008, "overlap_m": 0.03}], "problems": []}
+    assert report["plates"] == {"roof": one, "L1": one}
+    soup = from_dump(build(s, INPUTS))
+    assert checks.run(soup, soup, spec, TOL)["passed"]
+
+
+def test_plates_that_disagree_are_a_question():
+    from dt_ai.spec import extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    for i, p in enumerate(m["vertices"]):
+        if abs(p[2] - 3.305) < 1e-9:                    # the terrace plate 8 mm up, the roof plate stays at 5 mm
+            m["vertices"][i] = [p[0], p[1], 3.308]
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("plate-params", ["L1", "roof"])] or \
+        [(q["kind"], q["levels"]) for q in report["questions"]] == [("plate-params", ["roof", "L1"])]
+
+
+# Codex review 1 of PR #64
+
+
+def _moved(d, pick, to):
+    m = d["meshes"][0]
+    for i, p in enumerate(m["vertices"]):
+        if pick(p):
+            m["vertices"][i] = to(p)
+    return d
+
+
+def _kinds(d):
+    from dt_ai.spec import extract_spec
+    spec, report = extract_spec(d, SYNTH_OBJECT)
+    return spec, [(q["kind"], q["levels"]) for q in report["questions"]], report
+
+
+def test_plates_that_disagree_between_themselves_are_asked_whatever_the_median():
+    d = _moved(build(terraced(west_ledge), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.3056])
+    _, kinds, _ = _kinds(d)
+    assert kinds == [("plate-params", ["L1", "roof"])]
+
+
+def test_an_uneven_or_unflat_or_holeless_plate_is_asked_not_dropped():
+    # the roof plate's east edge 3 mm further out: uneven overlap
+    d = _moved(build(spec(), INPUTS), lambda p: abs(p[2] - 6.605) < 1e-9 and p[0] > 9, lambda p: [p[0] + 0.003, p[1], p[2]])
+    spec_, kinds, report = _kinds(d)
+    assert kinds == [("plate-params", ["roof"])] and report["plates"]["roof"]["problems"] == ["a plate that overlaps its hole unevenly"]
+    # the roof plate tilted by 0.5 mm: no flat plate
+    d = _moved(build(spec(), INPUTS), lambda p: abs(p[2] - 6.605) < 1e-9 and p[0] > 5, lambda p: [p[0], p[1], 6.6055])
+    _, kinds, report = _kinds(d)
+    assert kinds == [("plate-params", ["roof"])] and report["plates"]["roof"]["problems"] == ["a plate that is not flat"]
+
+
+def test_split_plates_are_each_flat_on_their_own():
+    s = Spec.model_validate({**_split_terrace().model_dump(), "plate_gap_m": 0.0052})
+    d = _moved(build(_split_terrace(), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9 and p[0] > 5,
+               lambda p: [p[0], p[1], 3.3054])
+    spec_, kinds, report = _kinds(d)
+    assert [t.level for t in spec_.terraces] == ["L1"] and kinds == []
+    assert sorted(p["gap_m"] for p in report["plates"]["L1"]["plates"]) == [0.005, 0.0054]
+    assert by_id(checks.run(from_dump(d), from_dump(d), s, TOL))["mesh"]["status"] == "pass"
+
+
+def test_a_terrace_builds_under_a_roof_without_a_parapet():
+    for edit in (west_ledge, ):
+        s = Spec.model_validate({**terraced(edit).model_dump(), "roof": {"parapet_h_m": 0.0}})
+        assert topology_ok(build(s, INPUTS))
+    s = Spec.model_validate({**_split_terrace().model_dump(), "roof": {"parapet_h_m": 0.0}})
+    assert topology_ok(build(s, INPUTS))
+
+
+def test_a_perforated_plate_is_asked_not_read():
+    # Codex review 2 of PR #64: every outline of the plate counts, a hole in its overlap strip too
+    import shapely
+    d = build(spec(), INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    _drop(m, v, lambda t: np.all(np.abs(t[:, 2] - 6.605) < 1e-9))
+    plate = shapely.Polygon([(0.28, 0.28), (9.72, 0.28), (9.72, 9.72), (0.28, 9.72)],
+                            [[(0.281, 4), (0.285, 4), (0.285, 6), (0.281, 6)]])
+    for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(plate)):
+        a, b, c_ = list(tri.exterior.coords)[:3]
+        if (b[0] - a[0]) * (c_[1] - a[1]) - (b[1] - a[1]) * (c_[0] - a[0]) < 0:
+            b, c_ = c_, b
+        n = len(m["vertices"])
+        m["vertices"] += [[*a, 6.605], [*b, 6.605], [*c_, 6.605]]
+        m["triangles"].append([n, n + 1, n + 2])
+        m["material_ids"].append(ROOF)
+    m.pop("polygons", None)
+    m.pop("polygon_sizes", None)
+    _, kinds, report = _kinds(d)
+    assert kinds == [("plate-params", ["roof"])]
+    assert report["plates"]["roof"]["problems"] == ["a plate that overlaps its hole unevenly"]
+
+
+def test_plate_parameters_keep_their_precision_and_the_agreement_limit():
+    # Codex review 3 of PR #64: split terrace plates 5.051 mm and a roof plate 4.561 mm (spread 0.49 mm) agree;
+    # the spec keeps the median to the micron, so the same geometry passes against it
+    d = build(_split_terrace(), INPUTS)
+    d = _moved(d, lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.305051])
+    d = _moved(d, lambda p: abs(p[2] - 6.605) < 1e-9, lambda p: [p[0], p[1], 6.604561])
+    spec_, kinds, _ = _kinds(d)
+    assert kinds == [] and spec_.plate_gap_m == pytest.approx(0.005051, abs=1e-7)
+    assert by_id(checks.run(from_dump(d), from_dump(d), spec_, TOL))["mesh"]["status"] == "pass"
+    # exactly 0.5 mm apart (roof 5 mm, terrace 4.5 mm): agreeing
+    d = _moved(build(terraced(west_ledge), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.3045])
+    _, kinds, _ = _kinds(d)
+    assert kinds == []

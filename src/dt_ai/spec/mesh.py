@@ -14,6 +14,7 @@ import numpy as np
 import shapely
 from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.geometry.polygon import orient
+from shapely.ops import polygonize
 
 from dt_ai.spec import floors as fl
 from dt_ai.spec import openings as op
@@ -57,6 +58,7 @@ DOOR_FLOOR_M = 0.05       # "from the floor": open from within this of the store
 RELIEF_M = 0.10
 DOOR_HOST_M = 0.02        # a source door is a facade door when its ends lie within half its host + this of the contour
 SLAB_GAP_M = (0.002, 0.010)  # an inset slab plate lies this far above its level (pattern roof-inset-plane)
+PLATE_SAME_M = 0.0005    # the inset plates of one building share plate_gap_m / plate_overlap_m within this
 TERRACE_COVER = 0.02      # terrace: the walkable part at the level and the parapet cap together cover the ledge
                           # within this share of its area (pattern terrace, user plan 2026-10-10)
 
@@ -527,29 +529,69 @@ def _ledge_faces(v, tris, ledge, z0, z1, cap=None, inner_line=None, zt=None):
     return p[keep]
 
 
-def _inset_plate(v, extra, z0, region):
-    """The plan region of an inset slab plate over a level (pattern roof-inset-plane, user rule 2026-10-10):
-    up-facing flat triangles of the parts outside the body at one height SLAB_GAP_M above z0 (within the
-    checkers' 0.1 mm weld, so the extractor accepts no gap the checker rejects: review 1 of PR #63),
-    inside region."""
+def _inset_plates(v, extra, z0, region):
+    """Inset slab plates over a level (pattern roof-inset-plane, user rules 2026-10-10): the connected
+    groups of up-facing triangles of the parts outside the body whose height lies SLAB_GAP_M above z0
+    (within the checkers' 0.1 mm weld) and whose centre lies inside region. Each group is one plate,
+    flat on its own within WELD_M (reviews of PR #63, #64): returns ([(plan polygon, raw gap)], number of
+    groups that are not flat - no plate, never averaged away)."""
     if extra is None or not len(extra):
-        return Polygon(), None
+        return [], 0
     p = v[extra]
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
     z = p[:, :, 2]
     lo, hi = SLAB_GAP_M
-    flat = (z.max(axis=1) - z.min(axis=1) < WELD_M) & (n[:, 2] > 0)         & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)
-    flat &= shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
-    if not flat.any():
-        return Polygon(), None
-    # the whole plate is flat as the checker welds it: no triangle and no slope across triangles beyond
-    # WELD_M (reviews 2 and 3 of PR #63); a plate that is not is no inset plate
-    near = (n[:, 2] > 0) & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)         & shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
-    if float(z[near].max() - z[near].min()) > WELD_M:
-        return Polygon(), None
-    zp = float(np.median(z[flat].mean(axis=1)))
-    tri = [Polygon(t[:, :2]) for t in p[flat]]
-    return shapely.unary_union([t for t in tri if t.area > 0]), round(zp - z0, 4)
+    near = ((n[:, 2] > 0) & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)
+            & shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T))
+    if not near.any():
+        return [], 0
+    cand = extra[near]
+    plates, bad = [], 0
+    for group in _parts(v, cand):
+        zz = v[cand[group]][:, :, 2]
+        if float(zz.max() - zz.min()) > WELD_M:
+            bad += 1
+            continue
+        tri = [Polygon(t[:, :2]) for t in v[cand[group]]]
+        plates.append((shapely.unary_union([t for t in tri if t.area > 0]), float(zz.mean()) - z0))
+    return plates, bad
+
+
+def _holes(v, tris, z):
+    """Closed outlines of the body's open edges lying flat at height z (the holes of inset slabs)."""
+    e = np.sort(np.concatenate([tris[:, [0, 1]], tris[:, [1, 2]], tris[:, [2, 0]]]), axis=1)
+    edges, count = np.unique(e, axis=0, return_counts=True)
+    once = edges[count == 1]
+    once = once[np.abs(v[once][:, :, 2] - z).max(axis=1) <= WELD_M]
+    return list(polygonize([LineString(v[pair][:, :2]) for pair in once]))
+
+
+def _plate_params(v, body, extra, z, region):
+    """Measured (plate_gap_m, plate_overlap_m) of every inset plate over level z inside region, and the
+    problems that make a plate unreadable (pattern roof-inset-plane, user 2026-10-10): its height above the
+    level, and how far it overlaps the one hole of the body it lies over, outline to outline, evenly all
+    round as the checker wants it (review 1 of PR #64). A slab with no readable plate is a problem too."""
+    plates, bad = _inset_plates(v, extra, z, region)
+    holes = _holes(v, body, z)
+    out, problems = [], ["a plate that is not flat"] * bad
+    for part, gap in plates:
+        inside = [h for h in holes if part.buffer(-WELD_M).contains(h)]
+        if len(inside) != 1:
+            problems.append("a plate over no single hole")
+            continue
+        hole = inside[0]
+        # every outline counts, inner ones too (a shaft, a perforation): the plate is the hole grown by one
+        # even overlap all round, inner outlines shrunk by the same (review 2 of PR #64)
+        overlap = float(hole.boundary.distance(part.boundary))
+        grown = hole.buffer(overlap, join_style="mitre", mitre_limit=1e6)
+        if (len(grown.interiors) != len(part.interiors)
+                or float(grown.boundary.hausdorff_distance(part.boundary)) > WELD_M):
+            problems.append("a plate that overlaps its hole unevenly")
+            continue
+        out.append((gap, overlap))
+    if not out and not problems:
+        problems.append("no inset plate")
+    return out, problems
 
 
 def _terrace(v, tris, groups, closed, z0, z1, below, extra=None):
@@ -578,8 +620,11 @@ def _terrace(v, tris, groups, closed, z0, z1, below, extra=None):
         return None
     # an inset walkable plate (user rule 2026-10-10): a separate plate SLAB_GAP_M above the level, its edge
     # under the parapet; the walkable part is the plate where no cap covers it
-    plate, gap = _inset_plate(v, extra, z0, ledge)
-    if gap is not None:
+    plates, bad = _inset_plates(v, extra, z0, ledge)
+    if bad:                                              # a plate that is not flat: no terrace read (the
+        return None                                      # checker rejects it too)
+    gap = round(float(np.median([g for _, g in plates])), 4) if plates else None
+    for plate, _ in plates:
         walk = walk.union(plate.intersection(ledge).difference(cap))
     if walk.area <= HOLE_MIN_M2 or ledge.symmetric_difference(walk.union(cap)).area > limit:
         return None
@@ -1168,6 +1213,38 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     written, report["floor_classes"] = fl.collapse(levels, floors)
     terraces = [{"level": n, "parapet_h_m": rep["terrace"]["parapet_h_m"]}
                 for n, rep in report["floors"].items() if "terrace" in rep]
+    # inset plates (pattern roof-inset-plane, user 2026-10-10): plate_gap_m / plate_overlap_m are building
+    # parameters read from the source; plates that disagree by more than PLATE_SAME_M between themselves,
+    # or that cannot be read, are a question; none read leaves the defaults (review 1 of PR #64)
+    extra = np.vstack(others) if others else None
+    plates, problems = {}, {}
+    if roof_stats["parapet"]:
+        plates[levels[-1]["name"]], problems[levels[-1]["name"]] = _plate_params(
+            v, body, extra, levels[-1]["elev_m"], polys[-1])
+    for t in terraces:
+        k = names.index(t["level"])
+        plates[t["level"]], problems[t["level"]] = _plate_params(
+            v, body, extra, levels[k]["elev_m"], polys[k - 1].difference(polys[k]))
+    measured = [p for ps in plates.values() for p in ps]
+    report["plates"] = {name: {"plates": [{"gap_m": round(g, 4), "overlap_m": round(o, 4)} for g, o in ps],
+                               "problems": problems[name]} for name, ps in plates.items()}
+    plate = {}
+    asked = sorted({name for name, pr in problems.items() if pr}, key=names.index)
+    if measured:
+        gaps, overlaps = [g for g, _ in measured], [o for _, o in measured]
+        # to the micron only: a 0.1 mm rounding could push an agreeing plate off plate_tol_m (review 3 of PR
+        # #64); the limit itself agrees despite roundoff
+        plate = {"plate_gap_m": round(float(np.median(gaps)), 6),
+                 "plate_overlap_m": round(float(np.median(overlaps)), 6)}
+        same = PLATE_SAME_M + 1e-9
+        if max(gaps) - min(gaps) > same or max(overlaps) - min(overlaps) > same:
+            asked = sorted(set(asked) | {name for name, ps in plates.items() if ps}, key=names.index)
+    if asked:
+        questions.append({"priority": "high", "kind": "plate-params", "levels": asked, "wall": None,
+                          "depth_m": None, "length_m": None, "facade_share": None, "heights_m": None, "at": None})
+        questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
+        for n, q in enumerate(questions, 1):
+            q["n"] = n
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
                 # the parapet is measured from the input roof level, never from the roof plane: an inset
@@ -1177,5 +1254,5 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                 roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0},
                 # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
                 **({"spec_version": "0.4", "terraces": terraces} if terraces else {}),
-                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
+                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2), **plate)
     return spec, report
