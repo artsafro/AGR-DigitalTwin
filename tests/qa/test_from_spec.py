@@ -319,3 +319,20 @@ def test_runner_input_errors_stop_with_a_summary_and_exit_2(tmp_path, bad, monke
 def test_runner_refuses_a_step_that_left_no_file(tmp_path):
     with pytest.raises(RuntimeError, match="model.blend"):
         run_benchmark.produced(tmp_path / "model.blend")
+
+
+def test_etalon_self_check_runs_even_when_the_engine_cannot_build(tmp_path, monkeypatch):
+    # B02 (2026-10-10): the etalon is checked against itself before the engine is asked to build it
+    def fake_blender(blender, script, *args, **kw):
+        Path(args[-1]).write_text(json.dumps({**box_dump(), "source": "etalon.fbx"}), encoding="utf-8")
+    monkeypatch.setattr(run_benchmark, "blender_run", fake_blender)
+    monkeypatch.setattr(run_benchmark, "build", lambda *a, **k: (_ for _ in ()).throw(BuildError("not built yet")))
+    etalon = tmp_path / "etalon.fbx"
+    etalon.write_bytes(b"x")
+    bench = ROOT / "benchmark/bench-b01-box"
+    argv = ["--etalon", str(etalon), "--object", str(bench / "object.json"), "--tolerances", str(bench / "tolerances.json"),
+            "--output", str(tmp_path / "run"), "--blender", "blender"]
+    assert run_benchmark.main(argv) == 2
+    summary = json.loads((tmp_path / "run/summary.json").read_text(encoding="utf-8"))
+    assert summary["steps"]["etalon_self"]["passed"] and "not built yet" in summary["stopped"]
+    assert (tmp_path / "run/etalon-self.json").is_file() and "model_check" not in summary["steps"]

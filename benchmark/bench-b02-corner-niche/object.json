@@ -1,0 +1,44 @@
+{
+  "id": "bench-b02-corner-niche",
+  "object_system": "etalon coordinates: south-west outer corner at 0,0,0, metres, Z up (B02 modeller brief)",
+  "frame": {
+    "to_object": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "derived_from": "the etalon is modelled in the object system"
+  },
+  "opening_depth_default_m": 0.2,
+  "build": {
+    "parapet_thickness_m": 0.3,
+    "ids": {
+      "facade": 1,
+      "reveal": 6,
+      "roof": 21,
+      "opening": 11
+    }
+  },
+  "build_note": "Build inputs the spec does not carry (engine from_spec): parapet wall thickness and material IDs of the B02 brief (standards/material_id_ranges.yaml)"
+}

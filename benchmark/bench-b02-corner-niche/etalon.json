@@ -1,0 +1,14 @@
+{
+  "bench": "bench-b02-corner-niche",
+  "note": "The etalon files live outside git (.max/.fbx are LFS-routed and the LFS budget is out, H9): data/benchmark/bench-b02-corner-niche/ of the main checkout. Check them against these hashes before a run.",
+  "files": {
+    "etalon.max": {"sha256": "cf123de5e133c9cfd58e4dca3e57d5ef9e3c562352af2939b82306ec1b942cad", "bytes": 483328, "made_with": "3ds Max 2024", "by": "user, 2026-10-10"},
+    "etalon.fbx": {"sha256": "611dc7ec5fcb19f20b52656563519abf6e604b4cea81013c76daa5df717239b3", "bytes": 53248, "exported": "from etalon.max by Claude via 3dsmax-mcp, FBX units m, scale 1, no triangulation"}
+  },
+  "history": [
+    "2026-10-10: vertices welded by the user (open edges 76 -> 56: the bottom ring and the outline of the inset roof plane)",
+    "2026-10-10: the inset roof plane lowered from 6.800 to 6.605 m (6 vertices) by Claude at the user's request: 5 mm above the parapet inner faces' foot, no edge-to-edge joint and no overlap; saved in place, FBX exported"
+  ],
+  "spec": "spec.json beside this file, extracted from etalon.fbx by tools/qa/run_benchmark.py (run-v002): equal to the B02 brief, 0 questions; parapet 0.595 m measured from the inset roof plane",
+  "brief": "https://claude.ai/code/artifact/e332aa9d-b0ae-4084-b70b-735eda67f741"
+}
