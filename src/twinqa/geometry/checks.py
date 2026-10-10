@@ -97,6 +97,28 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
     return result("silhouettes", worst >= tol["silhouette_iou_min"], worst, tol["silhouette_iou_min"], {"iou": ious})
 
 
+def inner_outlines_match(hole, plate, overlap, weld):
+    """Every inner outline of the hole (a shaft) shrunk by the overlap is one outline, and the plate's inner
+    outlines are exactly these, one to one (reviews 1-2 of PR #65: a shaft that vanishes or splits never
+    hides behind a matching count)."""
+    want = []
+    for ring in hole.interiors:
+        shrunk = shapely.Polygon(ring).buffer(-overlap, join_style="mitre", mitre_limit=1e6)
+        if shrunk.geom_type != "Polygon" or shrunk.is_empty:
+            return False
+        want.append(shrunk.exterior)
+    have = list(plate.interiors)
+    if len(want) != len(have):
+        return False
+    used = set()
+    for w_ in want:
+        hit = [k for k, h in enumerate(have) if k not in used and w_.hausdorff_distance(h) <= weld]
+        if len(hit) != 1:
+            return False
+        used.add(hit[0])
+    return True
+
+
 def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: dict) -> list[dict]:
     """Open edges grouped into loops and classified (pattern roof-inset-plane, user rules 2026-10-10):
     `bottom` - flat, at the model's lowest point. The joint of an inset slab (a roof in a parapet or a
@@ -204,8 +226,8 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
             # sharp corners keep their full mitre (no clipping); evenness within the weld tolerance
             grown = a_.buffer(embed, join_style="mitre", mitre_limit=1e6)
             # every inner outline of A (a shaft) survives the overlap and has its own in B (review 1 of PR #65)
-            even = (grown.geom_type == "Polygon" and len(grown.interiors) == len(a_.interiors) == len(b_.interiors)
-                    and float(grown.boundary.hausdorff_distance(b_.boundary)) <= w)
+            even = (grown.geom_type == "Polygon" and inner_outlines_match(a_, b_, embed, w)
+                    and float(grown.exterior.hausdorff_distance(b_.exterior)) <= w)
             if even and lo - w <= embed <= hi + w:
                 for pl in owners(b_, good_planes):
                     pl["embed_m"], pl["_embed"] = round(embed, 4), embed

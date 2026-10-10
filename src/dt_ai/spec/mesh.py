@@ -570,6 +570,28 @@ def _holes(v, tris, z):
     return [g for g in shapely.get_parts(area) if g.geom_type == "Polygon" and g.area > WELD_M ** 2]
 
 
+def _inner_outlines_match(hole, plate, overlap, weld):
+    """Every inner outline of the hole (a shaft) shrunk by the overlap is one outline, and the plate's inner
+    outlines are exactly these, one to one (reviews 1-2 of PR #65: a shaft that vanishes or splits never
+    hides behind a matching count)."""
+    want = []
+    for ring in hole.interiors:
+        shrunk = shapely.Polygon(ring).buffer(-overlap, join_style="mitre", mitre_limit=1e6)
+        if shrunk.geom_type != "Polygon" or shrunk.is_empty:
+            return False
+        want.append(shrunk.exterior)
+    have = list(plate.interiors)
+    if len(want) != len(have):
+        return False
+    used = set()
+    for w_ in want:
+        hit = [k for k, h in enumerate(have) if k not in used and w_.hausdorff_distance(h) <= weld]
+        if len(hit) != 1:
+            return False
+        used.add(hit[0])
+    return True
+
+
 def _plate_params(v, body, extra, z, region):
     """Measured (plate_gap_m, plate_overlap_m) of every inset plate over level z inside region, and the
     problems that make a plate unreadable (pattern roof-inset-plane, user 2026-10-10): its height above the
@@ -589,8 +611,8 @@ def _plate_params(v, body, extra, z, region):
         # even overlap all round, inner outlines shrunk by the same (review 2 of PR #64)
         overlap = float(hole.boundary.distance(part.boundary))
         grown = hole.buffer(overlap, join_style="mitre", mitre_limit=1e6)
-        if (not (len(grown.interiors) == len(hole.interiors) == len(part.interiors))   # no shaft lost (PR #65)
-                or float(grown.boundary.hausdorff_distance(part.boundary)) > WELD_M):
+        if (grown.geom_type != "Polygon" or not _inner_outlines_match(hole, part, overlap, WELD_M)
+                or float(grown.exterior.hausdorff_distance(part.exterior)) > WELD_M):
             problems.append("a plate that overlaps its hole unevenly")
             continue
         out.append((gap, overlap))

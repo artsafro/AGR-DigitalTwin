@@ -541,3 +541,55 @@ def test_a_plate_over_a_narrow_shaft_is_no_joint(width):
     from dt_ai.spec import extract_spec
     _, report = extract_spec(dump, {"id": "bench-synth-box", "frame": {"to_object": np.eye(4).tolist()}})
     assert [q["kind"] for q in report["questions"]] == ["plate-params"]
+
+
+def shafts_roof(shafts, overlap=0.02):
+    """box_dump with shafts (plan polygons) standing in the inset roof's hole and a plate grown by the overlap
+    whose holes are the shafts shrunk by it, whatever that leaves (synthetic)."""
+    import shapely
+    dump = box_dump(roof_inset=0.005)
+    body = dump["meshes"][0]
+    v = np.asarray(body["vertices"], float)
+    keep = [k for k, t in enumerate(body["triangles"]) if not np.all(np.abs(v[t][:, 2] - 6.605) < 1e-9)]
+    body["triangles"] = [body["triangles"][k] for k in keep]
+    body["material_ids"] = [body["material_ids"][k] for k in keep]
+    plate = shapely.box(0.28, 0.28, 9.72, 9.72)
+    for sh in shafts:
+        plate = plate.difference(sh.buffer(-overlap, join_style="mitre", mitre_limit=1e6))
+    tris = []
+    for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(plate)):
+        a, b, c = list(tri.exterior.coords)[:3]
+        if (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0:
+            b, c = c, b
+        tris.append([[*a, 6.605], [*b, 6.605], [*c, 6.605]])
+    for sh in shafts:
+        ring = list(sh.exterior.coords)[:-1]
+        for (x0, y0), (x1, y1) in zip(ring, ring[1:] + ring[:1]):
+            tris += [[[x1, y1, 6.6], [x0, y0, 6.6], [x0, y0, 7.5]], [[x1, y1, 6.6], [x0, y0, 7.5], [x1, y1, 7.5]]]
+        for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(sh)):
+            tris.append([[*p, 7.5] for p in list(tri.exterior.coords)[:3]])
+    n = len(body["vertices"])
+    body["vertices"] += [p for t in tris for p in t]
+    body["triangles"] += [[n + 3 * i, n + 3 * i + 1, n + 3 * i + 2] for i in range(len(tris))]
+    body["material_ids"] += [ROOF] * len(tris)
+    body["polygon_sizes"] = [3] * len(body["triangles"])
+    return dump
+
+
+def test_a_vanished_shaft_never_hides_behind_a_split_one():
+    # Codex review 2 of PR #65: a 30 mm shaft vanishes and a dumbbell shaft splits in two when shrunk by the
+    # overlap; the counts match, the outlines do not
+    import shapely
+    from shapely.geometry import box
+    narrow = box(2, 2, 2.03, 4)
+    dumbbell = shapely.unary_union([box(5, 3, 6, 4), box(5, 6, 6, 7), box(5.48, 4, 5.51, 6)])
+    dump = shafts_roof([narrow, dumbbell])
+    assert by_id(run(dump, dump))["mesh"]["status"] == "fail"
+    from dt_ai.spec import SpecError, extract_spec
+    try:                                                   # the extractor stops or asks, never reads it
+        _, report = extract_spec(dump, {"id": "bench-synth-box", "frame": {"to_object": np.eye(4).tolist()}})
+        assert [q["kind"] for q in report["questions"]] == ["plate-params"]
+    except SpecError:
+        pass
+    ok = shafts_roof([box(5, 3, 6, 4)])                    # one plain shaft still passes and is read
+    assert by_id(run(ok, ok))["mesh"]["status"] == "pass"
