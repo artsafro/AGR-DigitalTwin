@@ -236,9 +236,10 @@ membrane's drainage slopes <= 2 deg are not modelled). PSU275 stays before the r
   0 non-manifold edges, 0 doubles 2 mm; VPM 24 276 + 76 glass tris, 33 UCX; NPM 24 240 + 76 tris;
   SINTEZ VPM 64 / 53 / 3 and NPM 38 / 29 / 5 (verified / undefined / failed) — the same as v005, the
   failures are the deferred ZIP / GeoJSON / Ground items.
-- Spec v029 from the v006 VPM FBX (`outputs/spec-v029`): 0 questions (with the ledge fix of PR #66),
-  plates read 5 / 20 mm, parapet 0.741 m; comparison with the Revit spec (twin v013): **match**, 0
-  criteria outside.
+- Spec v029 from the v006 VPM FBX (`outputs/spec-v029`, extractor with the ledge fix of PR #66): 0
+  questions, plates read 5 / 20 mm, parapet 0.741 m; comparison v030 with the Revit spec (twin v013,
+  `outputs/spec-compare-v030`): **match**, 0 criteria outside. The v005 dump now asks one question,
+  `plate-params` on the roof (v005 predates the inset rule).
 - Mesh joint (checker, object frame, LEVEL_ from object.json): the roof joint is two hole outlines at
   7.909 (outer, shaft) and two plate outlines at 7.914, overlap 0.020, gap 0.005, no solid slab, plate
   parameters as the spec — passes once the faces carry a roof-group ID. K01 as a full benchmark is open:
