@@ -293,15 +293,15 @@ def test_exporter_rebuilds_polygons_exactly_or_refuses(tmp_path, mesh, ok, messa
         assert sum(len(m["triangles"]) for m in json.loads(dump.read_text(encoding="utf-8"))["meshes"]) == 2
 
 
-@pytest.mark.parametrize("bad", ["object", "tolerances"])
+@pytest.mark.parametrize("bad", ["object", "tolerances", "object-list"])
 def test_runner_input_errors_stop_with_a_summary_and_exit_2(tmp_path, bad, monkeypatch):
     monkeypatch.setattr(run_benchmark, "blender_run", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no run")))
     etalon = tmp_path / "etalon.fbx"
     etalon.write_bytes(b"x")
     bench = ROOT / "benchmark/bench-b01-box"
     broken = tmp_path / "broken.json"
-    broken.write_text("{" if bad == "object" else json.dumps({"profile": "npm_min"}), encoding="utf-8")
-    argv = ["--etalon", str(etalon), "--object", str(broken if bad == "object" else bench / "object.json"),
+    broken.write_text({"object": "{", "object-list": "[]"}.get(bad, json.dumps({"profile": "npm_min"})), encoding="utf-8")
+    argv = ["--etalon", str(etalon), "--object", str(broken if bad.startswith("object") else bench / "object.json"),
             "--tolerances", str(broken if bad == "tolerances" else bench / "tolerances.json"),
             "--output", str(tmp_path / "run"), "--blender", "blender"]
     assert run_benchmark.main(argv) == 2

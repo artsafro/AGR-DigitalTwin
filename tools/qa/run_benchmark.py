@@ -11,7 +11,8 @@ Steps (docs/HARNESS_PLAN.md §5, §8, §9), every output in the new run folder:
 5. model-readback.json  measure_spec_blender.py on model.fbx: the checks read the exported file, not memory
 6. etalon-self.json   the checks of the etalon against itself (a failure here is the etalon's or a threshold's)
    report.json        the checks of the model readback against the etalon
-summary.json holds every step's status. Exit 0 both reports pass, 1 a check fails, 2 a step stops,
+summary.json holds every step's status. Pattern: none — benchmark tooling, not a building node
+(REVIEW_CHECKLIST Q1: new-case). Exit 0 both reports pass, 1 a check fails, 2 a step stops,
 a check is not measured, or the input is wrong. The run folder must not exist (never overwritten).
 """
 import argparse
@@ -59,7 +60,12 @@ def run(etalon, obj_path, tol_path, out, blender):
     steps = summary["steps"]
     try:
         obj, tolerances = read_json(obj_path.read_bytes()), read_json(tol_path.read_bytes())
+        for name, value in (("object.json", obj), ("tolerances.json", tolerances)):
+            if not isinstance(value, dict):
+                raise ValueError(f"{name} must be a JSON object, got {type(value).__name__}")
         geometry = tolerances["geometry"]
+        if not isinstance(geometry, dict):
+            raise ValueError("tolerances.json geometry must be a JSON object")
         blender_run(blender, MEASURE, etalon, out / "etalon-dump.json")
         produced(out / "etalon-dump.json")
         etalon_dump = read_json((out / "etalon-dump.json").read_bytes())

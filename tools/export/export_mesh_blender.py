@@ -7,6 +7,7 @@ One mesh object per dump mesh, its polygons as given (`polygons`, else rebuilt f
 over triangles in fan order, else triangles); material slot index + 1 = material id
 (docs/domain/materials.md), slots named ID_<n>; every LEVEL_<name> helper as an empty at its
 location. Both outputs are new files: an existing path is refused. Units: metres, scale 1.
+Pattern: none — export tooling, not a building node (REVIEW_CHECKLIST Q1: new-case).
 """
 import json
 import sys
