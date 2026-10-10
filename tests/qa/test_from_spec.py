@@ -635,7 +635,8 @@ def test_terrace_parapet_on_a_ledge():
     dump = build(s, INPUTS)
     soup = from_dump(dump)
     assert topology_ok(dump)
-    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(40 - 5.22)        # walkable part
+    assert horizontal(soup, 3.3, ROOF, True) == 0.0                              # the hole (user rule 2026-10-10)
+    assert horizontal(soup, 3.305, ROOF, True) == pytest.approx(3.74 * 9.44)     # walkable plate: 3.7 x 9.4 + 20 mm
     assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(5.22)             # cap: 0.3 x 10 + 2 x 0.3 x 3.7
     c = soup.corners()
     hidden = (soup.material_ids == FACADE) & np.all(np.abs(c[:, :, 0] - 4) < 1e-9, axis=1) \
@@ -653,7 +654,9 @@ def test_b02_with_a_terrace_parapet_builds_and_closes():
     soup = from_dump(dump)
     assert topology_ok(dump)
     ledge = 6 * 9 - 3.5 * 0.6
-    assert horizontal(soup, 3.3, ROOF, True) + horizontal(soup, 3.9, ROOF, True) == pytest.approx(ledge)
+    assert horizontal(soup, 3.3, ROOF, True) == 0.0 and horizontal(soup, 3.9, ROOF, True) == pytest.approx(6.48)
+    assert horizontal(soup, 3.305, ROOF, True) == pytest.approx(46.0096)        # 45.42 m2 walkable grown 20 mm, as B02t
+    assert ledge == pytest.approx(45.42 + 6.48)
 
 
 def test_terrace_errors():
@@ -682,7 +685,7 @@ def test_terrace_on_a_ledge_in_two_parts():
     soup = from_dump(dump)
     assert topology_ok(dump)
     assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(2 * (0.3 * 10 + 2 * 0.3 * 1.7))   # two caps
-    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(2 * 1.7 * 9.4)                    # two walkable parts
+    assert horizontal(soup, 3.305, ROOF, True) == pytest.approx(2 * 1.74 * 9.44)                # two walkable plates
 
 
 # Terrace PR B: the extractor reads the terrace parapet back (engine model -> spec, round trip)

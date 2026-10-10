@@ -98,10 +98,11 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
 
 
 def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: dict) -> list[dict]:
-    """Open edges grouped into loops and classified (pattern roof-inset-plane, user rule 2026-10-10):
-    `bottom` - flat, at the model's lowest point. The inset roof joint is exactly two closed loops per
-    roof: `roof-foot` (contour A, the hole in the body: the foot of the upright roof-group faces at
-    a LEVEL_<name>) and `roof-plane` (contour B, the outline of a flat roof-group plane facing up,
+    """Open edges grouped into loops and classified (pattern roof-inset-plane, user rules 2026-10-10):
+    `bottom` - flat, at the model's lowest point. The joint of an inset slab (a roof in a parapet or a
+    terrace) is exactly two closed loops per slab: `roof-foot` (contour A, the hole in the body: the
+    foot of the upright faces around it - parapet inner faces, and walls of the floor above for a
+    terrace - at a LEVEL_<name>) and `roof-plane` (contour B, the outline of a flat roof-group plate facing up,
     roof_inset_gap_m above that level, embedded into the faces around the hole: in plan B is A grown
     by one even offset within roof_inset_embed_m, so the outlines never cross). A roof without an inset
     has no loop. Anything else - a third loop, a lone A or B, a loop that is not one simple closed
@@ -157,35 +158,44 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
         gap_lo, gap_hi = tol["roof_inset_gap_m"]
         if flat_loop and abs(float(z.mean()) - zmin) <= tol["weld_m"]:
             kind = "bottom"
-        elif flat_loop and closed and roof_faces:
+        elif flat_loop and closed:
             for name, lz in model.levels.items():
                 dz = float(z.mean()) - lz
-                if np.all(nz > 0.99) and gap_lo - tol["weld_m"] <= dz <= gap_hi + tol["weld_m"]:
+                if roof_faces and np.all(nz > 0.99) and gap_lo - tol["weld_m"] <= dz <= gap_hi + tol["weld_m"]:
                     kind, level = "roof-plane", name
                 elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
                     kind, level = "roof-foot", name
         segs = [welded[list(ends[e]), :2] for e in edges]
         out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4),
                     "closed": closed, "_segs": segs})
+    shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
+    lo, hi = tol["roof_inset_embed_m"]
     for name in {lp["level"] for lp in out if lp["level"]}:
         planes = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-plane"]
         feet = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-foot"]
-        joint_ok = len(planes) == 1 and len(feet) == 1   # exactly two closed loops per roof: A and B
-        if joint_ok:                                     # B = A grown by one even embed, outlines apart
-            shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
-            a, b = shape(feet[0]), shape(planes[0])
-            joint_ok = len(a) == 1 and len(b) == 1 and b[0].buffer(-tol["weld_m"]).contains(a[0])
-            if joint_ok:
-                lo, hi = tol["roof_inset_embed_m"]
-                embed = float(a[0].exterior.distance(b[0].exterior))
-                # sharp corners keep their full mitre (no clipping); evenness within the weld tolerance
-                grown = a[0].buffer(embed, join_style="mitre", mitre_limit=1e6)
-                even = float(grown.exterior.hausdorff_distance(b[0].exterior)) <= tol["weld_m"]
-                joint_ok = even and lo - tol["weld_m"] <= embed <= hi + tol["weld_m"]
-                for lp in planes:
-                    lp["embed_m"] = round(embed, 4)
-        if not joint_ok:
-            for lp in planes + feet:
+        # one slab = exactly two closed loops, A (foot) and B (plate): every A has exactly one B around it
+        # and every B exactly one A inside it; a level may hold several slabs (a ledge in parts)
+        polys = {id(lp): shape(lp) for lp in planes + feet}
+        paired = set()
+        for f in feet:
+            a_ = polys[id(f)]
+            around = [pl for pl in planes if len(a_) == 1 and len(polys[id(pl)]) == 1
+                      and polys[id(pl)][0].buffer(-tol["weld_m"]).contains(a_[0])]
+            if len(around) != 1:
+                continue
+            pl = around[0]
+            if sum(1 for g in feet if len(polys[id(g)]) == 1 and polys[id(pl)][0].contains(polys[id(g)][0])) != 1:
+                continue
+            b_ = polys[id(pl)][0]
+            embed = float(a_[0].exterior.distance(b_.exterior))
+            # sharp corners keep their full mitre (no clipping); evenness within the weld tolerance
+            grown = a_[0].buffer(embed, join_style="mitre", mitre_limit=1e6)
+            even = float(grown.exterior.hausdorff_distance(b_.exterior)) <= tol["weld_m"]
+            if even and lo - tol["weld_m"] <= embed <= hi + tol["weld_m"]:
+                pl["embed_m"] = round(embed, 4)
+                paired |= {id(f), id(pl)}
+        for lp in planes + feet:
+            if id(lp) not in paired:
                 lp["kind"] = "other"
     for lp in out:
         lp.pop("_segs")
@@ -224,7 +234,7 @@ def fan_vertices(triangles, ids, side_edges, skip) -> list[int]:
     return sorted(v for v, roots in fans.items() if len(roots) > 1)
 
 
-def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
+def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=()) -> dict:
     """Edge- and vertex-manifold (one face fan per vertex, issue #57), no n-gons, no overlapping faces, and open edges only where the pattern
     roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
     inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
@@ -239,6 +249,9 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
     boundary[np.unique(side_edges[~tri_open][counts[side_edges[~tri_open]] == 1])] = True
     loops = open_loops(model, ids, counts, side_edges, tri_open, tol, ranges)
     bad_loops = [lp for lp in loops if not lp["allowed"]]
+    # every slab is inset (user rule 2026-10-10): each level in `slabs` needs its two loops, A and B
+    inset = {lp["level"] for lp in loops if lp["kind"] == "roof-plane" and lp["allowed"]}
+    not_inset = [name for name in slabs if name not in inset]
     non_manifold = int((counts > 2).sum())
     fan_v = fan_vertices(model.triangles, ids, side_edges, tri_open)
     boundary_n = int(boundary.sum())
@@ -251,17 +264,18 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
         ngons, ngon_measured = int((model.polygon_sizes > 4).sum()), True
     details = {"non_manifold_edges": non_manifold, "non_manifold_vertices": len(fan_v),
                "non_manifold_vertex_points": [[round(float(c), 4) for c in model.vertices[ids == v][0]] for v in fan_v[:20]],
-               "boundary_edges": boundary_n, "open_loops": loops,
+               "boundary_edges": boundary_n, "open_loops": loops, "slabs": list(slabs), "slabs_not_inset": not_inset,
                "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
-    ok = (non_manifold <= tol["non_manifold_edges_max"] and not fan_v and not bad_loops
+    ok = (non_manifold <= tol["non_manifold_edges_max"] and not fan_v and not bad_loops and not not_inset
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
     if not ngon_measured and ok:
         return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes matching its triangles"},
                       measured=False)
     return result("mesh", ok, {"non_manifold": non_manifold, "non_manifold_vertices": len(fan_v), "boundary": boundary_n,
-                               "open_loops_not_allowed": len(bad_loops), "overlaps": len(overlaps), "ngons": ngons},
+                               "open_loops_not_allowed": len(bad_loops), "slabs_not_inset": len(not_inset),
+                               "overlaps": len(overlaps), "ngons": ngons},
                   None, details)
 
 
@@ -342,12 +356,18 @@ def check_opening_planes(model: Soup, spec: Spec, tol: dict, ranges: dict) -> di
                   {"openings": rows}, measured=bool(rows))
 
 
+def slabs(spec: Spec) -> list[str]:
+    """Levels whose slab must be inset (user rule 2026-10-10): the roof when it has a parapet, every terrace."""
+    roof = [spec.levels[-1].name] if spec.roof and spec.roof.parapet_h_m > 0 else []
+    return roof + [t.level for t in spec.terraces]
+
+
 def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None) -> dict:
     """All §5 checks; tol is the `geometry` block of tolerances.json."""
     ranges = ranges or load_ranges()
     checks = [check_bbox(model, etalon, tol), check_levels(model, etalon, spec, tol),
               check_floor_areas(model, etalon, spec, tol), check_silhouettes(model, etalon, tol),
-              check_mesh(model, tol, ranges), check_budget(model, tol),
+              check_mesh(model, tol, ranges, slabs(spec)), check_budget(model, tol),
               check_opening_planes(model, spec, tol, ranges), check_material_ids(model, tol, ranges)]
     return {"passed": all(c["status"] == "pass" for c in checks),
             "failed": [c["id"] for c in checks if c["status"] == "fail"],

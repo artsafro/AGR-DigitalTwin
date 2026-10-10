@@ -27,9 +27,10 @@ FACADE, REVEAL, PLANE, ROOF = 1, 6, 11, 21
 
 
 def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth=0.2, planes=True,
-             levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=(), roof_inset=0.0,
+             levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=(), roof_inset=0.005,
              roof_embed=0.02):
-    """Mesh dump of a closed box with recessed windows and a parapet (synthetic)."""
+    """Mesh dump of a box with recessed windows, a parapet and, by default, an inset roof plate 5 mm above
+    the roof level (every slab is inset, user rule 2026-10-10); roof_inset=0 gives a solid roof (synthetic)."""
     faces = []  # (points, material id)
     corners = [np.array(p, float) for p in ((0, 0), (size, 0), (size, size), (0, size))]
     zcuts = sorted({0.0, top, *(w[3] for w in windows), *(w[4] for w in windows)})
@@ -100,11 +101,12 @@ def by_id(report):
     return {c["id"]: c for c in report["checks"]}
 
 
-def test_synthetic_box_is_closed_and_passes_against_itself():
+def test_synthetic_box_is_closed_but_for_the_roof_inset_and_passes_against_itself():
     report = run(box_dump())
     assert report["passed"], report["failed"] + report["not_measured"]
     mesh = by_id(report)["mesh"]["details"]
-    assert mesh["boundary_edges"] == 0 and mesh["non_manifold_edges"] == 0 and mesh["overlap_pairs"] == 0
+    assert mesh["non_manifold_edges"] == 0 and mesh["overlap_pairs"] == 0 and mesh["slabs_not_inset"] == []
+    assert sorted(lp["kind"] for lp in mesh["open_loops"]) == ["roof-foot", "roof-plane"]
     openings = by_id(report)["opening_planes"]["details"]["openings"]
     assert [(o["level"], o["cover"]) for o in openings] == [("L0", 1.0), ("L1", 1.0)]
 
@@ -130,7 +132,7 @@ def test_missing_opening_plane_fails_cover_and_leaves_a_hole():
     assert report["failed"] == ["floor_areas", "mesh", "opening_planes"]
     assert by_id(report)["opening_planes"]["value"] == 0.0
     loops = by_id(report)["mesh"]["details"]["open_loops"]
-    assert [(lp["kind"], lp["edges"], lp["allowed"]) for lp in loops] == [("other", 4, False), ("other", 4, False)]
+    assert sorted((lp["kind"], lp["edges"], lp["allowed"]) for lp in loops if lp["kind"] == "other") ==         [("other", 4, False), ("other", 4, False)]
 
 
 def test_window_on_another_wall_fails():
@@ -278,6 +280,14 @@ def test_inset_roof_plane_joint_is_allowed():
     assert loops_of(report) == [("roof-foot", "roof", True), ("roof-plane", "roof", True)]
 
 
+def test_a_solid_roof_in_a_parapet_fails():
+    # user rule 2026-10-10: every slab is inset; the checker requires the joint, it does not only allow it
+    report = run(box_dump(roof_inset=0.0), box_dump(roof_inset=0.0))
+    mesh = by_id(report)["mesh"]
+    assert mesh["status"] == "fail" and mesh["details"]["slabs_not_inset"] == ["roof"]
+    assert mesh["details"]["open_loops"] == [] and mesh["value"]["open_loops_not_allowed"] == 0
+
+
 @pytest.mark.parametrize("gap, ok", [(0.001, False), (0.002, True), (0.010, True), (0.012, False), (0.05, False)])
 def test_inset_gap_is_2_to_10_mm(gap, ok):
     report = run(box_dump(roof_inset=gap), box_dump(roof_inset=gap))
@@ -288,7 +298,7 @@ def test_two_inset_planes_on_one_roof_are_not_allowed():
     patch = ([[3, 3, 6.605], [4, 3, 6.605], [4, 4, 6.605], [3, 4, 6.605]], ROOF)
     report = run(box_dump(roof_inset=0.005, extra=[patch]), box_dump(roof_inset=0.005))
     assert by_id(report)["mesh"]["status"] == "fail"
-    assert [k for k, _, ok in loops_of(report) if not ok] == ["other", "other", "other"]
+    assert [k for k, _, ok in loops_of(report) if not ok] == ["other"]           # the extra plate, no hole under it
 
 
 def test_open_bottom_ring_is_allowed():
@@ -300,7 +310,7 @@ def test_open_bottom_ring_is_allowed():
     body["material_ids"] = [body["material_ids"][k] for k in keep]
     del body["polygon_sizes"]
     report = run(dump)
-    assert loops_of(report) == [("bottom", "", True)]
+    assert loops_of(report) == [("bottom", "", True), ("roof-foot", "roof", True), ("roof-plane", "roof", True)]
 
 
 
@@ -418,6 +428,6 @@ def test_two_fans_meeting_at_one_vertex_fail_the_mesh_check():
 
 
 def test_open_fans_and_the_inset_roof_are_one_fan_each():
-    for dump in (box_dump(), box_dump(roof_inset=0.005)):
+    for dump in (box_dump(),):
         mesh = by_id(run(dump))["mesh"]
         assert mesh["status"] == "pass" and mesh["value"]["non_manifold_vertices"] == 0
