@@ -415,13 +415,15 @@ def _r(v):
 
 
 def _segments(poly, keep):
-    """The edges of a polygon's CCW outline whose midpoint passes keep(point)."""
+    """The edges of a polygon's CCW outlines (every part of a multipolygon) whose midpoint passes keep(point)."""
     out = []
-    for ring in [orient(poly, sign=1.0).exterior, *orient(poly, sign=1.0).interiors]:
-        c = np.asarray(ring.coords)
-        for p, q in zip(c[:-1], c[1:]):
-            if np.linalg.norm(q - p) > KEY_M and keep(Point((p + q) / 2)):
-                out.append((p[:2].copy(), q[:2].copy()))
+    for part in shapely.get_parts(poly):
+        part = orient(part, sign=1.0)
+        for ring in [part.exterior, *part.interiors]:
+            c = np.asarray(ring.coords)
+            for p, q in zip(c[:-1], c[1:]):
+                if np.linalg.norm(q - p) > KEY_M and keep(Point((p + q) / 2)):
+                    out.append((p[:2].copy(), q[:2].copy()))
     return out
 
 
@@ -431,15 +433,15 @@ def _terrace(ledge, upper, z, z_top, t, level):
     the floor above); its outer face continues the walls below, its inner face is t inside."""
     if ledge.is_empty or ledge.area <= KEY_M:
         raise BuildError(f"terrace at {level}: the floor below does not reach out past the floor above")
-    upper_line = upper.exterior
+    upper_line = upper.boundary
     outer = [(p, q) for p, q in _segments(ledge, lambda m: m.distance(upper_line) > KEY_M)]
     if not outer:
         raise BuildError(f"terrace at {level}: the ledge has no outer edge for a parapet")
     lines = shapely.line_merge(shapely.MultiLineString([[tuple(p), tuple(q)] for p, q in outer]))
     band = lines.buffer(t, cap_style="flat", join_style="mitre", mitre_limit=1e6).intersection(ledge)
     walk = ledge.difference(band)
-    if band.area <= KEY_M or walk.area <= KEY_M:
-        raise BuildError(f"terrace at {level}: the parapet leaves no walkable terrace")
+    if band.area <= KEY_M or any(walk.intersection(part).area <= KEY_M for part in shapely.get_parts(ledge)):
+        raise BuildError(f"terrace at {level}: the parapet leaves a ledge part with no walkable terrace")
     walls = [("terrace-outer", p, q, z, z_top) for p, q in outer]
     for part in shapely.get_parts(walk):           # the parapet's inner face: walkable outline off the ledge's own
         walls += [("inner", p, q, z, z_top) for p, q in _segments(part, lambda m: m.distance(ledge.boundary) > KEY_M)]

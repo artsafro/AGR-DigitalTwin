@@ -666,3 +666,17 @@ def test_terrace_errors():
     data["terraces"] = [{"level": "roof", "parapet_h_m": 0.6}]
     with pytest.raises(ValueError, match="between the first and the roof"):
         Spec.model_validate(data)
+
+
+# Codex review 1 of PR #59: a ledge in several parts (the floor above splits it) carries a parapet on each
+
+
+def test_terrace_on_a_ledge_in_two_parts():
+    def split(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                       {"level": "L1", "contour": [[2, 0], [8, 0], [8, 10], [2, 10]], "openings": []}]
+    dump = build(terraced(split), INPUTS)
+    soup = from_dump(dump)
+    assert topology_ok(dump)
+    assert horizontal(soup, 3.9, ROOF, True) == pytest.approx(2 * (0.3 * 10 + 2 * 0.3 * 1.7))   # two caps
+    assert horizontal(soup, 3.3, ROOF, True) == pytest.approx(2 * 1.7 * 9.4)                    # two walkable parts
