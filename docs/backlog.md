@@ -53,9 +53,6 @@ the pattern `markup-helpers` (written or extended) and its test.
 Plan: `docs/HARNESS_PLAN.md` §15 (user decision 2026-10-11). One PR each, extending the skill
 `analyze-architectural-source` (no parallel skill); intake reads only, never changes or exports sources.
 
-- **IN1** Skeleton: formats of `jobs/<JOB>/intake/sources.json`, `picture.md` (facts with source and
-  confidence measured / read_from_drawing / estimated / unknown; contradictions listed, not resolved),
-  `questions.md`, `spec-draft.json` (`null` without a source, `confidence` per block); `dt intake check`.
 - **IN2** Intake on the existing adapters (FBX mesh dump, Revit twin): inventory, picture, contradictions,
   implementation proposal. Test: K01 KPP1 (Revit + FBX).
 - **IN3** PDF adapter: text, vector dimensions, page rasters. Test: one real PDF.

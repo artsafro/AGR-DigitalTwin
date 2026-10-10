@@ -153,6 +153,11 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   transparency, doors from records, attachments by the main-walls hull rule (user decision 2026-10-08). The
   document is not modified (flag checked before and after); files go only to the new folder.
   KPP1: contours equal to the mesh path (0.0 mm), `jobs/KPP1/spec-compare-v002.md`.
+- Intake check (Claude, 2026-10-11, IN1, HARNESS_PLAN §15): `dt intake check --dir jobs/<JOB>/intake` validates
+  `sources.json` / `spec-draft.json` (schemas `IntakeSources`, `IntakeSpecDraft`), `picture.md` (Facts and
+  Contradictions tables) and `questions.md`: sources and confidence of every fact, null = unknown, images at
+  most estimated, the primary source by priority, the scale anchor; reports `buildable`. Procedure: skill
+  `analyze-architectural-source`, intake mode. Adapters per format: IN2-IN7.
 - Spec comparison (Claude, 2026-10-08, #11): `dt spec compare --a <spec> --b <spec> --tolerances
   benchmark/<id>/tolerances.json --output <cmp.json>` (+ `.md`): rows per criterion of HARNESS_PLAN §4
   with both values, threshold and reference side, contour difference regions; thresholds, reference

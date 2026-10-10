@@ -56,3 +56,32 @@ against both NPM and VPM.
 
 Every step has a recorded result. Unknowns are written as unknowns with the reason,
 never filled by assumption. Synthetic or estimated values are labelled.
+
+## Intake mode — "study the sources" (HARNESS_PLAN §15)
+
+When the user puts every source of an object into `jobs/<JOB>/sources/` and says "изучи исходники",
+run the steps above for each file and write `jobs/<JOB>/intake/` (read only: nothing in `sources/` changes,
+nothing is exported):
+
+1. `sources.json` — one entry per file: path, sha256, bytes, format, what was read (`geometry`,
+   `dimensions`, `image`, `materials`, `metadata`), units, frame, version, `opened`, the reason it did not
+   open. Role by priority — BIM (Revit, IFC) → 3D (SketchUp, Max, FBX) → DWG → PDF with dimensions →
+   images: `primary` for the best-ranked source with geometry or dimensions; the others `check`,
+   `materials` or `none`. ArchiCAD comes in as IFC.
+2. `picture.md` — `## Facts` table (Fact | Value | Source | Confidence) for storeys and levels, contours,
+   openings, roof, attachments, materials; every fact names its source (`path#locator`) and a confidence:
+   `measured` (read from geometry), `read_from_drawing` (from dimensions), `estimated` (anything from
+   images), `unknown`. `## Contradictions` table (Fact | Source A | Value A | Source B | Value B | Status)
+   — Status stays `open`; never pick a side.
+3. `questions.md` — the gray zone, in the questions-file format (`dt spec merge-questions`).
+4. `spec-draft.json` — the spec blocks; a block without a source is `null` with confidence `unknown`, never a
+   default. Images only / PDF without dimensions: `anchor.needed` true and an anchor question (one
+   dimension the user confirms — a door, a storey, an opening, a brick or panel module; a range like
+   "door 2.1-2.4 m" only phrases the question). Until it is confirmed nothing is `measured` and no spec is
+   built.
+5. An implementation proposal (end of `picture.md` or the report): extractor route (mesh / Revit / 2D /
+   image), the patterns needed, what the user must give before the start.
+
+Done when `uv run dt intake check --dir jobs/<JOB>/intake` reports `ok`; it also says whether the draft is
+`buildable` (every required block filled, the anchor confirmed, the spec valid). The engine runs on a
+buildable draft only.
