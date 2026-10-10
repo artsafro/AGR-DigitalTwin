@@ -798,3 +798,54 @@ def test_a_fin_across_the_parapet_inner_face_is_a_question():
     m["material_ids"] += [ROOF]
     spec, report = extract_spec(d, SYNTH_OBJECT)
     assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+
+
+# Codex review 1 of PR #63: every slab inset, only where the spec implies one, inputs in range
+
+
+def _split_terrace():
+    def split(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                       {"level": "L1", "contour": [[2, 0], [8, 0], [8, 10], [2, 10]], "openings": []}]
+    return terraced(split)
+
+
+def test_an_inset_slab_never_hides_a_solid_one_on_its_level():
+    s = _split_terrace()
+    d = build(s, INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    east_plate = [i for i, t in enumerate(m["triangles"]) if np.all(np.abs(v[t][:, 2] - 3.305) < 1e-9) and v[t][:, 0].min() > 7]
+    for i in east_plate:                                    # the east plate put down on the level: a solid slab
+        for k in m["triangles"][i]:
+            m["vertices"][k] = [m["vertices"][k][0], m["vertices"][k][1], 3.3]
+    m.pop("polygons", None)
+    mesh = by_id(checks.run(from_dump(d), from_dump(build(s, INPUTS)), s, TOL))["mesh"]
+    assert mesh["status"] == "fail" and mesh["details"]["slabs_not_inset"] == ["L1"] and "L1" in mesh["details"]["solid_slab_m2"]
+
+
+def test_a_slab_joint_the_spec_implies_no_slab_for_is_not_allowed():
+    s = _split_terrace()
+    plain = Spec.model_validate({**s.model_dump(), "terraces": []})
+    soup = from_dump(build(s, INPUTS))
+    mesh = by_id(checks.run(soup, soup, plain, TOL))["mesh"]
+    assert mesh["status"] == "fail" and mesh["value"]["open_loops_not_allowed"] == 4
+
+
+@pytest.mark.parametrize("gap, embed", [(0.001, 0.02), (0.012, 0.02), (0.005, 0.009), (0.005, 0.051)])
+def test_inset_inputs_outside_the_pattern_are_build_errors(gap, embed):
+    with pytest.raises(BuildError, match="outside the pattern"):
+        build(spec(), BuildInputs(**{**INPUTS.__dict__, "slab_gap_m": gap, "slab_embed_m": embed}))
+
+
+@pytest.mark.parametrize("dz", [0.001, 0.0105])
+def test_the_extractor_reads_no_terrace_plate_the_checker_rejects(dz):
+    from dt_ai.spec import SpecError, extract_spec
+    d = build(terraced(west_ledge), INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    for i, p in enumerate(v):
+        if abs(p[2] - 3.305) < 1e-9:
+            m["vertices"][i] = [p[0], p[1], 3.3 + dz]
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(d, SYNTH_OBJECT)

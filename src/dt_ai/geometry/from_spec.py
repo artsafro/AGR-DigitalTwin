@@ -52,6 +52,8 @@ KEY_M = 1e-6          # vertices on one 1 µm grid are one vertex
 MIN_FEATURE_M = 1e-4  # no edge or cut gap shorter than 0.1 mm (measured along the wall / side) is built
 FEATURE_TOL = 1e-9    # exactly 0.1 mm passes despite floating-point arithmetic (review 2 of PR #58)
 BUILT_KINDS = ("window", "door", None)
+SLAB_GAP_M = (0.002, 0.010)    # inset slab plate above its level (pattern roof-inset-plane, checker roof_inset_gap_m)
+SLAB_EMBED_M = (0.010, 0.050)  # its outline beyond the hole (checker roof_inset_embed_m)
 SEAT_SHARE = {"npm_min": 1.0, "mid": 0.5}   # plane seat as a share of the opening depth (C24 final, user 2026-10-10)
 
 
@@ -383,9 +385,12 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     joints = [bottom]
     if slabs:
         gap, embed = inputs.slab_gap_m, inputs.slab_embed_m
-        if gap is None or embed is None or gap <= 0 or embed <= 0:
-            raise BuildError("inset slabs need slab_gap_m and slab_embed_m > 0 in the build inputs (object.json "
+        if gap is None or embed is None:
+            raise BuildError("inset slabs need slab_gap_m and slab_embed_m in the build inputs (object.json "
                              "build.slab_inset)")
+        if not (SLAB_GAP_M[0] <= gap <= SLAB_GAP_M[1] and SLAB_EMBED_M[0] <= embed <= SLAB_EMBED_M[1]):
+            raise BuildError(f"inset slab gap {gap} m / embed {embed} m outside the pattern's {SLAB_GAP_M} / "
+                             f"{SLAB_EMBED_M} m (roof-inset-plane); not built (Codex review 1 of PR #63)")
     for hole, z, where in slabs:                        # pattern roof-inset-plane: a separate plate, not welded
         plate = orient(hole.buffer(embed, join_style="mitre", mitre_limit=1e6), sign=1.0)
         if plate.geom_type != "Polygon" or not plate.buffer(-MIN_FEATURE_M).contains(hole):

@@ -529,14 +529,16 @@ def _ledge_faces(v, tris, ledge, z0, z1, cap=None, inner_line=None, zt=None):
 
 def _inset_plate(v, extra, z0, region):
     """The plan region of an inset slab plate over a level (pattern roof-inset-plane, user rule 2026-10-10):
-    up-facing flat triangles of the parts outside the body at one height SLAB_GAP_M above z0, inside region."""
+    up-facing flat triangles of the parts outside the body at one height SLAB_GAP_M above z0 (within the
+    checkers' 0.1 mm weld, so the extractor accepts no gap the checker rejects: review 1 of PR #63),
+    inside region."""
     if extra is None or not len(extra):
         return Polygon(), None
     p = v[extra]
     n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
     z = p[:, :, 2]
     lo, hi = SLAB_GAP_M
-    flat = (z.max(axis=1) - z.min(axis=1) < EVENT_MIN_M) & (n[:, 2] > 0)         & (z.mean(axis=1) >= z0 + lo - EVENT_MIN_M) & (z.mean(axis=1) <= z0 + hi + EVENT_MIN_M)
+    flat = (z.max(axis=1) - z.min(axis=1) < EVENT_MIN_M) & (n[:, 2] > 0)         & (z.mean(axis=1) >= z0 + lo - WELD_M) & (z.mean(axis=1) <= z0 + hi + WELD_M)
     flat &= shapely.contains_xy(region.buffer(SAME_CONTOUR_M), *p[:, :, :2].mean(axis=1).T)
     if not flat.any():
         return Polygon(), None

@@ -234,7 +234,7 @@ def fan_vertices(triangles, ids, side_edges, skip) -> list[int]:
     return sorted(v for v, roots in fans.items() if len(roots) > 1)
 
 
-def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=()) -> dict:
+def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None) -> dict:
     """Edge- and vertex-manifold (one face fan per vertex, issue #57), no n-gons, no overlapping faces, and open edges only where the pattern
     roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
     inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
@@ -248,10 +248,26 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=()) -> dict:
     boundary = np.zeros(len(counts), dtype=bool)
     boundary[np.unique(side_edges[~tri_open][counts[side_edges[~tri_open]] == 1])] = True
     loops = open_loops(model, ids, counts, side_edges, tri_open, tol, ranges)
+    # every slab is inset (user rule 2026-10-10). With the spec's slabs known (a list): a slab joint at a
+    # level the spec implies no slab at is not allowed, each slab level needs a joint, and no up-facing
+    # face of the model may lie flat at a slab level - that is a solid slab beside an inset one
+    # (Codex review 1 of PR #63). slabs=None: the spec is unknown, joints are only allowed.
+    not_inset, solid = [], {}
+    if slabs is not None:
+        for lp in loops:
+            if lp["kind"] in ("roof-foot", "roof-plane") and lp["level"] not in slabs:
+                lp["kind"], lp["allowed"] = "other", False
+        inset = {lp["level"] for lp in loops if lp["kind"] == "roof-plane" and lp["allowed"]}
+        c = model.corners()
+        n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+        up = n[:, 2] > 0.99 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+        for name in slabs:
+            lz = model.levels.get(name)
+            flat = up & (np.abs(c[:, :, 2] - lz).max(axis=1) <= tol["weld_m"]) if lz is not None else up & False
+            if flat.any():
+                solid[name] = round(float(np.linalg.norm(n[flat], axis=1).sum() / 2), 4)
+        not_inset = [name for name in slabs if name not in inset or name in solid]
     bad_loops = [lp for lp in loops if not lp["allowed"]]
-    # every slab is inset (user rule 2026-10-10): each level in `slabs` needs its two loops, A and B
-    inset = {lp["level"] for lp in loops if lp["kind"] == "roof-plane" and lp["allowed"]}
-    not_inset = [name for name in slabs if name not in inset]
     non_manifold = int((counts > 2).sum())
     fan_v = fan_vertices(model.triangles, ids, side_edges, tri_open)
     boundary_n = int(boundary.sum())
@@ -264,7 +280,8 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=()) -> dict:
         ngons, ngon_measured = int((model.polygon_sizes > 4).sum()), True
     details = {"non_manifold_edges": non_manifold, "non_manifold_vertices": len(fan_v),
                "non_manifold_vertex_points": [[round(float(c), 4) for c in model.vertices[ids == v][0]] for v in fan_v[:20]],
-               "boundary_edges": boundary_n, "open_loops": loops, "slabs": list(slabs), "slabs_not_inset": not_inset,
+               "boundary_edges": boundary_n, "open_loops": loops, "slabs": None if slabs is None else list(slabs), "slabs_not_inset": not_inset,
+               "solid_slab_m2": solid,
                "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
