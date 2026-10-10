@@ -27,7 +27,7 @@ FACADE, REVEAL, PLANE, ROOF = 1, 6, 11, 21
 
 
 def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth=0.2, planes=True,
-             levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=()):
+             levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=(), roof_inset=0.0):
     """Mesh dump of a closed box with recessed windows and a parapet (synthetic)."""
     faces = []  # (points, material id)
     corners = [np.array(p, float) for p in ((0, 0), (size, 0), (size, size), (0, size))]
@@ -57,7 +57,9 @@ def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth
             faces.append(([[*inner(s0), roof], [*inner(s1), roof], [*inner(s1), top], [*inner(s0), top]], ROOF))
         ring_out += [p(s, 0.0) for s in cuts[:-1]]
         ring_in += [[*inner(s), roof] for s in cuts[:-1]]
-    for ring, z, mid in ((ring_out, 0.0, FACADE), (ring_in, roof, ROOF)):
+    if roof_inset:                       # an inset roof plane (pattern roof-inset-plane): a loose element
+        ring_in = [[x, y, z + roof_inset] for x, y, z in ring_in]
+    for ring, z, mid in ((ring_out, 0.0, FACADE), (ring_in, roof + roof_inset, ROOF)):
         c = [size / 2, size / 2, z]
         faces += [([c, ring[k], ring[(k + 1) % len(ring)]], mid) for k in range(len(ring))]
     faces += list(extra)
@@ -121,10 +123,11 @@ def _walk(node):
 def test_missing_opening_plane_fails_cover_and_leaves_a_hole():
     report = run(box_dump(planes=False, windows=WINDOWS))
     # the open window also stops the model section closing where the etalon's closes
-    assert report["failed"] == ["floor_areas", "opening_planes"] and by_id(report)["opening_planes"]["value"] == 0.0
-    assert by_id(report)["mesh"]["details"]["boundary_edges"] == 8  # reported, not judged (null)
-    closed = run(box_dump(planes=False, windows=WINDOWS), tol={**TOL, "boundary_edges_max": 0})
-    assert {"opening_planes", "mesh"} <= set(closed["failed"])
+    # an open window is no allowed open loop (pattern roof-inset-plane, user rule 2026-10-10)
+    assert report["failed"] == ["floor_areas", "mesh", "opening_planes"]
+    assert by_id(report)["opening_planes"]["value"] == 0.0
+    loops = by_id(report)["mesh"]["details"]["open_loops"]
+    assert [(lp["kind"], lp["edges"], lp["allowed"]) for lp in loops] == [("other", 4, False), ("other", 4, False)]
 
 
 def test_window_on_another_wall_fails():
@@ -182,9 +185,10 @@ def test_face_two_mm_in_front_of_a_wall_is_an_overlap():
     assert mesh["status"] == "fail" and mesh["details"]["overlap_pairs"] >= 1
 
 
-def test_standalone_opening_plane_may_stay_open():
+def test_standalone_opening_plane_is_open_only_where_a_benchmark_allows_it():
     plane = ([[20, 0, 1], [21, 0, 1], [21, 0, 2], [20, 0, 2]], PLANE)
-    report = run(box_dump(extra=[plane]), box_dump(), tol={**TOL, "boundary_edges_max": 0})
+    assert by_id(run(box_dump(extra=[plane]), box_dump()))["mesh"]["status"] == "fail"     # B01: none allowed
+    report = run(box_dump(extra=[plane]), box_dump(), tol={**TOL, "open_part_groups": ["opening"]})
     assert by_id(report)["mesh"]["status"] == "pass" and by_id(report)["mesh"]["details"]["open_parts_allowed"] == 1
 
 
@@ -255,3 +259,41 @@ def test_section_open_in_both_is_listed_not_judged():
         return dump
     area = by_id(run(strip(box_dump()), strip(box_dump())))["floor_areas"]
     assert area["status"] == "pass" and ["L0", 0.33] in area["details"]["open_on_both_sides"]
+
+
+
+# pattern roof-inset-plane (user rule 2026-10-10): open edges = bottom ring + the inset roof joint
+
+
+def loops_of(report):
+    return sorted(((lp["kind"], lp["level"] or "", lp["allowed"]) for lp in by_id(report)["mesh"]["details"]["open_loops"]))
+
+
+def test_inset_roof_plane_joint_is_allowed():
+    report = run(box_dump(roof_inset=0.005), box_dump(roof_inset=0.005))
+    assert by_id(report)["mesh"]["status"] == "pass"
+    assert loops_of(report) == [("roof-foot", "roof", True), ("roof-plane", "roof", True)]
+
+
+def test_roof_plane_lifted_too_far_is_not_an_inset():
+    report = run(box_dump(roof_inset=0.05), box_dump(roof_inset=0.05))
+    assert by_id(report)["mesh"]["status"] == "fail" and ("other", "", False) in loops_of(report)
+
+
+def test_two_inset_planes_on_one_roof_are_not_allowed():
+    patch = ([[3, 3, 6.605], [4, 3, 6.605], [4, 4, 6.605], [3, 4, 6.605]], ROOF)
+    report = run(box_dump(roof_inset=0.005, extra=[patch]), box_dump(roof_inset=0.005))
+    assert by_id(report)["mesh"]["status"] == "fail"
+    assert [k for k, _, ok in loops_of(report) if not ok] == ["other", "other", "other"]
+
+
+def test_open_bottom_ring_is_allowed():
+    dump = box_dump()
+    body = dump["meshes"][0]
+    v = np.asarray(body["vertices"])
+    keep = [k for k, t in enumerate(body["triangles"]) if not np.all(v[t][:, 2] == 0)]
+    body["triangles"] = [body["triangles"][k] for k in keep]
+    body["material_ids"] = [body["material_ids"][k] for k in keep]
+    del body["polygon_sizes"]
+    report = run(dump)
+    assert loops_of(report) == [("bottom", "", True)]
