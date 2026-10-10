@@ -727,20 +727,16 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
     if terrace is not None:                    # the parapet shape is the terrace, not a question
         report["terrace"] = {"parapet_h_m": round(zt - z0, 3), **areas}
         others = []
-    if below is not None:                      # anything else standing on a ledge: a question
-        on = _ledge_faces(v, tris, below.difference(base["poly"]), z0, z1,
-                          *((cap, inner_line, zt) if terrace is not None else ()))
-        if len(on):
-            c = on.reshape(-1, 3)
-            report["ledge_structure"] = {"triangles": int(len(on)), "heights_m": [round(z0, 3), round(float(c[:, 2].max()), 3)],
-                                         "at": [round(float(c[:, 0].mean()), 2), round(float(c[:, 1].mean()), 2)]}
+    # what stands on a ledge is looked for once both contours are final (extract_spec): a door recess or
+    # relief of the floor below is no ledge (KPP1 v006 run, 2026-10-10)
+    parapet = (cap, inner_line, zt) if terrace is not None else ()
     # door recesses leave the contour and become openings; relief is not a kink (#31)
     poly, relief = _relief(base["poly"])
     poly, doors = _door_recesses(closed, poly, z0, z1)
     report["door_recesses"], report["relief_parts"] = len(doors), relief
     # every other shape is not over the full height -> questions
     report["bridged_sections"] = sum(1 for _, _, m, _ in mouth_spans if m)
-    return poly, report, _deviations(others, poly), mouth_spans, doors
+    return poly, report, _deviations(others, poly), mouth_spans, doors, parapet
 
 
 def _measure(piece, section, contour_pts):
@@ -1164,7 +1160,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     floors, polys, pieces, mouths, doors = [], [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev, ms, dr = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
+        poly, rep, dev, ms, dr, parapet = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
                                                 below=polys[-1] if polys else None,
                                                 extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
         mouths.append(ms)
@@ -1172,6 +1168,13 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
+        if polys:                                  # anything else standing on a ledge (both contours final)
+            on = _ledge_faces(v, body, polys[-1].difference(poly), lv["elev_m"], nxt["elev_m"], *parapet)
+            if len(on):
+                c = on.reshape(-1, 3)
+                rep["ledge_structure"] = {"triangles": int(len(on)),
+                                          "heights_m": [round(lv["elev_m"], 3), round(float(c[:, 2].max()), 3)],
+                                          "at": [round(float(c[:, 0].mean()), 2), round(float(c[:, 1].mean()), 2)]}
         polys.append(poly)
         pieces.append(dev)
     panes, flat_glass = _glass(dump, m)

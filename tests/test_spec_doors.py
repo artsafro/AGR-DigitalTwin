@@ -200,3 +200,11 @@ def test_two_ids_on_one_frame_across_a_level_give_no_id_and_a_conflict():
     (o,) = spec.expanded_floors()[0].openings
     assert (o.level_to, o.material_id, o.plane_conflict) == ("L1", None, True)
     assert report["openings"]["openings_with_conflicting_planes"] == 1
+
+
+def test_a_door_recess_of_an_upper_floor_is_no_ledge():
+    # KPP1 v006 run (2026-10-10): a recess from the floor of L1 leaves L1's contour as a door; its head is
+    # not "something standing on a ledge" - ledges are looked for between final contours only
+    spec, report = extract_spec(building(boxes=[(0, 4.0, 5.0, 3.3, 5.4, -0.23)]), at(L1=4.5))
+    assert [q["kind"] for q in report["questions"]] == [] and "ledge_structure" not in report["floors"]["L1"]
+    assert doors(spec, level=1) == [(0, 4.0, 0.0, 1.0, 2.1, None, "hole")]
