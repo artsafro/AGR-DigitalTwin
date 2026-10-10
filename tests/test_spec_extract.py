@@ -507,3 +507,27 @@ def test_object_json_levels_must_agree_with_the_revit_helpers(given, ok):
 def test_the_roof_type_must_name_one_roof_element():
     with pytest.raises(SpecError, match="need exactly one"):
         extract_spec(revit_box(revit_roofs=[]), {**OBJECT, "revit_levels": REVIT_TABLE})
+
+
+# Codex review 1 of PR #69
+
+
+def test_an_unknown_revit_level_is_named_in_its_question():
+    from dt_ai.spec.mesh import questions_markdown
+    dump = revit_box()
+    dump["revit_levels"].append({"id": 4, "name": "Mezzanine A", "elevation_m": 1.5})
+    _, report = extract_spec(dump, {**OBJECT, "revit_levels": REVIT_TABLE})
+    assert "Revit level Mezzanine A" in questions_markdown("bench-synth-box", report["questions"])
+
+
+@pytest.mark.parametrize("field", ["offset_m", "volume_m3", "area_m2", "base_level_m"])
+def test_a_roof_value_not_read_is_never_guessed(field):
+    roofs = [{**revit_box()["revit_roofs"][0], field: None}]
+    with pytest.raises(SpecError, match="not read"):
+        extract_spec(revit_box(revit_roofs=roofs), {**OBJECT, "revit_levels": REVIT_TABLE})
+
+
+@pytest.mark.parametrize("roof", [6.63, 6.57])
+def test_the_3_cm_agreement_limit_itself_agrees(roof):
+    given = [{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": roof}]
+    extract_spec(revit_box(), {**OBJECT, "revit_levels": REVIT_TABLE, "levels": given})

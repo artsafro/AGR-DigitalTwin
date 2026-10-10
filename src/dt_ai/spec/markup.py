@@ -28,7 +28,10 @@ def revit_level_helpers(dump, table):
     helpers, questions = [], []
     for lv in levels:
         if lv["name"] not in names:
-            questions.append({"priority": "high", "kind": "revit-level", "wall": None, "depth_m": None,
+            # the Revit level's name rides in the Wall cell: shown in questions.md and part of the identity
+            # an answer is matched by (review 1 of PR #69)
+            questions.append({"priority": "high", "kind": "revit-level", "wall": f"Revit level {lv['name']}",
+                              "depth_m": None,
                               "length_m": None, "facade_share": None,
                               "heights_m": [round(lv["elevation_m"], 3), round(lv["elevation_m"], 3)], "at": None,
                               "revit_level": lv["name"]})
@@ -41,10 +44,12 @@ def revit_level_helpers(dump, table):
             raise MarkupError(f"object.json revit_levels.roof type {roof['type']!r}: {len(found)} roof elements of "
                               "that type in the Revit export, need exactly one")
         r = found[0]
-        if not r.get("area_m2") or r.get("volume_m3") is None:
-            raise MarkupError(f"Revit roof {r['id']}: no volume / area to measure the covering thickness")
-        top = r["base_level_m"] + r.get("offset_m", 0.0) + r["volume_m3"] / r["area_m2"]
+        missing = [k for k in ("base_level_m", "offset_m", "volume_m3", "area_m2") if r.get(k) is None]
+        if missing or not r["area_m2"]:
+            raise MarkupError(f"Revit roof {r['id']}: {missing or ['area_m2 = 0']} not read; the covering top is not "
+                              "guessed (review 1 of PR #69)")
+        top = r["base_level_m"] + r["offset_m"] + r["volume_m3"] / r["area_m2"]
         helpers.append({"name": "LEVEL_roof", "location": [0.0, 0.0, round(top, 4)],
-                        "derived": f"roof {r['id']}: base {r['base_level_m']} + offset {r.get('offset_m', 0.0)} + "
+                        "derived": f"roof {r['id']}: base {r['base_level_m']} + offset {r['offset_m']} + "
                                    f"volume {r['volume_m3']} / area {r['area_m2']}"})
     return helpers, questions

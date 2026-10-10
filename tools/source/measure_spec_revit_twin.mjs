@@ -47,12 +47,18 @@ const FT = 0.3048;
 const levels = (await call('list_levels')).levels.map(l => ({id: l.id, name: l.name, elevation_m: l.elevationMeters}));
 const byId = Object.fromEntries(levels.map(l => [l.id, l]));
 const roofs = [];
-for (const r of (await call('list_elements', {category: 'OST_Roofs', onlyInstances: true})).elements) {
+const roofList = [];                                   // every page (review 1 of PR #69)
+for (let offset = 0; offset !== null && offset !== undefined;) {
+  const page = await call('list_elements', {category: 'OST_Roofs', onlyInstances: true, offset, limit: 200});
+  roofList.push(...page.elements);
+  offset = page.hasMore ? page.nextOffset : null;
+}
+for (const r of roofList) {
   const info = await call('get_element_info', {id: r.id});
   const p = name => info.parameters.find(q => q.name === name);
   const base = byId[info.levelId];
   roofs.push({id: r.id, type: r.name, base_level: base?.name ?? null, base_level_m: base?.elevation_m ?? null,
-              offset_m: (p('Смещение от уровня')?.value ?? 0) * FT,
+              offset_m: p('Смещение от уровня')?.value == null ? null : p('Смещение от уровня').value * FT,  // never 0 by default
               volume_m3: p('Объем')?.value == null ? null : p('Объем').value * FT ** 3,
               area_m2: p('Площадь')?.value == null ? null : p('Площадь').value * FT ** 2});
 }

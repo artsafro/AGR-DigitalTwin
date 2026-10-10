@@ -1177,7 +1177,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
         mine = {lv["name"]: lv["elev_m"] for lv in levels}
         theirs = {lv["name"]: float(lv["elev_m"]) for lv in given}
         off = {n: (mine.get(n), theirs.get(n)) for n in set(mine) | set(theirs)
-               if n not in mine or n not in theirs or abs(mine[n] - theirs[n]) > LEVEL_AGREE_M}
+               if n not in mine or n not in theirs or abs(mine[n] - theirs[n]) > LEVEL_AGREE_M + 1e-9}
         if off:
             raise SpecError(f"Revit level helpers and object.json levels disagree (> {LEVEL_AGREE_M} m or missing): "
                             f"{dict(sorted(off.items()))} (helper, object.json)")
