@@ -118,7 +118,7 @@ def test_grille_gets_no_hole():
 
 @pytest.mark.parametrize("change, message", [
     ({"contour": [[0, 0], [10, 0], [10, 10, {"r": 1.0}], [0, 10]]}, "rounded corners"),
-    ({"contour": [[0, 0], [10, 0], [12, 10], [0, 10]]}, "not axis-parallel"),
+    ({"contour": [[0, 0], [10, 0], [12, 10], [0, 10]]}, "triangle is not built yet"),   # an x-extreme sharp corner
 ])
 def test_what_this_step_cannot_build_is_an_error_not_a_guess(change, message):
     data = json.loads(json.dumps(FIXTURE))
@@ -493,3 +493,119 @@ def test_overlap_areas_touching_at_a_corner_are_an_error():
                        {"level": "L1", "contour": [[2, 0], [4, 0], [4, 4], [0, 4], [0, 2], [2, 2]], "openings": []}]
     with pytest.raises(BuildError, match="do not meet over area only"):
         build(edited(edit), INPUTS)
+
+
+# pattern non-90-corner: oblique walls; horizontal faces cut into trapezoids by vertical strips
+
+
+def b02_spec():
+    data = json.loads((ROOT / "benchmark/bench-b02-corner-niche/spec.json").read_text(encoding="utf-8"))
+    return Spec.model_validate(data)
+
+
+def test_b02_spec_builds_with_its_oblique_wall_niche_and_step():
+    dump = build(b02_spec(), INPUTS)
+    assert topology_ok(dump)
+    soup = from_dump(dump)
+    planes = soup.corners()[soup.material_ids == PLANE]
+    oblique = planes[planes[:, :, 2].min(1) > 3.3]
+    n = np.cross(oblique[:, 1] - oblique[:, 0], oblique[:, 2] - oblique[:, 0])
+    assert np.allclose(n[:, :2] / np.linalg.norm(n[:, :2], axis=1)[:, None], [0.7071068, 0.7071068], atol=1e-6)
+
+
+def test_b02_model_passes_the_checks_against_itself():
+    s = b02_spec()
+    soup = from_dump(build(s, INPUTS))
+    report = checks.run(soup, soup, s, TOL)
+    assert report["passed"], report["failed"] + report["not_measured"]
+
+
+@pytest.mark.parametrize("contour", [
+    [[0, 0], [10, 0], [10, 6], [7, 9], [0, 9]],                      # one 45° corner cut
+    [[0, 0], [10, 0], [12, 6], [12, 9], [0, 9]],                     # a wall leaning out, obtuse corners
+    [[0, 0], [10, 0], [10, 10], [5, 7], [0, 10]],                    # a V notch in the north wall
+])
+def test_oblique_contours_build_without_t_junctions(contour):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+    dump = build(edited(edit), INPUTS)
+    assert topology_ok(dump)
+
+
+
+# Codex review 1 of PR #58: inputs that would weld into collapsed quads are errors
+
+
+@pytest.mark.parametrize("contour, window", [
+    ([[0, 0], [10, 0], [10, 6], [7.878679656440357, 8.121320343559642], [0, 8.121320343559642]], None),
+    ([[0, 0], [10, 0], [10, 3], [10.000002, 6], [10.000002, 9], [0, 9]],
+     {"wall": 2, "x_m": 0.5, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}),
+    ([[0, 0], [10, 0], [10, 0.00001], [0, 10]],
+     {"wall": 3, "x_m": 1.0, "sill_m": 0.9, "w_m": 0.2, "h_m": 1.5, "kind": "window"}),
+])
+def test_near_degenerate_inputs_build_clean_or_stop(contour, window):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+        d["floors"][0]["openings"] = [window] if window else []
+        d["roof"] = {"parapet_h_m": 0.0}
+    try:
+        dump = build(edited(edit), INPUTS)
+    except BuildError:
+        return
+    soup = from_dump(dump)
+    c = soup.corners()
+    area = np.linalg.norm(np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0]), axis=1) / 2
+    assert area.min() > 1e-9 and topology_ok(dump)
+    if window:
+        assert PLANE in set(soup.material_ids.tolist())     # never a window silently turned into facade
+
+
+
+@pytest.mark.parametrize("contour, wall, x_m", [
+    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 0.0001),               # exactly 0.1 mm from the start (review 2 of #58)
+    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 8.9999),               # exactly 0.1 mm from the end
+])
+def test_windows_at_the_0_1_mm_limit_are_built(contour, wall, x_m):
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+        d["floors"][0]["openings"] = [{"wall": wall, "x_m": x_m, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+        d["roof"] = {"parapet_h_m": 0.0}
+    dump = build(edited(edit), INPUTS)
+    assert topology_ok(dump) and PLANE in set(from_dump(dump).material_ids.tolist())
+
+
+def test_window_closer_than_0_1_mm_to_a_wall_end_is_an_error():
+    def edit(d):
+        d["floors"][0]["openings"] = [{"wall": 0, "x_m": 0.00005, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+    with pytest.raises(BuildError, match="closer than 0.1 mm to the wall end"):
+        build(edited(edit), INPUTS)
+
+
+
+def test_window_close_to_a_steep_oblique_corner_is_a_clear_error():
+    # Codex review 2 of PR #58: 1 mm along a steep oblique wall is 0.03 mm in x; the strips would put
+    # vertices closer than the checkers' 0.1 mm weld, so this is a BuildError, not merged geometry
+    def edit(d):
+        d["floors"][0]["contour"] = [[0, 0], [10, 0], [10, 6], [9.9, 9], [0, 9]]
+        d["floors"][0]["openings"] = [{"wall": 2, "x_m": 0.001, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+    with pytest.raises(BuildError, match="strip lines closer than 0.1 mm"):
+        build(edited(edit), INPUTS)
+
+
+
+def test_inputs_at_the_limit_that_would_break_under_the_weld_are_errors():
+    # Codex review 3 of PR #58: both built "valid" raw quads that collapse or leave a hole at 0.1 mm
+    def window_case(d):
+        d["floors"][0]["contour"] = [[.00005, 0], [10.00005, 0], [10.00005, 6], [9.00005, 7], [.00005, 7]]
+        d["floors"][0]["openings"] = [{"wall": 2, "x_m": .0001414213562373095, "sill_m": 0.9, "w_m": 0.5,
+                                       "h_m": 1.5, "kind": "window"}]
+        d["roof"] = {"parapet_h_m": 0.0}
+
+    def step_case(d):
+        d["floors"] = [{"level": "L0", "contour": [[0, 0], [10, 0], [10, 6], [9.9999, 9], [0, 9]], "openings": []},
+                       {"level": "L1", "contour": [[0, 0], [10, 0], [10, 5.9999], [9.9999, 8.9999], [0, 8.9999]],
+                        "openings": []}]
+        d["roof"] = {"parapet_h_m": 0.0}
+    for edit in (window_case, step_case):
+        with pytest.raises(BuildError):
+            build(edited(edit), INPUTS)
