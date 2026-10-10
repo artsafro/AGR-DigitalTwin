@@ -436,7 +436,13 @@ def roof(mb):
         pa, pb = p(a), p(b)
         mb.quad([Vector((pa.x, pa.y, Z_ROOF)), Vector((pb.x, pb.y, Z_ROOF)), Vector((pb.x, pb.y, zt)),
                  Vector((pa.x, pa.y, zt))], n, "Membrane_Logicroof")
-    mb.quad([Vector((x0, y0, zt)), Vector((x1, y0, zt)), Vector((x1, y1, zt)), Vector((x0, y1, zt))], UP, "Interior")
+    # shaft top split as in v005 (where the membrane's cuts ran across it): the Interior placeholder UV scale is
+    # its largest face, so one 1.96 m quad would rescale every Interior face of the building (PR #67 review 2)
+    sxs, sys_ = [x0, (x0 + x1) / 2, x1], [y0, 7.895, 8.385, y1]
+    for i in range(2):
+        for j in range(3):
+            mb.quad([Vector((sxs[i], sys_[j], zt)), Vector((sxs[i + 1], sys_[j], zt)), Vector((sxs[i + 1], sys_[j + 1], zt)),
+                     Vector((sxs[i], sys_[j + 1], zt))], UP, "Interior")
     # the plate: the hole grown by PLATE_OVERLAP (under the parapet), the shaft shrunk by it; a ring of quads
     o = PLATE_OVERLAP
     px, py = [xi0 - o, x0 + o, x1 - o, xi1 + o], [yi0 - o, y0 + o, y1 - o, yi1 + o]

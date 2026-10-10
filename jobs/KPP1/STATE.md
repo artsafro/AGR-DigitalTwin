@@ -219,7 +219,7 @@ depth and height both <= 0.10 m is relief, not a question. Spec v021 (`outputs/s
 dump): spec identical to v020, 25 rails counted as `section_relief_parts`, 0 questions; all 83 rows
 of `questions.md` are `gone`. No open contour question is left for KPP1.
 
-## v006: inset roof (2026-10-10)
+## v007: inset roof (2026-10-10)
 
 User rules 2026-10-10: every slab is inset — a hole in the body at the level and a separate plate
 `plate_gap_m` 5 mm above it, overlapping the hole by `plate_overlap_m` 20 mm (pattern
@@ -230,20 +230,22 @@ membrane's drainage slopes <= 2 deg are not modelled). PSU275 stays before the r
   7.909 (the hole: outer outline and the shaft's inner one; the shaft is a part of its own); the plate is
   a ring of 8 quads at 7.914 — the hole grown 20 mm under the parapet, the shaft shrunk 20 mm (280.62 m2);
   walkways, aerators and funnel grates moved onto the plate by the membrane height under them (heights
-  above the membrane kept), feet 1 mm into the plate; UCX body hull to 7.914.
-- `run_all.sh v006` (local outputs `outputs/*-v006`): Main 12 138 quads / 24 276 tris (v005 12 456 /
-  24 912), leaks 0, T-junctions 17 (as v005), open edges uncovered 1 653 (v005 1 996); overlap QA 0 pairs,
-  0 non-manifold edges, 0 doubles 2 mm; VPM 24 276 + 76 glass tris, 33 UCX; NPM 24 240 + 76 tris;
+  above the membrane kept), feet 1 mm into the plate; UCX body hull to 7.914; the shaft top split as in
+  v005 (6 quads), because the Interior placeholder UV scale is its largest face.
+- v006 (local, superseded): one-quad shaft top rescaled the UVs of all 534 Interior faces (PR #67 review 2);
+  v007 fixes it — every face below 7.5 m (10 490) has the v005 geometry, finish and UVs (within 1e-6).
+- `run_all.sh v007` (local outputs `outputs/*-v007`): Main 12 149 quads / 24 298 tris (v005 12 456 /
+  24 912), leaks 0, T-junctions 17 (as v005), open edges uncovered 1 659 (v005 1 996); overlap QA 0 pairs,
+  0 non-manifold edges, 0 doubles 2 mm; VPM 24 298 + 76 glass tris, 33 UCX; NPM 24 262 + 76 tris;
   SINTEZ VPM 64 / 53 / 3 and NPM 38 / 29 / 5 (verified / undefined / failed) — the same as v005, the
   failures are the deferred ZIP / GeoJSON / Ground items.
-- Spec v029 from the v006 VPM FBX (`outputs/spec-v029`, extractor with the ledge fix of PR #66): 0
-  questions, plates read 5 / 20 mm, parapet 0.741 m; comparison v030 with the Revit spec (twin v013,
-  `outputs/spec-compare-v030`): **match**, 0 criteria outside. The v005 dump now asks one question,
-  `plate-params` on the roof (v005 predates the inset rule).
-- Mesh joint (checker, object frame, LEVEL_ from object.json): the roof joint is two hole outlines at
-  7.909 (outer, shaft) and two plate outlines at 7.914, overlap 0.020, gap 0.005, no solid slab, plate
-  parameters as the spec — passes once the faces carry a roof-group ID. K01 as a full benchmark is open:
-  KPP1 has no material-ID scheme (finish names + UDIM; all faces read as ID 1) and
-  `benchmark/bench-k01-kpp1/tolerances.json` has no `geometry` block yet; its decor / alpha parts are open
-  shells (other open loops).
-- Status: v006 built and QA'd by Claude; not accepted by the user yet (v005 stays the accepted ~90 %).
+- Spec v030 from the v007 VPM FBX (`outputs/spec-v030`, extractor with PR #66): 0 questions, plates read
+  5 / 20 mm, parapet 0.741 m; comparison v031 with the Revit spec (twin v013, `outputs/spec-compare-v031`):
+  **match**, 0 criteria outside. The v005 dump asks one question, `plate-params` on the roof (v005
+  predates the inset rule).
+- Mesh joint (checker, object frame, LEVEL_ from object.json): two hole outlines at 7.909 (outer, shaft)
+  and two plate outlines at 7.914, overlap 0.020, gap 0.005, no solid slab, plate parameters as the spec —
+  passes once the faces carry a roof-group ID. K01 as a full benchmark is open: KPP1 has no material-ID
+  scheme (finish names + UDIM; all faces read as ID 1) and `benchmark/bench-k01-kpp1/tolerances.json` has
+  no `geometry` block yet; its decor / alpha parts are open shells (other open loops).
+- Status: v007 built and QA'd by Claude; not accepted by the user yet (v005 stays the accepted ~90 %).
