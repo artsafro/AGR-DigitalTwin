@@ -43,7 +43,9 @@ def test_hole_with_glass_is_one_opening():
     spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)],
                                          extra=[pane("Glass", 2.1, 3.4, 1.0, 2.3)]), OBJECT)
     assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, 0.0, "hole+glass")]
-    assert report["questions"] == []
+    # glass flush with the facade: depth 0, relief or a drawing? (C24 final, user decision 2026-10-10)
+    assert [q["kind"] for q in report["questions"]] == ["opening-flush"]
+    assert report["openings"]["openings_flush"] == 1
 
 
 def test_glass_in_a_closed_wall_is_an_opening():
@@ -346,3 +348,20 @@ def test_remote_or_high_flat_objects_are_not_questions():
     high.quad((2.0, 0, 9.0), (3.0, 0, 9.0), (3.0, 0, 10.0), (2.0, 0, 10.0))
     _, report = extract_spec(building(extra=[sign, high]), OBJECT)
     assert report["questions"] == []
+
+
+
+def test_plane_at_the_back_of_its_reveal_gives_the_opening_depth():
+    # C24 final (user 2026-10-10): the depth is facade -> back polygon; the plane is that polygon in npm_min
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 6.6, [(0, 2.0, 3.5, 0.9, 2.4, 0.0)])
+    reveal(b, 2.0, 3.5, 0.9, 2.4, 0.4)
+    flat(b, Polygon(SQUARE10), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    plane = Mesh("OpeningPlane")
+    plane.quad((2.0, 0.4, 0.9), (3.5, 0.4, 0.9), (3.5, 0.4, 2.4), (2.0, 0.4, 2.4))
+    d = dump_of(b)
+    d["meshes"].append({**plane.dump(), "material_ids": [11, 11]})
+    spec, report = extract_spec(d, OBJECT)
+    (o,) = spec.expanded_floors()[0].openings
+    assert (o.depth_m, o.material_id) == (0.4, 11) and report["questions"] == []

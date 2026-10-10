@@ -35,6 +35,10 @@ PANE_BAND_M = 0.05       # ... when aligned: side by side, one's heights within 
 # defaults of the extraction thresholds; a benchmark's tolerances.json (spec_extract) gives the values
 # in use (user decision 2026-10-09)
 DEPTH_EXCEPTION_M = 0.10  # a measured depth further than this from the spec default is written (#36)
+# the depth is the way from the facade to the back polygon of the opening (plane, else glass); a back
+# polygon not deeper than this is flush with the facade: relief or a drawing, not an opening — a question
+# (C24 final, user decision 2026-10-10)
+FLUSH_M = 0.01
 GLASS_FRAME_M = 0.20     # glass fills an opening's height when no stretch without glass is longer (a frame member)
 LEVEL_JOINT_M = 0.15     # an opening reaching less than this past a level line does not cross it (a frame joint)
 # a door opening: from the storey floor, high and wide enough (user decisions 2026-10-08, #31;
@@ -576,6 +580,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                 holes.append(g)
         for h in holes:
             ids = {pl["material_id"] for pl in plane_items if pl["level"] == li and _overlap(h, pl)}
+            h["back"] = bool(ids) or bool(h.get("glass_z"))   # a back polygon: an opening plane or glass
             if ids:                                  # two planes with different ids: no id is invented
                 h["material_id"] = ids.pop() if len(ids) == 1 else None
                 h["plane_conflict"] = len(ids) > 0
@@ -602,6 +607,9 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                     **_glass_size(o, floor["contour"])}
             if not o.get("kind_fixed") and abs(o["depth"] - depth_default) > depth_exception:
                 item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
+            if not o.get("kind_fixed") and o.get("back") and o["depth"] <= FLUSH_M:
+                p0, p1, _ = _world(o, floor["contour"])
+                breaks.append({"kind": "opening-flush", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
             items.append(item)
@@ -624,7 +632,8 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
               "opening_planes_mixed_ids": sum(1 for _, _, mid in planes if mid is None),
               "openings_with_conflicting_planes": sum(1 for f in per_floor for o in f if o.get("plane_conflict")),
               "breaks_off_contour": sum(b["kind"] == "wall-break-off-contour" for b in breaks),
-              "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks)}
+              "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks),
+              "openings_flush": sum(b["kind"] == "opening-flush" for b in breaks)}
     return per_floor, footprints, breaks, report
 
 
@@ -669,7 +678,7 @@ def break_questions(breaks, levels):
     out = []
     for b in breaks:
         mid = (b["p"] + b["q"]) / 2
-        out.append({"priority": "normal" if b["kind"] == "opening-size-unknown" else "high",
+        out.append({"priority": "normal" if b["kind"] in ("opening-size-unknown", "opening-flush") else "high",
                     "kind": b["kind"], "levels": [levels[b["level"]]["name"]], "wall": None,
                     "depth_m": None, "length_m": round(float(np.linalg.norm(b["p"] - b["q"])), 3),
                     "facade_share": None, "heights_m": [round(b["z0"], 3), round(b["z1"], 3)],

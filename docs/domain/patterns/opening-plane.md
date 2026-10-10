@@ -32,7 +32,7 @@ spec v0.3 (#36); window library `library/windows/window_types.json` (#4).
 
 ## Traps
 
-- Seat (C24, user 2026-10-10): `npm_min` at half the opening depth, `mid` at full; no reveal behind it.
+- Seat (C24 final, 2026-10-10): `npm_min` back polygon at full depth; `mid` half, detailed window from it.
 - Edges from the wall faces, never from frames or sills; a plane at the back of the reveal was
   rejected (visible slits).
 - A long plane must not cross a belt or another window row.
