@@ -962,6 +962,8 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     written, report["floor_classes"] = fl.collapse(levels, floors)
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
-                levels=levels, floors=written, roof={"parapet_h_m": round(max(top_z - roof_z, 0.0), 3)},
+                # the parapet is measured from the input roof level, never from the roof plane: an inset
+                # roof plane (+5 mm, pattern roof-inset-plane, user rule 2026-10-10) sets no height
+                levels=levels, floors=written, roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3)},
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
     return spec, report

@@ -274,3 +274,24 @@ def test_roof_without_a_parapet_keeps_its_edge_ring():
     d["meshes"] += [ring.dump(), roof_part(6.65, 6.65, 2.0, 8.0, 2.0, 8.0).dump()]
     _, report = extract_spec(d, OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.618, abs=0.001) and report["roof"]["closed_share"] == 1.0
+
+
+
+def test_parapet_is_measured_from_the_roof_level_not_from_an_inset_roof_plane():
+    # B02 (user rule 2026-10-10, pattern roof-inset-plane): the roof plane is inset 5 mm above the
+    # parapet foot; the spec heights come from LEVEL_roof (6.6), so the parapet is 0.6, not 0.595
+    b = Mesh("Body")
+    inner = [[0.3, 0.3], [9.7, 0.3], [9.7, 9.7], [0.3, 9.7]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], 7.2), (*SQUARE10[a], 7.2))
+        b.quad((*SQUARE10[a], 7.2), (*SQUARE10[c], 7.2), (*inner[c], 7.2), (*inner[a], 7.2))
+        b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 7.2), (*inner[c], 7.2))
+    roof = Mesh("RoofPlane")
+    roof.quad((0.3, 0.3, 6.605), (9.7, 0.3, 6.605), (9.7, 9.7, 6.605), (0.3, 9.7, 6.605))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(roof.dump())
+    spec, report = extract_spec(d, OBJECT)
+    assert report["roof"]["plane_m"] == pytest.approx(6.605, abs=0.001)
+    assert spec.roof.parapet_h_m == 0.6
