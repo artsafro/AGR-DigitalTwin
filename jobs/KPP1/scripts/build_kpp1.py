@@ -345,6 +345,15 @@ def openings(mb, gb, spec, decor=False):
 # ---------------------------------------------------------------- stage 3: roof
 PARAPET_IN = 0.225     # inner parapet face at x/y 0.225 and 26.775 / 10.775 (Revit parapet walls)
 PARAPET_TOP_IN = 8.58  # inner parapet face runs up into the cap
+# Inset roof (pattern roof-inset-plane, user rules 2026-10-10; KPP1 v006 = option a, a flat plate): the body
+# has a hole at LEVEL_roof (the foot of the parapet inner faces and of the shaft walls) and the roof is a
+# separate flat plate PLATE_GAP above it, overlapping the hole by PLATE_OVERLAP under the parapet and around
+# the shaft. The Revit membrane's drainage slopes (<= 2 deg) are not modelled (user: flat plate).
+Z_ROOF = 7.909          # LEVEL_roof (jobs/KPP1/object.json, confirmed by the user)
+PLATE_GAP = 0.005       # spec plate_gap_m default (the etalons' 5 mm)
+PLATE_OVERLAP = 0.02    # spec plate_overlap_m default (the etalons' 20 mm)
+Z_PLATE = Z_ROOF + PLATE_GAP
+SEAT = 0.001            # roof items stand 1 mm into the plate (no gap; > 2.5 mm off the hole's foot)
 SHAFT = (11.915, 12.46, 7.405, 9.365, 9.50)                 # brick vent shaft x0, x1, y0, y1, top
 HOOD = (11.887, 12.487, 7.385, 9.385, 9.645, 9.665, 9.83)   # x0, x1, y0, y1, rim bottom, rim top, ridge
 # Parapet cap (RAL 5015 sheet), profile (d inward from the cassette plane, z) as a closed loop. Outer drip,
@@ -396,33 +405,58 @@ def split_concave(bm):
     return len(bad)
 
 
+def membrane_z():
+    """Height of the Revit membrane at (x, y): roof items keep their height above it on the flat plate."""
+    bm, _ = roof_surface()
+    bvh = BVHTree.FromBMesh(bm)
+    bm.free()
+    return lambda x, y: bvh.ray_cast(Vector((x, y, 20.0)), Vector((0, 0, -1)))[0].z
+
+
 def roof(mb):
+    d = 0.33 + PARAPET_IN
+    xi0, xi1, yi0, yi1 = X0 + d, X1 - d, Y0 + d, Y1 - d
+    x0, x1, y0, y1, zt = SHAFT
+    xs, ys = [xi0, x0, x1, xi1], [yi0, y0, y1, yi1]
     mb.piece()
-    bm, (xi0, xi1, yi0, yi1) = roof_surface()
-    for f in bm.faces:
-        mb.quad([v.co.copy() for v in f.verts], UP, "Membrane_Logicroof")
-    on = lambda v, axis, val: abs(v.co[axis] - val) < 1e-4 and v.is_boundary
-
-    def side_walls(axis, val, n, ztop, finish):
-        vs = sorted((v.co.copy() for v in bm.verts if on(v, axis, val)), key=lambda c: c[1 - axis])
-        for a, b in zip(vs, vs[1:]):
-            mb.quad([a, b, Vector((b.x, b.y, ztop)), Vector((a.x, a.y, ztop))], n, finish)
-        return len(vs)
-
-    # inner parapet faces, welded to the roof boundary (membrane upturn)
+    # the hole: inner parapet faces and shaft walls from LEVEL_roof, cut where the shaft's lines cross
     for axis, val, n in ((0, xi0, Vector((1, 0, 0))), (0, xi1, Vector((-1, 0, 0))),
                          (1, yi0, Vector((0, 1, 0))), (1, yi1, Vector((0, -1, 0)))):
-        side_walls(axis, val, n, PARAPET_TOP_IN, "Membrane_Logicroof")
-    # vent shaft walls from the roof hole to the shaft top; dark top = duct opening under the hood
-    x0, x1, y0, y1, zt = SHAFT
+        run = ys if axis == 0 else xs
+        for a, b in zip(run, run[1:]):
+            p = (lambda t: Vector((val, t, 0))) if axis == 0 else (lambda t: Vector((t, val, 0)))
+            pa, pb = p(a), p(b)
+            mb.quad([Vector((pa.x, pa.y, Z_ROOF)), Vector((pb.x, pb.y, Z_ROOF)), Vector((pb.x, pb.y, PARAPET_TOP_IN)),
+                     Vector((pa.x, pa.y, PARAPET_TOP_IN))], n, "Membrane_Logicroof")
+    mb.piece()                                        # the shaft stands in the hole: a part of its own
     for axis, val, n in ((0, x0, Vector((-1, 0, 0))), (0, x1, Vector((1, 0, 0))),
                          (1, y0, Vector((0, -1, 0))), (1, y1, Vector((0, 1, 0)))):
-        assert side_walls(axis, val, n, zt, "Membrane_Logicroof") == 2, "shaft side must be one quad"
-    mb.quad([Vector((x0, y0, zt)), Vector((x1, y0, zt)), Vector((x1, y1, zt)), Vector((x0, y1, zt))], UP, "Interior")
-    bm.free()
+        a, b = (y0, y1) if axis == 0 else (x0, x1)
+        p = (lambda t: Vector((val, t, 0))) if axis == 0 else (lambda t: Vector((t, val, 0)))
+        pa, pb = p(a), p(b)
+        mb.quad([Vector((pa.x, pa.y, Z_ROOF)), Vector((pb.x, pb.y, Z_ROOF)), Vector((pb.x, pb.y, zt)),
+                 Vector((pa.x, pa.y, zt))], n, "Membrane_Logicroof")
+    # shaft top split as in v005 (where the membrane's cuts ran across it): the Interior placeholder UV scale is
+    # its largest face, so one 1.96 m quad would rescale every Interior face of the building (PR #67 review 2)
+    sxs, sys_ = [x0, (x0 + x1) / 2, x1], [y0, 7.895, 8.385, y1]
+    for i in range(2):
+        for j in range(3):
+            mb.quad([Vector((sxs[i], sys_[j], zt)), Vector((sxs[i + 1], sys_[j], zt)), Vector((sxs[i + 1], sys_[j + 1], zt)),
+                     Vector((sxs[i], sys_[j + 1], zt))], UP, "Interior")
+    # the plate: the hole grown by PLATE_OVERLAP (under the parapet), the shaft shrunk by it; a ring of quads
+    o = PLATE_OVERLAP
+    px, py = [xi0 - o, x0 + o, x1 - o, xi1 + o], [yi0 - o, y0 + o, y1 - o, yi1 + o]
+    mb.piece()
+    for i in range(3):
+        for j in range(3):
+            if i == 1 and j == 1:
+                continue                              # the shaft
+            mb.quad([Vector((px[i], py[j], Z_PLATE)), Vector((px[i + 1], py[j], Z_PLATE)),
+                     Vector((px[i + 1], py[j + 1], Z_PLATE)), Vector((px[i], py[j + 1], Z_PLATE))], UP, "Membrane_Logicroof")
+    zm = membrane_z()
     parapet_cap(mb)
     hood(mb)
-    roof_items(mb)
+    roof_items(mb, zm)
     walkways(mb)
 
 
@@ -489,12 +523,9 @@ def cylinder(mb, cx, cy, z0, z1, r0, r1, finish, top=True, sides=8):
 
 def walkways(mb):
     """Roof walkways: Revit 'ПВХ Logicroof Walkway Puzzle 0.6 x 0.6' tiles (25 mm), merged into strips
-    along their chaining direction (the 0.76 bbox side holds the puzzle teeth), draped on the membrane:
-    top = membrane + 25 mm, sides embedded 10 mm below the membrane, cut every tile (0.6 m)."""
-    bm, _ = roof_surface()
-    bvh = BVHTree.FromBMesh(bm)
-    bm.free()
-    zm = lambda x, y: bvh.ray_cast(Vector((x, y, 20.0)), Vector((0, 0, -1)))[0].z
+    along their chaining direction (the 0.76 bbox side holds the puzzle teeth),     laid on the flat inset roof plate (v006): top = plate + 25 mm, sides SEAT into the plate, cut every
+    tile (0.6 m)."""
+    zm = lambda x, y: Z_PLATE
     rows, cols = {}, {}
     tiles = refs("TN_ПВХ Logicroof")
     assert len(tiles) == 136, len(tiles)
@@ -520,7 +551,7 @@ def walkways(mb):
         P = (lambda t, s: Vector((t, key + s, 0))) if along == "x" else (lambda t, s: Vector((key + s, t, 0)))
         mb.piece()
         top = lambda t, s: (lambda p: Vector((p.x, p.y, zm(p.x, p.y) + 0.025)))(P(t, s))
-        bot = lambda t, s: (lambda p: Vector((p.x, p.y, zm(p.x, p.y) - 0.01)))(P(t, s))
+        bot = lambda t, s: (lambda p: Vector((p.x, p.y, zm(p.x, p.y) - SEAT)))(P(t, s))
         side = Vector((0, 1, 0)) if along == "x" else Vector((1, 0, 0))
         dirv = Vector((1, 0, 0)) if along == "x" else Vector((0, 1, 0))
         for a, b in zip(ts, ts[1:]):
@@ -531,8 +562,9 @@ def walkways(mb):
             mb.quad([bot(t, -0.3), bot(t, 0.3), top(t, 0.3), top(t, -0.3)], n, "Walkway_Logicroof")
 
 
-def roof_items(mb):
-    """Aerators (pipe 110 mm + hat 390 mm) and roof funnel grates; sizes from the Revit bounding boxes."""
+def roof_items(mb, zm):
+    """Aerators (pipe 110 mm + hat 390 mm) and roof funnel grates; sizes from the Revit bounding boxes, moved
+    onto the flat plate (v006) by the membrane's height under them, their feet SEAT into the plate."""
     for o in list(bpy.data.objects):
         if o.type != "MESH":
             continue
@@ -540,13 +572,16 @@ def roof_items(mb):
         lo = Vector([min(w[i] for w in ws) for i in range(3)])
         hi = Vector([max(w[i] for w in ws) for i in range(3)])
         cx, cy = (lo.x + hi.x) / 2, (lo.y + hi.y) / 2
+        if o.name.startswith(("TN_Аэратор", "TN_Воронка с обжимным")):
+            dz = Z_PLATE - zm(cx, cy)                 # the membrane under the item -> the plate
+            lo, hi = lo + Vector((0, 0, dz)), hi + Vector((0, 0, dz))
         if o.name.startswith("TN_Аэратор"):
             # Revit profile: flange cone r 0.065 -> 0.195 (+0.06), pipe r 0.05, hat r 0.09 (top 0.155..0.035 below hi)
-            cylinder(mb, cx, cy, lo.z - 0.01, lo.z + 0.064, 0.195, 0.195, "Plastic_Black")
+            cylinder(mb, cx, cy, Z_PLATE - SEAT, lo.z + 0.064, 0.195, 0.195, "Plastic_Black")
             cylinder(mb, cx, cy, lo.z + 0.054, hi.z - 0.145, 0.05, 0.05, "Plastic_Black", top=False)
             cylinder(mb, cx, cy, hi.z - 0.155, hi.z - 0.005, 0.09, 0.09, "Plastic_Black")
         elif o.name.startswith("TN_Воронка с обжимным"):
-            cylinder(mb, cx, cy, 7.835, hi.z, 0.19, 0.10, "Plastic_Black")
+            cylinder(mb, cx, cy, Z_PLATE - SEAT, max(hi.z, Z_PLATE + 0.01), 0.19, 0.10, "Plastic_Black")
 
 
 # ---------------------------------------------------------------- stage 4: decor and perimeter
@@ -970,7 +1005,7 @@ def collisions(report):
         tops = [b[5] for b in pr if b[:4] in g]
         porches.append(([min(r[0] for r in g), max(r[1] for r in g), min(r[2] for r in g), max(r[3] for r in g)], max(tops)))
     d = 0.33 + PARAPET_IN
-    parts = vpm_ucx.pieces(FOOT, 7.962, d, 8.68, SHAFT, HOOD, canopies, piers, porches)
+    parts = vpm_ucx.pieces(FOOT, Z_PLATE, d, 8.68, SHAFT, HOOD, canopies, piers, porches)  # body hull to the plate
     hulls = [(label, vpm_ucx.hull(pts)) for label, pts in parts]
     objs, tris = [], 0
     for k, (label, bm) in enumerate(hulls, 1):
