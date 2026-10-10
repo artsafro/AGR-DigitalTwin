@@ -348,3 +348,23 @@ def test_drainage_roof_touching_one_wall_top_keeps_the_upstand_elsewhere(wall_to
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, _ = extract_spec(dump_of(b), OBJECT)
     assert spec.roof.parapet_h_m == pytest.approx(parapet, abs=1e-6)
+
+
+
+@pytest.mark.parametrize("separate", [False, True])
+def test_walls_following_a_drainage_slope_have_no_parapet(separate):
+    # Codex review 4 of PR #54: roof rising 6.55 -> 6.65 m along y, walls ending on it everywhere
+    b = Mesh("Body")
+    rise = lambda y: 6.55 + 0.01 * y  # noqa: E731
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        (xa, ya), (xc, yc) = SQUARE10[a], SQUARE10[c]
+        b.quad((xa, ya, 0), (xc, yc, 0), (xc, yc, rise(yc)), (xa, ya, rise(ya)))
+    roof = b if not separate else Mesh("Roof")
+    roof.quad((0, 0, rise(0)), (10, 0, rise(0)), (10, 10, rise(10)), (0, 10, rise(10)))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    if separate:
+        d["meshes"].append(roof.dump())
+    spec, _ = extract_spec(d, {**OBJECT, "contour_at_m": {"L1": 4.0}})   # the sloped top leaves L1's top open
+    assert spec.roof.parapet_h_m == 0.0

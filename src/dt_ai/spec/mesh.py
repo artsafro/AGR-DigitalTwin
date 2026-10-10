@@ -662,7 +662,7 @@ def _has_parapet(edge, body_pts, roof_tris):
         if not hits:
             return True                      # no roof at the wall line: something stands between
         roof_z = max(_z_at(roof_tris[i], probe) for i in hits)
-        wall_z = float(np.interp(s, ss, zz))
+        wall_z = float(np.interp(s, ss, zz, period=length))   # the outer line is closed (review 4 of PR #54)
         if wall_z - roof_z > SAME_CONTOUR_M:
             return True                      # the wall rises above the roof here: an upstand
     return False
