@@ -4,7 +4,8 @@ Box 10 x 10 m, 2 storeys, 2 windows, flat roof with a parapet.
 
 Patterns: wall-from-contour, opening-plane, typical-floor-repeat, parapet.
 
-Etalon: issue #12 (user); spec: #13; checkers: #14. Thresholds: `tolerances.json` (`geometry`
+Etalon: issue #12 (user) — files outside git in `data/benchmark/bench-b01-box/`, hashes in
+`etalon.json`; spec: #13 (`spec.json`, extracted from the etalon); checkers: #14. Thresholds: `tolerances.json` (`geometry`
 for the checkers, `spec_extract` for the extractor).
 
 ## What the etalon carries (#12)
@@ -27,14 +28,14 @@ sill 0.9 m, opening depth 0.2 m (plane and reveals at 0.1 m).
 ## Run
 
 ```
-blender --background --factory-startup --python tools/source/measure_spec_blender.py -- etalon.fbx <dump.json>
-uv run dt spec extract --dump <dump.json> --object <object.json> --output spec.json --tolerances tolerances.json
-uv run python tools/qa/check_geometry.py <model-dump.json> <etalon-dump.json> --spec spec.json --tolerances tolerances.json --output <report.json>
+uv run python tools/qa/run_benchmark.py --etalon etalon.fbx --object benchmark/bench-b01-box/object.json --tolerances benchmark/bench-b01-box/tolerances.json --output <new run folder>
 ```
 
-The model dump comes from the same Blender script, run on the built model (engine `from_spec.py`,
-HARNESS_PLAN §9); the model must carry the same `LEVEL_<name>` helpers. First run the etalon
-against itself: every check must pass, or the etalon (or a threshold) is wrong.
+One command, every step's output in the run folder: etalon dump (`measure_spec_blender.py`) ->
+`spec.json` (extractor) -> `model-dump.json` (engine `from_spec.py`, build inputs from `object.json`)
+-> `model.blend` / `model.fbx` (`tools/export/export_mesh_blender.py`) -> readback of `model.fbx` ->
+`etalon-self.json` (the etalon against itself: must pass, or the etalon or a threshold is wrong)
+and `report.json` (the model against the etalon); `summary.json` lists the steps. Exit 0 both pass.
 
 ## Checks (`twinqa.geometry`, starting numbers of HARNESS_PLAN §5)
 
