@@ -1030,3 +1030,14 @@ def test_plate_parameters_keep_their_precision_and_the_agreement_limit():
     d = _moved(build(terraced(west_ledge), INPUTS), lambda p: abs(p[2] - 3.305) < 1e-9, lambda p: [p[0], p[1], 3.3045])
     _, kinds, _ = _kinds(d)
     assert kinds == []
+
+
+@pytest.mark.parametrize("inner, read", [(0.02, True), (0.03, False)])
+def test_the_extractor_reads_a_plate_around_a_shaft(inner, read):
+    # KPP1 (user 2026-10-10): a shaft stands in the hole as a part of its own; its foot is an inner outline
+    from dt_ai.spec import extract_spec
+    from test_geometry_checks import shaft_roof
+    spec_, report = extract_spec(shaft_roof(inner), SYNTH_OBJECT)
+    kinds = [q["kind"] for q in report["questions"]]
+    assert (report["plates"]["roof"]["plates"] == [{"gap_m": 0.005, "overlap_m": 0.02}]) == read
+    assert (kinds == []) == read and (kinds == ["plate-params"]) != read
