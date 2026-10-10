@@ -350,3 +350,45 @@ def test_foot_and_plane_must_be_one_joint_in_plan():
         if abs(v[2] - 6.605) < 1e-6:
             v[0] += 30
     assert by_id(run(dump, box_dump()))["mesh"]["status"] == "fail"
+
+
+
+def offset_triangle(pts, d):
+    """Edges of a CCW triangle moved out by d, corners where they meet (unclipped mitre)."""
+    lines = []
+    for i in range(3):
+        p0, p1 = np.array(pts[i], float), np.array(pts[(i + 1) % 3], float)
+        e = (p1 - p0) / np.linalg.norm(p1 - p0)
+        lines.append((p0 + np.array([e[1], -e[0]]) * d, e))
+    out = []
+    for i in range(3):
+        (p, e1), (q, e2) = lines[i - 1], lines[i]
+        t = np.linalg.solve(np.array([e1, -e2]).T, q - p)[0]
+        out.append(list(p + e1 * t))
+    return out
+
+
+def test_acute_corner_keeps_its_full_mitre():
+    # Codex review 2 of PR #54: A = a sharp triangle hole, B = A's edges offset 20 mm with unclipped corners
+    a = [[1, 1], [9, 1], [1, 2]]
+    b, o = offset_triangle(a, 0.02), offset_triangle(a, 0.3)
+    z, top = 6.6, 7.1
+    faces = [([[*b[0], z + 0.005], [*b[1], z + 0.005], [*b[2], z + 0.005]], ROOF)]
+    for i in range(3):
+        j = (i + 1) % 3
+        faces.append(([[*a[i], z], [*a[j], z], [*a[j], top], [*a[i], top]], ROOF))          # parapet inner face
+        faces.append(([[*a[i], top], [*a[j], top], [*o[j], top], [*o[i], top]], ROOF))      # cap
+        faces.append(([[*o[i], 0], [*o[j], 0], [*o[j], top], [*o[i], top]], FACADE))        # outer wall
+    soup = from_dump({"meshes": [_mesh("m", faces)],
+                      "helpers": [{"name": "LEVEL_roof", "location": [0, 0, z]}, {"name": "LEVEL_L0", "location": [0, 0, 0]}]})
+    loops = checks.check_mesh(soup, TOL, checks.load_ranges())["details"]["open_loops"]
+    assert sorted(lp["kind"] for lp in loops) == ["bottom", "roof-foot", "roof-plane"], loops
+
+
+def test_evenness_tolerance_is_the_weld_tolerance():
+    # Codex review 2 of PR #54: one side embedded 0.9 mm more is uneven
+    dump = box_dump(roof_inset=0.005)
+    for v in dump["meshes"][0]["vertices"]:
+        if abs(v[2] - 6.605) < 1e-6 and v[0] > 9:
+            v[0] += 0.0009
+    assert by_id(run(dump, box_dump()))["mesh"]["status"] == "fail"

@@ -178,8 +178,9 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
             if joint_ok:
                 lo, hi = tol["roof_inset_embed_m"]
                 embed = float(a[0].exterior.distance(b[0].exterior))
-                grown = a[0].buffer(embed, join_style="mitre")
-                even = float(grown.exterior.hausdorff_distance(b[0].exterior)) <= 10 * tol["weld_m"]
+                # sharp corners keep their full mitre (no clipping); evenness within the weld tolerance
+                grown = a[0].buffer(embed, join_style="mitre", mitre_limit=1e6)
+                even = float(grown.exterior.hausdorff_distance(b[0].exterior)) <= tol["weld_m"]
                 joint_ok = even and lo - tol["weld_m"] <= embed <= hi + tol["weld_m"]
                 for lp in planes:
                     lp["embed_m"] = round(embed, 4)

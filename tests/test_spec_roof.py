@@ -309,3 +309,24 @@ def test_roof_without_a_parapet_has_none_whatever_the_plane_height(roof_z):
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, _ = extract_spec(dump_of(b), OBJECT)
     assert spec.roof.parapet_h_m == 0.0
+
+
+
+@pytest.mark.parametrize("gap", [0.002, 0.010])
+def test_a_low_real_parapet_does_not_depend_on_the_roof_plane(gap):
+    # Codex review 2 of PR #54: parapet inner faces 6.600-6.625 m, an inset plane 2 or 10 mm up
+    b = Mesh("Body")
+    inner = [[0.3, 0.3], [9.7, 0.3], [9.7, 9.7], [0.3, 9.7]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], 6.625), (*SQUARE10[a], 6.625))
+        b.quad((*SQUARE10[a], 6.625), (*SQUARE10[c], 6.625), (*inner[c], 6.625), (*inner[a], 6.625))
+        b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 6.625), (*inner[c], 6.625))
+    roof = Mesh("RoofPlane")
+    z = 6.6 + gap
+    roof.quad((0.28, 0.28, z), (9.72, 0.28, z), (9.72, 9.72, z), (0.28, 9.72, z))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(roof.dump())
+    spec, _ = extract_spec(d, OBJECT)
+    assert spec.roof.parapet_h_m == 0.025

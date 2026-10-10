@@ -46,7 +46,6 @@ SHAFT_UPPER = 0.85        # ... and again at this share of the top storey's heig
 SHAFT_WALL_SHARE = 0.9    # a roof hole is a shaft when body walls line this share of its edge at mid top storey
 ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
-PARAPET_MIN_M = 0.02      # walls rising less than this above the roof plane are no parapet (an inset gap is <= 10 mm)
 # user decisions 2026-10-08 (#31): a recess open from the storey floor, at least DOOR_MIN_H_M high
 # and DOOR_W_M wide at its mouth, is a door opening and leaves the contour (depth is no criterion);
 # a bump or notch with both sizes <= RELIEF_M is relief, not a kink; the same in section: a projection or
@@ -777,7 +776,13 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
                 raise SpecError(f"roof at {roof_z:.3f} m has an opening of {hole.area:.2f} m2 at ({c.x:.2f}, {c.y:.2f}) "
                                 f"that is not a shaft (walls line {lined:.0%} of it at {z_mid:.2f} m): "
                                 "roof missing there? ask the user")
-    stats = {"surface_z_min_m": round(float(p[idx][:, :, 2].min()), 3), "surface_z_max_m": round(float(p[idx][:, :, 2].max()), 3),
+    # a parapet is structure, not a height difference (Codex review 2 of PR #54): there is none when the
+    # roof surface itself runs out to the outer wall line and reaches the wall top there
+    edge_tops = [float(z) for i in idx for (x, y, z) in p[i]
+                 if edge.distance(shapely.Point(x, y)) <= PARAPET_EDGE_M]
+    parapet = not (on_edge and edge_tops and parapet_top - max(edge_tops) <= SAME_CONTOUR_M)
+    stats = {"parapet": parapet,
+             "surface_z_min_m": round(float(p[idx][:, :, 2].min()), 3), "surface_z_max_m": round(float(p[idx][:, :, 2].max()), 3),
              "slope_max_deg": round(float(slope[idx].max()), 2),
              "slope_mean_deg": round(float((slope[idx] * areas).sum() / areas.sum()), 2)}
     return roof_z, parapet_top if on_edge else roof_z, round(closed, 3), stats
@@ -964,10 +969,9 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
                 # the parapet is measured from the input roof level, never from the roof plane: an inset
-                # roof plane (+5 mm, pattern roof-inset-plane, user rule 2026-10-10) sets no height; a roof
-                # with no parapet (walls ending at the roof plane) keeps 0 (Codex review 1 of PR #54)
+                # roof plane (pattern roof-inset-plane, user rule 2026-10-10) sets no height; a roof whose
+                # surface reaches the wall top at the outer wall line has no parapet (reviews of PR #54)
                 levels=levels, floors=written,
-                roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3)
-                      if top_z - roof_z > PARAPET_MIN_M else 0.0},
+                roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0},
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
     return spec, report
