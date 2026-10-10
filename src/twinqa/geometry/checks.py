@@ -95,10 +95,81 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
     return result("silhouettes", worst >= tol["silhouette_iou_min"], worst, tol["silhouette_iou_min"], {"iou": ious})
 
 
+def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: dict) -> list[dict]:
+    """Open edges grouped into loops and classified (pattern roof-inset-plane, user rule 2026-10-10):
+    `bottom` - every vertex at the model's lowest point; `roof-plane` - a horizontal loop of roof-group
+    faces facing up, up to roof_inset_max_m above a LEVEL_<name> helper, one per level; `roof-foot` -
+    the loop of upright roof-group faces (parapet inner faces) at that level under such a plane, at
+    most one. Anything else is `other` and not allowed."""
+    tri = np.flatnonzero(~skip)
+    sides = side_edges[tri]
+    open_mask = counts[sides] == 1
+    edge_tris = {}
+    for t, k in zip(*np.nonzero(open_mask)):
+        edge_tris.setdefault(int(sides[t, k]), (int(tri[t]), int(k)))
+    if not edge_tris:
+        return []
+    welded = np.zeros((int(ids.max()) + 1, 3))
+    welded[ids] = model.vertices
+    tri_ids = ids[model.triangles]
+    parent = {}
+
+    def find(v):
+        parent.setdefault(v, v)
+        while parent[v] != v:
+            parent[v] = parent[parent[v]]
+            v = parent[v]
+        return v
+
+    ends = {}
+    for e, (t, k) in edge_tris.items():
+        va, vb = int(tri_ids[t][k]), int(tri_ids[t][(k + 1) % 3])
+        ends[e] = (va, vb)
+        parent[find(va)] = find(vb)
+    loops = {}
+    for e, (va, _) in ends.items():
+        loops.setdefault(find(va), []).append(e)
+    g_roof = ranges["groups"]["roof"]
+    zmin = float(model.vertices[:, 2].min())
+    corners = model.corners()
+    out = []
+    for edges in loops.values():
+        verts = sorted({v for e in edges for v in ends[e]})
+        z = welded[verts, 2]
+        flat_loop = float(z.max() - z.min()) <= tol["weld_m"]
+        tris_ = [edge_tris[e][0] for e in edges]
+        mids = model.material_ids[tris_]
+        roof_faces = bool(np.all((mids >= g_roof["first"]) & (mids <= g_roof["last"])))
+        c = corners[tris_]
+        n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+        nz = n[:, 2] / np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+        kind, level = "other", None
+        if flat_loop and abs(float(z.mean()) - zmin) <= tol["weld_m"]:
+            kind = "bottom"
+        elif flat_loop and roof_faces:
+            for name, lz in model.levels.items():
+                dz = float(z.mean()) - lz
+                if np.all(nz > 0.99) and tol["weld_m"] < dz <= tol["roof_inset_max_m"] + tol["weld_m"]:
+                    kind, level = "roof-plane", name
+                elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
+                    kind, level = "roof-foot", name
+        out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4)})
+    for name in {lp["level"] for lp in out if lp["level"]}:
+        planes = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-plane"]
+        feet = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-foot"]
+        if len(planes) != 1 or len(feet) > 1:      # one inset plane per roof, its foot only under it
+            for lp in planes + feet:
+                lp["kind"] = "other"
+    for lp in out:
+        lp["allowed"] = lp["kind"] != "other"
+    return out
+
+
 def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
-    """Edge-manifold, no n-gons, no overlapping faces. Open edges are reported; they fail only when a
-    benchmark sets boundary_edges_max (null by user decision 2026-10-09: NPM keeps reveals without inner
-    faces, docs/domain/geometry.md), and never on parts made only of open_part_groups."""
+    """Edge-manifold, no n-gons, no overlapping faces, and open edges only where the pattern
+    roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
+    inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
+    open_part_groups are left out of the open-edge rule."""
     ids = weld(model.vertices, tol["weld_m"])
     _, counts, side_edges = edge_uses(model.triangles, ids)
     part = parts(model.triangles, ids)
@@ -107,6 +178,8 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
     tri_open = np.array([p in open_ok for p in part], dtype=bool)
     boundary = np.zeros(len(counts), dtype=bool)
     boundary[np.unique(side_edges[~tri_open][counts[side_edges[~tri_open]] == 1])] = True
+    loops = open_loops(model, ids, counts, side_edges, tri_open, tol, ranges)
+    bad_loops = [lp for lp in loops if not lp["allowed"]]
     non_manifold = int((counts > 2).sum())
     boundary_n = int(boundary.sum())
     corners = model.corners()
@@ -116,17 +189,18 @@ def check_mesh(model: Soup, tol: dict, ranges: dict) -> dict:
         ngons, ngon_measured = None, False
     else:
         ngons, ngon_measured = int((model.polygon_sizes > 4).sum()), True
-    details = {"non_manifold_edges": non_manifold, "boundary_edges": boundary_n,
+    details = {"non_manifold_edges": non_manifold, "boundary_edges": boundary_n, "open_loops": loops,
                "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
                "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
-    closed_ok = tol["boundary_edges_max"] is None or boundary_n <= tol["boundary_edges_max"]
-    ok = (non_manifold <= tol["non_manifold_edges_max"] and closed_ok
+    ok = (non_manifold <= tol["non_manifold_edges_max"] and not bad_loops
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
     if not ngon_measured and ok:
-        return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes matching its triangles"}, measured=False)
-    return result("mesh", ok, {"non_manifold": non_manifold, "boundary": boundary_n, "overlaps": len(overlaps),
-                               "ngons": ngons}, None, details)
+        return result("mesh", False, None, None, {**details, "why": "dump has no polygon_sizes matching its triangles"},
+                      measured=False)
+    return result("mesh", ok, {"non_manifold": non_manifold, "boundary": boundary_n,
+                               "open_loops_not_allowed": len(bad_loops), "overlaps": len(overlaps), "ngons": ngons},
+                  None, details)
 
 
 def check_budget(model: Soup, tol: dict) -> dict:
