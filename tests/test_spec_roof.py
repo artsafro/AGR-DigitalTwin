@@ -295,3 +295,17 @@ def test_parapet_is_measured_from_the_roof_level_not_from_an_inset_roof_plane():
     spec, report = extract_spec(d, OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.605, abs=0.001)
     assert spec.roof.parapet_h_m == 0.6
+
+
+
+@pytest.mark.parametrize("roof_z", [6.605, 6.65, 6.69])
+def test_roof_without_a_parapet_has_none_whatever_the_plane_height(roof_z):
+    # Codex review 1 of PR #54: walls and a flat roof ending at roof_z (no parapet) near LEVEL_roof 6.6
+    b = Mesh("Body")
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], roof_z), (*SQUARE10[a], roof_z))
+    b.quad((0, 0, roof_z), (10, 0, roof_z), (10, 10, roof_z), (0, 10, roof_z))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, _ = extract_spec(dump_of(b), OBJECT)
+    assert spec.roof.parapet_h_m == 0.0

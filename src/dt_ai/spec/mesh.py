@@ -46,6 +46,7 @@ SHAFT_UPPER = 0.85        # ... and again at this share of the top storey's heig
 SHAFT_WALL_SHARE = 0.9    # a roof hole is a shaft when body walls line this share of its edge at mid top storey
 ROOF_CLOSED = 0.9         # share of the top floor the roof and surfaces above it must close
 PARAPET_EDGE_M = 0.05     # parapet top is read only on the outer wall line of the top floor
+PARAPET_MIN_M = 0.02      # walls rising less than this above the roof plane are no parapet (an inset gap is <= 10 mm)
 # user decisions 2026-10-08 (#31): a recess open from the storey floor, at least DOOR_MIN_H_M high
 # and DOOR_W_M wide at its mouth, is a door opening and leaves the contour (depth is no criterion);
 # a bump or notch with both sizes <= RELIEF_M is relief, not a kink; the same in section: a projection or
@@ -963,7 +964,10 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     spec = Spec(id=obj_cfg["id"], profile=profile,
                 frame={"object": obj_cfg["id"], "source": dump.get("source", "?"), "to_object": m.tolist()},
                 # the parapet is measured from the input roof level, never from the roof plane: an inset
-                # roof plane (+5 mm, pattern roof-inset-plane, user rule 2026-10-10) sets no height
-                levels=levels, floors=written, roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3)},
+                # roof plane (+5 mm, pattern roof-inset-plane, user rule 2026-10-10) sets no height; a roof
+                # with no parapet (walls ending at the roof plane) keeps 0 (Codex review 1 of PR #54)
+                levels=levels, floors=written,
+                roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3)
+                      if top_z - roof_z > PARAPET_MIN_M else 0.0},
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2))
     return spec, report

@@ -16,6 +16,8 @@ from dt_ai.geometry.from_spec import SEAT_SHARE
 from dt_ai.spec.model import Spec
 from twinqa.clearance import near_parallel_overlaps
 from twinqa.geometry import measure
+from shapely.ops import polygonize
+
 from twinqa.geometry.mesh import Soup, edge_uses, parts, weld
 
 RANGES = Path(__file__).resolve().parents[3] / "standards" / "material_id_ranges.yaml"
@@ -97,10 +99,13 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
 
 def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: dict) -> list[dict]:
     """Open edges grouped into loops and classified (pattern roof-inset-plane, user rule 2026-10-10):
-    `bottom` - every vertex at the model's lowest point; `roof-plane` - a horizontal loop of roof-group
-    faces facing up, up to roof_inset_max_m above a LEVEL_<name> helper, one per level; `roof-foot` -
-    the loop of upright roof-group faces (parapet inner faces) at that level under such a plane, at
-    most one. Anything else is `other` and not allowed."""
+    `bottom` - flat, at the model's lowest point. The inset roof joint is exactly two closed loops per
+    roof: `roof-foot` (contour A, the hole in the body: the foot of the upright roof-group faces at
+    a LEVEL_<name>) and `roof-plane` (contour B, the outline of a flat roof-group plane facing up,
+    roof_inset_gap_m above that level, embedded into the faces around the hole: in plan B is A grown
+    by one even offset within roof_inset_embed_m, so the outlines never cross). A roof without an inset
+    has no loop. Anything else - a third loop, a lone A or B, a loop that is not one simple closed
+    cycle - is `other`."""
     tri = np.flatnonzero(~skip)
     sides = side_edges[tri]
     open_mask = counts[sides] == 1
@@ -135,6 +140,11 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
     out = []
     for edges in loops.values():
         verts = sorted({v for e in edges for v in ends[e]})
+        degree = {}
+        for e in edges:
+            for v in ends[e]:
+                degree[v] = degree.get(v, 0) + 1
+        closed = all(d == 2 for d in degree.values())
         z = welded[verts, 2]
         flat_loop = float(z.max() - z.min()) <= tol["weld_m"]
         tris_ = [edge_tris[e][0] for e in edges]
@@ -144,22 +154,40 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
         n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
         nz = n[:, 2] / np.maximum(np.linalg.norm(n, axis=1), 1e-12)
         kind, level = "other", None
+        gap_lo, gap_hi = tol["roof_inset_gap_m"]
         if flat_loop and abs(float(z.mean()) - zmin) <= tol["weld_m"]:
             kind = "bottom"
-        elif flat_loop and roof_faces:
+        elif flat_loop and closed and roof_faces:
             for name, lz in model.levels.items():
                 dz = float(z.mean()) - lz
-                if np.all(nz > 0.99) and tol["weld_m"] < dz <= tol["roof_inset_max_m"] + tol["weld_m"]:
+                if np.all(nz > 0.99) and gap_lo - tol["weld_m"] <= dz <= gap_hi + tol["weld_m"]:
                     kind, level = "roof-plane", name
                 elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
                     kind, level = "roof-foot", name
-        out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4)})
+        segs = [welded[list(ends[e]), :2] for e in edges]
+        out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4),
+                    "closed": closed, "_segs": segs})
     for name in {lp["level"] for lp in out if lp["level"]}:
         planes = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-plane"]
         feet = [lp for lp in out if lp["level"] == name and lp["kind"] == "roof-foot"]
-        if len(planes) != 1 or len(feet) > 1:      # one inset plane per roof, its foot only under it
+        joint_ok = len(planes) == 1 and len(feet) == 1   # exactly two closed loops per roof: A and B
+        if joint_ok:                                     # B = A grown by one even embed, outlines apart
+            shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
+            a, b = shape(feet[0]), shape(planes[0])
+            joint_ok = len(a) == 1 and len(b) == 1 and b[0].buffer(-tol["weld_m"]).contains(a[0])
+            if joint_ok:
+                lo, hi = tol["roof_inset_embed_m"]
+                embed = float(a[0].exterior.distance(b[0].exterior))
+                grown = a[0].buffer(embed, join_style="mitre")
+                even = float(grown.exterior.hausdorff_distance(b[0].exterior)) <= 10 * tol["weld_m"]
+                joint_ok = even and lo - tol["weld_m"] <= embed <= hi + tol["weld_m"]
+                for lp in planes:
+                    lp["embed_m"] = round(embed, 4)
+        if not joint_ok:
             for lp in planes + feet:
                 lp["kind"] = "other"
+    for lp in out:
+        lp.pop("_segs")
     for lp in out:
         lp["allowed"] = lp["kind"] != "other"
     return out

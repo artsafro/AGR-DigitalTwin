@@ -27,7 +27,8 @@ FACADE, REVEAL, PLANE, ROOF = 1, 6, 11, 21
 
 
 def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth=0.2, planes=True,
-             levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=(), roof_inset=0.0):
+             levels=(("L0", 0.0), ("L1", 3.3), ("roof", 6.6)), polygon_sizes=True, extra=(), roof_inset=0.0,
+             roof_embed=0.02):
     """Mesh dump of a closed box with recessed windows and a parapet (synthetic)."""
     faces = []  # (points, material id)
     corners = [np.array(p, float) for p in ((0, 0), (size, 0), (size, size), (0, size))]
@@ -57,8 +58,10 @@ def box_dump(size=10.0, roof=6.6, top=7.2, parapet_t=0.3, windows=WINDOWS, depth
             faces.append(([[*inner(s0), roof], [*inner(s1), roof], [*inner(s1), top], [*inner(s0), top]], ROOF))
         ring_out += [p(s, 0.0) for s in cuts[:-1]]
         ring_in += [[*inner(s), roof] for s in cuts[:-1]]
-    if roof_inset:                       # an inset roof plane (pattern roof-inset-plane): a loose element
-        ring_in = [[x, y, z + roof_inset] for x, y, z in ring_in]
+    if roof_inset:                       # an inset roof plane (pattern roof-inset-plane): a loose element,
+        half = size / 2 - parapet_t      # embedded roof_embed into the parapet faces all round
+        k = (half + roof_embed) / half
+        ring_in = [[size / 2 + (x - size / 2) * k, size / 2 + (y - size / 2) * k, z + roof_inset] for x, y, z in ring_in]
     for ring, z, mid in ((ring_out, 0.0, FACADE), (ring_in, roof + roof_inset, ROOF)):
         c = [size / 2, size / 2, z]
         faces += [([c, ring[k], ring[(k + 1) % len(ring)]], mid) for k in range(len(ring))]
@@ -275,9 +278,10 @@ def test_inset_roof_plane_joint_is_allowed():
     assert loops_of(report) == [("roof-foot", "roof", True), ("roof-plane", "roof", True)]
 
 
-def test_roof_plane_lifted_too_far_is_not_an_inset():
-    report = run(box_dump(roof_inset=0.05), box_dump(roof_inset=0.05))
-    assert by_id(report)["mesh"]["status"] == "fail" and ("other", "", False) in loops_of(report)
+@pytest.mark.parametrize("gap, ok", [(0.001, False), (0.002, True), (0.010, True), (0.012, False), (0.05, False)])
+def test_inset_gap_is_2_to_10_mm(gap, ok):
+    report = run(box_dump(roof_inset=gap), box_dump(roof_inset=gap))
+    assert (by_id(report)["mesh"]["status"] == "pass") == ok
 
 
 def test_two_inset_planes_on_one_roof_are_not_allowed():
@@ -297,3 +301,52 @@ def test_open_bottom_ring_is_allowed():
     del body["polygon_sizes"]
     report = run(dump)
     assert loops_of(report) == [("bottom", "", True)]
+
+
+
+def test_lone_foot_or_plane_is_not_a_joint():
+    # a plane with no hole under it (welded roof + an extra plane) and a hole with no plane both fail
+    patch = ([[3, 3, 6.605], [4, 3, 6.605], [4, 4, 6.605], [3, 4, 6.605]], ROOF)
+    assert by_id(run(box_dump(extra=[patch]), box_dump()))["mesh"]["status"] == "fail"
+    dump = box_dump(roof_inset=0.005)
+    body = dump["meshes"][0]
+    v = np.asarray(body["vertices"])
+    keep = [k for k, t in enumerate(body["triangles"]) if not np.all(np.abs(v[t][:, 2] - 6.605) < 1e-6)]
+    body["triangles"] = [body["triangles"][k] for k in keep]
+    body["material_ids"] = [body["material_ids"][k] for k in keep]
+    del body["polygon_sizes"]
+    report = run(dump, box_dump())
+    assert loops_of(report) == [("other", "roof", False)]
+
+
+@pytest.mark.parametrize("embed, ok", [(-0.02, False), (0.0, False), (0.005, False), (0.01, True), (0.02, True),
+                                       (0.05, True), (0.08, False)])
+def test_plane_is_embedded_into_the_parapet_by_an_even_offset(embed, ok):
+    # user 2026-10-10: contour B outside contour A, the plane embedded into the parapet faces (B02: 20 mm)
+    report = run(box_dump(roof_inset=0.005, roof_embed=embed), box_dump())
+    assert (by_id(report)["mesh"]["status"] == "pass") == ok
+
+
+def test_uneven_embed_is_no_joint():
+    dump = box_dump(roof_inset=0.005)
+    for v in dump["meshes"][0]["vertices"]:
+        if abs(v[2] - 6.605) < 1e-6 and v[0] > 9:
+            v[0] += 0.03                 # the east side embedded 50 mm, the rest 20 mm
+    assert by_id(run(dump, box_dump()))["mesh"]["status"] == "fail"
+
+
+def test_outlines_touching_at_one_vertex_are_not_one_loop():
+    # Codex review 1 of PR #54: two roof quads sharing one vertex are not a simple closed cycle
+    quads = [([[3, 3, 6.605], [4, 3, 6.605], [4, 4, 6.605], [3, 4, 6.605]], ROOF),
+             ([[4, 4, 6.605], [5, 4, 6.605], [5, 5, 6.605], [4, 5, 6.605]], ROOF)]
+    report = run(box_dump(extra=quads), box_dump())
+    assert by_id(report)["mesh"]["status"] == "fail"
+
+
+def test_foot_and_plane_must_be_one_joint_in_plan():
+    # Codex review 1 of PR #54: a hole and a plane far apart are no joint
+    dump = box_dump(roof_inset=0.005)
+    for v in dump["meshes"][0]["vertices"]:
+        if abs(v[2] - 6.605) < 1e-6:
+            v[0] += 30
+    assert by_id(run(dump, box_dump()))["mesh"]["status"] == "fail"

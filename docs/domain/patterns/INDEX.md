@@ -16,4 +16,4 @@ Status: draft / proven on benchmark / in work. A pattern changes only with the u
 | Niche in the contour | `contour-niche` | facade recess given by contour points | draft |
 | Parapet | `parapet` | roof edge along the contour of the top level | draft |
 | Vent grille | `vent-grille` | inset grille: an opening of kind `grille`; texture in `npm_min`, geometry in `mid` | draft |
-| Inset roof plane | `roof-inset-plane` | the roof covering as a separate plane +5 mm over the parapet foot: no height, an allowed open joint | draft |
+| Inset roof plane | `roof-inset-plane` | the roof covering as a separate plane embedded into the parapet, +2-10 mm: no height; its joint = two open loops (hole A, plane B) | draft |
