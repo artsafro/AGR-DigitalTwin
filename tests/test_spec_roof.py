@@ -274,3 +274,97 @@ def test_roof_without_a_parapet_keeps_its_edge_ring():
     d["meshes"] += [ring.dump(), roof_part(6.65, 6.65, 2.0, 8.0, 2.0, 8.0).dump()]
     _, report = extract_spec(d, OBJECT)
     assert report["roof"]["plane_m"] == pytest.approx(6.618, abs=0.001) and report["roof"]["closed_share"] == 1.0
+
+
+
+def test_parapet_is_measured_from_the_roof_level_not_from_an_inset_roof_plane():
+    # B02 (user rule 2026-10-10, pattern roof-inset-plane): the roof plane is inset 5 mm above the
+    # parapet foot; the spec heights come from LEVEL_roof (6.6), so the parapet is 0.6, not 0.595
+    b = Mesh("Body")
+    inner = [[0.3, 0.3], [9.7, 0.3], [9.7, 9.7], [0.3, 9.7]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], 7.2), (*SQUARE10[a], 7.2))
+        b.quad((*SQUARE10[a], 7.2), (*SQUARE10[c], 7.2), (*inner[c], 7.2), (*inner[a], 7.2))
+        b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 7.2), (*inner[c], 7.2))
+    roof = Mesh("RoofPlane")
+    roof.quad((0.3, 0.3, 6.605), (9.7, 0.3, 6.605), (9.7, 9.7, 6.605), (0.3, 9.7, 6.605))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(roof.dump())
+    spec, report = extract_spec(d, OBJECT)
+    assert report["roof"]["plane_m"] == pytest.approx(6.605, abs=0.001)
+    assert spec.roof.parapet_h_m == 0.6
+
+
+
+@pytest.mark.parametrize("roof_z", [6.605, 6.65, 6.69])
+def test_roof_without_a_parapet_has_none_whatever_the_plane_height(roof_z):
+    # Codex review 1 of PR #54: walls and a flat roof ending at roof_z (no parapet) near LEVEL_roof 6.6
+    b = Mesh("Body")
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], roof_z), (*SQUARE10[a], roof_z))
+    b.quad((0, 0, roof_z), (10, 0, roof_z), (10, 10, roof_z), (0, 10, roof_z))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, _ = extract_spec(dump_of(b), OBJECT)
+    assert spec.roof.parapet_h_m == 0.0
+
+
+
+@pytest.mark.parametrize("gap", [0.002, 0.010])
+def test_a_low_real_parapet_does_not_depend_on_the_roof_plane(gap):
+    # Codex review 2 of PR #54: parapet inner faces 6.600-6.625 m, an inset plane 2 or 10 mm up
+    b = Mesh("Body")
+    inner = [[0.3, 0.3], [9.7, 0.3], [9.7, 9.7], [0.3, 9.7]]
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], 6.625), (*SQUARE10[a], 6.625))
+        b.quad((*SQUARE10[a], 6.625), (*SQUARE10[c], 6.625), (*inner[c], 6.625), (*inner[a], 6.625))
+        b.quad((*inner[c], 6.6), (*inner[a], 6.6), (*inner[a], 6.625), (*inner[c], 6.625))
+    roof = Mesh("RoofPlane")
+    z = 6.6 + gap
+    roof.quad((0.28, 0.28, z), (9.72, 0.28, z), (9.72, 9.72, z), (0.28, 9.72, z))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    d["meshes"].append(roof.dump())
+    spec, _ = extract_spec(d, OBJECT)
+    assert spec.roof.parapet_h_m == 0.025
+
+
+
+@pytest.mark.parametrize("wall_top, parapet", [(6.65, 0.05), (6.652, 0.052)])
+def test_drainage_roof_touching_one_wall_top_keeps_the_upstand_elsewhere(wall_top, parapet):
+    # Codex review 3 of PR #54: level wall tops, a roof rising 6.55 -> 6.65 m across x; the low edge
+    # has an upstand, so there is a parapet, measured from LEVEL_roof
+    b = Mesh("Body")
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        b.quad((*SQUARE10[a], 0), (*SQUARE10[c], 0), (*SQUARE10[c], wall_top), (*SQUARE10[a], wall_top))
+    rise = lambda x: 6.55 + 0.01 * x  # noqa: E731
+    b.quad((0, 0, rise(0)), (10, 0, rise(10)), (10, 10, rise(10)), (0, 10, rise(0)))
+    for x in (0,):                                             # the gap between wall top and the low roof edge
+        b.quad((x, 0, rise(0)), (x, 10, rise(0)), (x, 10, wall_top), (x, 0, wall_top))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, _ = extract_spec(dump_of(b), OBJECT)
+    assert spec.roof.parapet_h_m == pytest.approx(parapet, abs=1e-6)
+
+
+
+@pytest.mark.parametrize("separate", [False, True])
+def test_walls_following_a_drainage_slope_have_no_parapet(separate):
+    # Codex review 4 of PR #54: roof rising 6.55 -> 6.65 m along y, walls ending on it everywhere
+    b = Mesh("Body")
+    rise = lambda y: 6.55 + 0.01 * y  # noqa: E731
+    for w in range(4):
+        a, c = w, (w + 1) % 4
+        (xa, ya), (xc, yc) = SQUARE10[a], SQUARE10[c]
+        b.quad((xa, ya, 0), (xc, yc, 0), (xc, yc, rise(yc)), (xa, ya, rise(ya)))
+    roof = b if not separate else Mesh("Roof")
+    roof.quad((0, 0, rise(0)), (10, 0, rise(0)), (10, 10, rise(10)), (0, 10, rise(10)))
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    d = dump_of(b)
+    if separate:
+        d["meshes"].append(roof.dump())
+    spec, _ = extract_spec(d, {**OBJECT, "contour_at_m": {"L1": 4.0}})   # the sloped top leaves L1's top open
+    assert spec.roof.parapet_h_m == 0.0
