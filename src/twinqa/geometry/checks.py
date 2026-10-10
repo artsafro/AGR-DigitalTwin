@@ -283,7 +283,8 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None) -> 
             if lp["kind"] == "roof-plane" and lp["allowed"]:   # raw values, rounded only in the report
                 gap = lp["_z"] - model.levels[lp["level"]]       # (review 1 of PR #64)
                 lp["gap_m"] = round(gap, 4)
-                if abs(gap - gap_s) > tol["plate_tol_m"] or abs(lp["_embed"] - overlap_s) > tol["plate_tol_m"]:
+                limit = tol["plate_tol_m"] + 1e-9               # the limit itself passes (review 2 of PR #64)
+                if abs(gap - gap_s) > limit or abs(lp["_embed"] - overlap_s) > limit:
                     plate_off.append({"level": lp["level"], "gap_m": round(gap, 4), "overlap_m": lp["embed_m"]})
     bad_loops = [lp for lp in loops if not lp["allowed"]]
     for lp in loops:

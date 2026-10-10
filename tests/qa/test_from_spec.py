@@ -991,3 +991,27 @@ def test_a_terrace_builds_under_a_roof_without_a_parapet():
         assert topology_ok(build(s, INPUTS))
     s = Spec.model_validate({**_split_terrace().model_dump(), "roof": {"parapet_h_m": 0.0}})
     assert topology_ok(build(s, INPUTS))
+
+
+def test_a_perforated_plate_is_asked_not_read():
+    # Codex review 2 of PR #64: every outline of the plate counts, a hole in its overlap strip too
+    import shapely
+    d = build(spec(), INPUTS)
+    m = d["meshes"][0]
+    v = np.asarray(m["vertices"], float)
+    _drop(m, v, lambda t: np.all(np.abs(t[:, 2] - 6.605) < 1e-9))
+    plate = shapely.Polygon([(0.28, 0.28), (9.72, 0.28), (9.72, 9.72), (0.28, 9.72)],
+                            [[(0.281, 4), (0.285, 4), (0.285, 6), (0.281, 6)]])
+    for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(plate)):
+        a, b, c_ = list(tri.exterior.coords)[:3]
+        if (b[0] - a[0]) * (c_[1] - a[1]) - (b[1] - a[1]) * (c_[0] - a[0]) < 0:
+            b, c_ = c_, b
+        n = len(m["vertices"])
+        m["vertices"] += [[*a, 6.605], [*b, 6.605], [*c_, 6.605]]
+        m["triangles"].append([n, n + 1, n + 2])
+        m["material_ids"].append(ROOF)
+    m.pop("polygons", None)
+    m.pop("polygon_sizes", None)
+    _, kinds, report = _kinds(d)
+    assert kinds == [("plate-params", ["roof"])]
+    assert report["plates"]["roof"]["problems"] == ["a plate that overlaps its hole unevenly"]

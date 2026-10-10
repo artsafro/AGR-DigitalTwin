@@ -580,9 +580,12 @@ def _plate_params(v, body, extra, z, region):
             problems.append("a plate over no single hole")
             continue
         hole = inside[0]
-        overlap = float(hole.exterior.distance(part.exterior))
+        # every outline counts, inner ones too (a shaft, a perforation): the plate is the hole grown by one
+        # even overlap all round, inner outlines shrunk by the same (review 2 of PR #64)
+        overlap = float(hole.boundary.distance(part.boundary))
         grown = hole.buffer(overlap, join_style="mitre", mitre_limit=1e6)
-        if float(grown.exterior.hausdorff_distance(part.exterior)) > WELD_M:
+        if (len(grown.interiors) != len(part.interiors)
+                or float(grown.boundary.hausdorff_distance(part.boundary)) > WELD_M):
             problems.append("a plate that overlaps its hole unevenly")
             continue
         out.append((gap, overlap))

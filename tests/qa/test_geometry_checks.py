@@ -453,3 +453,10 @@ def test_plates_are_compared_unrounded(spec_gap, gap, spec_overlap, overlap, ok)
     # Codex review 1 of PR #64: the raw gap / overlap against plate_tol_m, rounding only in the report
     report = run(box_dump(roof_inset=gap, roof_embed=overlap), box_dump(), spec=plates(spec_gap, spec_overlap))
     assert (by_id(report)["mesh"]["status"] == "pass") == ok
+
+
+@pytest.mark.parametrize("gap, overlap", [(0.0055, 0.02), (0.0045, 0.02), (0.005, 0.0195), (0.005, 0.0205)])
+def test_plates_exactly_at_the_tolerance_pass(gap, overlap):
+    # Codex review 2 of PR #64: plate_tol_m itself passes despite floating-point roundoff
+    report = run(box_dump(roof_inset=gap, roof_embed=overlap), box_dump(), spec=plates(0.005, 0.02))
+    assert by_id(report)["mesh"]["status"] == "pass"
