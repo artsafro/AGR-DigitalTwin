@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-09
+Last updated: 2026-10-10
 
 ## Current goal
 
@@ -66,7 +66,13 @@ issue #14 stays open until the first green run on the etalon. #48 patterns `open
 `typical-floor-repeat`, `non-90-corner`, `contour-niche` approved by the user (status draft until a
 benchmark proves them; the 95 % plane cover stays a proposal until B01). #49 choices page
 `docs/domain/conflict-choices-2026-10-09.md` for C7, C8, C10, C24, C25 (C3 decided earlier) waits
-for the user's decisions. Human tickets: #2 (move `Unreal/`), #4 (window
+for the user's decisions. PR #50 (2026-10-10, three Codex review rounds): engine
+`src/dt_ai/geometry/from_spec.py` builds a quad, welded mesh dump from a spec (walls by contour,
+holes with reveals and planes, roof, parapet; unsupported shapes are errors); the B01 fixture spec
+passes all 8 benchmark checks against the synthetic box — first spec -> model -> checkers loop,
+synthetic only. C24 decided (user, 2026-10-10): plane seat by profile, `npm_min` half the opening
+depth, `mid` full depth, no reveal behind the plane. B01 modeller brief: Claude Docs
+https://claude.ai/code/artifact/62e3769e-f61e-4c7c-96ee-7682fea85a5f. Human tickets: #2 (move `Unreal/`), #4 (window
 library file), #12 (etalon B01 in 3ds Max). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -148,8 +154,8 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 ## Next actions
 
 0. User: B01 etalon in 3ds Max (#12, `benchmark/bench-b01-box/README.md`); decisions on the choices
-   page (C7, C8, C10, C24, C25). Claude, after #12: spec of B01 (#13), etalon against itself and the
-   first green run (#14), then the engine `from_spec.py`; extractor follow-ups #21-#24, #28, #34, #37,
+   page (C7, C8, C10, C25). Claude: Blender/FBX writer and a CLI so the chain runs from the etalon
+   FBX to the checker report; after #12: spec of B01 (#13), etalon against itself, first green run (#14); extractor follow-ups #21-#24, #28, #34, #37,
    #45 when they block a benchmark (one writing agent, one branch per ticket, Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
    and the unwelded-roof rule on KPP1 before generalising (case `PSU275_VPM_NPM_DELIVERY_V003.md`).
