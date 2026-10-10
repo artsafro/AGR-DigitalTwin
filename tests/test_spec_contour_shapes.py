@@ -418,3 +418,17 @@ def test_a_parapet_on_part_of_a_ledge_is_a_question():
     spec, report = extract_spec(dump_of(b), OBJECT)
     assert spec.terraces == []
     assert [(q["kind"], q["levels"]) for q in report["questions"]] == [("ledge-structure", ["L1"])]
+
+
+def test_a_relief_over_a_real_ledge_is_no_ledge_structure():
+    # Codex review 1 of PR #66: a 0.075 x 0.09 m full-height relief profile on the upper floor's facade over a
+    # real ledge is relief, not something standing on the ledge
+    upper = [[4, 0], [10, 0], [10, 10], [4, 10], [4, 5.075], [3.91, 5.075], [3.91, 5], [4, 5]]
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 3.3)
+    walls(b, upper, 3.3, 6.6)
+    flat(b, Polygon(SQUARE10).difference(Polygon(upper)), 3.3)
+    flat(b, Polygon(upper), 6.6)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, report = extract_spec(dump_of(b), OBJECT)
+    assert report["questions"] == [] and report["floors"]["L1"]["relief_parts"] == 1
