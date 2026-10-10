@@ -34,6 +34,7 @@ tools/export/export_mesh_blender.py write it as a Blender scene and FBX.
 from dataclasses import dataclass
 
 import numpy as np
+import shapely
 from shapely.geometry import Point, Polygon
 from shapely.geometry.polygon import orient
 
@@ -164,8 +165,9 @@ def _openings(spec, floors, contours, inputs):
                         "depth": depth, "where": f"floor {f.level} wall {o.wall} x {o.x_m}"})
     for i, a in enumerate(out):
         for b in out[i + 1:]:
-            if (a["level"] == b["level"] and a["wall"] == b["wall"] and a["s0"] <= b["s1"] + KEY_M and b["s0"] <= a["s1"] + KEY_M
-                    and a["z0"] <= b["z1"] + KEY_M and b["z0"] <= a["z1"] + KEY_M):
+            span = _on_line(b, a["a"], a["u"])              # b on a's wall line, in a's coordinates
+            if (span is not None and a["s0"] <= span[1] + KEY_M and span[0] <= a["s1"] + KEY_M and b["s0"] <= a["s1"] + KEY_M
+                    and a["z0"] <= b["z1"] + KEY_M and b["z0"] <= a["z1"] + KEY_M):   # any floors
                 raise BuildError(f"openings touch or overlap ({a['where']}, {b['where']}); not built yet")
     return out
 
@@ -182,6 +184,37 @@ def _on_line(o, a, u):
     return off + o["s0"], off + o["s1"]
 
 
+def _check_steps(floors, polys):
+    """Two floors must meet over one area: floors touching only along an edge or at a corner (a floor
+    beside the one below, walls back to back) are not built (Codex review 1 of PR #55)."""
+    for k in range(len(polys) - 1):
+        meet = polys[k].intersection(polys[k + 1])
+        if meet.is_empty or meet.geom_type != "Polygon" or meet.area <= KEY_M:
+            raise BuildError(f"floors {floors[k].level} and {floors[k + 1].level} do not meet over one area "
+                             f"({meet.geom_type}); edge- or corner-only contact is not built yet (floor-step)")
+
+
+def _check_openings_on_walls(openings, contours, elev, top):
+    """Every wall an opening crosses must hold the whole opening span strictly inside it (Codex review 1
+    of PR #55): a frame across a level onto a shorter upper wall is a corner opening, not built yet."""
+    for o in openings:
+        for k, pts in enumerate(contours):
+            z_lo, z_hi = elev[k], (elev[k + 1] if k < len(contours) - 1 else top)
+            if min(o["z1"], z_hi) - max(o["z0"], z_lo) <= KEY_M:
+                continue
+            held = False
+            for w in range(len(pts)):
+                a, b = pts[w], pts[(w + 1) % len(pts)]
+                length = float(np.linalg.norm(b - a))
+                span = _on_line(o, a, (b - a) / length)
+                if span is not None and span[0] > KEY_M and span[1] < length - KEY_M:
+                    held = True
+                    break
+            if not held:
+                raise BuildError(f"{o['where']}: no wall of floor {k} holds the whole opening between "
+                                 f"{max(o['z0'], z_lo):.3f} and {min(o['z1'], z_hi):.3f} m; not built yet")
+
+
 def build(spec: Spec, inputs: BuildInputs) -> dict:
     """Mesh dump of the spec's exterior (see module docstring)."""
     floors, contours = _contours(spec)
@@ -192,6 +225,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     top = round(roof + parapet, 9)
     t = inputs.parapet_thickness_m if parapet > 0 else 0.0
     polys = [orient(Polygon(pts), sign=1.0) for pts in contours]
+    _check_steps(floors, polys)
     outer = polys[-1]
     inner = outer.buffer(-t, join_style="mitre") if t > 0 else outer
     if t > 0 and (inner.geom_type != "Polygon" or inner.is_empty):
@@ -211,6 +245,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
             (xs if abs(o["u"][0]) > 0.5 else ys).add(x if abs(o["u"][0]) > 0.5 else y)
         if o["z1"] >= roof - KEY_M or o["z0"] < bottom - KEY_M:
             raise BuildError(f"{o['where']}: the opening must lie between the bottom level and below the roof level")
+    _check_openings_on_walls(openings, contours, elev, top)
     xs, ys = sorted(round(v, 9) for v in xs), sorted(round(v, 9) for v in ys)
     zs_all = _cuts(elev + [top] + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
 

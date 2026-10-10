@@ -422,3 +422,44 @@ def test_runner_exit_code_precedence(tmp_path, monkeypatch, tol_change, code):
     argv = ["--etalon", str(etalon), "--object", str(bench / "object.json"), "--tolerances", str(tmp_path / "t.json"),
             "--output", str(tmp_path / "run"), "--blender", "blender"]
     assert run_benchmark.main(argv) == code
+
+
+# Codex review 1 of PR #55: unsupported floor-step inputs are errors, not broken geometry
+
+SQ = [[0, 0], [10, 0], [10, 10], [0, 10]]
+
+
+def test_openings_of_two_floors_overlapping_on_one_wall_line_are_an_error():
+    o0 = {"wall": 0, "x_m": 2.0, "sill_m": 2.5, "w_m": 1.5, "h_m": 2.0, "kind": "window",
+          "level_from": "L0", "level_to": "L1"}
+    o1 = {"wall": 0, "x_m": 2.0, "sill_m": 0.2, "w_m": 1.5, "h_m": 1.0, "kind": "window"}
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": [o0]},
+                       {"level": "L1", "contour": SQ, "openings": [o1]}]
+    with pytest.raises(BuildError, match="touch or overlap"):
+        build(edited(edit), INPUTS)
+
+
+def test_frame_across_a_level_onto_a_shorter_upper_wall_is_an_error():
+    o0 = {"wall": 0, "x_m": 2.0, "sill_m": 2.8, "w_m": 1.5, "h_m": 1.2, "kind": "window",
+          "level_from": "L0", "level_to": "L1"}
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": [o0]},
+                       {"level": "L1", "contour": [[3, 0], [10, 0], [10, 10], [3, 10]], "openings": []}]
+    with pytest.raises(BuildError, match="no wall of floor 1 holds"):
+        build(edited(edit), INPUTS)
+
+
+@pytest.mark.parametrize("upper", [[[10, 3], [20, 3], [20, 7], [10, 7]], [[10, 10], [20, 10], [20, 20], [10, 20]]])
+def test_floors_meeting_only_along_an_edge_or_at_a_corner_are_an_error(upper):
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": SQ, "openings": []},
+                       {"level": "L1", "contour": upper, "openings": []}]
+    with pytest.raises(BuildError, match="do not meet over one area"):
+        build(edited(edit), INPUTS)
+
+
+def test_upper_floor_overhanging_past_one_wall_is_built():
+    s = stepped(SQ, [[0, 0], [10, 0], [10, 10], [6, 10], [6, 14], [0, 14]])
+    dump = build(s, INPUTS)
+    assert horizontal(from_dump(dump), 3.3, FACADE, False) == pytest.approx(24.0) and topology_ok(dump)
