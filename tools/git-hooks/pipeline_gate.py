@@ -25,7 +25,8 @@ import sys
 from pathlib import Path, PurePosixPath
 
 LEVELS = ("draft", "built", "checked", "delivered")
-STATUS_LINE = re.compile(r"^\s*Pipeline status:\s*(.*?)\s*$", re.M)
+# any line naming the status, however it is formatted (bold, quote, list, BOM, case; review 1 of PR #73)
+STATUS_LINE = re.compile(r"^[\s﻿>*_`-]*pipeline\s+status[*_`\s]*:(.*?)$", re.M | re.I)
 GAP_LINE = re.compile(r"Engine gap:\s*(EG\d+)\b")
 GAP_HEAD_LINES = 30
 SCRIPT_SUFFIXES = {".py", ".mjs", ".js", ".sh", ".ms", ".cmd", ".ps1"}
@@ -39,7 +40,7 @@ def status_of(text):
         return None, None
     if len(found) > 1:
         return None, f"{len(found)} 'Pipeline status:' lines; one per STATE.md"
-    value = found[0].strip("`* ").lower()
+    value = found[0].strip("`*_ \t\r").lower()
     if value not in LEVELS:
         return None, f"Pipeline status {found[0]!r} is none of {', '.join(LEVELS)}"
     return value, None
@@ -101,14 +102,16 @@ def script_errors(path, text, backlog):
     if not gap:
         return [f"{path}: a job script names the engine gap it fills in its first {GAP_HEAD_LINES} lines "
                 "('Engine gap: EG<n>', docs/backlog.md); anything else is asked, not scripted"]
-    if backlog is not None and f"**{gap.group(1)}**" not in backlog:
+    if backlog is None:                              # no list, no gap (review 1 of PR #73)
+        return [f"{path}: docs/backlog.md missing; {gap.group(1)} is not a listed engine gap"]
+    if f"**{gap.group(1)}**" not in backlog:
         return [f"{path}: {gap.group(1)} is not an engine gap in docs/backlog.md"]
     return []
 
 
 def is_job_script(path):
     p = PurePosixPath(path)
-    return len(p.parts) >= 4 and p.parts[0] == "jobs" and p.parts[2] == "scripts" and \
+    return len(p.parts) >= 4 and p.parts[0].lower() == "jobs" and p.parts[2].lower() == "scripts" and \
         "__pycache__" not in p.parts and p.suffix.lower() in SCRIPT_SUFFIXES
 
 
@@ -133,6 +136,9 @@ def staged(root):
         if not m:
             continue
         jobs.add(m.group(1))
+        if path.lower() == f"jobs/{m.group(1)}/state.md".lower() and path != f"jobs/{m.group(1)}/STATE.md" \
+                and code != "D":                     # a case variant would escape the check
+            errors.append(f"{path}: name it STATE.md")
         if path == f"jobs/{m.group(1)}/STATE.md" and code != "D":
             states.add(m.group(1))
         if code == "A" and is_job_script(path):
@@ -144,10 +150,10 @@ def staged(root):
 
 def delivery(root, job_dir):
     """Errors of one job on the working tree, for hand-over."""
-    job_dir = (root / job_dir).resolve() if not Path(job_dir).is_absolute() else Path(job_dir)
+    job_dir = (root / job_dir).resolve()
     job = job_dir.name
-    if job_dir.parent.name != "jobs" or not job_dir.is_dir():
-        raise ValueError(f"{job_dir} is not a jobs/<JOB> folder")
+    if job_dir != (root / "jobs" / job).resolve() or not job_dir.is_dir():   # review 1 of PR #73
+        raise ValueError(f"{job_dir} is not a jobs/<JOB> folder of this repository")
 
     def read(path):
         p = root / path
@@ -156,10 +162,14 @@ def delivery(root, job_dir):
     errors = job_errors(job, read, require_line=True)
     if read(f"jobs/{job}/STATE.md") is None:
         errors.append(f"jobs/{job}/STATE.md missing")
-    tracked = set(_git(root, "ls-files", "-z", f"jobs/{job}").stdout.decode("utf-8").split("\0"))
+    # committed = in HEAD, not merely staged (review 1 of PR #73)
+    tracked = set(_git(root, "ls-tree", "-r", "-z", "--name-only", "HEAD", "--", f"jobs/{job}")
+                  .stdout.decode("utf-8").split("\0"))
     for pyc in sorted((job_dir / "scripts").rglob("*.pyc")):
-        name = pyc.name.split(".")[0] + ".py"
-        source = pyc.parent.parent / name if pyc.parent.name == "__pycache__" else pyc.with_suffix(".py")
+        if pyc.parent.name == "__pycache__":         # <name>.<tag>.pyc; the name may hold dots
+            source = pyc.parent.parent / (pyc.name.rsplit(".", 2)[0] + ".py")
+        else:
+            source = pyc.with_suffix(".py")
         rel = source.relative_to(root).as_posix()
         if rel not in tracked:
             errors.append(f"{pyc.relative_to(root).as_posix()}: its source {rel} is not committed")

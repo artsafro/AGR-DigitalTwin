@@ -251,3 +251,92 @@ def test_hook_new_script_needs_a_gap(tmp_path):
 def test_hook_ignores_other_files(tmp_path):
     assert hook({"tool_name": "Write", "tool_input": {"file_path": str(tmp_path / "src/a.py"), "content": ""}}) == "allow"
     assert hook({"tool_name": "Bash", "tool_input": {"command": "ls"}}) == "allow"
+
+
+# --- review 1 of PR #73 ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text", [
+    "Pipeline status: draft\n**Pipeline status: built**\n",
+    "Pipeline status: draft\npipeline STATUS: built\n",
+    "Pipeline status: draft\n> - Pipeline status: built\n",
+])
+def test_a_second_formatted_status_line_counts(text):
+    assert "one per" in gate.status_of(text)[1]
+
+
+@pytest.mark.parametrize("text", ["**Pipeline status: built**\n", "\ufeffPipeline status: built\n",
+                                  "**Pipeline status:** built\n", "Pipeline status: Built\r\n"])
+def test_formatted_single_status_is_read(text):
+    assert gate.status_of(text) == ("built", None)
+
+
+def test_missing_backlog_lists_no_gap():
+    assert "backlog.md missing" in gate.script_errors("jobs/J/scripts/a.py", '"""Engine gap: EG999"""\n', None)[0]
+
+
+def test_staged_backlog_deleted_unknown_gap_blocked(repo):
+    git(repo, "rm", "-q", "docs/backlog.md")
+    write(repo, "jobs/J/scripts/a.py", '"""Engine gap: EG999"""\n')
+    assert any("backlog.md missing" in e for e in gate.staged(repo))
+
+
+def test_staged_case_variant_of_state_is_blocked(repo):
+    write(repo, "jobs/J/state.md", state("built"))
+    assert any("name it STATE.md" in e for e in gate.staged(repo))
+
+
+def test_delivery_staged_source_is_not_committed(repo):
+    write(repo, "jobs/J/STATE.md", state("draft"))
+    git(repo, "commit", "-qm", "j")
+    pyc = repo / "jobs/J/scripts/__pycache__/build.cpython-313.pyc"
+    pyc.parent.mkdir(parents=True)
+    pyc.write_bytes(b"\0")
+    write(repo, "jobs/J/scripts/build.py", '"""Engine gap: EG1"""\n')      # staged only
+    assert any("build.py is not committed" in e for e in gate.delivery(repo, "jobs/J"))
+
+
+def test_delivery_dotted_cache_name(repo):
+    write(repo, "jobs/J/STATE.md", state("draft"))
+    write(repo, "jobs/J/scripts/build.decor.py", '"""Engine gap: EG1"""\n')
+    git(repo, "commit", "-qm", "j")
+    pyc = repo / "jobs/J/scripts/__pycache__/build.decor.cpython-313.pyc"
+    pyc.parent.mkdir(parents=True)
+    pyc.write_bytes(b"\0")
+    assert gate.delivery(repo, "jobs/J") == []
+
+
+def test_delivery_rejects_a_non_canonical_job_path(repo):
+    (repo / "nested/jobs/J").mkdir(parents=True)
+    with pytest.raises(ValueError):
+        gate.delivery(repo, "nested/jobs/J")
+
+
+def test_pre_commit_gate_sees_the_index_after_linking(repo):
+    import shutil
+    hooks = repo / ".git/hooks"
+    shutil.copy(ROOT / "tools/git-hooks/pre-commit", hooks / "pre-commit")
+    (repo / "tools/git-hooks").mkdir(parents=True)
+    for name in ("pipeline_gate.py", "link_large_files.py"):
+        shutil.copy(ROOT / "tools/git-hooks" / name, repo / "tools/git-hooks" / name)
+    git(repo, "add", "tools")
+    git(repo, "commit", "-qm", "hooks", "--no-verify")
+    git(repo, "config", "twin.linkLargeMb", "0.001")
+    write(repo, "jobs/J/STATE.md", state("built"))
+    write(repo, "jobs/J/pipeline/spec.json", json.dumps({"id": "obj", "pad": "x" * 4000}))
+    write(repo, "jobs/J/pipeline/spec.report.json", REPORT)
+    write(repo, "jobs/J/pipeline/check.json", CHECK_PASS)
+    result = subprocess.run(["git", "commit", "-qm", "built"], cwd=repo, capture_output=True, text=True)
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "spec.json missing" in result.stderr
+
+
+def test_hook_state_name_case_blind(tmp_path):
+    target = tmp_path / "jobs/J/state.md"
+    assert hook({"tool_name": "Write", "tool_input": {"file_path": str(target), "content": state("built")}}) == "deny"
+
+
+@pytest.mark.parametrize("raw", ["[]", "null", '"x"', '{"tool_name": "Write", "tool_input": "x"}',
+                                 '{"tool_name": "Write", "tool_input": {"file_path": 5}}'])
+def test_hook_malformed_payload_passes(raw):
+    result = subprocess.run([sys.executable, str(HOOK)], input=raw, capture_output=True, text=True)
+    assert result.returncode == 0 and not result.stdout.strip(), result.stderr

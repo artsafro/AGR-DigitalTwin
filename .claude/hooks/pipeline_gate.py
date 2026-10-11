@@ -42,10 +42,12 @@ def main():
         data = json.loads(sys.stdin.read() or "{}")
     except ValueError:
         sys.exit(0)
+    if not isinstance(data, dict) or not isinstance(data.get("tool_input"), dict):
+        sys.exit(0)
     tool = data.get("tool_name", "")
-    tin = data.get("tool_input", {}) or {}
+    tin = data["tool_input"]
     target = tin.get("file_path", "")
-    if tool not in ("Write", "Edit") or not target:
+    if tool not in ("Write", "Edit") or not isinstance(target, str) or not target:
         sys.exit(0)
     path = Path(target)
     parts = [p.lower() for p in path.parts]
@@ -57,7 +59,8 @@ def main():
     root, job, rest = Path(*path.parts[:k]), path.parts[k + 1], path.parts[k + 2:]
     gate = _gate()
     rel = "/".join(("jobs", job) + tuple(rest))
-    if tuple(rest) == ("STATE.md",):
+    if tuple(r.lower() for r in rest) == ("state.md",):       # Windows names are case-blind (review 1 of PR #73)
+        rel = f"jobs/{job}/STATE.md"
         text = new_text(tool, tin, path)
 
         def read(p):
@@ -71,7 +74,7 @@ def main():
             deny(errors)
     elif tool == "Write" and not path.exists() and gate.is_job_script(rel):
         backlog = root / "docs" / "backlog.md"
-        errors = gate.script_errors(rel, tin.get("content", ""),
+        errors = gate.script_errors(rel, str(tin.get("content", "")),
                                     backlog.read_text(encoding="utf-8") if backlog.is_file() else None)
         if errors:
             deny(errors)
