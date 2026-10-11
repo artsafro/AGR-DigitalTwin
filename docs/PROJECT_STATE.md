@@ -111,6 +111,12 @@ implies and fails a solid slab inside a slab region; the extractor reads inset t
 0.1 mm); pattern `roof-inset-plane` = "Inset slab", proven on B01 / B02 / B02t. B01 (user's inset v2),
 B02, B02t all 8/8 etalon and engine model, two loops per slab. #60 merged: plan for markup helpers
 (HARNESS_PLAN §14, backlog MH1-MH3). PSU275 delivery-v003 predates the inset rule (user: mark, do not touch).
+Markup helpers: #68 merged (MH1 — pattern `markup-helpers`, level helper name rule, the Blender route proven on a
+hand-made Blender B01 etalon 8/8); #69 merged (MH2 — LEVEL_ helpers generated from Revit Levels and the roof
+covering through the object.json `revit_levels` table; KPP1 Revit vs FBX levels 0 / 0 / 0.3 mm, match).
+Intake: #70 merged (plan, HARNESS_PLAN §15, approved), #71 merged (IN1 — formats, `dt intake check`, skill
+procedure; 3 Codex rounds). K01: PR #72 (KPP1 material IDs from UDIM tiles, geometry thresholds, first run:
+5/8 pass, open items listed in its README).
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -203,8 +209,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Next actions
 
-0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; how K01 gets material
-   IDs and geometry thresholds. Claude: markup helpers MH1-MH3; issue #56; extractor follow-ups
+0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
+   for openings, decor IDs, asphalt, the engine's parapet strip). Claude: PR #72; intake IN2-IN8; MH3; the
+   modelling blockers (attachments, finishes, B03, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
