@@ -1,6 +1,7 @@
 """Intake formats (docs/HARNESS_PLAN.md §15, user decisions 2026-10-11): what "study the sources" writes to
 jobs/<JOB>/intake/ — sources.json (the inventory) and spec-draft.json (a spec whose blocks may be null,
 each with a confidence and its sources). picture.md and questions.md are Markdown (dt_ai.intake.check).
+Pattern: none — intake code (REVIEW_CHECKLIST Q1: new-case, HARNESS_PLAN §15).
 """
 from typing import Any, Literal
 
@@ -17,6 +18,14 @@ RANK = {"rvt": 1, "ifc": 1, "skp": 2, "max": 2, "fbx": 2, "blend": 2, "obj": 2, 
 BLOCKS = ("frame", "levels", "floors", "roof", "terraces", "attachments", "opening_depth_default_m",
           "plate_gap_m", "plate_overlap_m")
 REQUIRED = ("frame", "levels", "floors", "roof")
+# what a format can give (review 1 of PR #71): geometry only from BIM, 3D and CAD; a picture never measures
+_SOLID = {"geometry", "dimensions", "image", "materials", "metadata"}
+ALLOWED_READS = {
+    **{f: _SOLID for f in ("rvt", "ifc", "skp", "max", "fbx", "blend", "obj")},
+    "dwg": {"geometry", "dimensions", "materials", "metadata"}, "dxf": {"geometry", "dimensions", "materials", "metadata"},
+    "pdf": {"dimensions", "image", "materials", "metadata"}, "pptx": {"dimensions", "image", "materials", "metadata"},
+    "image": {"image", "materials", "metadata"}, "other": {"metadata"},
+}
 
 
 class Part(BaseModel):
@@ -40,6 +49,10 @@ class SourceEntry(Part):
 
     @model_validator(mode="after")
     def consistent(self):
+        beyond = sorted(set(self.reads) - ALLOWED_READS[self.format])
+        if beyond:
+            raise ValueError(f"{self.path}: a {self.format} file cannot give {beyond} (geometry only from BIM, 3D or "
+                             "CAD; images and PDF never measure)")
         if not self.opened and (self.reads or not self.not_opened_reason):
             raise ValueError(f"{self.path}: a source that did not open reads nothing and says why")
         if self.opened and self.not_opened_reason:

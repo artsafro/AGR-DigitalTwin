@@ -1,19 +1,25 @@
 """Check an intake folder (docs/HARNESS_PLAN.md §15): `dt intake check --dir jobs/<JOB>/intake`.
 
 The four files and their rules (user decisions 2026-10-11):
-- sources.json (dt_ai.intake.model.SourcesFile): every file, what was read, units, frame, version, what did
-  not open and why; one primary source - the best-ranked with geometry or dimensions.
+- sources.json (dt_ai.intake.model.SourcesFile): every file, what was read (only what its format can
+  give), units, frame, version, what did not open and why; the primary source is the best-ranked one with
+  geometry or dimensions.
 - picture.md: a "## Facts" table | Fact | Value | Source | Confidence | and a "## Contradictions" table
-  | Fact | Source A | Value A | Source B | Value B | Status |; every source a path of sources.json
-  (optionally "#locator"); contradictions are never resolved by the agent (Status "open", or the user's
-  "answered: ...").
-- questions.md: the questions-file format (dt_ai.spec.questions_file).
+  | Fact | Source A | Value A | Source B | Value B | Status |, exactly these columns, every row as long;
+  every stated value names its sources (paths of sources.json, optionally "#locator"); contradictions are
+  never resolved by the agent: Status "open", or "answered: Q<n>" once the user answered Q<n> in
+  questions.md.
+- questions.md: the questions-file format of this object (dt_ai.spec.questions_file); the anchor question
+  is one of its rows.
 - spec-draft.json (dt_ai.intake.model.SpecDraft): null without a source, a confidence per block.
 
 Confidence: `measured` needs a source read for geometry; `read_from_drawing` one read for dimensions;
 anything taken from images only is at most `estimated`; while an anchor is needed and not confirmed,
 nothing is measured or read from a drawing and no spec is built. The draft is buildable only when every
-required block is filled and the assembled spec validates — the engine runs on nothing less.
+required block is filled, no block is null, every filled block cites the primary source (when there is
+one) and the assembled spec validates — the engine runs on nothing less. Blocks the draft leaves out take
+the spec's documented defaults, listed in the report.
+Pattern: none — intake code (REVIEW_CHECKLIST Q1: new-case, HARNESS_PLAN §15).
 """
 import json
 import re
@@ -26,11 +32,14 @@ from dt_ai.spec import questions_file
 from dt_ai.spec.model import Spec
 
 CONFIDENCE = ("measured", "read_from_drawing", "estimated", "unknown")
+FACTS = ("Fact", "Value", "Source", "Confidence")
+CONTRADICTIONS = ("Fact", "Source A", "Value A", "Source B", "Value B", "Status")
 _SPLIT = re.compile(r"(?<!\\)\|")
 
 
-def _table(text, heading):
-    """Rows (dicts) of the first Markdown table under '## <heading>'."""
+def _table(text, heading, columns, errors):
+    """Rows (dicts) of the first Markdown table under '## <heading>'; its header must be exactly `columns`
+    and every row as long (review 1 of PR #71). None when the heading is missing."""
     part = re.split(r"^##\s+" + re.escape(heading) + r"\s*$", text, flags=re.M)
     if len(part) < 2:
         return None
@@ -46,11 +55,19 @@ def _table(text, heading):
         cells = [c.strip() for c in _SPLIT.split(body.strip("|"))]
         if header is None:
             header = cells
+            if header != list(columns):
+                errors.append(f"picture.md {heading}: columns must be {' | '.join(columns)}")
+                return []
         elif all(re.fullmatch(r":?-+:?", c) for c in cells if c):
             continue
+        elif len(cells) != len(header):
+            errors.append(f"picture.md {heading}: a row with {len(cells)} cells under {len(header)} columns")
         else:
             rows.append(dict(zip(header, cells)))
-    return rows if header is not None else None
+    if header is None:
+        errors.append(f"picture.md {heading}: no table (write its header even when it is empty)")
+        return []
+    return rows
 
 
 def _paths(cell):
@@ -69,7 +86,7 @@ def _confidence_errors(where, confidence, sources, by_path, anchor_open):
         errors.append(f"{where}: confidence {confidence!r} is none of {CONFIDENCE}")
     elif confidence == "measured" and "geometry" not in reads:
         errors.append(f"{where}: measured needs a source read for geometry")
-    elif confidence == "read_from_drawing" and not {"dimensions", "geometry"} & reads:
+    elif confidence == "read_from_drawing" and "dimensions" not in reads:
         errors.append(f"{where}: read_from_drawing needs a source read for dimensions")
     if confidence in ("measured", "read_from_drawing") and anchor_open:
         errors.append(f"{where}: {confidence} while the scale anchor is not confirmed (§15)")
@@ -88,9 +105,11 @@ def check(folder):
             return None
         try:
             return model.model_validate(json.loads(path.read_text(encoding="utf-8")))
-        except (ValidationError, ValueError) as exc:
-            errors.append(f"{name}: {str(exc).splitlines()[0] if isinstance(exc, ValueError) and not isinstance(exc, ValidationError) else exc}")
-            return None
+        except ValidationError as exc:
+            errors.append(f"{name}: {exc}")
+        except ValueError as exc:
+            errors.append(f"{name}: {exc}")
+        return None
 
     sources = load("sources.json", SourcesFile)
     draft = load("spec-draft.json", SpecDraft)
@@ -100,59 +119,74 @@ def check(folder):
         errors.append("spec-draft.json: only images / sources without dimensions, yet no scale anchor needed (§15)")
     anchor_open = bool(draft and draft.anchor.needed and not draft.anchor.confirmed)
 
-    picture = folder / "picture.md"
-    if not picture.exists():
-        errors.append("picture.md missing")
-    else:
-        text = picture.read_text(encoding="utf-8")
-        facts, contra = _table(text, "Facts"), _table(text, "Contradictions")
-        if facts is None:
-            errors.append("picture.md: no '## Facts' table")
-        if contra is None:
-            errors.append("picture.md: no '## Contradictions' table (write it empty when there is none)")
-        for k, row in enumerate(facts or [], 1):
-            where = f"picture.md fact {k} ({row.get('Fact', '?')})"
-            if set(row) != {"Fact", "Value", "Source", "Confidence"}:
-                errors.append(f"{where}: columns must be Fact | Value | Source | Confidence")
-                continue
-            if row["Confidence"] != "unknown" and not _paths(row["Source"]):
-                errors.append(f"{where}: no source")
-            errors += _confidence_errors(where, row["Confidence"], _paths(row["Source"]), by_path, anchor_open)
-        for k, row in enumerate(contra or [], 1):
-            where = f"picture.md contradiction {k} ({row.get('Fact', '?')})"
-            status = row.get("Status", "")
-            if not (status == "open" or status.startswith("answered")):
-                errors.append(f"{where}: status is 'open' until the user answers; the agent does not resolve it")
-            for p in _paths(row.get("Source A", "")) + _paths(row.get("Source B", "")):
-                if p not in by_path:
-                    errors.append(f"{where}: source {p!r} is not in sources.json")
-        report["facts"], report["contradictions"] = len(facts or []), len(contra or [])
-
+    answers = {}
     questions = folder / "questions.md"
     if not questions.exists():
         errors.append("questions.md missing")
     else:
         try:
-            _, rows = questions_file.parse(questions.read_text(encoding="utf-8"))
+            title, rows = questions_file.parse(questions.read_text(encoding="utf-8"))
+            if title is None or (sources is not None and title != sources.object):
+                errors.append("questions.md: no '# Questions — <object>' title of this object (questions-file format)")
+            answers = {r["ID"]: r["Answer"] for r in rows}
             report["questions"] = len(rows)
         except ValueError as exc:
             errors.append(f"questions.md: {exc}")
+    if draft is not None and draft.anchor.question and draft.anchor.question not in answers:
+        errors.append(f"spec-draft.json: the anchor question {draft.anchor.question} is not in questions.md")
+
+    picture = folder / "picture.md"
+    if not picture.exists():
+        errors.append("picture.md missing")
+    else:
+        text = picture.read_text(encoding="utf-8")
+        facts = _table(text, "Facts", FACTS, errors)
+        contra = _table(text, "Contradictions", CONTRADICTIONS, errors)
+        if facts is None:
+            errors.append("picture.md: no '## Facts' table")
+        if contra is None:
+            errors.append("picture.md: no '## Contradictions' table (write it empty when there is none)")
+        for k, row in enumerate(facts or [], 1):
+            where = f"picture.md fact {k} ({row['Fact']})"
+            stated = row["Value"] not in ("", "—")
+            if row["Confidence"] == "unknown" and stated:
+                errors.append(f"{where}: a stated value with confidence unknown")
+            if (row["Confidence"] != "unknown" or stated) and not _paths(row["Source"]):
+                errors.append(f"{where}: no source")
+            errors += _confidence_errors(where, row["Confidence"], _paths(row["Source"]), by_path, anchor_open)
+        for k, row in enumerate(contra or [], 1):
+            where = f"picture.md contradiction {k} ({row['Fact']})"
+            linked = re.fullmatch(r"answered:\s*(Q\d+)", row["Status"])
+            if not (row["Status"] == "open" or (linked and answers.get(linked.group(1), "").strip())):
+                errors.append(f"{where}: status is 'open' until the user answers its question ('answered: Q<n>' with "
+                              "that answer in questions.md); the agent does not resolve it")
+            if not _paths(row["Source A"]) or not _paths(row["Source B"]):
+                errors.append(f"{where}: both sides name their sources")
+            for p in _paths(row["Source A"]) + _paths(row["Source B"]):
+                if p not in by_path:
+                    errors.append(f"{where}: source {p!r} is not in sources.json")
+        report["facts"], report["contradictions"] = len(facts or []), len(contra or [])
 
     buildable, why = False, []
     if draft is not None:
+        primary = {f.path for f in by_path.values() if f.role == "primary"}
         for name, block in draft.blocks.items():
-            errors += _confidence_errors(f"spec-draft.json {name}", block.confidence, [p.split("#")[0] for p in block.sources],
-                                         by_path, anchor_open)
-        why += [f"{b} is null" for b in REQUIRED if draft.blocks[b].value is None]
+            cited = [p.split("#")[0] for p in block.sources]
+            errors += _confidence_errors(f"spec-draft.json {name}", block.confidence, cited, by_path, anchor_open)
+            if block.value is not None and primary and not set(cited) & primary:
+                errors.append(f"spec-draft.json {name}: cites no primary source {sorted(primary)}; lower-ranked "
+                              "sources only check it or give materials (§15)")
+        why += [f"{b} is null" for b in BLOCKS if b in draft.blocks and draft.blocks[b].value is None]
         if anchor_open:
             why.append("the scale anchor is not confirmed")
         if not why and not errors:
             data = {"id": draft.object, "profile": draft.profile or "npm_min",
                     **({"spec_version": draft.spec_version} if draft.spec_version else {}),
-                    **{b: draft.blocks[b].value for b in BLOCKS if b in draft.blocks and draft.blocks[b].value is not None}}
+                    **{b: draft.blocks[b].value for b in BLOCKS if b in draft.blocks}}
             try:
                 Spec.model_validate(data)
                 buildable = True
+                report["defaults_used"] = [b for b in BLOCKS if b not in draft.blocks]
             except ValidationError as exc:
                 why.append(f"the assembled spec does not validate: {exc.errors()[0]['msg']}")
         report["confidence"] = {name: block.confidence for name, block in draft.blocks.items()}

@@ -61,7 +61,9 @@ never filled by assumption. Synthetic or estimated values are labelled.
 
 When the user puts every source of an object into `jobs/<JOB>/sources/` and says "изучи исходники",
 run the steps above for each file and write `jobs/<JOB>/intake/` (read only: nothing in `sources/` changes,
-nothing is exported):
+nothing is exported). Exception to step 2 here: when only images or PDF without dimensions exist, the
+reference dimension is not measured — it is the anchor question below, and the intake is complete with
+the anchor open (the draft stays not buildable):
 
 1. `sources.json` — one entry per file: path, sha256, bytes, format, what was read (`geometry`,
    `dimensions`, `image`, `materials`, `metadata`), units, frame, version, `opened`, the reason it did not

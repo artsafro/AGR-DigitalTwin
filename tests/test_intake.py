@@ -121,3 +121,67 @@ def test_every_intake_file_is_required(tmp_path, name):
     (d / name).unlink()
     r = check(d)
     assert not r["ok"] and f"{name} missing" in r["errors"]
+
+
+# Codex review 1 of PR #71
+
+
+def test_an_image_cannot_be_declared_geometry(tmp_path):
+    spoof = dict(PNG, reads=["geometry"], role="primary")
+    blocks = {k: block(B01[k], "measured", ("view.png",)) for k in ("frame", "levels", "floors", "roof")}
+    r = check(folder(tmp_path, files=(spoof,), blocks=blocks))
+    assert not r["ok"] and not r["buildable"] and any("cannot give ['geometry']" in e for e in r["errors"])
+
+
+def test_an_unknown_block_is_never_a_default(tmp_path):
+    blocks = {k: block(B01[k]) for k in ("frame", "levels", "floors", "roof")} | {"opening_depth_default_m": block(None, "unknown")}
+    r = check(folder(tmp_path, blocks=blocks))
+    assert r["ok"] and not r["buildable"] and r["not_buildable_because"] == ["opening_depth_default_m is null"]
+    r = check(folder(tmp_path / "b"))
+    assert r["buildable"] and "opening_depth_default_m" in r["defaults_used"]
+
+
+def test_draft_blocks_cite_the_primary_source(tmp_path):
+    blocks = {k: block(B01[k], "read_from_drawing", ("album.pdf#p3",)) for k in ("frame", "levels", "floors", "roof")}
+    r = check(folder(tmp_path, blocks=blocks))
+    assert not r["ok"] and any("cites no primary source" in e for e in r["errors"])
+
+
+@pytest.mark.parametrize("bad", [
+    FACTS.replace("| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured |", "| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured | extra |"),
+    FACTS.replace("| Fact | Value | Source | Confidence |", "| nonsense |"),
+])
+def test_malformed_tables_fail(tmp_path, bad):
+    assert not check(folder(tmp_path, facts=bad))["ok"]
+
+
+def test_a_contradiction_is_answered_only_through_a_users_answer(tmp_path):
+    r = check(folder(tmp_path, facts=FACTS.replace("| open |", "| answered_by_agent |")))
+    assert any("the agent does not resolve it" in e for e in r["errors"])
+    r = check(folder(tmp_path / "b", facts=FACTS.replace("| open |", "| answered: Q001 |")))
+    assert any("the agent does not resolve it" in e for e in r["errors"])          # no Q001 answered
+
+
+def test_questions_file_format_and_the_anchor_question(tmp_path):
+    d = folder(tmp_path)
+    (d / "questions.md").write_text("this is not a questions file", encoding="utf-8")
+    assert any("questions-file format" in e for e in check(d)["errors"])
+    blocks = {k: block(B01[k], "estimated", ("view.png",)) for k in ("frame", "levels", "floors", "roof")}
+    r = check(folder(tmp_path / "b", files=(PNG,), blocks=blocks, anchor={"needed": True, "question": "Q999"},
+                     facts="## Facts\n\n| Fact | Value | Source | Confidence |\n|---|---|---|---|\n\n## Contradictions\n\n"
+                           "| Fact | Source A | Value A | Source B | Value B | Status |\n|---|---|---|---|---|---|\n"))
+    assert any("anchor question Q999 is not in questions.md" in e for e in r["errors"])
+
+
+def test_stated_values_and_contradictions_name_their_sources(tmp_path):
+    facts = FACTS.replace("| facade colour | grey | view.png | estimated |", "| height | 6.6 | — | unknown |")
+    r = check(folder(tmp_path, facts=facts))
+    assert any("stated value with confidence unknown" in e for e in r["errors"])
+    facts = FACTS.replace("| parapet | etalon.fbx | 0.60 m | album.pdf#p3 | 0.65 m | open |", "| parapet | — | 0.60 m | — | 0.65 m | open |")
+    assert any("both sides name their sources" in e for e in check(folder(tmp_path / "b", facts=facts))["errors"])
+
+
+def test_read_from_drawing_needs_dimensions_not_geometry(tmp_path):
+    facts = FACTS.replace("| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured |", "| levels | 0 / 3.3 / 6.6 m | etalon.fbx | read_from_drawing |")
+    r = check(folder(tmp_path, files=(dict(FBX, reads=["geometry"]), dict(PDF, path="album.pdf"), PNG), facts=facts))
+    assert any("read_from_drawing needs a source read for dimensions" in e for e in r["errors"])
