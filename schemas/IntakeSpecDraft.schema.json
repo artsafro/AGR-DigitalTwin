@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "Anchor": {
+      "additionalProperties": false,
+      "properties": {
+        "confirmed": {
+          "default": false,
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "needed": {
+          "description": "true when only images / PDF without dimensions give the shape",
+          "title": "Needed",
+          "type": "boolean"
+        },
+        "question": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "the questions.md id that asks for it",
+          "title": "Question"
+        },
+        "what": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "the dimension the user confirmed, e.g. 'door height 2.1 m'",
+          "title": "What"
+        }
+      },
+      "required": [
+        "needed"
+      ],
+      "title": "Anchor",
+      "type": "object"
+    },
+    "Block": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "enum": [
+            "measured",
+            "read_from_drawing",
+            "estimated",
+            "unknown"
+          ],
+          "title": "Confidence",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "sources": {
+          "description": "paths of sources.json, optionally #locator",
+          "items": {
+            "type": "string"
+          },
+          "title": "Sources",
+          "type": "array"
+        },
+        "value": {
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "confidence"
+      ],
+      "title": "Block",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "anchor": {
+      "$ref": "#/$defs/Anchor"
+    },
+    "blocks": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Block"
+      },
+      "title": "Blocks",
+      "type": "object"
+    },
+    "object": {
+      "minLength": 1,
+      "title": "Object",
+      "type": "string"
+    },
+    "profile": {
+      "anyOf": [
+        {
+          "enum": [
+            "npm_min",
+            "mid"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profile"
+    },
+    "spec_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Spec Version"
+    }
+  },
+  "required": [
+    "object",
+    "anchor",
+    "blocks"
+  ],
+  "title": "SpecDraft",
+  "type": "object"
+}

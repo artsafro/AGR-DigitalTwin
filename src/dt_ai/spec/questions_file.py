@@ -48,7 +48,9 @@ def parse(text):
         if inner.endswith("|") and not inner.endswith("\\|"):
             inner = inner[:-1]
         cells = [c.strip() for c in _SPLIT.split(inner)]
-        if cells and cells[0] == "ID" and len(cells) == len(COLUMNS):
+        if cells and cells[0] == "ID":
+            if cells != COLUMNS:                     # an answer is read by its column (review 3 of PR #71)
+                raise ValueError(f"questions file header is not {' | '.join(COLUMNS)}; not overwriting")
             table = True
         elif cells and re.fullmatch(r"(?i)q\d+|id", cells[0]) and not table:
             raise ValueError("questions file has question rows without its header row; not overwriting")
