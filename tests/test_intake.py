@@ -242,6 +242,37 @@ def test_an_unopened_source_is_no_evidence(tmp_path):
     assert any("'view.png' did not open; it is no evidence" in e for e in r["errors"])
 
 
+def test_questions_columns_are_exact(tmp_path):
+    # Codex review 3 of PR #71: swapped Answer / Status headers must not turn a status into an answer
+    from dt_ai.spec.questions_file import COLUMNS
+    blocks = {k: block(B01[k], "estimated", ("view.png",)) for k in ("frame", "levels", "floors", "roof")}
+    d = folder(tmp_path, files=(PNG,), facts=IMG_FACTS, blocks=blocks,
+               anchor={"needed": True, "confirmed": True, "what": "door height 2.1 m", "question": "Q001"})
+    cols = [c for c in COLUMNS]
+    i, j = cols.index("Status"), cols.index("Answer")
+    cols[i], cols[j] = cols[j], cols[i]
+    row = {c: "—" for c in cols} | {"ID": "Q001", "Status": "", "Answer": "answered"}
+    (d / "questions.md").write_text("# Questions — bench-synth-box\n\n| " + " | ".join(cols) + " |\n|" + "---|" * len(cols)
+                                    + "\n| " + " | ".join(row[c] for c in cols) + " |\n", encoding="utf-8")
+    r = check(d)
+    assert not r["ok"] and not r["buildable"] and any("header is not" in e for e in r["errors"])
+
+
+def test_one_table_per_section_with_its_delimiter_row(tmp_path):
+    second = FACTS.replace("## Contradictions", "Note.\n\n| Fact | Value | Source | Confidence |\n|---|---|---|---|\n"
+                                                "| invented | 100 m | nowhere.fbx | measured |\n\n## Contradictions")
+    assert any("more than one table" in e for e in check(folder(tmp_path, facts=second))["errors"])
+    bare = "\n".join(line for line in FACTS.splitlines() if not line.startswith("|---"))
+    assert any("no delimiter row" in e for e in check(folder(tmp_path / "b", facts=bare))["errors"])
+
+
+def test_an_unopened_source_backs_no_contradiction(tmp_path):
+    closed = {"path": "closed.pdf", "format": "pdf", "reads": [], "opened": False, "not_opened_reason": "corrupt", "role": "none"}
+    facts = FACTS.replace("| album.pdf#p3 | 0.65 m | open |", "| closed.pdf | 9 m | open |")
+    r = check(folder(tmp_path, files=(FBX, dict(PDF, path="album.pdf"), PNG, closed), facts=facts))
+    assert any("'closed.pdf' did not open" in e for e in r["errors"])
+
+
 def test_the_draft_is_of_the_inventorys_object(tmp_path):
     d = folder(tmp_path)
     draft = json.loads((d / "spec-draft.json").read_text(encoding="utf-8"))

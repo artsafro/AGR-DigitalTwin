@@ -43,29 +43,37 @@ def _table(text, heading, columns, errors):
     part = re.split(r"^##\s+" + re.escape(heading) + r"\s*$", text, flags=re.M)
     if len(part) < 2:
         return None
-    rows, header = [], None
+    rows, header, delimited, ended = [], None, False, False
     for line in part[1].splitlines():
         body = line.strip()
         if body.startswith("## "):
             break
         if not body.startswith("|"):
-            if header is not None and rows:
-                break
+            ended = ended or header is not None
             continue
+        if ended:                                       # one table per section (review 3 of PR #71)
+            errors.append(f"picture.md {heading}: more than one table; one table per section")
+            return []
         cells = [c.strip() for c in _SPLIT.split(body.strip("|"))]
         if header is None:
             header = cells
             if header != list(columns):
                 errors.append(f"picture.md {heading}: columns must be {' | '.join(columns)}")
                 return []
-        elif all(re.fullmatch(r":?-+:?", c) for c in cells if c):
-            continue
+        elif not delimited:                             # the delimiter row right under the header
+            if len(cells) != len(header) or not all(re.fullmatch(r":?-+:?", c) for c in cells):
+                errors.append(f"picture.md {heading}: no delimiter row (|---|...) under the header")
+                return []
+            delimited = True
         elif len(cells) != len(header):
             errors.append(f"picture.md {heading}: a row with {len(cells)} cells under {len(header)} columns")
         else:
             rows.append(dict(zip(header, cells)))
     if header is None:
         errors.append(f"picture.md {heading}: no table (write its header even when it is empty)")
+        return []
+    if not delimited:
+        errors.append(f"picture.md {heading}: no delimiter row (|---|...) under the header")
         return []
     return rows
 
@@ -181,6 +189,8 @@ def check(folder):
             for p in _paths(row["Source A"]) + _paths(row["Source B"]):
                 if p not in by_path:
                     errors.append(f"{where}: source {p!r} is not in sources.json")
+                elif not by_path[p].opened:                     # review 3 of PR #71
+                    errors.append(f"{where}: source {p!r} did not open; it is no evidence")
         report["facts"], report["contradictions"] = len(facts or []), len(contra or [])
 
     buildable, why = False, []
