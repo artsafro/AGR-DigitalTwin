@@ -1,0 +1,86 @@
+{
+  "object": "tec26-kpp1",
+  "scheme": "material id ranges of standards/material_id_ranges.yaml (ADR 0001); KPP1 table accepted by the user 2026-10-11",
+  "note": "The VPM FBX carries one material; each finish is a UDIM tile (scripts/vpm_textures.json), so the benchmark reads material ids from the tile of every triangle (tools/source/measure_spec_blender.py udim_tiles). Asphalt (the blind area) is Ground, not OKS: id 0 = unassigned, a question. Glass is its own mesh.",
+  "finishes": {
+    "Plinth_RAL7004": {
+      "id": 1,
+      "udim": 1001
+    },
+    "Asphalt": {
+      "id": 0,
+      "udim": 1002
+    },
+    "Railing_Alpha": {
+      "id": 26,
+      "udim": 1003
+    },
+    "Ladder_Alpha_RAL1021": {
+      "id": 27,
+      "udim": 1004
+    },
+    "Cage_Alpha_RAL1021": {
+      "id": 28,
+      "udim": 1005
+    },
+    "Cassette_RAL7047": {
+      "id": 2,
+      "udim": 1006
+    },
+    "Cassette_RAL5015": {
+      "id": 3,
+      "udim": 1007
+    },
+    "Perforated_RAL9016": {
+      "id": 5,
+      "udim": 1008
+    },
+    "Frame_RAL9016": {
+      "id": 16,
+      "udim": 1009
+    },
+    "Door_RAL7004": {
+      "id": 11,
+      "udim": 1010
+    },
+    "Interior": {
+      "id": 31,
+      "udim": 1011
+    },
+    "Membrane_Logicroof": {
+      "id": 21,
+      "udim": 1012
+    },
+    "Metal_RAL5015": {
+      "id": 17,
+      "udim": 1013
+    },
+    "Plastic_Black": {
+      "id": 29,
+      "udim": 1014
+    },
+    "Grille_RAL7004": {
+      "id": 18,
+      "udim": 1015
+    },
+    "Slat_RAL5015": {
+      "id": 19,
+      "udim": 1016
+    },
+    "Membrane_Solo": {
+      "id": 22,
+      "udim": 1017
+    },
+    "Cassette_RAL5015_Top": {
+      "id": 4,
+      "udim": 1018
+    },
+    "Walkway_Logicroof": {
+      "id": 23,
+      "udim": 1019
+    }
+  },
+  "meshes": {
+    "SM_Kpp_1_MainGlass": 12
+  }
+}

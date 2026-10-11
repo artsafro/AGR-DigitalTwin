@@ -88,3 +88,21 @@ def parts(triangles: np.ndarray, ids: np.ndarray) -> np.ndarray:
         parent[rb] = ra
         parent[find(rc)] = ra
     return np.array([find(a) for a in ids[triangles[:, 0]]], dtype=int)
+
+
+def assign_material_ids(dump: dict, table: dict) -> dict:
+    """A copy of a dump whose material ids come from an object's materials table (jobs/<object>/materials.json,
+    K01, user 2026-10-11): a mesh named in table["meshes"] takes that id; otherwise every triangle takes the id
+    of its UDIM tile (`udim_tiles` of the dump; finishes as tiles, not slots); a tile the table does not name is
+    0, unassigned. A mesh with neither keeps its slot ids."""
+    tiles = {int(f["udim"]): int(f["id"]) for f in table["finishes"].values()}
+    by_mesh = {k: int(v) for k, v in table.get("meshes", {}).items()}
+    meshes = []
+    for mesh in dump["meshes"]:
+        mesh = dict(mesh)
+        if mesh["name"] in by_mesh:
+            mesh["material_ids"] = [by_mesh[mesh["name"]]] * len(mesh["triangles"])
+        elif "udim_tiles" in mesh:
+            mesh["material_ids"] = [tiles.get(int(t), 0) for t in mesh["udim_tiles"]]
+        meshes.append(mesh)
+    return {**dump, "meshes": meshes}
