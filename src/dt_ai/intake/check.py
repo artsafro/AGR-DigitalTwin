@@ -74,13 +74,17 @@ def _paths(cell):
     return [p.strip().split("#")[0].strip() for p in cell.split(",") if p.strip() and p.strip() != "—"]
 
 
-def _confidence_errors(where, confidence, sources, by_path, anchor_open):
+def _confidence_errors(where, confidence, sources, by_path, anchor_open, capable=None):
+    """capable: the paths whose reads may carry the confidence (a draft block: the primary sources only, so a
+    lower-ranked source never lends it its capability, review 2 of PR #71); None = every cited source."""
     errors = []
     reads = set()
     for p in sources:
         if p not in by_path:
             errors.append(f"{where}: source {p!r} is not in sources.json")
-        else:
+        elif not by_path[p].opened:
+            errors.append(f"{where}: source {p!r} did not open; it is no evidence")
+        elif capable is None or p in capable:
             reads |= set(by_path[p].reads)
     if confidence not in CONFIDENCE:
         errors.append(f"{where}: confidence {confidence!r} is none of {CONFIDENCE}")
@@ -128,18 +132,30 @@ def check(folder):
             title, rows = questions_file.parse(questions.read_text(encoding="utf-8"))
             if title is None or (sources is not None and title != sources.object):
                 errors.append("questions.md: no '# Questions — <object>' title of this object (questions-file format)")
-            answers = {r["ID"]: r["Answer"] for r in rows}
+            ids = [r["ID"] for r in rows]
+            twice = sorted({i for i in ids if ids.count(i) > 1})
+            if twice:                                    # one answer per question (review 2 of PR #71)
+                errors.append(f"questions.md: question ids {twice} given more than once")
+            answers = {r["ID"]: r["Answer"] for r in rows if r["ID"] not in twice}
             report["questions"] = len(rows)
         except ValueError as exc:
             errors.append(f"questions.md: {exc}")
     if draft is not None and draft.anchor.question and draft.anchor.question not in answers:
         errors.append(f"spec-draft.json: the anchor question {draft.anchor.question} is not in questions.md")
+    elif draft is not None and draft.anchor.confirmed and not answers.get(draft.anchor.question, "").strip():
+        errors.append(f"spec-draft.json: the anchor is confirmed only by the user's answer to "
+                      f"{draft.anchor.question} in questions.md (review 2 of PR #71)")
+    if draft is not None and sources is not None and draft.object != sources.object:
+        errors.append(f"spec-draft.json: object {draft.object!r} is not the inventory's {sources.object!r}")
 
     picture = folder / "picture.md"
     if not picture.exists():
         errors.append("picture.md missing")
     else:
         text = picture.read_text(encoding="utf-8")
+        for heading in ("Facts", "Contradictions"):       # one section each (review 2 of PR #71)
+            if len(re.findall(r"^##\s+" + heading + r"\s*$", text, flags=re.M)) > 1:
+                errors.append(f"picture.md: more than one '## {heading}' section")
         facts = _table(text, "Facts", FACTS, errors)
         contra = _table(text, "Contradictions", CONTRADICTIONS, errors)
         if facts is None:
@@ -172,7 +188,8 @@ def check(folder):
         primary = {f.path for f in by_path.values() if f.role == "primary"}
         for name, block in draft.blocks.items():
             cited = [p.split("#")[0] for p in block.sources]
-            errors += _confidence_errors(f"spec-draft.json {name}", block.confidence, cited, by_path, anchor_open)
+            errors += _confidence_errors(f"spec-draft.json {name}", block.confidence, cited, by_path, anchor_open,
+                                         capable=primary or None)
             if block.value is not None and primary and not set(cited) & primary:
                 errors.append(f"spec-draft.json {name}: cites no primary source {sorted(primary)}; lower-ranked "
                               "sources only check it or give materials (§15)")

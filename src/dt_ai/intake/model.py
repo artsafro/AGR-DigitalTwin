@@ -104,8 +104,8 @@ class Anchor(Part):
 
     @model_validator(mode="after")
     def asked(self):
-        if self.needed and not self.confirmed and not self.question:
-            raise ValueError("an anchor still needed is asked in questions.md")
+        if self.needed and not self.question:          # asked, and confirmed only through the user's answer
+            raise ValueError("a needed anchor is asked in questions.md (its question id), also once confirmed")
         if self.confirmed and not self.what:
             raise ValueError("a confirmed anchor says what was confirmed")
         return self

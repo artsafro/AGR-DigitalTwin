@@ -147,12 +147,17 @@ def test_draft_blocks_cite_the_primary_source(tmp_path):
     assert not r["ok"] and any("cites no primary source" in e for e in r["errors"])
 
 
-@pytest.mark.parametrize("bad", [
-    FACTS.replace("| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured |", "| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured | extra |"),
-    FACTS.replace("| Fact | Value | Source | Confidence |", "| nonsense |"),
+EMPTY_CONTRA = "## Contradictions\n\n| Fact | Source A | Value A | Source B | Value B | Status |\n|---|---|---|---|---|---|\n"
+
+
+@pytest.mark.parametrize("bad, message", [
+    (FACTS.replace("| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured |", "| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured | extra |"),
+     "a row with 5 cells under 4 columns"),
+    ("## Facts\n\n| nonsense |\n|---|\n\n" + EMPTY_CONTRA, "Facts: columns must be"),     # empty, wrong header
 ])
-def test_malformed_tables_fail(tmp_path, bad):
-    assert not check(folder(tmp_path, facts=bad))["ok"]
+def test_malformed_tables_fail(tmp_path, bad, message):
+    r = check(folder(tmp_path, facts=bad))
+    assert not r["ok"] and any(message in e for e in r["errors"]), r["errors"]
 
 
 def test_a_contradiction_is_answered_only_through_a_users_answer(tmp_path):
@@ -185,3 +190,61 @@ def test_read_from_drawing_needs_dimensions_not_geometry(tmp_path):
     facts = FACTS.replace("| levels | 0 / 3.3 / 6.6 m | etalon.fbx | measured |", "| levels | 0 / 3.3 / 6.6 m | etalon.fbx | read_from_drawing |")
     r = check(folder(tmp_path, files=(dict(FBX, reads=["geometry"]), dict(PDF, path="album.pdf"), PNG), facts=facts))
     assert any("read_from_drawing needs a source read for dimensions" in e for e in r["errors"])
+
+
+# Codex review 2 of PR #71
+
+
+def _questions(d, rows):
+    """questions.md of the synthetic object with rows (id, answer)."""
+    from dt_ai.spec.questions_file import COLUMNS
+    lines = ["# Questions — bench-synth-box", "", "| " + " | ".join(COLUMNS) + " |", "|" + "---|" * len(COLUMNS)]
+    for qid, answer in rows:
+        cells = {c: "—" for c in COLUMNS} | {"ID": qid, "Status": "answered" if answer else "open", "Answer": answer}
+        lines.append("| " + " | ".join(cells[c] for c in COLUMNS) + " |")
+    (d / "questions.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+IMG_FACTS = ("## Facts\n\n| Fact | Value | Source | Confidence |\n|---|---|---|---|\n"
+             "| levels | 2 storeys | view.png | estimated |\n\n" + EMPTY_CONTRA)
+
+
+@pytest.mark.parametrize("answer, ok", [("", False), ("door height 2.1 m", True)])
+def test_an_anchor_is_confirmed_only_by_the_users_answer(tmp_path, answer, ok):
+    blocks = {k: block(B01[k], "estimated", ("view.png",)) for k in ("frame", "levels", "floors", "roof")}
+    d = folder(tmp_path, files=(PNG,), facts=IMG_FACTS, blocks=blocks,
+               anchor={"needed": True, "confirmed": True, "what": "door height 2.1 m", "question": "Q001"})
+    _questions(d, [("Q001", answer)])
+    r = check(d)
+    assert r["ok"] == ok and r["buildable"] == ok, r["errors"]
+
+
+def test_a_lower_ranked_source_lends_no_confidence_to_a_draft_block(tmp_path):
+    blocks = {k: block(B01[k], "read_from_drawing", ("etalon.fbx", "album.pdf#p3")) for k in ("frame", "levels", "floors", "roof")}
+    r = check(folder(tmp_path, files=(dict(FBX, reads=["geometry"]), dict(PDF, path="album.pdf"), PNG), blocks=blocks))
+    assert any("read_from_drawing needs a source read for dimensions" in e for e in r["errors"])
+
+
+def test_question_ids_are_unique(tmp_path):
+    d = folder(tmp_path, facts=FACTS.replace("| open |", "| answered: Q001 |"))
+    _questions(d, [("Q001", ""), ("Q001", "grey")])
+    assert any("given more than once" in e for e in check(d)["errors"])
+
+
+def test_one_facts_section(tmp_path):
+    extra = FACTS + "\n## Facts\n\n| Fact | Value | Source | Confidence |\n|---|---|---|---|\n| height | 100 m | absent.fbx | measured |\n"
+    assert any("more than one '## Facts' section" in e for e in check(folder(tmp_path, facts=extra))["errors"])
+
+
+def test_an_unopened_source_is_no_evidence(tmp_path):
+    broken = dict(PNG, opened=False, reads=[], not_opened_reason="corrupt")
+    r = check(folder(tmp_path, files=(FBX, dict(PDF, path="album.pdf"), broken)))
+    assert any("'view.png' did not open; it is no evidence" in e for e in r["errors"])
+
+
+def test_the_draft_is_of_the_inventorys_object(tmp_path):
+    d = folder(tmp_path)
+    draft = json.loads((d / "spec-draft.json").read_text(encoding="utf-8"))
+    draft["object"] = "wrong-object"
+    (d / "spec-draft.json").write_text(json.dumps(draft), encoding="utf-8")
+    assert any("is not the inventory's" in e for e in check(d)["errors"])
