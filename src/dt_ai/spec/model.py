@@ -95,12 +95,55 @@ class Terrace(SpecPart):
     parapet_h_m: Positive
 
 
+DECOR_TEXTURE_M = 0.10   # pattern facade-decor-inset (user 2026-10-11): projection <= this is texture, boundary included
+
+
+class Decor(SpecPart):
+    """One facade decor element (spec v0.5, pattern facade-decor-inset, user decisions 2026-10-11/12): a
+    simple solid, pieces of a split element merged. Wall-bound kinds by shape in the wall plane: band (width
+    >= 3 x height), strip (height >= 3 x width: pilaster, lesene), panel (spandrel and the rest); a column
+    stands free of the walls. Position from the floor of `level`: along `wall` of its contour (x_m, w_m) and
+    from the level (z_m, h_m); a column by its footprint [x0, y0, x1, y1] in object coordinates."""
+    kind: Literal["band", "strip", "panel", "column"]
+    level: str
+    wall: int | None = Field(default=None, ge=0)
+    x_m: Finite | None = None
+    w_m: Positive
+    z_m: Finite
+    h_m: Positive
+    projection_m: Positive | None = None
+    footprint: list[Finite] | None = Field(default=None, min_length=4, max_length=4)
+    # projection <= DECOR_TEXTURE_M: texture on the wall, nothing built
+    texture: bool = False
+    # material id from the source when all its faces carry one id of the attachment group (26-30)
+    material_id: int | None = None
+    # source pieces merged into it (same cross-section, one axis, seams <= plate_gap_m x 12)
+    pieces: int = Field(default=1, ge=1)
+
+    @model_validator(mode="after")
+    def placed(self):
+        if self.kind == "column":
+            if self.footprint is None or self.wall is not None or self.x_m is not None:
+                raise ValueError("a column has a footprint and no wall")
+            if self.footprint[0] >= self.footprint[2] or self.footprint[1] >= self.footprint[3]:
+                raise ValueError("a column footprint is [x0, y0, x1, y1] with x0 < x1, y0 < y1")
+            if self.texture:
+                raise ValueError("a free-standing column is never texture")
+        else:
+            if self.wall is None or self.x_m is None or self.projection_m is None or self.footprint is not None:
+                raise ValueError(f"a {self.kind} has wall, x_m and projection_m and no footprint")
+            if self.texture != (self.projection_m <= DECOR_TEXTURE_M + 1e-9):
+                raise ValueError(f"texture is projection <= {DECOR_TEXTURE_M} m (boundary included)")
+        return self
+
+
 class Spec(SpecPart):
     id: str = Field(pattern=r"^[a-z0-9]+(-[a-z0-9]+)+$")
     # 0.2: openings across levels (level_from / level_to); 0.3: opening = hole with frame, glass_w /
     # glass_h, depth_m only as an exception to opening_depth_default_m (#36)
     # 0.4: terraces with a parapet at floor steps (pattern terrace, user decision 2026-10-10)
-    spec_version: Literal["0.1", "0.2", "0.3", "0.4"] = "0.3"
+    # 0.5: facade decor (pattern facade-decor-inset, user decisions 2026-10-11/12)
+    spec_version: Literal["0.1", "0.2", "0.3", "0.4", "0.5"] = "0.3"
     profile: Literal["npm_min", "mid"]
     frame: Frame
     levels: list[Level] = Field(min_length=2)
@@ -108,6 +151,7 @@ class Spec(SpecPart):
     roof: Roof | None = None
     terraces: list[Terrace] = []
     attachments: list[dict] = []
+    decor: list[Decor] = []
     opening_depth_default_m: NonNegative = 0.2
     # pattern roof-inset-plane (user 2026-10-10): every slab is a separate plate plate_gap_m above its level
     # that overlaps its hole by plate_overlap_m; building parameters, the etalons' 5 mm / 20 mm by default
@@ -117,8 +161,13 @@ class Spec(SpecPart):
     @model_validator(mode="after")
     def consistent(self):
         names = [lv.name for lv in self.levels]
-        if self.terraces and self.spec_version != "0.4":
+        if self.terraces and self.spec_version not in ("0.4", "0.5"):
             raise ValueError("terraces need spec_version 0.4")
+        if self.decor and self.spec_version != "0.5":
+            raise ValueError("decor needs spec_version 0.5")
+        for d in self.decor:
+            if d.level not in names[:-1]:
+                raise ValueError(f"decor at {d.level}: a decor element stands on a floor level")
         seen = set()
         for tr in self.terraces:
             if tr.level not in names[1:-1]:
@@ -145,7 +194,7 @@ class Spec(SpecPart):
                     raise ValueError("openings across levels need spec_version 0.2")
                 if self.spec_version in ("0.1", "0.2") and o.depth_m is None:
                     raise ValueError(f"spec {self.spec_version}: every opening has depth_m (optional from 0.3)")
-                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version not in ("0.3", "0.4"):
+                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version not in ("0.3", "0.4", "0.5"):
                     raise ValueError("glass_w / glass_h need spec_version 0.3")
         full = {f.level for f in self.floors if f.contour is not None}
         owner = {}
@@ -165,6 +214,13 @@ class Spec(SpecPart):
                 if i in owner:
                     raise ValueError(f"level {names[i]} is given twice ({owner[i]} and {f.level})")
                 owner[i] = f.level
+        if self.decor:
+            sides = {f.level: len(f.contour) for f in self.expanded_floors()}
+            for d in self.decor:
+                if d.level not in sides:
+                    raise ValueError(f"decor at {d.level}: no floor at that level")
+                if d.wall is not None and d.wall >= sides[d.level]:
+                    raise ValueError(f"decor at {d.level}: wall {d.wall}, the contour has {sides[d.level]}")
         return self
 
     def expanded_floors(self):

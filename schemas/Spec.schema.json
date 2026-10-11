@@ -1,5 +1,126 @@
 {
   "$defs": {
+    "Decor": {
+      "additionalProperties": false,
+      "description": "One facade decor element (spec v0.5, pattern facade-decor-inset, user decisions 2026-10-11/12): a\nsimple solid, pieces of a split element merged. Wall-bound kinds by shape in the wall plane: band (width\n>= 3 x height), strip (height >= 3 x width: pilaster, lesene), panel (spandrel and the rest); a column\nstands free of the walls. Position from the floor of `level`: along `wall` of its contour (x_m, w_m) and\nfrom the level (z_m, h_m); a column by its footprint [x0, y0, x1, y1] in object coordinates.",
+      "properties": {
+        "footprint": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "number"
+              },
+              "maxItems": 4,
+              "minItems": 4,
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Footprint"
+        },
+        "h_m": {
+          "exclusiveMinimum": 0,
+          "title": "H M",
+          "type": "number"
+        },
+        "kind": {
+          "enum": [
+            "band",
+            "strip",
+            "panel",
+            "column"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "level": {
+          "title": "Level",
+          "type": "string"
+        },
+        "material_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Material Id"
+        },
+        "pieces": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Pieces",
+          "type": "integer"
+        },
+        "projection_m": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Projection M"
+        },
+        "texture": {
+          "default": false,
+          "title": "Texture",
+          "type": "boolean"
+        },
+        "w_m": {
+          "exclusiveMinimum": 0,
+          "title": "W M",
+          "type": "number"
+        },
+        "wall": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Wall"
+        },
+        "x_m": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "X M"
+        },
+        "z_m": {
+          "title": "Z M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "level",
+        "w_m",
+        "z_m",
+        "h_m"
+      ],
+      "title": "Decor",
+      "type": "object"
+    },
     "Floor": {
       "additionalProperties": false,
       "properties": {
@@ -355,6 +476,14 @@
       "title": "Attachments",
       "type": "array"
     },
+    "decor": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Decor"
+      },
+      "title": "Decor",
+      "type": "array"
+    },
     "floors": {
       "items": {
         "$ref": "#/$defs/Floor"
@@ -422,7 +551,8 @@
         "0.1",
         "0.2",
         "0.3",
-        "0.4"
+        "0.4",
+        "0.5"
       ],
       "title": "Spec Version",
       "type": "string"
