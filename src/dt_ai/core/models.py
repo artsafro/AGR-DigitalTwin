@@ -188,3 +188,7 @@ SCHEMAS["AdapterReport"] = AdapterReport
 from dt_ai.spec.model import Spec
 SCHEMAS["Spec"] = Spec
 
+from dt_ai.intake.model import SourcesFile, SpecDraft
+SCHEMAS["IntakeSources"] = SourcesFile
+SCHEMAS["IntakeSpecDraft"] = SpecDraft
+

@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -46,6 +47,9 @@ def parser():
     spec.add_argument("--a", type=Path, help="compare: first spec.json (its <spec>.report.json beside it)")
     spec.add_argument("--b", type=Path, help="compare: second spec.json (its <spec>.report.json beside it)")
     spec.add_argument("--tolerances", type=Path, help="compare / extract: benchmark tolerances.json (extract: its spec_extract thresholds)")
+    intake = sub.add_parser("intake", help="Check an intake folder ('study the sources', HARNESS_PLAN §15)")
+    intake.add_argument("action", choices=["check"])
+    intake.add_argument("--dir", type=Path, required=True, help="jobs/<JOB>/intake")
     for name in ("build", "validate"):
         item = sub.add_parser(name, help="Build/check a labelled development bundle; never certify delivery")
         item.add_argument("--job" if name == "build" else "--archive", type=Path, required=True)
@@ -78,6 +82,12 @@ def main(argv=None):
         elif args.command == "index-pdf":
             result = index_pdf(args.source, args.output)
             print(f"Indexed {len(result['pages'])} pages: {args.output / 'index.json'}")
+        elif args.command == "intake":
+            from dt_ai.intake.check import check as intake_check
+            result = intake_check(args.dir)
+            print(json.dumps(result, ensure_ascii=False, indent=1))
+            if not result["ok"]:
+                return 1
         elif args.command == "spec" and args.action == "merge-questions":
             if not (args.report and args.version and args.into):
                 raise ValueError("merge-questions needs --report, --version and --into")

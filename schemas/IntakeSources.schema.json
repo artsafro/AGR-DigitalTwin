@@ -1,0 +1,176 @@
+{
+  "$defs": {
+    "SourceEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "bytes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bytes"
+        },
+        "format": {
+          "enum": [
+            "rvt",
+            "ifc",
+            "skp",
+            "max",
+            "fbx",
+            "blend",
+            "obj",
+            "dwg",
+            "dxf",
+            "pdf",
+            "image",
+            "pptx",
+            "other"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
+        "frame": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "coordinate system / zero / up axis as found",
+          "title": "Frame"
+        },
+        "not_opened_reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not Opened Reason"
+        },
+        "opened": {
+          "title": "Opened",
+          "type": "boolean"
+        },
+        "path": {
+          "description": "relative to jobs/<JOB>/sources/",
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "reads": {
+          "description": "what was read from it; empty when it did not open",
+          "items": {
+            "enum": [
+              "geometry",
+              "dimensions",
+              "image",
+              "materials",
+              "metadata"
+            ],
+            "type": "string"
+          },
+          "title": "Reads",
+          "type": "array"
+        },
+        "role": {
+          "description": "primary: the best-ranked source that gives geometry or dimensions; lower-ranked sources only check it or give materials (§15)",
+          "enum": [
+            "primary",
+            "check",
+            "materials",
+            "none"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "units": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Units"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "path",
+        "format",
+        "reads",
+        "opened",
+        "role"
+      ],
+      "title": "SourceEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "files": {
+      "items": {
+        "$ref": "#/$defs/SourceEntry"
+      },
+      "minItems": 1,
+      "title": "Files",
+      "type": "array"
+    },
+    "made": {
+      "description": "ISO date of the inventory",
+      "title": "Made",
+      "type": "string"
+    },
+    "object": {
+      "minLength": 1,
+      "title": "Object",
+      "type": "string"
+    }
+  },
+  "required": [
+    "object",
+    "made",
+    "files"
+  ],
+  "title": "SourcesFile",
+  "type": "object"
+}
