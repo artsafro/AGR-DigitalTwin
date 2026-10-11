@@ -117,6 +117,12 @@ covering through the object.json `revit_levels` table; KPP1 Revit vs FBX levels 
 Intake: #70 merged (plan, HARNESS_PLAN §15, approved), #71 merged (IN1 — formats, `dt intake check`, skill
 procedure; 3 Codex rounds). #72 merged (K01: KPP1 material IDs from UDIM tiles via jobs/KPP1/materials.json,
 geometry thresholds, first run 5/8 pass; open items in benchmark/bench-k01-kpp1/README.md).
+#73 merged (3 Codex rounds): colleague case alina-bld as a lesson (HARNESS_PLAN §16): pattern
+`facade-decor-inset` (draft; 0.10 m threshold inclusive, split pieces merged with seams <= plate_gap_m x 12),
+decor benchmark K02 = real facade fragment `bench-k02-decor-fragment` (brief + `decor-catalog.json`; the user
+cuts `source.max` and makes `etalon.max`), synthetic B03 decor deferred, old B03 attachments -> B04;
+`pipeline_gate` (pre-commit + Claude PreToolUse: `Pipeline status` above draft needs pipeline/spec.json,
+spec.report.json, check.json; new job scripts name an engine gap EG1-EG4); OD1 opening depth 0.4 in backlog.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -210,8 +216,10 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 ## Next actions
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
-   for openings, decor IDs, asphalt, the engine's parapet strip). Claude: intake IN2-IN8; MH3; the
-   modelling blockers (attachments, finishes, B03, H10); issue #56; extractor follow-ups
+   for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
+   Claude: decor PR 2 (spec `decor` + extractor), PR 3 (engine + checker), PR 4 (K02 run); install the
+   pre-commit (`tools/git-hooks/pre-commit`); OD1; intake IN2-IN8; MH3; the
+   modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
 1. Claude: PSU275 — racks, transformer massing, window frame density; check `clean_loops.py`
