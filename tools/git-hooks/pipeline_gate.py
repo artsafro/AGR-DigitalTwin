@@ -33,7 +33,8 @@ MENTION = re.compile(r"pipeline\s*status", re.I)
 STATUS = re.compile(r"^-?\s*pipeline\s+status\s*:\s*(\S+)\s*$", re.I)
 GAP_LINE = re.compile(r"Engine gap:\s*(EG\d+)\b")
 GAP_HEAD_LINES = 30
-SCRIPT_SUFFIXES = {".py", ".mjs", ".js", ".sh", ".ms", ".cmd", ".ps1"}
+# every file under scripts/ is a script except data and bytecode (review 3 of PR #73: .bat, sources in __pycache__)
+NOT_SCRIPT_SUFFIXES = {".pyc", ".pyo", ".json", ".yaml", ".yml", ".csv", ".txt", ".md", ".png", ".jpg", ".jpeg"}
 JOB_PATH = re.compile(r"^jobs/([^/]+)/")
 
 
@@ -117,7 +118,7 @@ def script_errors(path, text, backlog):
 def is_job_script(path):
     p = PurePosixPath(path)
     return len(p.parts) >= 4 and p.parts[0].lower() == "jobs" and p.parts[2].lower() == "scripts" and \
-        "__pycache__" not in p.parts and p.suffix.lower() in SCRIPT_SUFFIXES
+        p.suffix.lower() not in NOT_SCRIPT_SUFFIXES
 
 
 def _git(root, *args):

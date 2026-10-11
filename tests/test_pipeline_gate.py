@@ -218,6 +218,7 @@ def hook(payload):
 
 
 def test_hook_denies_a_status_without_files(tmp_path):
+    (tmp_path / ".git").mkdir()                       # the repository root (review 3 of PR #73)
     target = tmp_path / "jobs/J/STATE.md"
     payload = {"tool_name": "Write", "tool_input": {"file_path": str(target), "content": state("built")}}
     assert hook(payload) == "deny"
@@ -226,6 +227,7 @@ def test_hook_denies_a_status_without_files(tmp_path):
 
 
 def test_hook_edit_applies_the_change(tmp_path):
+    (tmp_path / ".git").mkdir()                       # the repository root (review 3 of PR #73)
     target = tmp_path / "jobs/J/STATE.md"
     target.parent.mkdir(parents=True)
     target.write_text(state("draft"), encoding="utf-8")
@@ -239,6 +241,7 @@ def test_hook_edit_applies_the_change(tmp_path):
 
 
 def test_hook_new_script_needs_a_gap(tmp_path):
+    (tmp_path / ".git").mkdir()                       # the repository root (review 3 of PR #73)
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs/backlog.md").write_text(BACKLOG, encoding="utf-8")
     target = tmp_path / "jobs/J/scripts/build_decor.py"
@@ -331,6 +334,7 @@ def test_pre_commit_gate_sees_the_index_after_linking(repo):
 
 
 def test_hook_state_name_case_blind(tmp_path):
+    (tmp_path / ".git").mkdir()                       # the repository root (review 3 of PR #73)
     target = tmp_path / "jobs/J/state.md"
     assert hook({"tool_name": "Write", "tool_input": {"file_path": str(target), "content": state("built")}}) == "deny"
 
@@ -388,3 +392,43 @@ def test_staged_folder_case_variant_is_blocked(repo):
 def test_hook_malformed_fields_pass(payload):
     result = subprocess.run([sys.executable, str(HOOK)], input=json.dumps(payload), capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
+
+
+# --- review 3 of PR #73 ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("path", ["jobs/J/scripts/run.bat", "jobs/J/scripts/__pycache__/run.py", "jobs/J/scripts/run"])
+def test_any_file_under_scripts_is_a_script(path):
+    assert gate.is_job_script(path)
+
+
+@pytest.mark.parametrize("path", ["jobs/J/scripts/__pycache__/run.cpython-313.pyc", "jobs/J/scripts/table.json"])
+def test_bytecode_and_data_are_not_scripts(path):
+    assert not gate.is_job_script(path)
+
+
+def test_staged_batch_script_needs_a_gap(repo):
+    write(repo, "jobs/J/scripts/run.bat", "@echo off\n")
+    assert any("names the engine gap" in e for e in gate.staged(repo))
+
+
+def test_hook_dotdot_path_is_resolved(tmp_path):
+    (tmp_path / ".git").mkdir()
+    (tmp_path / "jobs/J/sub").mkdir(parents=True)
+    target = str(tmp_path / "jobs/J/sub/../STATE.md")
+    assert hook({"tool_name": "Write", "tool_input": {"file_path": target, "content": state("built")}}) == "deny"
+
+
+def test_hook_root_is_the_repository_not_a_deeper_jobs_folder(tmp_path):
+    (tmp_path / ".git").mkdir()
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/backlog.md").write_text(BACKLOG, encoding="utf-8")
+    target = str(tmp_path / "jobs/J/scripts/jobs/new.py")
+    assert hook({"tool_name": "Write", "tool_input": {"file_path": target, "content": "import bpy\n"}}) == "deny"
+
+
+def test_hook_malformed_script_content_passes_silently(tmp_path):
+    (tmp_path / ".git").mkdir()
+    target = str(tmp_path / "jobs/J/scripts/new.py")
+    raw = json.dumps({"tool_name": "Write", "tool_input": {"file_path": target, "content": None}})
+    result = subprocess.run([sys.executable, str(HOOK)], input=raw, capture_output=True, text=True)
+    assert result.returncode == 0 and not result.stdout.strip()

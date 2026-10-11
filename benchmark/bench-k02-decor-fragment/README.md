@@ -44,7 +44,8 @@ that job's derived `decor.json` / `openings.json` (catalogue: `decor-catalog.jso
   - glass inserts 0.59 x 0.55, projection 0.02 (<= 0.10: texture), u 14.23-14.82, z 13.75-14.30 and
     17.05-17.60 — they lie inside the window rectangles: check in the FBX whether they are part of the window
     (then they belong to the opening, not the decor).
-  - the left neighbour's windows end at u 13.001: on the cut line, outside the fragment.
+  - the left neighbour's windows (z 13.10-15.80 and 17.00-19.10) end at u 13.001, 1 mm past the cut line u 13.0:
+    rounding in the job data; check in the FBX that they end at the lesene's edge, and keep them out of the fragment.
 - **Body**: close the fragment as a box behind the facade, 3.0 m deep (x 56.719 ... 59.719): the facade face
   as in the source with its window openings; sides, back, top and bottom are flat cut faces of the facade
   material. No interior, no slabs.

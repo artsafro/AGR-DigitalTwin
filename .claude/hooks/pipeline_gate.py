@@ -8,6 +8,7 @@ Every other call passes. The git pre-commit runs the same rules for every agent.
 """
 import importlib.util
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -41,6 +42,17 @@ def new_text(tool, tin, path):
     return old.replace(a, b) if tin.get("replace_all") else old.replace(a, b, 1)
 
 
+def _root(target, data):
+    """The repository the target lies in: the project folder or the session's cwd when they hold it, else the
+    nearest folder above it with .git (review 3 of PR #73: never a `jobs` folder deeper in the path)."""
+    for c in (os.environ.get("CLAUDE_PROJECT_DIR"), data.get("cwd")):
+        if isinstance(c, str) and c:
+            base = os.path.normcase(os.path.abspath(c))
+            if os.path.normcase(str(target)).startswith(base.rstrip("\\/") + os.sep):
+                return Path(os.path.abspath(c))
+    return next((a for a in target.parents if (a / ".git").exists()), None)
+
+
 def main():
     try:
         data = json.loads(sys.stdin.read() or "{}")
@@ -53,14 +65,14 @@ def main():
     target = tin.get("file_path", "")
     if tool not in ("Write", "Edit") or not isinstance(target, str) or not target:
         sys.exit(0)
-    path = Path(target)
-    parts = [p.lower() for p in path.parts]
-    if "jobs" not in parts:
+    path = Path(os.path.abspath(target))              # `..` resolved (review 3 of PR #73)
+    root = _root(path, data)
+    if root is None:
         sys.exit(0)
-    k = len(parts) - 1 - parts[::-1].index("jobs")
-    if len(path.parts) < k + 3:
+    parts = Path(os.path.relpath(path, root)).parts   # case-blind on Windows
+    if len(parts) < 3 or parts[0].lower() != "jobs":
         sys.exit(0)
-    root, job, rest = Path(*path.parts[:k]), path.parts[k + 1], path.parts[k + 2:]
+    job, rest = parts[1], parts[2:]
     gate = _gate()
     rel = "/".join(("jobs", job) + tuple(rest))
     if tuple(r.lower() for r in rest) == ("state.md",):       # Windows names are case-blind (review 1 of PR #73)
@@ -80,7 +92,10 @@ def main():
             deny(errors)
     elif tool == "Write" and not path.exists() and gate.is_job_script(rel):
         backlog = root / "docs" / "backlog.md"
-        errors = gate.script_errors(rel, str(tin.get("content", "")),
+        content = tin.get("content", "")
+        if not isinstance(content, str):              # a malformed call is the tool's to reject
+            sys.exit(0)
+        errors = gate.script_errors(rel, content,
                                     backlog.read_text(encoding="utf-8") if backlog.is_file() else None)
         if errors:
             deny(errors)
