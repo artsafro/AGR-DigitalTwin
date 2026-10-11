@@ -44,7 +44,8 @@ the engine covers it.
 
 - **EG1** Facade decor (pattern `facade-decor-inset`): PR 2 spec block `decor` + extractor; PR 3 engine +
   checker (no decor overlap with openings, no body edge cut, ids 26-30, 10 cm threshold); PR 4 run on
-  `bench-b03-decor` (`source.max` + `etalon.max` by the user).
+  `bench-k02-decor-fragment` (real fragment: `source.max` + `etalon.max` by the user). Later regression: the
+  synthetic `bench-b03-decor` (free-standing column).
 - **EG2** Balconies (slab, railing, soffit) — pattern to be written.
 - **EG3** `mid` window sashes / detailed windows from the opening plane.
 - **EG4** UV, atlas and delivery package = **H10**.

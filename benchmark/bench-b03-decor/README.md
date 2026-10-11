@@ -1,5 +1,9 @@
 # bench-b03-decor
 
+**Deferred** (user decision 2026-10-11): the first decor benchmark is the real fragment
+`bench-k02-decor-fragment`; this synthetic box stays as a later regression (`docs/backlog.md` EG1), mainly for
+the free-standing column, which the fragment does not have.
+
 Facade decor by the user's technology (pattern `facade-decor-inset`, draft; user decisions 2026-10-11): one
 simple solid per element, embedded into the body, the body mesh untouched, decor ids of the attachment
 group 26-30, relief of 0.10 m or less as texture. Both files are made by hand by the user in 3ds Max; the
