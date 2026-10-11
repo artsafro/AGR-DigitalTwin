@@ -163,3 +163,115 @@ def test_version_0_5_keeps_glass_and_terraces():
     doc["floors"][0]["openings"][0].update(glass_w=1.0, glass_h=1.0)
     doc["terraces"] = [{"level": "L1", "parapet_h_m": 1.0}]
     assert Spec.model_validate(doc).spec_version == "0.5"
+
+
+# --- review 1 of PR #74: the detector on synthetic parts, run directly ---------------------------------
+
+import itertools
+
+import numpy as np
+from shapely.geometry import Polygon
+
+from dt_ai.spec import decor as dc
+
+LEVELS = [{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": 6.6}]
+U_CONTOUR = [[0, 0], [3, 0], [3, 2], [5, 2], [5, 0], [8, 0], [8, 8], [0, 8]]
+
+
+def parts_of(*meshes):
+    """(v, tris, mats, parts) of separate meshes given as Mesh objects."""
+    v, tris, parts = [], [], []
+    for m in meshes:
+        base, first = len(v), len(tris)
+        v += m.vertices
+        tris += [[a + base, b + base, c + base] for a, b, c in m.triangles]
+        parts.append(np.arange(first, len(tris)))
+    return np.array(v, float), np.array(tris), np.zeros(len(tris), int), parts
+
+
+def run(meshes, contours=None):
+    contours = contours or [U_CONTOUR, U_CONTOUR]
+    v, tris, mats, parts = parts_of(*meshes)
+    return dc.extract(v, tris, mats, parts, LEVELS, contours, [Polygon(c) for c in contours], 0.005,
+                      frozenset(range(26, 31)))
+
+
+def box(lo, hi, name="B"):
+    m = Mesh(name)
+    m.box(lo, hi)
+    return m
+
+
+def test_concave_contour_takes_the_wall_holding_the_piece():
+    decor, questions, _ = run([box((1, -0.15, 1), (2, 0, 1.3))])
+    (d,) = decor
+    assert (d["wall"], d["x_m"]) == (0, 1.0) and not questions
+
+
+def test_an_l_shaped_solid_is_a_question():
+    m = Mesh("L")                                         # front: 1 x 1 minus the upper right quarter
+    for (s0, z0, s1, z1) in ((1.0, 1.0, 2.0, 1.5), (1.0, 1.5, 1.5, 2.0)):
+        m.box((s0, -0.15, z0), (s1, 0.0, z1))
+    decor, questions, _ = run([m])
+    assert decor == [] and [q["kind"] for q in questions] == ["decor-shape"]
+
+
+def test_a_flat_horizontal_sheet_on_a_wall_is_a_question():
+    m = Mesh("Sheet")
+    m.quad((1, 0, 1), (2, 0, 1), (2, -0.3, 1), (1, -0.3, 1))
+    decor, questions, _ = run([m])
+    assert decor == [] and [q["kind"] for q in questions] == ["decor-shape"]
+
+
+def test_a_diagonal_sheet_is_no_column():
+    m = Mesh("Diag")
+    m.quad((5, -2, 0), (5.4, -1.6, 0), (5.4, -1.6, 3), (5, -2, 3))
+    decor, questions, report = run([m])
+    assert decor == [] and not questions and report["not_decor_parts"] == 1
+
+
+def test_a_rotated_or_hollow_column_is_no_column():
+    m = Mesh("Hollow")                                    # two opposite sides only
+    m.quad((5, -2, 0), (5.4, -2, 0), (5.4, -2, 3), (5, -2, 3))
+    m.quad((5.4, -1.6, 0), (5, -1.6, 0), (5, -1.6, 3), (5.4, -1.6, 3))
+    decor, _, _ = run([m])
+    assert decor == []
+
+
+def test_l_of_three_tiles_is_asked_whatever_the_order():
+    tiles = [box((1.0, -0.15, 1.0), (1.5, 0, 1.5)), box((1.52, -0.15, 1.0), (2.02, 0, 1.5)),
+             box((1.0, -0.15, 1.52), (1.5, 0, 2.02))]
+    results = set()
+    for order in itertools.permutations(tiles):
+        decor, questions, _ = run(list(order))
+        results.add((tuple(sorted((d["x_m"], d["z_m"], d["w_m"], d["h_m"]) for d in decor)),
+                     tuple(q["kind"] for q in questions)))
+    assert len(results) == 1
+    (decor, kinds), = results
+    assert len(decor) == 3 and kinds == ("decor-merge",)
+
+
+def test_a_full_grid_of_tiles_is_one_element():
+    tiles = [box((1 + 0.32 * i, -0.05, 1 + 0.32 * k), (1.3 + 0.32 * i, 0, 1.3 + 0.32 * k)) for i in range(3)
+             for k in range(2)]
+    decor, questions, _ = run(tiles)
+    (d,) = decor
+    assert d["pieces"] == 6 and d["texture"] is True and not questions
+
+
+def test_pieces_across_the_texture_boundary_stay_apart():
+    decor, _, _ = run([box((1, -0.100, 1.0), (1.5, 0, 2.0)), box((1, -0.104, 2.02), (1.5, 0, 3.0))])
+    assert sorted((d["projection_m"], d["texture"]) for d in decor) == [(0.1, True), (0.104, False)]
+
+
+def test_a_projection_just_over_the_boundary_is_geometry():
+    (d,), _, _ = run([box((1, -0.100049, 1.0), (1.5, 0, 2.0))])
+    assert d["projection_m"] == 0.100049 and d["texture"] is False
+
+
+@pytest.mark.parametrize("upper_y", [1.0, -1.0])
+def test_a_strip_crossing_a_storey_must_stay_on_a_wall(upper_y):
+    upper = [[0, upper_y], [8, upper_y], [8, 8], [0, 8]]
+    lower = [[0, 0], [8, 0], [8, 8], [0, 8]]
+    decor, questions, _ = run([box((1, -0.15, 1), (1.5, 0, 5))], contours=[lower, upper])
+    assert decor == [] and [q["kind"] for q in questions] == ["decor-shape"]

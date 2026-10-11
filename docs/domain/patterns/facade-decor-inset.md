@@ -33,14 +33,19 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 ## How the extractor reads it (`src/dt_ai/spec/decor.py`)
 
 - Candidates: the parts other than the body. Wall decor lies on one contour wall of the storey of its bottom:
-  back at the wall face (5 mm) or embedded up to 0.05 m, inside the wall's span, faces axis-aligned in the
-  wall frame. A free-standing column: at least 2 m high, 0.05-1.5 m a side, standing on a level, clear of
-  the walls. Everything else stays an attachment.
+  back at the wall face (5 mm) or embedded up to 0.05 m, inside that wall's span (on a concave contour the
+  wall that holds it), and on a wall of the same line in every storey it crosses. It must be a box: faces
+  axis-aligned in the wall frame and its front face covering the whole front rectangle at full projection.
+  A free-standing column: an axis-aligned box at least 2 m high, 0.05-1.5 m a side, standing on a level,
+  clear of the walls. Everything else stays an attachment.
 - **Merging a split element** (user 2026-10-11/12; the main thing `bench-k02-decor-fragment` checks): pieces
   with the same cross-section (width and projection), on one axis (same wall, same line along the strip) and
-  with gaps of at most `plate_gap_m` x 12 = 0.06 m between them are one element (stacked or in a row). The
-  seam is texture. Pieces repeated on the storey / bay rhythm (gaps far over the seam) stay separate elements.
-- Questions only where these rules do not cover a piece: `decor-shape` (on a wall, not a box) and
+  with gaps of at most `plate_gap_m` x 12 = 0.06 m between them are joinable (stacked or in a row), never
+  across the 0.10 m texture boundary. A group of joinable pieces that fills one rectangle up to the seams (a
+  row, a stack, a full grid) is one element; the seam is texture. Any other group (an L of tiles) stays apart
+  and is a `decor-merge` question — the result never depends on the order of the source. Pieces repeated on the storey / bay rhythm (gaps far over the seam) stay separate elements.
+- Questions only where these rules do not cover a piece: `decor-shape` (on a wall but no box, or off a wall
+  of a storey it crosses), `decor-merge` (above) and
   `decor-deep` (projection over 0.8 m, the deepest common decor of the catalogue: canopy, porch or decor?;
   proposed threshold, to be confirmed) — never for a number at a threshold.
 
