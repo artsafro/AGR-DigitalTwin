@@ -1,0 +1,94 @@
+{
+  "id": "bench-k01-kpp1",
+  "note": "K01 = object tec26-kpp1 (jobs/KPP1/object.json: frames, levels, contour heights), etalon = KPP1 v007 VPM FBX (built by the job scripts, option a, user 2026-10-10). Material ids from jobs/KPP1/materials.json (UDIM tile -> id, user 2026-10-11).",
+  "frames": {
+    "SM_Kpp_1.fbx": {
+      "to_object": [
+        [
+          1,
+          0,
+          0,
+          14.655
+        ],
+        [
+          0,
+          1,
+          0,
+          5.355
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "derived_from": "package-vpm-v005/export_meta.json pivot_revit_internal_m [14.655, 5.355, 0]; checked 2026-10-08 on Revit 2025 (read only): 4 outer facade corners at 0.000 (-0.330/27.330 x -0.330/11.330 m) land on v005 mesh vertices within 0.0 mm; facade bottom 0.900 m matches a vertex row"
+    },
+    "revit": {
+      "to_object": [
+        [
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1
+        ]
+      ],
+      "derived_from": "Revit data is already in project coordinates (issue #10)"
+    }
+  },
+  "levels": [
+    {
+      "name": "L0",
+      "elev_m": 0.0
+    },
+    {
+      "name": "L1",
+      "elev_m": 3.9
+    },
+    {
+      "name": "roof",
+      "elev_m": 7.909
+    }
+  ],
+  "contour_at_m": {
+    "L0": 0.5,
+    "L1": 4.5
+  },
+  "opening_depth_default_m": 0.2,
+  "materials": "jobs/KPP1/materials.json",
+  "build": {
+    "parapet_thickness_m": 0.555,
+    "ids": {
+      "facade": 3,
+      "reveal": 6,
+      "roof": 21,
+      "opening": 11
+    }
+  },
+  "build_note": "Build inputs the spec does not carry: parapet 0.555 m (cassette plane to the inner parapet face, scripts/build_kpp1.py PARAPET_IN + 0.33); ids from jobs/KPP1/materials.json (facade = the main band Cassette_RAL5015, roof = Membrane_Logicroof)"
+}

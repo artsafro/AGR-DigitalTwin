@@ -30,7 +30,7 @@ from dt_ai.geometry.from_spec import BuildError, BuildInputs, build  # noqa: E40
 from dt_ai.spec import SpecError, extract_spec  # noqa: E402
 from dt_ai.spec.model import Spec  # noqa: E402
 from twinqa.geometry import checks  # noqa: E402
-from twinqa.geometry.mesh import from_dump  # noqa: E402
+from twinqa.geometry.mesh import assign_material_ids, from_dump  # noqa: E402
 from twinqa.io import read_json  # noqa: E402
 from twinqa.scene import find_blender  # noqa: E402
 
@@ -71,12 +71,16 @@ def run(etalon, obj_path, tol_path, out, blender):
         blender_run(blender, MEASURE, etalon, out / "etalon-dump.json")
         produced(out / "etalon-dump.json")
         etalon_dump = read_json((out / "etalon-dump.json").read_bytes())
+        if obj.get("materials"):          # finishes as UDIM tiles: ids from the object's table (K01)
+            etalon_dump = assign_material_ids(etalon_dump, read_json((ROOT / obj["materials"]).read_bytes()))
         steps["etalon_dump"] = "done"
         spec, report = extract_spec(etalon_dump, obj, tolerances.get("profile", "npm_min"), tolerances.get("spec_extract"))
         write(out / "spec.json", spec.model_dump(exclude_none=True))
         write(out / "spec.report.json", report)
         steps["spec"] = {"status": "done", "questions": len(report["questions"])}
         etalon_soup = from_dump(etalon_dump, spec.frame.to_object)
+        if not etalon_soup.levels:        # a source without LEVEL_ helpers (levels from object.json): the spec's
+            etalon_soup.levels = {lv.name: lv.elev_m for lv in spec.levels}   # levels, object system (K01)
         self_check = checks.run(etalon_soup, etalon_soup, spec, geometry)   # before the engine: an etalon is
         write(out / "etalon-self.json", self_check)                        # checked even when it cannot be built
         steps["etalon_self"] = {k: self_check[k] for k in ("passed", "failed", "not_measured")}

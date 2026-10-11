@@ -593,3 +593,26 @@ def test_a_vanished_shaft_never_hides_behind_a_split_one():
         pass
     ok = shafts_roof([box(5, 3, 6, 4)])                    # one plain shaft still passes and is read
     assert by_id(run(ok, ok))["mesh"]["status"] == "pass"
+
+
+def test_material_ids_from_an_objects_udim_table():
+    # K01 (user 2026-10-11): finishes as UDIM tiles; ids from jobs/<object>/materials.json; unknown tile = 0
+    from twinqa.geometry.mesh import assign_material_ids
+    dump = {"meshes": [{"name": "body", "vertices": [], "triangles": [[0, 1, 2]] * 3, "material_ids": [1, 1, 1],
+                        "udim_tiles": [1001, 1006, 1099]},
+                       {"name": "glass", "vertices": [], "triangles": [[0, 1, 2]], "material_ids": [1], "udim_tiles": [1001]},
+                       {"name": "slots", "vertices": [], "triangles": [[0, 1, 2]], "material_ids": [6]}]}
+    table = {"finishes": {"Plinth": {"id": 1, "udim": 1001}, "Cassette": {"id": 2, "udim": 1006}}, "meshes": {"glass": 12}}
+    out = assign_material_ids(dump, table)
+    assert [m["material_ids"] for m in out["meshes"]] == [[1, 2, 0], [12], [6]]
+    assert dump["meshes"][0]["material_ids"] == [1, 1, 1]                       # the input is not changed
+
+
+def test_the_kpp1_table_covers_every_finish_once():
+    kpp1 = json.loads((ROOT / "jobs/KPP1/materials.json").read_text(encoding="utf-8"))
+    tex = json.loads((ROOT / "jobs/KPP1/scripts/vpm_textures.json").read_text(encoding="utf-8"))["finishes"]
+    assert set(kpp1["finishes"]) == set(tex)
+    assert {k: v["udim"] for k, v in kpp1["finishes"].items()} == {k: v["udim"] for k, v in tex.items()}
+    ranges = checks.load_ranges()["groups"]
+    ok = lambda i: i == 0 or any(g["first"] <= i <= g["last"] for g in ranges.values())  # noqa: E731
+    assert all(ok(v["id"]) for v in kpp1["finishes"].values()) and all(ok(i) for i in kpp1["meshes"].values())
