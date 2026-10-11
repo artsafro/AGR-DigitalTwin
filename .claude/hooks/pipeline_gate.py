@@ -30,10 +30,14 @@ def deny(reasons):
 
 
 def new_text(tool, tin, path):
+    """The file's text after the call; None for a malformed call (review 2 of PR #73)."""
     if tool == "Write":
-        return tin.get("content", "")
+        content = tin.get("content", "")
+        return content if isinstance(content, str) else None
     old = path.read_text(encoding="utf-8") if path.is_file() else ""
     a, b = tin.get("old_string", ""), tin.get("new_string", "")
+    if not isinstance(a, str) or not isinstance(b, str):
+        return None
     return old.replace(a, b) if tin.get("replace_all") else old.replace(a, b, 1)
 
 
@@ -62,6 +66,8 @@ def main():
     if tuple(r.lower() for r in rest) == ("state.md",):       # Windows names are case-blind (review 1 of PR #73)
         rel = f"jobs/{job}/STATE.md"
         text = new_text(tool, tin, path)
+        if text is None:                              # a malformed call is the tool's to reject
+            sys.exit(0)
 
         def read(p):
             if p == rel:

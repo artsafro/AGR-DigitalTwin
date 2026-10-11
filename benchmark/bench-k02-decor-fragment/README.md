@@ -23,31 +23,38 @@ that job's derived `decor.json` / `openings.json` (catalogue: `decor-catalog.jso
 
 - **Wall**: the wall at x = 56.719 from y 176.261 to 152.46 (facade faces -X, the building is at +X), in
   the storeys below z 56.2. Wall coordinate u = 176.261 - y.
-- **Fragment**: u 13.0 ... 17.6, i.e. **y 158.661 ... 163.261** (4.6 m), and **z 13.1 ... 20.3** (7.2 m, two
-  storeys of 3.3 m around the belt). Cut lines run along element edges, never through a decor element's width:
-  the left edge is the left lesene's edge, the right edge the pilaster's right edge.
-- **Inside the fragment** (from the data, u / z on the wall, projection from the wall):
-  - belt: horizontal band over the whole wall, z 15.80-16.26, projection 0.30, two stepped pieces
+- **Fragment**: u 13.0 ... 17.6, i.e. **y 158.661 ... 163.261** (4.6 m), and **z 12.52 ... 19.69** (7.17 m;
+  corrected 2026-10-12 after review 2 of PR #73 — the first brief's z 13.1 ... 20.3 cut through a spandrel at the
+  bottom and an upper window at the top). Bottom: the lower spandrel's bottom edge; top: just under the upper
+  window (19.699), so no opening is cut. Cut lines run along element edges, never through a decor element's
+  width: the left edge is the left lesene's edge, the right edge the pilaster's right edge. The lesenes and the
+  upper pilaster piece run on past the top / bottom and are cut there (height only).
+- **Inside the fragment** (every `decor.json` / `openings.json` record of that wall overlapping it; u / z on
+  the wall, projection from the wall):
+  - belt: horizontal band over the whole wall, z 15.80-16.26, projection 0.30, two stacked pieces
     (15.80-16.05 and 16.05-16.26; the upper one is set back only at the wall ends, outside the fragment) — cut
     by the fragment's side lines;
-  - lesenes (vertical strips, 0.30): u 13.00-13.35 and 13.85-14.20 below the belt with a pilaster strip
-    13.35-13.85 (0.18) between them; u 13.0-14.2 above the belt; u 16.4-17.6 below the belt, 16.4-17.0 above;
-  - pilaster above the belt: u 17.0-17.6, projection 0.18, **split per storey** into pieces with 0.02 m joints
-    (z 16.34-19.06, 19.08-20.28, ...) — the "tiles" the extractor must merge into one element;
-  - window bay u 14.2-16.4: windows z 13.7-15.8 and 17.0-19.1; spandrel panels (0.18) z 16.32-16.98 and
-    19.12-20.28 between them;
-  - glass inserts 0.59 x 0.55, projection 0.02 (<= 0.10: texture), at u 14.23-14.82, z 13.75-14.30 and
-    17.05-17.60.
+  - below the belt: lesenes (0.30) u 13.00-13.35 and 13.85-14.20 with a strip 13.35-13.85 (0.18) between
+    them, all from z 0.02 / 0.04 up to 15.76-15.80; lesene u 16.4-17.6 (0.30) up to 15.80;
+  - above the belt: lesenes (0.30) u 13.0-14.2 and 16.4-17.0 from z 16.30 up (cut at the top); pilaster u
+    17.0-17.6, projection 0.18, **split** into pieces with a 0.02 m joint: z 16.34-19.06 and 19.08-20.28 (the
+    second cut at the top) — the pieces the extractor must merge into one element;
+  - window bay u 14.2-16.4: spandrel (0.18) z 12.52-13.68, window z 13.70-15.80, belt, spandrel (0.18) z
+    16.32-16.98, window z 17.00-19.10, plain wall 19.10-19.69;
+  - glass inserts 0.59 x 0.55, projection 0.02 (<= 0.10: texture), u 14.23-14.82, z 13.75-14.30 and
+    17.05-17.60 — they lie inside the window rectangles: check in the FBX whether they are part of the window
+    (then they belong to the opening, not the decor).
+  - the left neighbour's windows end at u 13.001: on the cut line, outside the fragment.
 - **Body**: close the fragment as a box behind the facade, 3.0 m deep (x 56.719 ... 59.719): the facade face
   as in the source with its window openings; sides, back, top and bottom are flat cut faces of the facade
   material. No interior, no slabs.
 - **Coordinates**: move the fragment so that the facade's bottom-left corner seen from outside is the origin:
-  subtract (56.719, 158.661, 13.1), no rotation (the facade then lies in x = 0 facing -X, y 0 ... 4.6, z 0 ...
-  7.2). Metres, Z up. Write the offset you used into this README.
+  subtract (56.719, 158.661, 12.52), no rotation (the facade then lies in x = 0 facing -X, y 0 ... 4.6, z
+  0 ... 7.17). Metres, Z up. Write the offset you used into this README.
 - **Helpers** (`LEVEL_<name>`, Point helpers, name rule of `markup-helpers`): `LEVEL_cut_bottom` at z 0,
   `LEVEL_F1` and `LEVEL_F2` at the finished floor levels of the two storeys as the source shows them (the
   slabs are outside the cut, take them from the source; if a floor is below the cut, put the helper at the cut
-  bottom and say so), `LEVEL_cut_top` at z 7.2.
+  bottom and say so), `LEVEL_cut_top` at z 7.17.
 - Keep the source's decor exactly as delivered (separate meshes, their materials and joints); only cut and
   move. Openings stay as in the source (their reveal depth is read, default 0.4 when the source has none).
 

@@ -25,8 +25,12 @@ import sys
 from pathlib import Path, PurePosixPath
 
 LEVELS = ("draft", "built", "checked", "delivered")
-# any line naming the status, however it is formatted (bold, quote, list, BOM, case; review 1 of PR #73)
-STATUS_LINE = re.compile(r"^[\s﻿>*_`-]*pipeline\s+status[*_`\s]*:(.*?)$", re.M | re.I)
+# Every line that mentions the pipeline status, once Markdown marks are dropped, counts, however it is
+# formatted (bold anywhere, heading, quote, list, BOM, case; reviews 1-2 of PR #73); it must read
+# `pipeline status: <level>` and there must be exactly one.
+MARKS = re.compile(r"[﻿*_`#>]")
+MENTION = re.compile(r"pipeline\s*status", re.I)
+STATUS = re.compile(r"^-?\s*pipeline\s+status\s*:\s*(\S+)\s*$", re.I)
 GAP_LINE = re.compile(r"Engine gap:\s*(EG\d+)\b")
 GAP_HEAD_LINES = 30
 SCRIPT_SUFFIXES = {".py", ".mjs", ".js", ".sh", ".ms", ".cmd", ".ps1"}
@@ -34,16 +38,17 @@ JOB_PATH = re.compile(r"^jobs/([^/]+)/")
 
 
 def status_of(text):
-    """(status, error) of a STATE.md text; status None when the line is missing."""
-    found = STATUS_LINE.findall(text)
+    """(status, error) of a STATE.md text; status None when no line mentions it."""
+    lines = [MARKS.sub("", line).strip() for line in text.splitlines()]
+    found = [line for line in lines if MENTION.search(line)]
     if not found:
         return None, None
     if len(found) > 1:
-        return None, f"{len(found)} 'Pipeline status:' lines; one per STATE.md"
-    value = found[0].strip("`*_ \t\r").lower()
-    if value not in LEVELS:
-        return None, f"Pipeline status {found[0]!r} is none of {', '.join(LEVELS)}"
-    return value, None
+        return None, f"{len(found)} lines name the pipeline status; one 'Pipeline status: <level>' per STATE.md"
+    m = STATUS.match(found[0])
+    if not m or m.group(1).lower() not in LEVELS:
+        return None, f"{found[0]!r} is not 'Pipeline status: <{'|'.join(LEVELS)}>'"
+    return m.group(1).lower(), None
 
 
 def _json(read, path, errors):
@@ -132,6 +137,9 @@ def staged(root):
     backlog = backlog.decode("utf-8", "replace") if backlog is not None else None
     errors, jobs, states = [], set(), set()
     for code, path in changes:
+        if code != "D" and path.split("/")[0].lower() == "jobs" and not path.startswith("jobs/"):
+            errors.append(f"{path}: the folder is jobs/ (a case variant would escape the check; review 2 of PR #73)")
+            continue
         m = JOB_PATH.match(path)
         if not m:
             continue

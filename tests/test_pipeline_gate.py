@@ -47,8 +47,8 @@ def test_status_line(text, expected):
 
 
 def test_status_line_rejects_unknown_and_twice():
-    assert "none of" in gate.status_of("Pipeline status: accepted\n")[1]
-    assert "one per" in gate.status_of("Pipeline status: draft\nPipeline status: built\n")[1]
+    assert "is not 'Pipeline status" in gate.status_of("Pipeline status: accepted\n")[1]
+    assert "one 'Pipeline status" in gate.status_of("Pipeline status: draft\nPipeline status: built\n")[1]
 
 
 def test_draft_needs_nothing():
@@ -261,7 +261,7 @@ def test_hook_ignores_other_files(tmp_path):
     "Pipeline status: draft\n> - Pipeline status: built\n",
 ])
 def test_a_second_formatted_status_line_counts(text):
-    assert "one per" in gate.status_of(text)[1]
+    assert "one 'Pipeline status" in gate.status_of(text)[1]
 
 
 @pytest.mark.parametrize("text", ["**Pipeline status: built**\n", "\ufeffPipeline status: built\n",
@@ -352,3 +352,39 @@ def test_delivery_optimized_cache_name(repo):
     assert gate.delivery(repo, "jobs/J") == []
     (pyc.parent / "other.cpython-313.opt-2.pyc").write_bytes(b"\0")
     assert any("other.py is not committed" in e for e in gate.delivery(repo, "jobs/J"))
+
+
+# --- review 2 of PR #73 ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("text", ["Pipeline status: draft\n# Pipeline status: built\n",
+                                  "Pipeline status: draft\nPipeline **status**: built\n",
+                                  "Pipeline status: draft\nThe pipeline status was built earlier.\n"])
+def test_any_second_mention_of_the_status_is_an_error(text):
+    assert "one 'Pipeline status" in gate.status_of(text)[1]
+
+
+@pytest.mark.parametrize("text", ["## Pipeline status: built\n", "Pipeline **status**: built\n"])
+def test_heading_or_inner_bold_status_is_read(text):
+    assert gate.status_of(text) == ("built", None)
+
+
+def test_unreadable_status_line_is_an_error():
+    assert "is not 'Pipeline status" in gate.status_of("Pipeline status: built, mostly\n")[1]
+
+
+def test_staged_folder_case_variant_is_blocked(repo):
+    git(repo, "config", "core.ignorecase", "false")   # else git files it under the tracked jobs/ (checked there)
+    write(repo, "Jobs/J/STATE.md", state("built"))
+    write(repo, "Jobs/J/scripts/run.py", "print(1)\n")
+    errors = gate.staged(repo)
+    assert sum("the folder is jobs/" in e for e in errors) == 2
+
+
+@pytest.mark.parametrize("payload", [
+    {"tool_name": "Write", "tool_input": {"file_path": "C:/r/jobs/J/STATE.md", "content": 5}},
+    {"tool_name": "Edit", "tool_input": {"file_path": "C:/r/jobs/J/STATE.md", "old_string": None, "new_string": None}},
+    {"tool_name": "Write", "tool_input": {"file_path": "C:/r/jobs/J/scripts/new.py", "content": None}},
+])
+def test_hook_malformed_fields_pass(payload):
+    result = subprocess.run([sys.executable, str(HOOK)], input=json.dumps(payload), capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr

@@ -22,8 +22,9 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   vertical strips — lesenes and pilasters (0.35-1.2 wide, several storeys high, 0.18-0.30); horizontal belts
   over a whole wall (0.30, a stepped profile in two pieces); deep panels 0.6-0.8; thin vertical fins 0.05 x
   0.20 at a 0.20 m step (screens).
-- Grouping in the source: pilaster strips are split per storey (388 pieces in 62 strips, joints 0.02 / 0.06
-  m) — one element each; spandrels and inserts repeat per storey on a 3.3 m rhythm and per bay on 3.4 m
+- Grouping in the source: pilaster strips are split per storey (388 pieces in 62 strips; joints 0.01-0.06 m,
+  all within the 0.06 m seam below, so the same 62 strips under the merge rule; the catalogue groups with
+  joints up to 0.10 m and finds no joint over 0.06) — one element each; spandrels and inserts repeat per storey on a 3.3 m rhythm and per bay on 3.4 m
   (typical-floor repeat, not one element).
 
 ## How the extractor reads it
