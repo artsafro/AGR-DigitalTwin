@@ -26,8 +26,9 @@ Etalon = KPP1 v007 VPM FBX (job scripts, option a). Etalon against itself: bbox,
 silhouettes, triangle budget **pass**; the inset roof joint is recognised (slabs inset, plates as the spec);
 **fail**:
 - `mesh`: 88 open loops outside the allowed ones (decor parts that are not only attachment / metal, e.g.
-  canopies in facade IDs) and 10 non-manifold vertices (south facade, window surrounds against the
-  cassettes at y -0.07, z 4.97 / 6.53);
+  canopies in facade IDs) and 10 non-manifold vertices, real contacts at every weld down to 0.00001 mm:
+  6 at the south window surrounds against the cassettes (y -0.07, z 4.97 / 6.53), 2 on the west facade
+  (x -0.07) and 2 next to the south doors (z 2.70, x 13.01 / 14.09) (review 1 of PR #72);
 - `opening_planes` 0.0: KPP1's openings are glass + frames (VPM), not an npm_min plane at the opening depth
   (C24 seat); with door (11) and glass (12) in the opening group the extractor also takes them as planes and
   asks 25 `wall-break-off-contour` questions;
