@@ -33,7 +33,7 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - **Merging a split element** (user 2026-10-11; the main thing `bench-k02-decor-fragment` checks, with its
   own extractor test in PR 2): source pieces with the same cross-section (width and projection), on one axis
   (same wall, same line along the strip) and with gaps of at most `plate_gap_m` x N between them are one
-  element. N = 4 gives 0.02 m, the seam of a pilaster cut per storey. The seam is texture.
+  element. N = 12 (user 2026-10-12) gives 0.06 m: both seams of the catalogue, 0.02 and 0.06 m, are seams. The seam is texture.
 - Pieces repeated on the storey / bay rhythm (gaps far over the seam) are separate elements of one typical
   floor, not one element.
 - A question only where these rules do not cover the case (a piece that fits no element, kind or wall) —
