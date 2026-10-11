@@ -344,4 +344,6 @@ def load(index_path):
         folder = index_path.parent / band["dir"]
         bands.append(json.loads((folder / "floor.json").read_text(encoding="utf-8")))
         objs.append((folder / "reference.obj").read_text(encoding="utf-8"))
-    return {**to_dump(bands, objs, index.get("document")), "levels": index.get("levels", [])}
+    # Levels and Roofs of the document (MH2): object.json `revit_levels` turns them into LEVEL_ helpers
+    return {**to_dump(bands, objs, index.get("document")), "levels": index.get("levels", []),
+            **{k: index[k] for k in ("revit_levels", "revit_roofs") if k in index}}

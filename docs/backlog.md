@@ -42,8 +42,6 @@ the pattern `markup-helpers` (written or extended) and its test.
 
 - **MH1b** (MH1 done: Blender route closed on the Blender B01 etalon, pattern `markup-helpers`) — later:
   a script that places `LEVEL_*` Empties in a Blender scene from `spec.json`.
-- **MH2** Revit route, levels: generate `LEVEL_<name>` (elevation) from `Levels` through TwinPack.
-  Test: on KPP1 the Revit helpers match the ones taken from mesh v022 within the level tolerance.
 - **MH3** Axes and anchors: generate `AXIS_<name>` (line) from Revit `Grids` through TwinPack; the
   extractor reads the `AXIS_<letter>` / `AXIS_<digit>` grid and binds openings to axes, not absolute
   coordinates; named anchors `TERRACE_<n>`, `ENTRANCE_<name>` as hints to patterns (smaller gray zone).
