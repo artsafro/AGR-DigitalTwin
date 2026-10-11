@@ -72,6 +72,6 @@ FBX and records their SHA256 in `etalon.json`. The repo keeps spec, hashes and t
 ## Checks (after PRs 2-4)
 
 Extractor on the source: belt, lesenes, pilaster and spandrels as geometry entries, the pilaster pieces as one
-element, the glass inserts as texture, anything undecided as a question. Engine model against the etalon: the
+element, the glass inserts as texture, anything the rules do not cover as a question (no question for a number at a threshold). Engine model against the etalon: the
 8 checks of §5 plus the decor checks — no decor face within 5 mm of an opening face, no body edge cut by decor,
 decor ids in 26-30, nothing of 0.10 m or less built as geometry.

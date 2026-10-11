@@ -42,7 +42,9 @@ the gaps listed here; a job script names its gap in its header (`Engine gap: EG<
 `pipeline_gate` on new scripts); anything not listed is asked, not scripted. A gap leaves this list when
 the engine covers it.
 
-- **EG1** Facade decor (pattern `facade-decor-inset`): PR 2 spec block `decor` + extractor; PR 3 engine +
+- **EG1** Facade decor (pattern `facade-decor-inset`): PR 2 spec block `decor` + extractor, with a test of
+  merging a split element (same cross-section, one axis, gaps <= `plate_gap_m` x N, N = 4: 0.02 m) and of the
+  inclusive 0.10 m threshold; PR 3 engine +
   checker (no decor overlap with openings, no body edge cut, ids 26-30, 10 cm threshold); PR 4 run on
   `bench-k02-decor-fragment` (real fragment: `source.max` + `etalon.max` by the user). Later regression: the
   synthetic `bench-b03-decor` (free-standing column).

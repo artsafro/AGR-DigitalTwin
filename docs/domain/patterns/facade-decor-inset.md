@@ -10,14 +10,14 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   (belt / cornice), `pilaster`, `lesene`, `spandrel`, `fin`, `column`, `tile-band` (list open until PR 2); `profile` the cross-section (height and
   projection); `extent` the wall run or the footprint; `id` from the attachment group 26-30
   (`standards/material_id_ranges.yaml`).
-- Projection over 0.10 m: geometry. 0.10 m or less: texture (`texture: true`, nothing built) — the
-  same threshold as facade relief.
+- Threshold (user 2026-10-11), the same as facade relief: **projection <= 0.10 -> texture; > 0.10 ->
+  geometry; the boundary is included** (exactly 0.10 is texture). Decided by the projection alone, never a
+  question: a texture entry has `texture: true` and nothing is built.
 
 ## What real decor looks like (catalogue of one building, 2471 pieces)
 
 - 85 % of the pieces project more than 0.10 m (geometry): 0.18 (1229), 0.30 (472), 0.60 (224), 0.80,
-  0.14, 0.12, 0.20. At or under 0.10 m: 347 glass inserts 0.02 m and 27 pieces at exactly 0.10 m (the
-  boundary: texture by the rule, worth a question when they belong to a deeper element).
+  0.14, 0.12, 0.20. At or under 0.10 m (texture): 347 glass inserts 0.02 m and 27 pieces at exactly 0.10 m.
 - Kinds by shape: spandrel panels between windows (about 2.16 x 1.16, 0.18; one piece per bay and storey);
   vertical strips — lesenes and pilasters (0.35-1.2 wide, several storeys high, 0.18-0.30); horizontal belts
   over a whole wall (0.30, a stepped profile in two pieces); deep panels 0.6-0.8; thin vertical fins 0.05 x
@@ -30,10 +30,14 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 
 - Many source pieces of one element (tiles of a belt, segments of a cornice) are one entry: tiling
   and seams are texture, never geometry.
-- Pieces of one strip split along its height with joints up to 0.10 m (same wall, width, projection) are one
-  element; repeated pieces on the storey / bay rhythm are separate elements of one typical floor.
-- A piece it cannot assign to one element, kind or wall is a question, never a guess; so are thin fins
-  (width <= 0.10 m with projection > 0.10 m) and pieces at exactly 0.10 m.
+- **Merging a split element** (user 2026-10-11; the main thing `bench-k02-decor-fragment` checks, with its
+  own extractor test in PR 2): source pieces with the same cross-section (width and projection), on one axis
+  (same wall, same line along the strip) and with gaps of at most `plate_gap_m` x N between them are one
+  element. N = 4 gives 0.02 m, the seam of a pilaster cut per storey. The seam is texture.
+- Pieces repeated on the storey / bay rhythm (gaps far over the seam) are separate elements of one typical
+  floor, not one element.
+- A question only where these rules do not cover the case (a piece that fits no element, kind or wall) —
+  never for a number at a threshold.
 
 ## How to build it
 
