@@ -35,6 +35,27 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
   T-free quads), `drop_step_bottom_rims.py` (shell post-step). Move into `src/dt_ai/geometry/`
   with tests; keep the PSU275 outputs as regression.
 
+## Engine gaps — mixed mode (user decision 2026-10-11, `docs/HARNESS_PLAN.md` §16)
+
+The engine builds what it can (body, openings, floor steps, terraces, inset slabs). Job scripts do only
+the gaps listed here; a job script names its gap in its header (`Engine gap: EG<n>`, checked by
+`pipeline_gate` on new scripts); anything not listed is asked, not scripted. A gap leaves this list when
+the engine covers it.
+
+- **EG1** Facade decor (pattern `facade-decor-inset`): PR 2 spec block `decor` + extractor, with a test of
+  merging a split element (same cross-section, one axis, gaps <= `plate_gap_m` x N, N = 12: 0.06 m, user 2026-10-12) and of the
+  inclusive 0.10 m threshold; PR 3 engine +
+  checker (no decor overlap with openings, no body edge cut, ids 26-30, 10 cm threshold); PR 4 run on
+  `bench-k02-decor-fragment` (real fragment: `source.max` + `etalon.max` by the user). Later regression: the
+  synthetic `bench-b03-decor` (free-standing column).
+- **EG2** Balconies (slab, railing, soffit) — pattern to be written.
+- **EG3** `mid` window sashes / detailed windows from the opening plane.
+- **EG4** UV, atlas and delivery package = **H10**.
+- **OD1** Opening depth default 0.4 m (`opening_depth_default_m`; C24 `npm_min` plane at 0.4, `mid` at
+  0.2); a missing source value → 0.4 marked "depth by default" in the extractor report, never 0 or the
+  minimum; benchmarks rerun (B01/B02/B02t specs and etalons at 0.2 need the user's choice: keep their
+  explicit 0.2 in `object.json` or redo).
+
 ## Markup helpers (after the terrace; owner Claude, code parts Codex)
 
 Plan: `docs/HARNESS_PLAN.md` §14 (user decision 2026-10-10). One PR each, in this order, each with

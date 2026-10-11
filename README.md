@@ -15,7 +15,7 @@ uv run dt profiles check
 uv run dt schemas --check
 ```
 
-Install the pre-commit hook that commits files over 50 MB as links:
+Install the pre-commit hook (pipeline gate, docs/HARNESS_PLAN.md §16; files over 50 MB committed as links):
 
 ```powershell
 Copy-Item tools/git-hooks/pre-commit .git/hooks/pre-commit

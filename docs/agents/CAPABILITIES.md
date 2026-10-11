@@ -119,6 +119,15 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
 - `tools/git-hooks/link_large_files.py` via `.git/hooks/pre-commit`: new files over
   50 MB are committed as entries in `docs/sources/linked-files.json`. Toggle: Ctrl+B Shift+K.
 
+### Pipeline gate
+- Status: WORKING on tests (2026-10-11, Claude, `harness/b03-decor-case`; 27 tests); not yet installed in
+  `.git/hooks` on this machine (copy `tools/git-hooks/pre-commit`, README).
+- `tools/git-hooks/pipeline_gate.py --staged` (pre-commit, every agent) and `--job jobs/<JOB>` (delivery):
+  `Pipeline status` above draft needs `pipeline/spec.json` + `spec.report.json` + `check.json`; new job
+  scripts name an engine gap `EG<n>`; delivery needs a committed `.py` for every `.pyc`
+  (`docs/HARNESS_PLAN.md` §16). Claude Code also blocks such writes at PreToolUse
+  (`.claude/hooks/pipeline_gate.py`, permission "deny").
+
 ## Pipeline core (src/dt_ai, technical_library, tools)
 
 Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 2026-10-06
