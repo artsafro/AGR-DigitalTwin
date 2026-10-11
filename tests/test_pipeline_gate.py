@@ -340,3 +340,15 @@ def test_hook_state_name_case_blind(tmp_path):
 def test_hook_malformed_payload_passes(raw):
     result = subprocess.run([sys.executable, str(HOOK)], input=raw, capture_output=True, text=True)
     assert result.returncode == 0 and not result.stdout.strip(), result.stderr
+
+
+def test_delivery_optimized_cache_name(repo):
+    write(repo, "jobs/J/STATE.md", state("draft"))
+    write(repo, "jobs/J/scripts/build.decor.py", '"""Engine gap: EG1"""\n')
+    git(repo, "commit", "-qm", "j")
+    pyc = repo / "jobs/J/scripts/__pycache__/build.decor.cpython-313.opt-1.pyc"
+    pyc.parent.mkdir(parents=True)
+    pyc.write_bytes(b"\0")
+    assert gate.delivery(repo, "jobs/J") == []
+    (pyc.parent / "other.cpython-313.opt-2.pyc").write_bytes(b"\0")
+    assert any("other.py is not committed" in e for e in gate.delivery(repo, "jobs/J"))

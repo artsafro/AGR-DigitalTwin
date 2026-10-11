@@ -166,8 +166,8 @@ def delivery(root, job_dir):
     tracked = set(_git(root, "ls-tree", "-r", "-z", "--name-only", "HEAD", "--", f"jobs/{job}")
                   .stdout.decode("utf-8").split("\0"))
     for pyc in sorted((job_dir / "scripts").rglob("*.pyc")):
-        if pyc.parent.name == "__pycache__":         # <name>.<tag>.pyc; the name may hold dots
-            source = pyc.parent.parent / (pyc.name.rsplit(".", 2)[0] + ".py")
+        if pyc.parent.name == "__pycache__":         # <name>.<tag>[.opt-N].pyc; the name may hold dots
+            source = pyc.parent.parent / (re.sub(r"\.[^.]+(\.opt-\d+)?\.pyc$", "", pyc.name) + ".py")
         else:
             source = pyc.with_suffix(".py")
         rel = source.relative_to(root).as_posix()
