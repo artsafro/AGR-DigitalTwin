@@ -1,5 +1,12 @@
 #!/bin/sh
-# Commit large new files as links (tools/git-hooks/link_large_files.py, toggle: git config twin.linkLarge).
-script="$(git rev-parse --show-toplevel)/tools/git-hooks/link_large_files.py"
+# 1. Pipeline gate: a job status above draft needs spec + extractor report + checker report
+#    (tools/git-hooks/pipeline_gate.py, docs/HARNESS_PLAN.md §16).
+# 2. Commit large new files as links (tools/git-hooks/link_large_files.py, toggle: git config twin.linkLarge).
+top="$(git rev-parse --show-toplevel)"
+gate="$top/tools/git-hooks/pipeline_gate.py"
+if [ -f "$gate" ]; then
+    py -3 "$gate" --staged || exit 1
+fi
+script="$top/tools/git-hooks/link_large_files.py"
 [ -f "$script" ] || exit 0
 exec py -3 "$script"

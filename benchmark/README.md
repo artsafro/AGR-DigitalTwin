@@ -15,7 +15,8 @@ Terms: Etalon, Spec, Level contour in `GLOSSARY.md`.
 |---|---|---|
 | `bench-b01-box` | box 10x10 m, 2 storeys, 2 windows, flat roof with parapet | wall-from-contour, opening-plane, typical-floor-repeat, parapet |
 | `bench-b02-corner-niche` | one non-90 corner, one contour niche, two roof levels | non-90-corner, contour-niche |
-| `bench-b03-attachments` | rounded corner, vent grille, AC basket, outside stair | attachments (patterns to be written) |
+| `bench-b03-decor` | box of B01 with belt, pilaster, free-standing column, tile band; `source.max` + `etalon.max` | facade-decor-inset (draft) |
+| `bench-b04-attachments` | rounded corner, vent grille, AC basket, outside stair | attachments (patterns to be written) |
 | `bench-k01-kpp1` | first real building, object `tec26-kpp1` | all of the above |
 
 Layout of one benchmark:

@@ -1,4 +1,6 @@
-# bench-b03-attachments
+# bench-b04-attachments
+
+(Was B03 until 2026-10-11; B03 went to facade decor, user decision.)
 
 Rounded corner, vent grille (inset), AC basket and outside stair (attachments).
 
