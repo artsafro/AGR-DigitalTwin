@@ -40,7 +40,8 @@ COLUMN_MAX_M = 1.5
 COLUMN_MIN_M = 0.05       # ... and at least this on each side: a vertical sheet is no column
 COLUMN_BASE_M = 0.05      # ... standing on a level (its bottom within this of one)
 BAND_RATIO = 3.0          # band: width >= 3 x height; strip: height >= 3 x width; else panel
-ROUND = 6                 # metres to the micron: the texture boundary is decided on the written value
+ROUND = 6                 # metres to the micron in the spec ...
+ROUND_OUT = 9             # ... projections to the nanometre: the texture boundary is decided on the written value
 
 
 def _walls(contour):
@@ -83,16 +84,26 @@ def _normals(t):
     return nv[keep] / (2 * area[keep, None]), area[keep], t[keep]
 
 
+def _levels_of(values):
+    """Distinct values within SAME_M."""
+    out = []
+    for x in sorted(values):
+        if not out or x - out[-1] > SAME_M:
+            out.append(x)
+    return out
+
+
 def _is_box(t, u, n):
-    """Axis-aligned in the wall frame and its front face covering the whole front rectangle at full
-    projection (reviews of PR #74: an L or a stepped profile has aligned normals too)."""
+    """Axis-aligned in the wall frame, only two depths (back and front: no stepped profile) and its front face
+    covering the whole front rectangle at full projection (reviews 1-2 of PR #74). Inner s / z values are
+    allowed: pieces of a row or a stack welded into one part."""
     normals, _, t = _normals(t)
     axes = np.array([[*u, 0.0], [*n, 0.0], [0.0, 0.0, 1.0]])
     if not len(normals) or not (np.abs(normals @ axes.T).max(axis=1) >= AXIS_COS).all():
         return False
     s, d, z = t[..., :2] @ u, t[..., :2] @ n, t[..., 2]
     w, h = s.max() - s.min(), z.max() - z.min()
-    if w <= SAME_M or h <= SAME_M:
+    if w <= SAME_M or h <= SAME_M or len(_levels_of(d.ravel())) != 2:
         return False
     front = (normals @ axes[1] >= AXIS_COS) & (np.abs(d - d.max()).max(axis=1) <= SAME_M)
     cover = unary_union([shapely.Polygon(np.column_stack([s[k], z[k]])) for k in np.flatnonzero(front)])
@@ -100,11 +111,14 @@ def _is_box(t, u, n):
 
 
 def _is_column(t):
-    """An axis-aligned box in the object frame: its sides cover the whole perimeter x height."""
+    """An axis-aligned box in the object frame: two x and two y values only (no L footprint, review 2 of
+    PR #74) and its sides covering the whole perimeter x height."""
     normals, area, _ = _normals(t)
     if not len(normals) or not (np.abs(normals).max(axis=1) >= AXIS_COS).all():
         return False
     p = t.reshape(-1, 3)
+    if len(_levels_of(p[:, 0])) != 2 or len(_levels_of(p[:, 1])) != 2:
+        return False
     dx, dy, h = np.ptp(p[:, 0]), np.ptp(p[:, 1]), np.ptp(p[:, 2])
     sides = area[np.abs(normals[:, 2]) < 1 - AXIS_COS].sum()
     return sides >= COVER * 2 * (dx + dy) * h
@@ -137,8 +151,8 @@ def _piece(v, part_tris, levels, contours, polys):
         pc["type"] = "wall" if on_walls and _is_box(t, u, n) else "shape"
         return pc
     lo, hi = p[:, :2].min(axis=0), p[:, :2].max(axis=0)
-    free = polys[li].exterior.distance(shapely.Point(*((lo + hi) / 2))) > SHARE_TOL_M and \
-        not polys[li].buffer(-SHARE_TOL_M).intersects(shapely.box(*lo, *hi))
+    foot = shapely.box(*lo, *hi)                          # clear of the body in every storey it crosses
+    free = all(polys[k].distance(foot) > SHARE_TOL_M for k in range(li, _storey(levels, z1 - SAME_M) + 1))
     grounded = any(abs(z0 - lv["elev_m"]) <= COLUMN_BASE_M for lv in levels)
     if (free and grounded and z1 - z0 >= COLUMN_MIN_H_M and COLUMN_MIN_M <= (hi - lo).min()
             and (hi - lo).max() <= COLUMN_MAX_M and _is_column(t)):
@@ -148,7 +162,7 @@ def _piece(v, part_tris, levels, contours, polys):
 
 
 def _texture(out):
-    return round(out, ROUND) <= DECOR_TEXTURE_M + 1e-9
+    return round(out, ROUND_OUT) <= DECOR_TEXTURE_M + 1e-9
 
 
 def _joinable(a, b, seam):
@@ -196,7 +210,8 @@ def _merge(pieces, seam):
         z0, z1 = min(p["z0"] for p in g), max(p["z1"] for p in g)
         filled = unary_union([shapely.box(p["s0"] - half, p["z0"] - half, p["s1"] + half, p["z1"] + half)
                               for p in g])
-        if filled.area >= (s1 - s0 + 2 * half) * (z1 - z0 + 2 * half) - 1e-6:
+        outs = [p["out"] for p in g]                     # one cross-section over the whole group (review 2)
+        if filled.area >= (s1 - s0 + 2 * half) * (z1 - z0 + 2 * half) - 1e-6 and max(outs) - min(outs) <= SAME_M:
             elements.append(dict(g[0], s0=s0, s1=s1, z0=z0, z1=z1, li=min(p["li"] for p in g), pieces=len(g),
                                  out=max(p["out"] for p in g), embed=max(p["embed"] for p in g),
                                  ids=set().union(*(p["ids"] for p in g))))
@@ -210,6 +225,12 @@ def _question(kind, levels, li, out, s0, s1, z0, z1, at=None):
     return {"priority": "low", "kind": kind, "levels": [levels[li]["name"]], "wall": None,
             "depth_m": round(out, 3), "length_m": round(s1 - s0, 3), "facade_share": None,
             "heights_m": [round(z0, 3), round(z1, 3)], "at": at}
+
+
+def _at(piece, s):
+    """Plan point on the wall face at s along the wall (a question's position)."""
+    p = piece["u"] * s + piece["n"] * piece["c"]
+    return [round(float(p[0]), 2), round(float(p[1]), 2)]
 
 
 def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachment_ids):
@@ -232,10 +253,12 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             continue
         found.append(pc)
     walls, ambiguous = _merge([p for p in found if p["type"] == "wall"], seam)
-    for g in ambiguous:
-        questions.append(_question("decor-merge", levels, min(p["li"] for p in g), max(p["out"] for p in g),
-                                   min(p["s0"] for p in g), max(p["s1"] for p in g),
-                                   min(p["z0"] for p in g), max(p["z1"] for p in g)))
+    for g in ambiguous:                                   # placed by wall and position: answers stay with it
+        li, s0, s1 = min(p["li"] for p in g), min(p["s0"] for p in g), max(p["s1"] for p in g)
+        q = _question("decor-merge", levels, li, max(p["out"] for p in g), s0, s1,
+                      min(p["z0"] for p in g), max(p["z1"] for p in g), _at(g[0], (s0 + s1) / 2))
+        q["wall"] = (_wall_at(contours[li], g[0]["u"], g[0]["c"], s0, s1) or (None,))[0]
+        questions.append(q)
     columns = [dict(p, pieces=1) for p in found if p["type"] == "column"]
     decor = []
     for e in walls + columns:
@@ -251,11 +274,12 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             continue
         at = _wall_at(contours[li], e["u"], e["c"], e["s0"], e["s1"])
         if at is None:                                    # cannot happen for a checked piece; never guess
-            questions.append(_question("decor-shape", levels, li, e["out"], e["s0"], e["s1"], e["z0"], e["z1"]))
+            questions.append(_question("decor-shape", levels, li, e["out"], e["s0"], e["s1"], e["z0"], e["z1"],
+                                       _at(e, (e["s0"] + e["s1"]) / 2)))
             continue
         w_m, h_m = e["s1"] - e["s0"], e["z1"] - e["z0"]
         kind = "band" if w_m >= BAND_RATIO * h_m else "strip" if h_m >= BAND_RATIO * w_m else "panel"
-        out = round(e["out"], ROUND)
+        out = round(e["out"], ROUND_OUT)
         decor.append({"kind": kind, **entry, "wall": at[0], "x_m": round(at[1], ROUND), "w_m": round(w_m, ROUND),
                       "projection_m": out, "texture": _texture(out)})
     names = [lv["name"] for lv in levels]

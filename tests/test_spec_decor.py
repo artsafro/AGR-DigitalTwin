@@ -275,3 +275,61 @@ def test_a_strip_crossing_a_storey_must_stay_on_a_wall(upper_y):
     lower = [[0, 0], [8, 0], [8, 8], [0, 8]]
     decor, questions, _ = run([box((1, -0.15, 1), (1.5, 0, 5))], contours=[lower, upper])
     assert decor == [] and [q["kind"] for q in questions] == ["decor-shape"]
+
+
+# --- review 2 of PR #74 ------------------------------------------------------------------------------
+
+def prism(name, xy, z0, z1):
+    """A closed vertical prism over the polygon xy (counter-clockwise), quads for sides, fans for caps."""
+    m = Mesh(name)
+    k = len(xy)
+    for i in range(k):
+        (ax, ay), (bx, by) = xy[i], xy[(i + 1) % k]
+        m.quad((ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1))
+    base = len(m.vertices)
+    m.vertices += [[float(x), float(y), float(z0)] for x, y in xy] + [[float(x), float(y), float(z1)] for x, y in xy]
+    for i in range(1, k - 1):
+        m.triangles += [[base, base + i + 1, base + i], [base + k, base + k + i, base + k + i + 1]]
+    return m
+
+
+def test_a_stepped_depth_profile_is_a_question():
+    m = prism("Step", [(1, -0.15), (2, -0.15), (2, 0), (1.5, 0), (1.5, -0.05), (1, -0.05)], 1, 2)
+    decor, questions, _ = run([m])
+    assert decor == [] and [q["kind"] for q in questions] == ["decor-shape"]
+
+
+def test_an_l_shaped_column_is_no_column():
+    m = prism("LCol", [(5, -2), (5.4, -2), (5.4, -1.8), (5.2, -1.8), (5.2, -1.6), (5, -1.6)], 0, 3)
+    decor, _, report = run([m])
+    assert decor == [] and report["not_decor_parts"] == 1
+
+
+def test_a_column_inside_an_upper_storey_is_no_column():
+    lower = [[0, 0], [8, 0], [8, 8], [0, 8]]
+    upper = [[0, -3], [8, -3], [8, 8], [0, 8]]
+    decor, _, _ = run([box((5, -2, 0), (5.4, -1.6, 5))], contours=[lower, upper])
+    assert decor == []
+
+
+def test_a_group_over_the_cross_section_tolerance_is_asked():
+    pieces = [box((1, -out, 1 + 0.52 * k), (1.5, 0, 1.5 + 0.52 * k)) for k, out in enumerate((0.150, 0.154, 0.158))]
+    for order in itertools.permutations(pieces):
+        decor, questions, _ = run(list(order))
+        assert len(decor) == 3 and [q["kind"] for q in questions] == ["decor-merge"]
+
+
+def test_merge_questions_are_told_apart_by_place():
+    def l_at(x):
+        return [box((x, -0.15, 1.0), (x + 0.5, 0, 1.5)), box((x + 0.52, -0.15, 1.0), (x + 1.02, 0, 1.5)),
+                box((x, -0.15, 1.52), (x + 0.5, 0, 2.02))]
+    flat = [[0, 0], [8, 0], [8, 8], [0, 8]]
+    _, questions, _ = run(l_at(1) + l_at(6), contours=[flat, flat])
+    assert [q["kind"] for q in questions] == ["decor-merge"] * 2
+    assert questions[0]["at"] != questions[1]["at"] and {q["wall"] for q in questions} == {0}
+
+
+@pytest.mark.parametrize("out", [0.1000001, 0.10000049])
+def test_a_submicron_excess_is_still_geometry(out):
+    (d,), _, _ = run([box((1, -out, 1.0), (1.5, 0, 2.0))])
+    assert d["texture"] is False and d["projection_m"] > 0.1
