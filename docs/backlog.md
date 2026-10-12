@@ -52,10 +52,6 @@ the engine covers it.
   decor extractor already lists them as `decor.attachment_candidates` (user 2026-10-12).
 - **EG3** `mid` window sashes / detailed windows from the opening plane.
 - **EG4** UV, atlas and delivery package = **H10**.
-- **OD1** Opening depth default 0.4 m (`opening_depth_default_m`; C24 `npm_min` plane at 0.4, `mid` at
-  0.2); a missing source value → 0.4 marked "depth by default" in the extractor report, never 0 or the
-  minimum; benchmarks rerun (B01/B02/B02t specs and etalons at 0.2 need the user's choice: keep their
-  explicit 0.2 in `object.json` or redo).
 
 ## Markup helpers (after the terrace; owner Claude, code parts Codex)
 

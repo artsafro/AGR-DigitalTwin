@@ -12,7 +12,7 @@ from dt_ai.spec import Spec, SpecError, extract_spec
 from twinqa.scene import find_blender
 
 IDENTITY = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
-OBJECT = {"id": "bench-synth-box", "frame": {"to_object": IDENTITY}}
+OBJECT = {"id": "bench-synth-box", "frame": {"to_object": IDENTITY}, "opening_depth_default_m": 0.2}  # the synthetic reveals are 0.2
 SQUARE = [[0.0, 0.0], [10.0, 0.0], [10.0, 10.0], [0.0, 10.0]]
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -108,7 +108,7 @@ def test_box_levels_contours_and_roof():
     assert report["floors"]["L0"]["closed_sections"] == report["floors"]["L0"]["sections"]
     for f in spec.expanded_floors():
         (o,) = f.openings
-        assert (o.wall, o.x_m, o.sill_m, o.w_m, o.h_m, o.depth_m, o.source) == (0, 2.0, 0.9, 1.5, 1.5, 0.0, "hole")
+        assert (o.wall, o.x_m, o.sill_m, o.w_m, o.h_m, o.depth_m, o.source) == (0, 2.0, 0.9, 1.5, 1.5, None, "hole")
     assert spec.frame.object == "bench-synth-box"
 
 

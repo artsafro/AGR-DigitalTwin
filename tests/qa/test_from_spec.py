@@ -719,7 +719,8 @@ def test_b02_terrace_spec_round_trip():
     from dt_ai.spec import extract_spec
     data = json.loads((ROOT / "benchmark/bench-b02t-terrace/spec.json").read_text(encoding="utf-8"))
     s = Spec.model_validate(data)
-    spec, report = extract_spec(build(s, INPUTS), {**SYNTH_OBJECT, "id": s.id})
+    spec, report = extract_spec(build(s, INPUTS), {**SYNTH_OBJECT, "id": s.id,
+                                                   "opening_depth_default_m": s.opening_depth_default_m})  # as object.json
     keep = lambda x: {k: v for k, v in x.model_dump().items() if k != "frame"}   # noqa: E731
     assert keep(spec) == keep(s) and report["questions"] == []
 

@@ -3,7 +3,11 @@
 # 2. Pipeline gate on the resulting index: a job status above draft needs spec + extractor report + checker
 #    report (tools/git-hooks/pipeline_gate.py, docs/HARNESS_PLAN.md §16). It runs after linking, because
 #    linking may unstage a file the gate needs (review 1 of PR #73).
-top="$(git rev-parse --show-toplevel)"
+top="$(git rev-parse --show-toplevel)" || top=""   # its exit status counts, not its output (review 2 of #79)
+if [ -z "$top" ] || [ ! -d "$top" ]; then        # fail closed: no root, no checks (review 1 of PR #79)
+    echo "pre-commit: cannot find the repository root; blocked" >&2
+    exit 1
+fi
 script="$top/tools/git-hooks/link_large_files.py"
 if [ -f "$script" ]; then
     py -3 "$script" || exit 1
@@ -11,5 +15,16 @@ fi
 gate="$top/tools/git-hooks/pipeline_gate.py"
 if [ -f "$gate" ]; then
     py -3 "$gate" --staged || exit 1
+else
+    # no gate in this work tree (a branch older than #73, a redirected work tree): a commit touching jobs/
+    # cannot be checked, so it is blocked; other commits have nothing to check (review 3 of PR #79)
+    names="$(git -c core.quotepath=false diff --cached --name-only)" || {
+        echo "pre-commit: cannot read the index; blocked" >&2
+        exit 1
+    }
+    if printf '%s\n' "$names" | grep -qi '^"\{0,1\}jobs/'; then
+        echo "pre-commit: tools/git-hooks/pipeline_gate.py is missing and jobs/ is staged; blocked" >&2
+        exit 1
+    fi
 fi
 exit 0

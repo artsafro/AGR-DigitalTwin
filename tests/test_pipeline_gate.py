@@ -121,6 +121,9 @@ def repo(tmp_path):
     git(tmp_path, "init", "-q")
     git(tmp_path, "config", "user.email", "t@example.com")
     git(tmp_path, "config", "user.name", "t")
+    # under a long --basetemp the object paths pass MAX_PATH and git fails with "Filename too long"
+    # (a Claude scratchpad basetemp, 2026-10-12); the gate itself is not about path length
+    git(tmp_path, "config", "core.longpaths", "true")
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs/backlog.md").write_text(BACKLOG, encoding="utf-8")
     (tmp_path / "jobs/OLD").mkdir(parents=True)
@@ -207,6 +210,79 @@ def test_cli_exit_codes(repo):
     result = run("--staged")
     assert result.returncode == 1 and "blocked" in result.stderr
     assert run("--job", "nowhere").returncode == 2
+
+
+@pytest.mark.parametrize("failing", ["diff", "ls-files", "cat-file"])
+def test_git_failure_blocks_the_commit(repo, monkeypatch, failing):
+    """Fail closed (2026-10-12): under a long path git once failed, the gate read an empty index and let
+    a built status without pipeline/ through."""
+    write(repo, "jobs/J/STATE.md", state("built"))
+    real = gate._git
+
+    def broken(root, *args):
+        if args[0] == failing:
+            return subprocess.CompletedProcess(args, 128, b"", b"error: Filename too long")
+        return real(root, *args)
+    monkeypatch.setattr(gate, "_git", broken)
+    monkeypatch.chdir(repo)
+    assert gate.main(["--staged"]) == 2
+
+
+def test_unresolved_merge_blocks(repo):
+    """Review 1 of #79: STATE.md only at merge stages 1-3 (no stage 0) is not 'absent'."""
+    write(repo, "jobs/J/STATE.md", state("draft"))
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "draft")
+    git(repo, "checkout", "-qb", "other")
+    write(repo, "jobs/J/STATE.md", state("checked"))
+    git(repo, "commit", "-qam", "checked")
+    git(repo, "checkout", "-q", "-")
+    write(repo, "jobs/J/STATE.md", state("built"))
+    git(repo, "commit", "-qam", "built", "--no-verify")
+    subprocess.run(["git", "merge", "-q", "other"], cwd=repo, capture_output=True)   # conflicts
+    errors = gate.staged(repo)
+    assert errors and all("unresolved merge" in e for e in errors)
+
+
+def test_git_not_found_blocks(repo, monkeypatch):
+    """Review 1 of #79: a git that cannot start is a controlled block (exit 2), not a traceback."""
+    def missing(argv, **kw):
+        raise FileNotFoundError(2, "git not found")
+    monkeypatch.setattr(gate.subprocess, "run", missing)
+    monkeypatch.chdir(repo)
+    assert gate.main(["--staged"]) == 2
+
+
+def test_pre_commit_blocks_without_a_root(tmp_path):
+    """Review 1 of #79: when git cannot name the repository root the hook must not skip its checks."""
+    import shutil
+    bash = "C:/Program Files/Git/bin/bash.exe" if Path("C:/Program Files/Git/bin/bash.exe").exists()         else shutil.which("bash")
+    if not bash:
+        pytest.skip("bash unavailable")
+    env = {**__import__("os").environ, "GIT_DIR": str(tmp_path / "nowhere")}
+    result = subprocess.run([bash, str(ROOT / "tools/git-hooks/pre-commit")], cwd=tmp_path, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode == 1 and "blocked" in result.stderr
+
+
+def test_pre_commit_blocks_when_root_lookup_fails_with_output(tmp_path):
+    """Review 2 of #79: a failing `git rev-parse` that still prints a directory must block."""
+    import shutil
+    bash = "C:/Program Files/Git/bin/bash.exe" if Path("C:/Program Files/Git/bin/bash.exe").exists() \
+        else shutil.which("bash")
+    if not bash:
+        pytest.skip("bash unavailable")
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "git").write_text(f'#!/bin/sh\necho "{tmp_path.as_posix()}"\nexit 128\n', encoding="utf-8")
+    hook = (ROOT / "tools/git-hooks/pre-commit").as_posix()
+    bin_dir = fake.as_posix()
+    if fake.drive:                                   # C:/x -> /c/x: a drive colon would split bash's PATH
+        bin_dir = "/" + fake.drive[0].lower() + bin_dir[len(fake.drive):]
+    result = subprocess.run([bash, "-c", f'PATH="{bin_dir}:$PATH"; command -v git; sh "{hook}"'],
+                            cwd=tmp_path, capture_output=True, text=True)
+    assert result.stdout.strip().startswith(bin_dir), result.stdout     # the fake git is the one run
+    assert result.returncode == 1 and "blocked" in result.stderr
 
 
 # --- Claude Code PreToolUse hook ------------------------------------------------------------------------
@@ -331,6 +407,34 @@ def test_pre_commit_gate_sees_the_index_after_linking(repo):
     result = subprocess.run(["git", "commit", "-qm", "built"], cwd=repo, capture_output=True, text=True)
     assert result.returncode != 0, result.stdout + result.stderr
     assert "spec.json missing" in result.stderr
+
+
+def test_pre_commit_without_the_gate_blocks_jobs_only(repo):
+    """Review 3 of #79: no pipeline_gate.py in the work tree - a commit touching jobs/ is blocked, any other
+    commit has nothing to check and passes (branches older than #73)."""
+    import shutil
+    shutil.copy(ROOT / "tools/git-hooks/pre-commit", repo / ".git/hooks/pre-commit")
+    write(repo, "jobs/J/STATE.md", state("built"))
+    git(repo, "add", "-A")
+    result = subprocess.run(["git", "commit", "-qm", "built"], cwd=repo, capture_output=True, text=True)
+    assert result.returncode != 0 and "pipeline_gate.py is missing" in result.stderr, result.stderr
+    git(repo, "reset", "-q")
+    write(repo, "docs/note.md", "note\n")
+    git(repo, "add", "docs/note.md")
+    result = subprocess.run(["git", "commit", "-qm", "note"], cwd=repo, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_replace_refs_do_not_hide_the_staged_state(repo):
+    """Review 3 of #79: `git replace` showing a draft for the staged built STATE.md must not fool the gate."""
+    write(repo, "jobs/J/STATE.md", state("built"))
+    git(repo, "add", "-A")
+    staged = git(repo, "rev-parse", ":jobs/J/STATE.md").stdout.strip()
+    draft = subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=repo, input=state("draft"),
+                           capture_output=True, text=True, check=True).stdout.strip()
+    git(repo, "replace", staged, draft)
+    errors = gate.staged(repo)
+    assert any("spec.json missing" in e for e in errors), errors
 
 
 def test_hook_state_name_case_blind(tmp_path):

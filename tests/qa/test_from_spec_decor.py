@@ -531,3 +531,312 @@ def test_priority_uses_the_original_lengths():
 def test_review_3_build_errors(decor, message):
     with pytest.raises(BuildError, match=message):
         build(spec(*decor), INPUTS)
+
+
+# --- PR #76: attachments are no decor ------------------------------------------------------------------
+
+def test_attachments_beside_decor_are_not_flagged():
+    """K01 (PR #76): an attachment candidate over 0.8 m and a flat rung set into the wall are no decor."""
+    sp = spec(BELT)
+    dump = build(sp, INPUTS)
+    porch = Mesh("Porch")
+    porch.box((5.0, -1.4, 0.05), (7.0, 0.0, 2.3))
+    rung = Mesh("Rung")
+    rung.quad((9.0, -0.3, 4.0), (9.0, 0.2, 4.0), (9.0, 0.2, 4.03), (9.0, -0.3, 4.03))
+    dump["meshes"] += [porch.dump(), rung.dump()]
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+# --- decor ids by material (user 2026-10-12): metal 16-20 or 26-30, one group per element -----------------
+
+@pytest.mark.parametrize("mid, ok", [(17, True), (26, True), (3, False)])
+def test_decor_id_group_by_material(mid, ok):
+    sp = spec(dict(BELT, material_id=mid))
+    report = decor_check(build(sp, INPUTS), sp)
+    assert (report["status"] == "pass") == ok, problems(report)
+
+
+def test_unlisted_decor_running_past_a_corner_fails():
+    """Review 2 of PR #76: a box set 0.06 m in and running 11 mm past the wall end is unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((8.0, -0.15, 1.0), (10.011, 0.06, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_unlisted_decor_running_far_past_a_corner_fails():
+    """Review 3 of PR #76: the same box 0.801 m past the wall end is still unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((8.0, -0.15, 1.0), (10.801, 0.06, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_unlisted_box_set_deep_into_the_body_fails():
+    """User 2026-10-12 (follow-up to #76): no depth bound by number; a box 0.7 m into the body on one wall
+    still lies inside the storey contour behind that wall, so it is unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((2.0, -0.15, 1.0), (3.0, 0.7, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_box_reaching_across_the_body_is_no_decor():
+    """A box through the whole body (like a coping ring round the roof) leaves the storey contour behind the
+    wall: an attachment, not unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Through")
+    extra.box((2.0, -0.15, 1.0), (3.0, 10.15, 1.3))
+    dump["meshes"].append(extra.dump())
+    report = decor_check(dump, spec(strip))
+    assert report["status"] == "pass", problems(report)
+
+
+L_SHAPE = [[0, 0], [10, 0], [10, 4], [6, 4], [6, 10], [0, 10]]   # concave corner at (6, 4), walls 2 and 3
+
+
+def l_spec(*decor):
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    for f in data["floors"]:
+        if "contour" in f:
+            f["contour"], f["openings"] = L_SHAPE, []
+    data["decor"] = list(decor)
+    return Spec.model_validate(data)
+
+
+L_STRIP = dict(PILASTER, wall=1, x_m=1.5, z_m=1.0, h_m=2.0)
+
+
+@pytest.mark.parametrize("lo, hi", [
+    ((5.0, 3.94, 1.0), (8.0, 4.15, 1.3)),      # on wall 2, run into the concave corner and on into the wing
+    ((5.94, 3.0, 1.0), (6.15, 5.0, 1.3)),      # on wall 3, run back past the concave corner into the body
+    ((6.5, 3.3, 1.0), (8.0, 4.15, 1.3)),       # on wall 2 by the concave corner, 0.7 m into the body
+])
+def test_unlisted_decor_at_a_concave_corner_fails(lo, hi):
+    """User 2026-10-12 (#78): the embedded part is judged against the body, not one wall's span."""
+    sp = l_spec(L_STRIP)
+    dump = build(sp, INPUTS)
+    extra = Mesh("Extra")
+    extra.box(lo, hi)
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, sp)["status"] == "fail"
+
+
+def test_box_through_the_body_at_a_concave_corner_is_no_decor():
+    sp = l_spec(L_STRIP)
+    dump = build(sp, INPUTS)
+    extra = Mesh("Through")
+    extra.box((7.0, -0.15, 1.0), (8.0, 4.15, 1.3))
+    dump["meshes"].append(extra.dump())
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def prism(name, xy, z0, z1):
+    """A closed prism over a simple polygon (sides, and a triangulated top and bottom)."""
+    from shapely.geometry import Polygon
+    from shapely.ops import triangulate
+    m = Mesh(name)
+    for a, b in zip(xy, xy[1:] + xy[:1]):
+        m.quad((*a, z0), (*b, z0), (*b, z1), (*a, z1))
+    poly = Polygon(xy)
+    for tri in triangulate(poly):
+        if not poly.covers(tri):
+            continue
+        pts = list(tri.exterior.coords)[:-1]
+        for z, pts_z in ((z0, pts[::-1]), (z1, pts)):
+            k = len(m.vertices)
+            m.vertices.extend([[x, y, z] for x, y in pts_z])
+            m.triangles.append([k, k + 1, k + 2])
+    return m
+
+
+def test_unlisted_decor_following_a_concave_recess_fails():
+    """Review 1 of #78: a box whose back steps round a recess 0.03 m behind the facade lies in the body; its
+    bounding rectangle would fill the recess and read as through the body."""
+    contour = [[0, 0], [10, 0], [10, 10], [6, 10], [6, 0.03], [4, 0.03], [4, 10], [0, 10]]
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    data["floors"][0]["contour"], data["floors"][0]["openings"] = contour, []
+    data["decor"] = [dict(PILASTER, z_m=1.0, h_m=2.0)]
+    sp = Spec.model_validate(data)
+    dump = build(spec(dict(PILASTER, z_m=1.0, h_m=2.0)), INPUTS)
+    body = Mesh("Body")
+    for a, b in zip(contour, contour[1:] + contour[:1]):
+        body.quad((*a, 0), (*b, 0), (*b, 6.6), (*a, 6.6))
+    bd = body.dump()
+    bd["material_ids"] = [FACADE] * len(body.triangles)
+    dump["meshes"][0] = bd
+    back = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.06], [6, 0.06], [6, 0.02], [4, 0.02], [4, 0.06], [3.8, 0.06]]
+    dump["meshes"].append(prism("Extra", back, 1.0, 1.3).dump())
+    assert decor_check(dump, sp)["status"] == "fail"
+
+
+def stacked(contours, part, wall=1):
+    """A body of one prism per storey over its own contour, the spec to match, and an extra part; `wall` is
+    the strip's wall (x = 10) in the given contours."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    data = spec(strip).model_dump(exclude_none=True)
+    data["floors"] = [{"level": f"L{i}", "contour": c, "openings": []} for i, c in enumerate(contours)]
+    data["decor"][0]["wall"] = wall
+    sp = Spec.model_validate(data)
+    dump = build(spec(strip), INPUTS)
+    body, zs = Mesh("Body"), [lv.elev_m for lv in sp.levels]
+    for i, outline in enumerate(contours):
+        for a, b in zip(outline, outline[1:] + outline[:1]):
+            body.quad((*a, zs[i]), (*b, zs[i]), (*b, zs[i + 1]), (*a, zs[i + 1]))
+    bd = body.dump()
+    bd["material_ids"] = [FACADE] * len(body.triangles)
+    dump["meshes"][0] = bd
+    dump["meshes"].append(part.dump())
+    return dump, sp
+
+
+SQUARE = [[0, 0], [10, 0], [10, 10], [0, 10]]
+
+
+def test_box_through_the_body_with_partial_caps_is_no_decor():
+    """Review 2 of #78: the caps cover only the front strip; the sides still give the whole footprint."""
+    m = Mesh("Through")
+    m.box((2, -0.15, 1), (3, 10.15, 1.3))
+    for v in m.vertices[:8]:
+        v[1] = min(v[1], 0)
+    dump, sp = stacked([SQUARE, SQUARE], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_box_through_the_body_by_a_hair_is_no_decor():
+    """Review 2 of #78: 0.15 mm out on the far side is past the weld distance (0.1 mm): a second piece."""
+    m = Mesh("Through")
+    m.box((2, -0.15, 1), (2.006, 10.00015, 1.3))
+    dump, sp = stacked([SQUARE, SQUARE], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_box_through_an_upper_storey_it_enters_by_half_a_millimetre_is_no_decor():
+    """Review 2 of #78: every storey the box stands in by more than a weld counts; above 3.3 m the thin
+    upper storey is crossed through."""
+    m = Mesh("Through")
+    m.box((2, -0.15, 3), (3, 1, 3.3005))
+    dump, sp = stacked([SQUARE, [[0, 0], [10, 0], [10, 0.5], [0, 0.5]]], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_part_with_a_hole_through_the_body_is_no_decor():
+    """Review 3 of #78: a closed prism with a hole in its plan; filling the hole would join its two pieces
+    outside the body into one and read the attachment as unlisted decor."""
+    from shapely.geometry import Polygon
+    from shapely.ops import triangulate
+    outer = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.7], [3.8, 0.7]]
+    inner = [[3.9, 0.02], [6.1, 0.02], [6.1, 0.05], [3.9, 0.05]]
+    m = Mesh("Holed")
+    for ring in (outer, inner):
+        for a, b in zip(ring, ring[1:] + ring[:1]):
+            m.quad((*a, 1.0), (*b, 1.0), (*b, 1.3), (*a, 1.3))
+    poly = Polygon(outer, [inner])
+    for tri in triangulate(poly):
+        if poly.covers(tri):
+            pts = list(tri.exterior.coords)[:-1]
+            for z, q in ((1.0, pts[::-1]), (1.3, pts)):
+                k = len(m.vertices)
+                m.vertices.extend([[x, y, z] for x, y in q])
+                m.triangles.append([k, k + 1, k + 2])
+    contour = [[0, 0], [4, 0], [4, 1], [6, 1], [6, 0], [10, 0], [10, 10], [0, 10]]
+    dump, sp = stacked([contour, contour], m, wall=5)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+RING_OUTER = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.7], [3.8, 0.7]]
+RING_HOLE = [[3.9, 0.02], [6.1, 0.02], [6.1, 0.05], [3.9, 0.05]]
+NOTCHED = [[0, 0], [4, 0], [4, 1], [6, 1], [6, 0], [10, 0], [10, 10], [0, 10]]
+
+
+def ring(name, rings=(RING_OUTER, RING_HOLE), caps=True, sides=True):
+    from shapely.geometry import Polygon
+    from shapely.ops import triangulate
+    m = Mesh(name)
+    if sides:
+        for coords in rings:
+            for a, b in zip(coords, coords[1:] + coords[:1]):
+                m.quad((*a, 1.0), (*b, 1.0), (*b, 1.3), (*a, 1.3))
+    if caps:
+        poly = Polygon(rings[0], rings[1:])
+        for tri in triangulate(poly):
+            if poly.covers(tri):
+                pts = list(tri.exterior.coords)[:-1]
+                for z, q in ((1.0, pts[::-1]), (1.3, pts)):
+                    k = len(m.vertices)
+                    m.vertices.extend([[x, y, z] for x, y in q])
+                    m.triangles.append([k, k + 1, k + 2])
+    return m
+
+
+def joined(name, meshes):
+    m = Mesh(name)
+    for s in meshes:
+        k = len(m.vertices)
+        m.vertices.extend(s.vertices)
+        m.triangles.extend([[v + k for v in q] for q in s.triangles])
+    return m
+
+
+def ring_variant(kind):
+    left = [[3.8, -0.15], [5, -0.15], [5, 0.02], [3.9, 0.02], [3.9, 0.05], [5, 0.05], [5, 0.7], [3.8, 0.7]]
+    right = [[5, -0.15], [6.2, -0.15], [6.2, 0.7], [5, 0.7], [5, 0.05], [6.1, 0.05], [6.1, 0.02], [5, 0.02]]
+    if kind == "sides only":
+        return ring("R", caps=False)
+    if kind == "welded halves":
+        return joined("R", [prism("L", left, 1.0, 1.3), prism("R", right, 1.0, 1.3)])
+    if kind.startswith("T-junction"):
+        m = ring("R", rings=([[3.8, -0.15], [5, -0.15], [6.2, -0.15], [6.2, 0.7], [5, 0.7], [3.8, 0.7]],
+                             [[3.9, 0.02], [5, 0.02], [6.1, 0.02], [6.1, 0.05], [5, 0.05], [3.9, 0.05]]),
+                 caps=kind.endswith("caps"))
+        for a, b in (((5, -0.15), (5, 0.02)), ((5, 0.05), (5, 0.7))):
+            m.quad((*a, 1.0), (*b, 1.0), (*b, 1.3), (*a, 1.3))
+        return m
+    if kind.startswith("open outer side"):
+        m = ring("R")
+        side = int(kind[-1])
+        m.triangles = [q for i, q in enumerate(m.triangles) if i not in (2 * side, 2 * side + 1)]
+        return m
+    if kind == "duplicate front side":
+        m = ring("R")
+        m.quad((3.8, -0.15, 1.0), (6.2, -0.15, 1.0), (6.2, -0.15, 1.3), (3.8, -0.15, 1.3))
+        return m
+    return ring("R")
+
+
+@pytest.mark.parametrize("kind", ["closed", "sides only", "welded halves", "T-junction", "T-junction caps",
+                                  "open outer side 1", "open outer side 2", "open outer side 3",
+                                  "duplicate front side"])
+def test_holed_part_through_the_body_is_no_decor(kind):
+    """Reviews 3-4 of #78: a hole in a part's plan stays empty whatever its linework - internal shared faces,
+    T-junctions, an open side, duplicate sides; outside the body it is two pieces: an attachment."""
+    dump, sp = stacked([NOTCHED, NOTCHED], ring_variant(kind), wall=5)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_outside_bits_closer_than_a_weld_diagonally_are_one_piece():
+    """Review 5 of #78: two outside groups 0.0000999 m apart across a diagonal gap (weld_m 0.0001) are one
+    piece; a faceted buffer split them and unlisted decor passed."""
+    dx, dy = 0.00009977966607489673, 0.00000490186066530906
+    contour = [[0, 0], [4, 0], [4, -0.3], [6, -0.3], [6, dy], [4 + dx, dy], [4 + dx, 1], [6.1, 1], [6.1, 0],
+               [10, 0], [10, 10], [0, 10]]
+    m = Mesh("Extra")
+    m.box((3, -0.15, 1), (5, 0.7, 1.3))
+    dump, sp = stacked([contour, contour], m, wall=9)
+    assert decor_check(dump, sp)["status"] == "fail"

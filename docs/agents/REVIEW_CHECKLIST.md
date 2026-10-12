@@ -26,6 +26,9 @@ Lessons of PR #15 (2026-10-08). The Codex sandbox runs as a separate Windows use
 - Run: `codex exec -s workspace-write -C <dir> --skip-git-repo-check --output-last-message <file> -`
   with the prompt on stdin; tests as `.venv/Scripts/python.exe -m pytest -q -p no:cacheprovider
   --basetemp=../tN`; git as `git -c safe.directory=* ...`.
+- Keep `--basetemp` short (`../tN`, `C:/x/t-<name>`), for authors too: a long one passes MAX_PATH (git
+  "Filename too long", the Win32 working-directory limit of 258) - PR #79. On the user's machine the default
+  `%TEMP%\pytest-of-artsafro` is inaccessible (left as is, user 2026-10-12): plain `uv run pytest` errors there.
 - Known sandbox-only failure: `tests/test_run_record.py::test_timeout_preserves_partial_stdout_and_stderr`
   (`taskkill` access denied). It is not a finding.
 - `codex review --base` does not take custom instructions; use `codex exec` for this checklist.

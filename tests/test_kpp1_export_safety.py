@@ -211,9 +211,17 @@ def test_build_stage_failure_stops_before_export(shell_run):
     assert not (outputs / "build-v002/KPP1_VPM_v006_ucx.blend").exists()
 
 
+WIN32_CWD_MAX = 258   # Win32 limit of a working directory (MAX_PATH - 2), not lifted by LongPathsEnabled
+
+
 def test_long_safe_version_works_through_real_stage_launcher(shell_run):
     outputs, run = shell_run
     version = "v" + "2" * 63
+    deepest_cwd = outputs / f"package-npm-{version}" / "0000_Kpp_1"     # run_all.sh cd's here to zip the NPM
+    units = len(str(deepest_cwd).encode("utf-16-le")) // 2      # Win32 counts UTF-16 units (review 1 of #79)
+    if os.name == "nt" and units > WIN32_CWD_MAX:
+        pytest.skip(f"basetemp too long for this test: run_all.sh's working directory would be "
+                    f"{units} > {WIN32_CWD_MAX} UTF-16 units (Win32 limit); use a shorter --basetemp")
     result = run(version)
     assert result.returncode == 0, result.stdout + result.stderr
     assert (outputs / f"build-{version}/KPP1_VPM_v006_ucx.blend").exists()
