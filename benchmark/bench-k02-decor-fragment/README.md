@@ -61,7 +61,7 @@ that job's derived `decor.json` / `openings.json` (catalogue: `decor-catalog.jso
 
 ## Etalon (by the rules, by the user)
 
-- Belt: one box per stepped profile part, over the fragment width, embedded 0.02 m (back face deleted), body
+- Belt: one box over the fragment width (both stacked parts project 0.30 here, so they are one element), embedded 0.02 m (back face deleted), body
   not cut; a face that would coincide with a window face is moved 5 mm (`plate_gap_m`).
 - Pilaster above the belt: one box 0.6 x 0.18 over its whole height, joints as texture.
 - Lesenes: one box each, 0.30, embedded 0.02 m.

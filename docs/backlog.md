@@ -48,7 +48,8 @@ the engine covers it.
   checker (no decor overlap with openings, no body edge cut, ids 26-30, 10 cm threshold); PR 4 run on
   `bench-k02-decor-fragment` (real fragment: `source.max` + `etalon.max` by the user). Later regression: the
   synthetic `bench-b03-decor` (free-standing column).
-- **EG2** Balconies (slab, railing, soffit) — pattern to be written.
+- **EG2** Attachments over 0.8 m (balconies, canopies, bays; slab, railing, soffit) — pattern to be written; the
+  decor extractor already lists them as `decor.attachment_candidates` (user 2026-10-12).
 - **EG3** `mid` window sashes / detailed windows from the opening plane.
 - **EG4** UV, atlas and delivery package = **H10**.
 - **OD1** Opening depth default 0.4 m (`opening_depth_default_m`; C24 `npm_min` plane at 0.4, `mid` at

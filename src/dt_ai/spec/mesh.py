@@ -17,6 +17,7 @@ from shapely.geometry import LineString, MultiLineString, Polygon
 from shapely.geometry.polygon import orient
 from shapely.ops import polygonize
 
+from dt_ai.spec import decor as dc
 from dt_ai.spec import floors as fl
 from dt_ai.spec.markup import MarkupError, revit_level_helpers
 from dt_ai.spec import openings as op
@@ -172,17 +173,17 @@ def _weld(v):
     return rep
 
 
+def _group_ids(group):
+    """Material ids of one group of standards/material_id_ranges.yaml (ADR 0001)."""
+    import yaml
+    from dt_ai.core.io import repo_root
+    g = yaml.safe_load((repo_root() / "standards/material_id_ranges.yaml").read_text(encoding="utf-8"))
+    return frozenset(range(g["groups"][group]["first"], g["groups"][group]["last"] + 1))
+
+
 def _opening_ids():
     """Material ids of the `opening` group (standards/material_id_ranges.yaml, ADR 0001)."""
-    from functools import lru_cache
-
-    @lru_cache(maxsize=1)
-    def load():
-        import yaml
-        from dt_ai.core.io import repo_root
-        g = yaml.safe_load((repo_root() / "standards/material_id_ranges.yaml").read_text(encoding="utf-8"))
-        return frozenset(range(g["groups"]["opening"]["first"], g["groups"]["opening"]["last"] + 1))
-    return load()
+    return _group_ids("opening")
 
 
 def _mesh(dump, m, with_materials=False):
@@ -1187,7 +1188,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     v, tris, mats, owners = _mesh(dump, m, with_materials=True)
     plane = np.isin(mats, list(_opening_ids()))        # opening planes are not body: the hole stays the anchor
     plane_tris = np.column_stack([tris[plane], mats[plane]])
-    tris, owners = tris[~plane], owners[~plane]
+    tris, owners, mats = tris[~plane], owners[~plane], mats[~plane]
     if dump.get("body"):                                 # a source that names its body (Revit boxes do
         mine = np.isin(owners, list(dump["body"]))      # not share vertices): body = those meshes
         parts = [np.flatnonzero(mine)] + _parts(v, tris[~mine]) if (~mine).any() else [np.flatnonzero(mine)]
@@ -1318,6 +1319,15 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
         same = PLATE_SAME_M + 1e-9
         if max(gaps) - min(gaps) > same or max(overlaps) - min(overlaps) > same:
             asked = sorted(set(asked) | {name for name, ps in plates.items() if ps}, key=names.index)
+    # facade decor (pattern facade-decor-inset, spec v0.5): non-body parts on a wall or free-standing columns
+    decor, decor_questions, report["decor"] = dc.extract(
+        v, tris, mats, parts[1:], levels, [f["contour"] for f in floors], polys,
+        plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("attachment"))
+    questions += decor_questions
+    if decor_questions and not asked:
+        questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
+        for n, q in enumerate(questions, 1):
+            q["n"] = n
     if asked:
         questions.append({"priority": "high", "kind": "plate-params", "levels": asked, "wall": None,
                           "depth_m": None, "length_m": None, "facade_share": None, "heights_m": None, "at": None})
@@ -1332,6 +1342,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                 levels=levels, floors=written,
                 roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0},
                 # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
-                **({"spec_version": "0.4", "terraces": terraces} if terraces else {}),
+                **({"terraces": terraces} if terraces else {}), **({"decor": decor} if decor else {}),
+                **({"spec_version": "0.5"} if decor else {"spec_version": "0.4"} if terraces else {}),
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2), **plate)
     return spec, report
