@@ -86,7 +86,8 @@ Local state outside git:
 
 Decor ids by material (metal 16–20, plaster / stone / tile 26–30): **implemented in #76, not on main**. The
 K01 strip with id 17 was identified from `jobs/KPP1/materials.json` as `Metal_RAL5015` (0.074 x 0.30 m,
-0.22 m out, east wall at 3.6 m: a metal bracket); recorded in the pattern; the user has not confirmed it.
+0.22 m out, east wall at 3.6 m: a metal bracket); recorded in the pattern; **confirmed by the user 2026-10-12**
+("металлический кронштейн, правило верное").
 
 Corner of decor elements of different heights (back kept outside the wall, the other higher ->
 `decor-corner`): **in code since #75**.
@@ -95,7 +96,6 @@ Corner of decor elements of different heights (back kept outside the wall, the o
 
 - K02: `source.max` + `etalon.max` of the fragment (brief `benchmark/bench-k02-decor-fragment/README.md`,
   cut z 12.52–19.69) and the offset used.
-- Confirmation of the K01 id 17 reading (metal bracket).
 - KPP1 v007 acceptance.
 - `case-alina-bld`: the real object id `<site>-<code>`; the levels' open points (95.75 vs 96.55, 0.8 m apart;
   terrace decks 56.2 / 69.4 / 82.6 are 0.2 above the slabs); a finish table for the material slots.
