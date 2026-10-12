@@ -639,3 +639,43 @@ def test_box_through_the_body_at_a_concave_corner_is_no_decor():
     dump["meshes"].append(extra.dump())
     report = decor_check(dump, sp)
     assert report["status"] == "pass", problems(report)
+
+
+def prism(name, xy, z0, z1):
+    """A closed prism over a simple polygon (sides, and a triangulated top and bottom)."""
+    from shapely.geometry import Polygon
+    from shapely.ops import triangulate
+    m = Mesh(name)
+    for a, b in zip(xy, xy[1:] + xy[:1]):
+        m.quad((*a, z0), (*b, z0), (*b, z1), (*a, z1))
+    poly = Polygon(xy)
+    for tri in triangulate(poly):
+        if not poly.covers(tri):
+            continue
+        pts = list(tri.exterior.coords)[:-1]
+        for z, pts_z in ((z0, pts[::-1]), (z1, pts)):
+            k = len(m.vertices)
+            m.vertices.extend([[x, y, z] for x, y in pts_z])
+            m.triangles.append([k, k + 1, k + 2])
+    return m
+
+
+def test_unlisted_decor_following_a_concave_recess_fails():
+    """Review 1 of #78: a box whose back steps round a recess 0.03 m behind the facade lies in the body; its
+    bounding rectangle would fill the recess and read as through the body."""
+    contour = [[0, 0], [10, 0], [10, 10], [6, 10], [6, 0.03], [4, 0.03], [4, 10], [0, 10]]
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    data["floors"][0]["contour"], data["floors"][0]["openings"] = contour, []
+    data["decor"] = [dict(PILASTER, z_m=1.0, h_m=2.0)]
+    sp = Spec.model_validate(data)
+    dump = build(spec(dict(PILASTER, z_m=1.0, h_m=2.0)), INPUTS)
+    body = Mesh("Body")
+    for a, b in zip(contour, contour[1:] + contour[:1]):
+        body.quad((*a, 0), (*b, 0), (*b, 6.6), (*a, 6.6))
+    bd = body.dump()
+    bd["material_ids"] = [FACADE] * len(body.triangles)
+    dump["meshes"][0] = bd
+    back = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.06], [6, 0.06], [6, 0.02], [4, 0.02], [4, 0.06], [3.8, 0.06]]
+    dump["meshes"].append(prism("Extra", back, 1.0, 1.3).dump())
+    assert decor_check(dump, sp)["status"] == "fail"
