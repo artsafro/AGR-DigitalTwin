@@ -249,3 +249,13 @@ def test_od1_glass_deep_in_a_hole_without_reveal_gives_no_depth():
                                          extra=[pane("Glass", 2.1, 3.4, 1.0, 2.3, y=0.6)]), obj)
     (o,) = spec.expanded_floors()[0].openings
     assert o.depth_m is None and report["openings"]["openings_depth_by_default"] == 1
+
+
+def test_od1_lower_glass_joined_to_an_upper_hole_gives_no_depth():
+    """Review 3 of PR #76: glass only below (0.6 m in) joined across the level to a hole without reveal."""
+    obj = {k: v for k, v in at().items() if k != "opening_depth_default_m"}
+    d = building(boxes=[(0, 2.0, 3.5, 3.3, 4.5, 0.0)], extra=[pane("Glass", 2.0, 3.5, 2.0, 3.3, y=0.6)])
+    spec, report = extract_spec(d, obj)
+    opened = [o for f in spec.expanded_floors() for o in f.openings]
+    assert opened and all(o.depth_m is None for o in opened)
+    assert report["openings"]["openings_depth_by_default"] >= 1
