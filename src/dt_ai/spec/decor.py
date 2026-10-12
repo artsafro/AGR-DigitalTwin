@@ -32,7 +32,8 @@ SHARE_TOL_M = 0.005       # a piece's back at the wall face within this
 EMBED_MAX_M = 0.05        # ... or embedded into the wall up to this
 PROJECTION_MAX_M = 1.5    # deeper than this off a wall is no facade decor (canopy, balcony)
 ATTACHMENT_FROM_M = 0.8   # projection over this: an attachment candidate, not decor (user 2026-10-12)
-SPAN_TOL_M = 0.01         # a piece lies within its wall's span within this
+SPAN_TOL_M = 0.01         # a piece lies within its wall's span within this ...
+RUN_ON_MAX_M = 0.8        # ... or runs on past a building corner by at most this (an element's projection)
 SAME_M = 0.005            # one cross-section / one axis within this
 COVER = 0.99              # a box's front face covers this share of its front rectangle
 SEAM_FACTOR = 12          # seams up to plate_gap_m x 12 (0.06 m by default) join pieces (user 2026-10-12)
@@ -86,6 +87,7 @@ def _normals(t):
     return nv[keep] / (2 * area[keep, None]), area[keep], t[keep]
 
 
+AT_FACE_M = 0.0006        # a face this close to the wall face is at it (the engine's corner ends start 0.5 mm off)
 DEPTH_TOL_M = 1e-4        # depths of one face (a thin box keeps its two faces, review 3 of PR #74)
 
 
@@ -98,31 +100,69 @@ def _levels_of(values, tol):
     return out
 
 
-def _covered(t, normals, coords, axis, sign):
+def _covered(t, normals, coords, axis, sign, floor=None):
     """Whether the faces facing `sign` along `axis` at that extreme cover the whole rectangle of the other two
-    coordinates (reviews 1-3 of PR #74: summed areas or one face do not prove a solid)."""
+    coordinates (reviews 1-3 of PR #74: summed areas or one face do not prove a solid). floor: {axis: lowest
+    value} that clips the rectangle (a wall element: only its part out of the wall face must be closed; the
+    engine's end faces start at the wall face at a building corner, review 1 of PR #75)."""
     c = coords[axis]
     end = c.max() if sign > 0 else c.min()
     face = (sign * normals[:, axis] >= AXIS_COS) & (np.abs(c - end).max(axis=1) <= DEPTH_TOL_M)
     i, j = [k for k in range(3) if k != axis]
-    full = np.ptp(coords[i]) * np.ptp(coords[j])
+    lo = [max(coords[k].min(), (floor or {}).get(k, -np.inf)) for k in (i, j)]
+    target = shapely.box(lo[0], lo[1], coords[i].max(), coords[j].max())
     cover = unary_union([shapely.Polygon(np.column_stack([coords[i][k], coords[j][k]])) for k in np.flatnonzero(face)])
-    return full > 0 and cover.area >= COVER * full
+    return target.area > 0 and cover.intersection(target).area >= COVER * target.area
 
 
-def _is_box(t, u, n):
+def _is_box(t, u, n, c, hosts=()):
     """A box in the wall frame (reviews 1-3 of PR #74): faces axis-aligned, two depths only (back and front,
     no stepped profile), and front, top, bottom and both ends each covering their whole rectangle; the back
-    may be open (inset decor). Inner s / z values are allowed: pieces of a row or a stack welded into one."""
+    may be open (inset decor). Inner s / z values are allowed: pieces of a row or a stack welded into one.
+    An end (top, bottom or a side end) may be missing where it lies inside another element of the wall line
+    (hosts: {s0, s1, z0, z1, d1} absolute): a subordinate element run into a main one (user 2026-10-12); its
+    extent is then clipped at the main one's face. Returns the clip {key: value} (empty when whole), or None
+    when it is no box."""
     normals, _, t = _normals(t)
     axes = np.array([[*u, 0.0], [*n, 0.0], [0.0, 0.0, 1.0]])
     if not len(normals) or not (np.abs(normals @ axes.T).max(axis=1) >= AXIS_COS).all():
-        return False
+        return None
     coords = (t[..., :2] @ u, t[..., :2] @ n, t[..., 2])
     local = normals @ axes.T
-    if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(coords[1].ravel(), DEPTH_TOL_M)) != 2:
-        return False
-    return all(_covered(t, local, coords, axis, sign) for axis, sign in ((1, 1), (2, 1), (2, -1), (0, 1), (0, -1)))
+    # two depths out of the wall face: the face and the front (the inset part inside the body is not seen)
+    seen = np.maximum(coords[1].ravel(), c + AT_FACE_M)
+    if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(seen, DEPTH_TOL_M)) != 2:
+        return None
+    face = {1: c}                                      # out of the wall face (c along n) only
+    if not _covered(t, local, coords, 1, 1, face):
+        return None
+    lo = {k: float(coords[k].min()) for k in (0, 2)}
+    hi = {k: float(coords[k].max()) for k in (0, 2)}
+    front = float(coords[1].max())
+    clip = {}
+    for axis, sign in ((2, 1), (2, -1), (0, 1), (0, -1)):
+        if _covered(t, local, coords, axis, sign, face):
+            continue
+        end = hi[axis] if sign > 0 else lo[axis]
+        other = 2 if axis == 0 else 0
+        key = {0: ("s0", "s1"), 2: ("z0", "z1")}
+        def holds(h):
+            if h.get("corner"):                       # across walls: the end lies on the main one's back plane
+                inside = h[key[axis][0]] - DEPTH_TOL_M <= end <= h[key[axis][1]] + DEPTH_TOL_M
+            else:
+                inside = h[key[axis][0]] + DEPTH_TOL_M < end < h[key[axis][1]] - DEPTH_TOL_M
+            return (inside and h[key[other][0]] - DEPTH_TOL_M <= lo[other] and hi[other] <= h[key[other][1]] + DEPTH_TOL_M
+                    and front <= h["d1"] + DEPTH_TOL_M)
+        host = next((h for h in hosts if holds(h)), None)
+        if host is None or (axis == 2 and host.get("corner")):
+            return None
+        if host.get("corner"):                        # the source extent reaches the corner
+            clip[key[axis][1] if sign > 0 else key[axis][0]] = host["to1"] if sign > 0 else host["to0"]
+        elif sign > 0:
+            clip[key[axis][1]] = host[key[axis][0]]
+        else:
+            clip[key[axis][0]] = host[key[axis][1]]
+    return clip
 
 
 def _is_column(t):
@@ -148,21 +188,29 @@ def _piece(v, part_tris, levels, contours, polys):
     for w, (a, u, n, length) in enumerate(_walls(contours[li])):
         s = (p[:, :2] - a) @ u
         d = (p[:, :2] - a) @ n
+        # at a building corner the main element runs on past the wall end by the other's projection
+        # (user 2026-10-12); a piece fully inside the span is preferred
         if (d.min() < -EMBED_MAX_M or d.min() > SHARE_TOL_M or d.max() > PROJECTION_MAX_M or d.max() <= 0
-                or s.min() < -SPAN_TOL_M or s.max() > length + SPAN_TOL_M):
+                or s.min() < -RUN_ON_MAX_M or s.max() > length + RUN_ON_MAX_M):
             continue
-        if best is None or abs(d.min()) < abs(best[1]):
-            best = (w, float(d.min()))
+        over = s.min() < -SPAN_TOL_M or s.max() > length + SPAN_TOL_M
+        if best is None or (over, abs(d.min())) < (best[2], abs(best[1])):
+            best = (w, float(d.min()), over)
     if best is not None:
-        a, u, n, _ = _walls(contours[li])[best[0]]
+        a, u, n, length = _walls(contours[li])[best[0]]
         s, d = p[:, :2] @ u, p[:, :2] @ n                 # absolute along / out, comparable across storeys
-        c = float(a @ n)
-        pc = {"li": li, "u": u, "n": n, "c": c, "s0": float(s.min()), "s1": float(s.max()), "z0": z0, "z1": z1,
-              "out": float(d.max() - c), "embed": float(c - d.min())}
+        c, o = float(a @ n), float(a @ u)
+        s0, s1 = float(s.min()), float(s.max())
+        if best[2]:                                       # a run-on: the source extent ends at the wall end
+            s0, s1 = max(s0, o) if s0 < o - SPAN_TOL_M else s0, min(s1, o + length) if s1 > o + length + SPAN_TOL_M else s1
+        pc = {"li": li, "u": u, "n": n, "c": c, "o": o, "length": length, "s0": s0, "s1": s1, "z0": z0, "z1": z1,
+              "out": float(d.max() - c), "embed": float(c - d.min()), "run_on": best[2],
+              "foot": shapely.MultiPoint(p[:, :2]).convex_hull}
         # every storey it crosses has a wall on the same line holding its span (review 1 of PR #74)
         crossed = range(li, _storey(levels, z1 - SAME_M) + 1)
         on_walls = all(_wall_at(contours[k], u, c, pc["s0"], pc["s1"]) is not None for k in crossed)
-        pc["type"] = "wall" if on_walls and _is_box(t, u, n) else "shape"
+        pc["type"] = "wall" if on_walls and _is_box(t, u, n, c) is not None else "shape"
+        pc["t"], pc["on_walls"] = t, on_walls
         return pc
     lo, hi = p[:, :2].min(axis=0), p[:, :2].max(axis=0)
     foot = shapely.box(*lo, *hi)                          # clear of the body in every storey it crosses
@@ -174,6 +222,55 @@ def _piece(v, part_tris, levels, contours, polys):
                 "box": [float(lo[0]), float(lo[1]), float(hi[0]), float(hi[1])], "z0": z0, "z1": z1,
                 "out": float((hi - lo).max()), "s0": 0.0, "s1": float((hi - lo).min())}
     return None
+
+
+def _corner_arms(v, tris, part, levels, contours):
+    """A part round one or more convex building corners (elements meeting there, or a belt wrapped round),
+    split into one arm per wall, or None (user 2026-10-12: of one rank the longer continues; review 2 of PR
+    #75: any number of corners). A triangle belongs to the wall whose span holds its centre (in front of that
+    wall); a corner block past two wall ends goes to the longer of the two arms; an oblique corner: None; the other higher than the longer: "decor-corner"."""
+    p = v[np.unique(tris[part])]
+    li = _storey(levels, float(p[:, 2].min()))
+    walls = _walls(contours[li])
+    centre = v[tris[part]].mean(axis=1)[:, :2]
+    own = np.full(len(part), -1)
+    for w, (a, u, n, length) in enumerate(walls):
+        s, d = (centre - a) @ u, (centre - a) @ n
+        hit = (s > EMBED_MAX_M) & (s < length - EMBED_MAX_M) & (d >= -EMBED_MAX_M) & (d <= PROJECTION_MAX_M)
+        if (hit & (own >= 0)).any():
+            return None
+        own[hit] = w
+    arms = sorted(set(own[own >= 0]))
+    if len(arms) < 2:
+        return None
+    reach = {}
+    for w in arms:
+        a, u, _, length = walls[w]
+        s = (centre[own == w] - a) @ u
+        reach[w] = float(s.max() - s.min())
+    for k in np.flatnonzero(own < 0):                  # corner blocks
+        near = []
+        for w in arms:
+            nxt = (w + 1) % len(walls)
+            if nxt in arms:
+                corner = walls[nxt][0]
+                if np.linalg.norm(centre[k] - corner) <= RUN_ON_MAX_M + EMBED_MAX_M:
+                    near.append((w, nxt))
+        if len(near) != 1:
+            return None
+        w0, w1 = near[0]
+        u0, u1 = walls[w0][1], walls[w1][1]
+        if abs(float(u0 @ u1)) > 1 - AXIS_COS or u0[0] * u1[1] - u0[1] * u1[0] <= 0:
+            return None                                # an oblique or concave corner: not read
+        if abs(reach[w0] - reach[w1]) <= SAME_M:
+            return None                                # one length: which continues is the user's
+        own[k] = w0 if reach[w0] > reach[w1] else w1
+        main_w, other_w = (w0, w1) if reach[w0] > reach[w1] else (w1, w0)
+        zm = v[tris[part[own == main_w]]][..., 2]
+        zo = v[tris[part[own == other_w]]][..., 2]
+        if zo.min() < zm.min() - SAME_M or zo.max() > zm.max() + SAME_M:
+            return "decor-corner"                        # the other higher than the main one (user 2026-10-12)
+    return [part[own == w] for w in arms]
 
 
 def _texture(out):
@@ -229,7 +326,8 @@ def _merge(pieces, seam):
         if filled.area >= (s1 - s0 + 2 * half) * (z1 - z0 + 2 * half) - 1e-6 and max(outs) - min(outs) <= SAME_M:
             elements.append(dict(g[0], s0=s0, s1=s1, z0=z0, z1=z1, li=min(p["li"] for p in g), pieces=len(g),
                                  out=max(p["out"] for p in g), embed=max(p["embed"] for p in g),
-                                 ids=set().union(*(p["ids"] for p in g))))
+                                 ids=set().union(*(p["ids"] for p in g)),
+                                 part=np.concatenate([p["part"] for p in g])))
         else:
             ambiguous.append(g)
             elements += [dict(p, pieces=1) for p in g]
@@ -268,22 +366,64 @@ def _grouped(questions, names):
     return groups
 
 
-def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachment_ids):
+def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachment_ids, with_parts=False):
     """(decor entries for the spec, questions, report) from the non-body parts. parts: triangle-index arrays
-    of the parts other than the body; contours / polys: per storey."""
+    of the parts other than the body; contours / polys: per storey. with_parts: also the triangle indices of
+    every entry, in the entries' order (the checker reads the model with it)."""
     seam = plate_gap_m * SEAM_FACTOR
     found, questions, kept = [], [], 0
+    pieces = []
     for part in parts:
         pc = _piece(v, tris[part], levels, contours, polys)
+        if pc is None or pc["type"] == "shape":
+            arms = _corner_arms(v, tris, part, levels, contours)
+            if arms == "decor-corner":                # its part above the main one is closed by nothing
+                p = v[np.unique(tris[part])]
+                questions.append(_question("decor-corner", levels, _storey(levels, float(p[:, 2].min())), 0.0, 0.0,
+                                           0.0, float(p[:, 2].min()), float(p[:, 2].max()),
+                                           [round(float(c), 2) for c in p[:, :2].mean(axis=0)]))
+                continue
+            if arms:                                  # a belt round a building corner: one element per wall
+                found_arms = [(arm, _piece(v, tris[arm], levels, contours, polys)) for arm in arms]
+                if all(a_pc is not None for _, a_pc in found_arms):
+                    pieces += found_arms
+                    continue
         if pc is None:
             kept += 1
             continue
+        pieces.append((part, pc))
+    for _, m in pieces:                               # a corner's other element higher than the main one (run on)
+        if not m.get("run_on"):
+            continue
+        for part, o in pieces:
+            if (o is m or "foot" not in o or o.get("type") == "corner" or abs(float(o["u"] @ m["u"])) > 1 - AXIS_COS
+                    or o["foot"].distance(m["foot"]) > AT_FACE_M):
+                continue
+            if o["z0"] < m["z0"] - SAME_M or o["z1"] > m["z1"] + SAME_M:
+                o["type"] = "corner"                     # user 2026-10-12: its part beyond the main one is open
+    whole = [pc for _, pc in pieces if pc["type"] == "wall"]
+    for part, pc in pieces:                           # a subordinate element run into a main one (user 2026-10-12)
+        if pc["type"] == "shape" and pc["on_walls"]:
+            hosts = [{"s0": h["s0"], "s1": h["s1"], "z0": h["z0"], "z1": h["z1"], "d1": h["c"] + h["out"]}
+                     for h in whole if h is not pc and h["u"] @ pc["u"] >= AXIS_COS and abs(h["c"] - pc["c"]) <= SAME_M]
+            for h in whole:                           # the main one of a building corner, on the next wall
+                if h is pc or abs(float(h["u"] @ pc["u"])) > 1 - AXIS_COS:
+                    continue
+                hs, hd = h["t"][..., :2] @ pc["u"], h["t"][..., :2] @ pc["n"]
+                hosts.append({"s0": float(hs.min()), "s1": float(hs.max()), "z0": h["z0"], "z1": h["z1"],
+                              "d1": float(hd.max()), "corner": True, "to0": pc["o"], "to1": pc["o"] + pc["length"]})
+            clip = _is_box(pc["t"], pc["u"], pc["n"], pc["c"], hosts) if hosts else None
+            if clip:
+                pc.update(clip, type="wall", inset_into=True)
+    for part, pc in pieces:
+        pc["part"] = part
         pc["ids"] = set(int(i) for i in np.unique(mats[part]))
         if pc["type"] in ("shape", "wall") and pc["out"] > ATTACHMENT_FROM_M:
             pc["type"] = "deep"
-        if pc["type"] in ("shape", "deep", "column-off-level"):
+        if pc["type"] in ("shape", "deep", "column-off-level", "corner"):
             at = [round(float(c), 2) for c in v[np.unique(tris[part])][:, :2].mean(axis=0)]
-            kind = {"shape": "decor-shape", "deep": "decor-deep", "column-off-level": "decor-column"}[pc["type"]]
+            kind = {"shape": "decor-shape", "deep": "decor-deep", "column-off-level": "decor-column",
+                    "corner": "decor-corner"}[pc["type"]]
             questions.append(_question(kind, levels, pc["li"], pc["out"], pc["s0"], pc["s1"], pc["z0"], pc["z1"], at))
             continue
         found.append(pc)
@@ -295,7 +435,7 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         q["wall"] = (_wall_at(contours[li], g[0]["u"], g[0]["c"], s0, s1) or (None,))[0]
         questions.append(q)
     columns = [dict(p, pieces=1) for p in found if p["type"] == "column"]
-    decor = []
+    decor, owned = [], []
     for e in walls + columns:
         li = e["li"]
         lv = levels[li]
@@ -306,6 +446,7 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             x0, y0, x1, y1 = e["box"]
             decor.append({"kind": "column", **entry, "w_m": round(max(x1 - x0, y1 - y0), ROUND),
                           "footprint": [round(x0, ROUND), round(y0, ROUND), round(x1, ROUND), round(y1, ROUND)]})
+            owned.append(e["part"])
             continue
         at = _wall_at(contours[li], e["u"], e["c"], e["s0"], e["s1"])
         if at is None:                                    # cannot happen for a checked piece; never guess
@@ -317,13 +458,16 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         out = round(e["out"], ROUND_OUT)
         decor.append({"kind": kind, **entry, "wall": at[0], "x_m": round(at[1], ROUND), "w_m": round(w_m, ROUND),
                       "projection_m": out, "texture": _texture(out)})
+        owned.append(e["part"])
     names = [lv["name"] for lv in levels]
     questions = _grouped(questions, names)
     candidates = [{"projection_m": q["depth_m"], "h_m": round(q["heights_m"][1] - q["heights_m"][0], 3),
                    "count": q["count"], "levels": q["levels"], "at": q["positions"]}
                   for q in questions if q["kind"] == "decor-deep"]
-    decor.sort(key=lambda d: (names.index(d["level"]), d.get("wall") or 0, d.get("x_m") or 0.0, d["z_m"]))
+    order = sorted(range(len(decor)), key=lambda k: (names.index(decor[k]["level"]), decor[k].get("wall") or 0,
+                                                     decor[k].get("x_m") or 0.0, decor[k]["z_m"]))
+    decor, owned = [decor[k] for k in order], [owned[k] for k in order]
     report = {"pieces": len(found), "elements": len(decor), "texture": sum(d.get("texture", False) for d in decor),
               "columns": len(columns), "seam_m": round(seam, 4), "not_decor_parts": kept,
               "ambiguous_groups": len(ambiguous), "attachment_candidates": candidates, "questions": len(questions)}
-    return decor, questions, report
+    return (decor, questions, report, owned) if with_parts else (decor, questions, report)
