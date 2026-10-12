@@ -121,6 +121,9 @@ def repo(tmp_path):
     git(tmp_path, "init", "-q")
     git(tmp_path, "config", "user.email", "t@example.com")
     git(tmp_path, "config", "user.name", "t")
+    # under a long --basetemp the object paths pass MAX_PATH and git fails with "Filename too long"
+    # (a Claude scratchpad basetemp, 2026-10-12); the gate itself is not about path length
+    git(tmp_path, "config", "core.longpaths", "true")
     (tmp_path / "docs").mkdir()
     (tmp_path / "docs/backlog.md").write_text(BACKLOG, encoding="utf-8")
     (tmp_path / "jobs/OLD").mkdir(parents=True)
@@ -207,6 +210,22 @@ def test_cli_exit_codes(repo):
     result = run("--staged")
     assert result.returncode == 1 and "blocked" in result.stderr
     assert run("--job", "nowhere").returncode == 2
+
+
+@pytest.mark.parametrize("failing", ["diff", "ls-files", "cat-file"])
+def test_git_failure_blocks_the_commit(repo, monkeypatch, failing):
+    """Fail closed (2026-10-12): under a long path git once failed, the gate read an empty index and let
+    a built status without pipeline/ through."""
+    write(repo, "jobs/J/STATE.md", state("built"))
+    real = gate._git
+
+    def broken(root, *args):
+        if args[0] == failing:
+            return subprocess.CompletedProcess(args, 128, b"", b"error: Filename too long")
+        return real(root, *args)
+    monkeypatch.setattr(gate, "_git", broken)
+    monkeypatch.chdir(repo)
+    assert gate.main(["--staged"]) == 2
 
 
 # --- Claude Code PreToolUse hook ------------------------------------------------------------------------

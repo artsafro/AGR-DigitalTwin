@@ -121,18 +121,36 @@ def is_job_script(path):
         p.suffix.lower() not in NOT_SCRIPT_SUFFIXES
 
 
+class GitError(RuntimeError):
+    """git failed: the gate cannot see the commit and blocks it (fail closed, 2026-10-12)."""
+
+
 def _git(root, *args):
-    return subprocess.run(["git", *args], cwd=root, capture_output=True, check=False)
+    # core.longpaths: deep job paths under a long checkout pass MAX_PATH on Windows
+    return subprocess.run(["git", "-c", "core.longpaths=true", *args], cwd=root, capture_output=True, check=False)
+
+
+def _git_ok(root, *args):
+    result = _git(root, *args)
+    if result.returncode != 0:
+        raise GitError(f"git {' '.join(args)}: {result.stderr.decode('utf-8', 'replace').strip()}")
+    return result
 
 
 def staged(root):
     """Errors of the commit being made, read from the index."""
-    out = _git(root, "diff", "--cached", "--name-status", "--no-renames", "-z").stdout.decode("utf-8").split("\0")
+    out = _git_ok(root, "diff", "--cached", "--name-status", "--no-renames", "-z").stdout.decode("utf-8").split("\0")
     changes = list(zip(out[0::2], out[1::2]))
+    blobs = {}                                       # path -> its blob in the index (stage 0)
+    for entry in _git_ok(root, "ls-files", "-s", "-z").stdout.decode("utf-8").split("\0"):
+        if entry:
+            meta, path = entry.split("\t", 1)
+            _, blob, stage = meta.split()
+            if stage == "0":
+                blobs[path] = blob
 
-    def read(path):
-        result = _git(root, "show", f":{path}")
-        return result.stdout if result.returncode == 0 else None
+    def read(path):                                  # None only when the index has no such path
+        return _git_ok(root, "cat-file", "blob", blobs[path]).stdout if path in blobs else None
 
     backlog = read("docs/backlog.md")
     backlog = backlog.decode("utf-8", "replace") if backlog is not None else None
@@ -172,7 +190,7 @@ def delivery(root, job_dir):
     if read(f"jobs/{job}/STATE.md") is None:
         errors.append(f"jobs/{job}/STATE.md missing")
     # committed = in HEAD, not merely staged (review 1 of PR #73)
-    tracked = set(_git(root, "ls-tree", "-r", "-z", "--name-only", "HEAD", "--", f"jobs/{job}")
+    tracked = set(_git_ok(root, "ls-tree", "-r", "-z", "--name-only", "HEAD", "--", f"jobs/{job}")
                   .stdout.decode("utf-8").split("\0"))
     for pyc in sorted((job_dir / "scripts").rglob("*.pyc")):
         if pyc.parent.name == "__pycache__":         # <name>.<tag>[.opt-N].pyc; the name may hold dots
@@ -198,8 +216,9 @@ def main(argv=None):
     root = Path(top.stdout.decode("utf-8").strip())
     try:
         errors = staged(root) if args.staged else delivery(root, args.job)
-    except ValueError as exc:
+    except (ValueError, GitError) as exc:
         print(f"pipeline_gate: {exc}", file=sys.stderr)
+        print("pipeline_gate: blocked (docs/HARNESS_PLAN.md §16)", file=sys.stderr)
         return 2
     for e in errors:
         print(f"pipeline_gate: {e}", file=sys.stderr)
