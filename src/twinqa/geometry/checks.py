@@ -461,15 +461,24 @@ def _pieces(g, weld_m) -> int:
 
 
 def _footprint(t3):
-    """Real plan footprint of a part: its faces projected to the plan, the outline of its vertical faces
-    included (review 2 of #78: caps may be partial or missing), recesses left open."""
+    """Real plan footprint of a part: its caps projected to the plan, and the even-odd fill of the outline
+    its vertical faces draw (review 2 of #78: caps may be partial or missing; review 3: a hole stays a hole,
+    a recess stays open)."""
     xy = t3[..., :2]
     e1, e2 = xy[:, 1] - xy[:, 0], xy[:, 2] - xy[:, 0]
     flat = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) > 1e-12
-    edges = shapely.union_all([shapely.LineString(q[[i, j]]) for q in xy for i, j in ((0, 1), (1, 2), (2, 0))
-                               if np.linalg.norm(q[i] - q[j]) > 1e-12])
-    return shapely.union_all([*polygonize(getattr(edges, "geoms", [edges])),
-                              *(shapely.Polygon(q) for q in xy[flat])]).buffer(0)
+    sides = []                                       # a vertical face is a segment in the plan
+    for q in xy[~flat]:
+        k = np.argmax([np.linalg.norm(q[i] - q[j]) for i, j in ((0, 1), (1, 2), (2, 0))])
+        a, b = ((0, 1), (1, 2), (2, 0))[k]
+        if np.linalg.norm(q[a] - q[b]) > 1e-12:
+            sides.append(shapely.LineString(q[[a, b]]))
+    fill = shapely.Polygon()
+    if sides:
+        lines = shapely.union_all(sides)             # noded, duplicates merged
+        for face in polygonize(getattr(lines, "geoms", [lines])):
+            fill = fill.symmetric_difference(shapely.Polygon(face.exterior))   # even-odd over nested loops
+    return shapely.union_all([fill, *(shapely.Polygon(q) for q in xy[flat])]).buffer(0)
 
 
 def _matches(e, d, dt, elev, contours):

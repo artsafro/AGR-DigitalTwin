@@ -681,11 +681,13 @@ def test_unlisted_decor_following_a_concave_recess_fails():
     assert decor_check(dump, sp)["status"] == "fail"
 
 
-def stacked(contours, part):
-    """A body of one prism per storey over its own contour, the spec to match, and an extra part."""
+def stacked(contours, part, wall=1):
+    """A body of one prism per storey over its own contour, the spec to match, and an extra part; `wall` is
+    the strip's wall (x = 10) in the given contours."""
     strip = dict(PILASTER, z_m=1.0, h_m=2.0)
     data = spec(strip).model_dump(exclude_none=True)
     data["floors"] = [{"level": f"L{i}", "contour": c, "openings": []} for i, c in enumerate(contours)]
+    data["decor"][0]["wall"] = wall
     sp = Spec.model_validate(data)
     dump = build(spec(strip), INPUTS)
     body, zs = Mesh("Body"), [lv.elev_m for lv in sp.levels]
@@ -728,5 +730,30 @@ def test_box_through_an_upper_storey_it_enters_by_half_a_millimetre_is_no_decor(
     m = Mesh("Through")
     m.box((2, -0.15, 3), (3, 1, 3.3005))
     dump, sp = stacked([SQUARE, [[0, 0], [10, 0], [10, 0.5], [0, 0.5]]], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_part_with_a_hole_through_the_body_is_no_decor():
+    """Review 3 of #78: a closed prism with a hole in its plan; filling the hole would join its two pieces
+    outside the body into one and read the attachment as unlisted decor."""
+    from shapely.geometry import Polygon
+    from shapely.ops import triangulate
+    outer = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.7], [3.8, 0.7]]
+    inner = [[3.9, 0.02], [6.1, 0.02], [6.1, 0.05], [3.9, 0.05]]
+    m = Mesh("Holed")
+    for ring in (outer, inner):
+        for a, b in zip(ring, ring[1:] + ring[:1]):
+            m.quad((*a, 1.0), (*b, 1.0), (*b, 1.3), (*a, 1.3))
+    poly = Polygon(outer, [inner])
+    for tri in triangulate(poly):
+        if poly.covers(tri):
+            pts = list(tri.exterior.coords)[:-1]
+            for z, q in ((1.0, pts[::-1]), (1.3, pts)):
+                k = len(m.vertices)
+                m.vertices.extend([[x, y, z] for x, y in q])
+                m.triangles.append([k, k + 1, k + 2])
+    contour = [[0, 0], [4, 0], [4, 1], [6, 1], [6, 0], [10, 0], [10, 10], [0, 10]]
+    dump, sp = stacked([contour, contour], m, wall=5)
     report = decor_check(dump, sp)
     assert report["status"] == "pass", problems(report)
