@@ -84,44 +84,56 @@ def _normals(t):
     return nv[keep] / (2 * area[keep, None]), area[keep], t[keep]
 
 
-def _levels_of(values):
-    """Distinct values within SAME_M."""
+DEPTH_TOL_M = 1e-4        # depths of one face (a thin box keeps its two faces, review 3 of PR #74)
+
+
+def _levels_of(values, tol):
+    """Distinct values within tol."""
     out = []
     for x in sorted(values):
-        if not out or x - out[-1] > SAME_M:
+        if not out or x - out[-1] > tol:
             out.append(x)
     return out
 
 
+def _covered(t, normals, coords, axis, sign):
+    """Whether the faces facing `sign` along `axis` at that extreme cover the whole rectangle of the other two
+    coordinates (reviews 1-3 of PR #74: summed areas or one face do not prove a solid)."""
+    c = coords[axis]
+    end = c.max() if sign > 0 else c.min()
+    face = (sign * normals[:, axis] >= AXIS_COS) & (np.abs(c - end).max(axis=1) <= DEPTH_TOL_M)
+    i, j = [k for k in range(3) if k != axis]
+    full = np.ptp(coords[i]) * np.ptp(coords[j])
+    cover = unary_union([shapely.Polygon(np.column_stack([coords[i][k], coords[j][k]])) for k in np.flatnonzero(face)])
+    return full > 0 and cover.area >= COVER * full
+
+
 def _is_box(t, u, n):
-    """Axis-aligned in the wall frame, only two depths (back and front: no stepped profile) and its front face
-    covering the whole front rectangle at full projection (reviews 1-2 of PR #74). Inner s / z values are
-    allowed: pieces of a row or a stack welded into one part."""
+    """A box in the wall frame (reviews 1-3 of PR #74): faces axis-aligned, two depths only (back and front,
+    no stepped profile), and front, top, bottom and both ends each covering their whole rectangle; the back
+    may be open (inset decor). Inner s / z values are allowed: pieces of a row or a stack welded into one."""
     normals, _, t = _normals(t)
     axes = np.array([[*u, 0.0], [*n, 0.0], [0.0, 0.0, 1.0]])
     if not len(normals) or not (np.abs(normals @ axes.T).max(axis=1) >= AXIS_COS).all():
         return False
-    s, d, z = t[..., :2] @ u, t[..., :2] @ n, t[..., 2]
-    w, h = s.max() - s.min(), z.max() - z.min()
-    if w <= SAME_M or h <= SAME_M or len(_levels_of(d.ravel())) != 2:
+    coords = (t[..., :2] @ u, t[..., :2] @ n, t[..., 2])
+    local = normals @ axes.T
+    if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(coords[1].ravel(), DEPTH_TOL_M)) != 2:
         return False
-    front = (normals @ axes[1] >= AXIS_COS) & (np.abs(d - d.max()).max(axis=1) <= SAME_M)
-    cover = unary_union([shapely.Polygon(np.column_stack([s[k], z[k]])) for k in np.flatnonzero(front)])
-    return cover.area >= COVER * w * h
+    return all(_covered(t, local, coords, axis, sign) for axis, sign in ((1, 1), (2, 1), (2, -1), (0, 1), (0, -1)))
 
 
 def _is_column(t):
-    """An axis-aligned box in the object frame: two x and two y values only (no L footprint, review 2 of
-    PR #74) and its sides covering the whole perimeter x height."""
-    normals, area, _ = _normals(t)
+    """An axis-aligned box in the object frame: rectangular footprint (two x, two y values) and four sides and
+    the top each covering their whole rectangle; the bottom may be open (reviews 2-3 of PR #74)."""
+    normals, _, t = _normals(t)
     if not len(normals) or not (np.abs(normals).max(axis=1) >= AXIS_COS).all():
         return False
     p = t.reshape(-1, 3)
-    if len(_levels_of(p[:, 0])) != 2 or len(_levels_of(p[:, 1])) != 2:
+    if len(_levels_of(p[:, 0], DEPTH_TOL_M)) != 2 or len(_levels_of(p[:, 1], DEPTH_TOL_M)) != 2:
         return False
-    dx, dy, h = np.ptp(p[:, 0]), np.ptp(p[:, 1]), np.ptp(p[:, 2])
-    sides = area[np.abs(normals[:, 2]) < 1 - AXIS_COS].sum()
-    return sides >= COVER * 2 * (dx + dy) * h
+    coords = (t[..., 0], t[..., 1], t[..., 2])
+    return all(_covered(t, normals, coords, axis, sign) for axis, sign in ((0, 1), (0, -1), (1, 1), (1, -1), (2, 1)))
 
 
 def _piece(v, part_tris, levels, contours, polys):
@@ -162,7 +174,7 @@ def _piece(v, part_tris, levels, contours, polys):
 
 
 def _texture(out):
-    return round(out, ROUND_OUT) <= DECOR_TEXTURE_M + 1e-9
+    return round(out, ROUND_OUT) <= DECOR_TEXTURE_M     # exactly the rule (review 3 of PR #74)
 
 
 def _joinable(a, b, seam):

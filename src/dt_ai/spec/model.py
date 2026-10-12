@@ -132,7 +132,7 @@ class Decor(SpecPart):
         else:
             if self.wall is None or self.x_m is None or self.projection_m is None or self.footprint is not None:
                 raise ValueError(f"a {self.kind} has wall, x_m and projection_m and no footprint")
-            if self.texture != (self.projection_m <= DECOR_TEXTURE_M + 1e-9):
+            if self.texture != (self.projection_m <= DECOR_TEXTURE_M):
                 raise ValueError(f"texture is projection <= {DECOR_TEXTURE_M} m (boundary included)")
         return self
 

@@ -333,3 +333,41 @@ def test_merge_questions_are_told_apart_by_place():
 def test_a_submicron_excess_is_still_geometry(out):
     (d,), _, _ = run([box((1, -out, 1.0), (1.5, 0, 2.0))])
     assert d["texture"] is False and d["projection_m"] > 0.1
+
+
+# --- review 3 of PR #74 ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("thick", [0.001, 0.004, 0.005])
+def test_a_thin_closed_box_is_texture_decor(thick):
+    (d,), questions, _ = run([box((1, -thick, 1), (2, 0, 2))])
+    assert d["texture"] is True and not questions
+
+
+def open_box(lo, hi, drop):
+    """A box without the quads at the given indexes (Mesh.box order: bottom, top, y0, x1, y1, x0)."""
+    m = box(lo, hi)
+    m.triangles = [tr for k, tr in enumerate(m.triangles) if k // 2 not in drop]
+    return m
+
+
+def test_a_wall_box_without_its_top_is_a_question():
+    decor, questions, _ = run([open_box((1, -0.15, 1), (2, 0, 2), drop={1})])
+    assert decor == [] and [q["kind"] for q in questions] == ["decor-shape"]
+
+
+def test_a_wall_box_without_its_back_is_decor():
+    """Inset decor: the face inside the body is deleted (pattern)."""
+    (d,), questions, _ = run([open_box((1, -0.15, 1), (2, 0.02, 2), drop={4})])
+    assert d["projection_m"] == 0.15 and not questions
+
+
+def test_a_column_without_its_top_is_no_column_and_without_its_bottom_is():
+    decor, _, _ = run([open_box((5, -2, 0), (5.4, -1.6, 3), drop={1})])
+    assert decor == []
+    (d,), _, _ = run([open_box((5, -2, 0), (5.4, -1.6, 3), drop={0})])
+    assert d["kind"] == "column"
+
+
+def test_the_texture_boundary_is_exact():
+    (d,), _, _ = run([box((1, -0.100000001, 1), (2, 0, 1.3))])
+    assert d["projection_m"] == 0.100000001 and d["texture"] is False
