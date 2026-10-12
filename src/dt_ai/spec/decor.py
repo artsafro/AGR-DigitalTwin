@@ -10,8 +10,11 @@ face (within SHARE_TOL_M) or embedded up to EMBED_MAX_M, nothing further out tha
 that wall's span, and on a wall of the same line and span in every storey it crosses. It must be a box in
 the wall frame: faces axis-aligned and its front face covering its whole front rectangle at full projection
 (an L, a stepped profile or a flat sheet is no box). A wall piece that fails this, or is deeper than
-DEEP_ASK_M (canopy, porch or decor: the rules do not say), is a question. A column stands free: an
-axis-aligned box COLUMN_MIN_H_M high, COLUMN_MIN_M to COLUMN_MAX_M a side, standing on a level. Every other
+ATTACHMENT_FROM_M is no decor but an attachment candidate (balcony, canopy, bay: EG2; user 2026-10-12): kept
+out of the spec, listed in the report and asked once per type. A column stands free: an axis-aligned box
+COLUMN_MIN_H_M high, COLUMN_MIN_M to COLUMN_MAX_M a side, its bottom on a level; one starting mid-storey is a
+`decor-column` question (user 2026-10-12). Questions are grouped by type: one kind and one cross-section
+(projection and height) is one question, its count and positions listed (user 2026-10-12: no avalanche). Every other
 part stays an attachment, as before. Pieces join when the joined pieces fill one rectangle up to the seams
 (a row, a stack or a full grid); any other arrangement of joinable pieces is a `decor-merge` question and
 the pieces stay apart (reviews of PR #74).
@@ -28,8 +31,7 @@ from dt_ai.spec.model import DECOR_TEXTURE_M
 SHARE_TOL_M = 0.005       # a piece's back at the wall face within this
 EMBED_MAX_M = 0.05        # ... or embedded into the wall up to this
 PROJECTION_MAX_M = 1.5    # deeper than this off a wall is no facade decor (canopy, balcony)
-DEEP_ASK_M = 0.8          # deeper than the catalogue's common decor (0.8 m): canopy, porch or decor? a question
-                          # (proposed 2026-10-12, awaiting the user)
+ATTACHMENT_FROM_M = 0.8   # projection over this: an attachment candidate, not decor (user 2026-10-12)
 SPAN_TOL_M = 0.01         # a piece lies within its wall's span within this
 SAME_M = 0.005            # one cross-section / one axis within this
 COVER = 0.99              # a box's front face covers this share of its front rectangle
@@ -166,10 +168,11 @@ def _piece(v, part_tris, levels, contours, polys):
     foot = shapely.box(*lo, *hi)                          # clear of the body in every storey it crosses
     free = all(polys[k].distance(foot) > SHARE_TOL_M for k in range(li, _storey(levels, z1 - SAME_M) + 1))
     grounded = any(abs(z0 - lv["elev_m"]) <= COLUMN_BASE_M for lv in levels)
-    if (free and grounded and z1 - z0 >= COLUMN_MIN_H_M and COLUMN_MIN_M <= (hi - lo).min()
+    if (free and z1 - z0 >= COLUMN_MIN_H_M and COLUMN_MIN_M <= (hi - lo).min()
             and (hi - lo).max() <= COLUMN_MAX_M and _is_column(t)):
-        return {"type": "column", "li": li, "box": [float(lo[0]), float(lo[1]), float(hi[0]), float(hi[1])],
-                "z0": z0, "z1": z1}
+        return {"type": "column" if grounded else "column-off-level", "li": li,
+                "box": [float(lo[0]), float(lo[1]), float(hi[0]), float(hi[1])], "z0": z0, "z1": z1,
+                "out": float((hi - lo).max()), "s0": 0.0, "s1": float((hi - lo).min())}
     return None
 
 
@@ -245,6 +248,26 @@ def _at(piece, s):
     return [round(float(p[0]), 2), round(float(p[1]), 2)]
 
 
+def _grouped(questions, names):
+    """One question per type: same kind and cross-section (projection and height within SAME_M); the first
+    position stands for the group, all positions and the count are listed (user 2026-10-12)."""
+    groups = []
+    for q in sorted(questions, key=lambda q: (names.index(q["levels"][0]), q["heights_m"][0], q["at"] or [0, 0])):
+        h = q["heights_m"][1] - q["heights_m"][0]
+        for g in groups:
+            if (g["kind"] == q["kind"] and abs(g["depth_m"] - q["depth_m"]) <= SAME_M
+                    and abs(g["heights_m"][1] - g["heights_m"][0] - h) <= SAME_M):
+                g["count"] += 1
+                g["positions"].append(q["at"])
+                g["levels"] = sorted(set(g["levels"]) | set(q["levels"]), key=names.index)
+                if g["wall"] != q["wall"]:
+                    g["wall"] = None
+                break
+        else:
+            groups.append(dict(q, count=1, positions=[q["at"]]))
+    return groups
+
+
 def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachment_ids):
     """(decor entries for the spec, questions, report) from the non-body parts. parts: triangle-index arrays
     of the parts other than the body; contours / polys: per storey."""
@@ -256,12 +279,12 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             kept += 1
             continue
         pc["ids"] = set(int(i) for i in np.unique(mats[part]))
-        if pc["type"] in ("shape", "wall") and pc["out"] > DEEP_ASK_M:
+        if pc["type"] in ("shape", "wall") and pc["out"] > ATTACHMENT_FROM_M:
             pc["type"] = "deep"
-        if pc["type"] in ("shape", "deep"):
+        if pc["type"] in ("shape", "deep", "column-off-level"):
             at = [round(float(c), 2) for c in v[np.unique(tris[part])][:, :2].mean(axis=0)]
-            questions.append(_question(f"decor-{pc['type']}", levels, pc["li"], pc["out"], pc["s0"], pc["s1"],
-                                       pc["z0"], pc["z1"], at))
+            kind = {"shape": "decor-shape", "deep": "decor-deep", "column-off-level": "decor-column"}[pc["type"]]
+            questions.append(_question(kind, levels, pc["li"], pc["out"], pc["s0"], pc["s1"], pc["z0"], pc["z1"], at))
             continue
         found.append(pc)
     walls, ambiguous = _merge([p for p in found if p["type"] == "wall"], seam)
@@ -295,8 +318,12 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         decor.append({"kind": kind, **entry, "wall": at[0], "x_m": round(at[1], ROUND), "w_m": round(w_m, ROUND),
                       "projection_m": out, "texture": _texture(out)})
     names = [lv["name"] for lv in levels]
+    questions = _grouped(questions, names)
+    candidates = [{"projection_m": q["depth_m"], "h_m": round(q["heights_m"][1] - q["heights_m"][0], 3),
+                   "count": q["count"], "levels": q["levels"], "at": q["positions"]}
+                  for q in questions if q["kind"] == "decor-deep"]
     decor.sort(key=lambda d: (names.index(d["level"]), d.get("wall") or 0, d.get("x_m") or 0.0, d["z_m"]))
     report = {"pieces": len(found), "elements": len(decor), "texture": sum(d.get("texture", False) for d in decor),
               "columns": len(columns), "seam_m": round(seam, 4), "not_decor_parts": kept,
-              "ambiguous_groups": len(ambiguous), "questions": len(questions)}
+              "ambiguous_groups": len(ambiguous), "attachment_candidates": candidates, "questions": len(questions)}
     return decor, questions, report

@@ -38,7 +38,11 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   axis-aligned in the wall frame, two depths only (no stepped profile) and its front face covering the whole
   front rectangle at full projection.
   A free-standing column: an axis-aligned box (rectangular footprint) at least 2 m high, 0.05-1.5 m a side,
-  standing on a level, clear of the body in every storey it crosses. Everything else stays an attachment.
+  its bottom on a `LEVEL_*` (user 2026-10-12; one starting mid-storey is a `decor-column` question, not a
+  column), clear of the body in every storey it crosses. Everything else stays an attachment.
+- **Projection over 0.8 m is no decor** (user 2026-10-12): an attachment candidate — balcony, canopy, bay
+  (group attachments, backlog EG2). Never written to `decor`; listed in the report
+  (`decor.attachment_candidates`: projection, height, count, positions).
 - **Merging a split element** (user 2026-10-11/12; the main thing `bench-k02-decor-fragment` checks): pieces
   with the same cross-section (width and projection), on one axis (same wall, same line along the strip) and
   with gaps of at most `plate_gap_m` x 12 = 0.06 m between them are joinable (stacked or in a row), never
@@ -46,9 +50,11 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   row, a stack, a full grid) with one cross-section over the whole group is one element; the seam is texture. Any other group (an L of tiles) stays apart
   and is a `decor-merge` question — the result never depends on the order of the source. Pieces repeated on the storey / bay rhythm (gaps far over the seam) stay separate elements.
 - Questions only where these rules do not cover a piece: `decor-shape` (on a wall but no box, or off a wall
-  of a storey it crosses), `decor-merge` (above) and
-  `decor-deep` (projection over 0.8 m, the deepest common decor of the catalogue: canopy, porch or decor?;
-  proposed threshold, to be confirmed) — never for a number at a threshold.
+  of a storey it crosses), `decor-merge` (above), `decor-column` (a column off a level) and `decor-deep` (the
+  attachment candidates, to confirm their kind) — never for a number at a threshold.
+- **One question per type** (user 2026-10-12, general rule of the gray zone, HARNESS_PLAN §7): one kind and
+  one cross-section (projection and height within 5 mm), repeated on the facade, is one question with its
+  count and all positions — never one question per piece.
 
 ## How to build it
 

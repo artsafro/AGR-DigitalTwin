@@ -93,10 +93,10 @@ def test_deep_wall_pieces_are_a_question():
     assert q["depth_m"] == 1.4
 
 
-def test_a_column_off_the_levels_is_no_column():
-    """Found on the real K01 source: a ladder cage hanging between levels is an attachment."""
+def test_a_column_off_the_levels_is_a_question():
+    """User 2026-10-12: a column's bottom is on a level; one starting mid-storey is a question, not a column."""
     spec, report, _ = decor_of(with_meshes(("Cage", (5.8, -1.6, 1.0), (6.6, -0.8, 3.5))))
-    assert spec.decor == [] and report["decor"]["not_decor_parts"] == 1
+    assert spec.decor == [] and [q["kind"] for q in report["questions"] if q["kind"].startswith("decor")] == ["decor-column"]
 
 
 def test_canopy_and_off_wall_parts_stay_attachments():
@@ -319,14 +319,16 @@ def test_a_group_over_the_cross_section_tolerance_is_asked():
         assert len(decor) == 3 and [q["kind"] for q in questions] == ["decor-merge"]
 
 
-def test_merge_questions_are_told_apart_by_place():
+def test_merge_questions_of_one_type_are_one_question_with_their_places():
+    """User 2026-10-12: one question per type (kind + cross-section), its positions listed."""
     def l_at(x):
         return [box((x, -0.15, 1.0), (x + 0.5, 0, 1.5)), box((x + 0.52, -0.15, 1.0), (x + 1.02, 0, 1.5)),
                 box((x, -0.15, 1.52), (x + 0.5, 0, 2.02))]
     flat = [[0, 0], [8, 0], [8, 8], [0, 8]]
     _, questions, _ = run(l_at(1) + l_at(6), contours=[flat, flat])
-    assert [q["kind"] for q in questions] == ["decor-merge"] * 2
-    assert questions[0]["at"] != questions[1]["at"] and {q["wall"] for q in questions} == {0}
+    (q,) = questions
+    assert q["kind"] == "decor-merge" and q["count"] == 2 and q["wall"] == 0
+    assert len({tuple(p) for p in q["positions"]}) == 2 and q["at"] == q["positions"][0]
 
 
 @pytest.mark.parametrize("out", [0.1000001, 0.10000049])
@@ -371,3 +373,18 @@ def test_a_column_without_its_top_is_no_column_and_without_its_bottom_is():
 def test_the_texture_boundary_is_exact():
     (d,), _, _ = run([box((1, -0.100000001, 1), (2, 0, 1.3))])
     assert d["projection_m"] == 0.100000001 and d["texture"] is False
+
+
+# --- user decisions 2026-10-12 ------------------------------------------------------------------------
+
+def test_deep_pieces_are_attachment_candidates_one_question_per_type():
+    """Over 0.8 m: an attachment candidate (EG2), not decor; one question per cross-section, with the count."""
+    flat = [[0, 0], [8, 0], [8, 8], [0, 8]]
+    canopies = [box((x, -1.063, 2.7), (x + 2.0, 0, 3.3)) for x in (0.5, 3.0, 5.5)]
+    porch = [box((1.0, 8.0, 0.0), (3.0, 9.4, 3.0))]
+    decor, questions, report = run(canopies + porch, contours=[flat, flat])
+    assert decor == []
+    assert sorted((q["kind"], q["depth_m"], q["count"]) for q in questions) == [("decor-deep", 1.063, 3),
+                                                                                ("decor-deep", 1.4, 1)]
+    cands = report["attachment_candidates"]
+    assert sorted((c["projection_m"], c["count"]) for c in cands) == [(1.063, 3), (1.4, 1)]
