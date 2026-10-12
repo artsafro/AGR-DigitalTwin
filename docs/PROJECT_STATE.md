@@ -123,6 +123,10 @@ decor benchmark K02 = real facade fragment `bench-k02-decor-fragment` (brief + `
 cuts `source.max` and makes `etalon.max`), synthetic B03 decor deferred, old B03 attachments -> B04;
 `pipeline_gate` (pre-commit + Claude PreToolUse: `Pipeline status` above draft needs pipeline/spec.json,
 spec.report.json, check.json; new job scripts name an engine gap EG1-EG4); OD1 opening depth 0.4 in backlog.
+#74 merged (3 Codex rounds): spec v0.5 `decor` block and extractor (`src/dt_ai/spec/decor.py`): wall decor
+as boxes (band / strip / panel), free-standing columns on a level, split pieces merged up to 0.06 m seams,
+<= 0.10 m texture; > 0.8 m = attachment candidates (EG2, report only); questions one per type. B01/B02/B02t
+unchanged 8/8; K01: 1 decor strip, 6 attachment-candidate types.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -217,8 +221,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: decor PR 2 (spec `decor` + extractor), PR 3 (engine + checker), PR 4 (K02 run); install the
-   pre-commit (`tools/git-hooks/pre-commit`); OD1; intake IN2-IN8; MH3; the
+   Claude: decor PR 3 (engine + checker), PR 4 (K02 run); OD1; intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
