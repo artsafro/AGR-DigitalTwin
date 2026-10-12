@@ -265,6 +265,26 @@ def test_pre_commit_blocks_without_a_root(tmp_path):
     assert result.returncode == 1 and "blocked" in result.stderr
 
 
+def test_pre_commit_blocks_when_root_lookup_fails_with_output(tmp_path):
+    """Review 2 of #79: a failing `git rev-parse` that still prints a directory must block."""
+    import shutil
+    bash = "C:/Program Files/Git/bin/bash.exe" if Path("C:/Program Files/Git/bin/bash.exe").exists() \
+        else shutil.which("bash")
+    if not bash:
+        pytest.skip("bash unavailable")
+    fake = tmp_path / "bin"
+    fake.mkdir()
+    (fake / "git").write_text(f'#!/bin/sh\necho "{tmp_path.as_posix()}"\nexit 128\n', encoding="utf-8")
+    hook = (ROOT / "tools/git-hooks/pre-commit").as_posix()
+    bin_dir = fake.as_posix()
+    if fake.drive:                                   # C:/x -> /c/x: a drive colon would split bash's PATH
+        bin_dir = "/" + fake.drive[0].lower() + bin_dir[len(fake.drive):]
+    result = subprocess.run([bash, "-c", f'PATH="{bin_dir}:$PATH"; command -v git; sh "{hook}"'],
+                            cwd=tmp_path, capture_output=True, text=True)
+    assert result.stdout.strip().startswith(bin_dir), result.stdout     # the fake git is the one run
+    assert result.returncode == 1 and "blocked" in result.stderr
+
+
 # --- Claude Code PreToolUse hook ------------------------------------------------------------------------
 
 def hook(payload):
