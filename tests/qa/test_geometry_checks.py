@@ -630,3 +630,18 @@ def test_material_slots_and_glass_slots():
     g = by_name["Facade_glass"]
     assert g["material_ids"] == [12] and len(g["vertices"]) == 3 and g["triangles"] == [[0, 1, 2]]
     assert mesh["material_ids"] == [16, 16, 5, 99]                  # the input is not changed
+
+
+def test_glass_split_keeps_source_polygon_sizes():
+    """Review 1 of #77: polygon sizes follow their triangles into both parts (n-gons stay checked); a polygon
+    split between the parts leaves both without sizes rather than invent them."""
+    from twinqa.geometry.mesh import assign_material_ids
+    base = {"name": "Facade", "vertices": [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1], [2, 0, 0], [2, 0, 1]],
+            "triangles": [[0, 1, 2], [0, 2, 3], [1, 4, 5], [1, 5, 2]], "polygon_sizes": [4, 4]}
+    out = assign_material_ids({"meshes": [dict(base, material_ids=[16, 16, 5, 5])]},
+                              {"slots": {"16": 1}, "glass_slots": [5], "glass_id": 12})
+    by_name = {m["name"]: m for m in out["meshes"]}
+    assert by_name["Facade"]["polygon_sizes"] == [4] and by_name["Facade_glass"]["polygon_sizes"] == [4]
+    out = assign_material_ids({"meshes": [dict(base, material_ids=[16, 16, 5, 16])]},
+                              {"slots": {"16": 1}, "glass_slots": [5], "glass_id": 12})
+    assert all("polygon_sizes" not in m for m in out["meshes"])

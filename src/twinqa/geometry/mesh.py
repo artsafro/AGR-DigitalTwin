@@ -136,6 +136,16 @@ def _subset(mesh: dict, rows: list, name: str, mid) -> dict:
     for key in ("material_ids", "udim_tiles"):
         if key in mesh:
             out[key] = [mesh[key][k] for k in rows]
+    sizes = [int(k) for k in mesh.get("polygon_sizes", [])]
+    if sizes and sum(max(k - 2, 0) for k in sizes) == len(mesh["triangles"]):
+        # source polygons stay with their triangles, so n-gons are still checked (review 1 of #77); a polygon
+        # split between the subsets cannot be kept, and then neither part claims polygon sizes
+        poly = [p for p, k in enumerate(sizes) for _ in range(max(k - 2, 0))]
+        taken = {}
+        for k in rows:
+            taken[poly[k]] = taken.get(poly[k], 0) + 1
+        if all(n == sizes[p] - 2 for p, n in taken.items()):
+            out["polygon_sizes"] = [sizes[p] for p in sorted(taken)]
     if mid is not None:
         out["material_ids"] = [mid] * len(tris)
     return out
