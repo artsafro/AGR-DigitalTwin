@@ -609,14 +609,19 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                     "kind": o.get("kind_fixed") or _kind(o, frame),
                     "panes": (o.get("parts") or None) if (o.get("glass_z") or o.get("glazed")) else None,
                     **_glass_size(o, floor["contour"])}
-            if not o.get("kind_fixed") and o["depth"] <= FLUSH_M:
-                # no depth in the source (no reveal, or a plane flush with the facade): the default, marked in the
-                # report, never 0 or a minimum (OD1, user decision 2026-10-11); the glass never gives a depth
+            # no depth in the source: no reveal or a plane flush with the facade; glass without a reveal (the glass
+            # never gives a depth); an opening a source lists (Revit: its "depth" is the host wall's thickness, not
+            # a reveal, #36) - review 1 of PR #76
+            no_depth = (o.get("kind_fixed") or (o["source"] == "glass" and o.get("no_reveal"))
+                        or o["depth"] <= FLUSH_M)
+            depth = o["depth"]
+            if no_depth:
+                # the default, marked in the report, never 0 or a minimum (OD1, user decision 2026-10-11)
                 p0, p1, _ = _world(o, floor["contour"])
                 by_default.append({"level": levels[li]["name"], "wall": o["wall"], "x_m": item["x_m"],
                                    "sill_m": item["sill_m"], "at": [round(float(c), 2) for c in (p0 + p1) / 2]})
-            elif not o.get("kind_fixed") and abs(o["depth"] - depth_default) > depth_exception:
-                item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
+            elif abs(depth - depth_default) > depth_exception:
+                item["depth_m"] = round(depth, 3)   # a measured reveal off the default: an exception (#36)
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
             items.append(item)

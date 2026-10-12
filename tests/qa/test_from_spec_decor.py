@@ -531,3 +531,18 @@ def test_priority_uses_the_original_lengths():
 def test_review_3_build_errors(decor, message):
     with pytest.raises(BuildError, match=message):
         build(spec(*decor), INPUTS)
+
+
+# --- PR #76: attachments are no decor ------------------------------------------------------------------
+
+def test_attachments_beside_decor_are_not_flagged():
+    """K01 (PR #76): an attachment candidate over 0.8 m and a flat rung set into the wall are no decor."""
+    sp = spec(BELT)
+    dump = build(sp, INPUTS)
+    porch = Mesh("Porch")
+    porch.box((5.0, -1.4, 0.05), (7.0, 0.0, 2.3))
+    rung = Mesh("Rung")
+    rung.quad((9.0, -0.3, 4.0), (9.0, 0.2, 4.0), (9.0, 0.2, 4.03), (9.0, -0.3, 4.03))
+    dump["meshes"] += [porch.dump(), rung.dump()]
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)

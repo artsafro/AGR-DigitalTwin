@@ -207,3 +207,25 @@ def test_frame_across_a_level_keeps_the_size_question_of_either_part(case):
     floors = spec.expanded_floors()
     assert [o.level_to for o in floors[0].openings] == ["L1"] and floors[1].openings == []
     assert [q["kind"] for q in report["questions"]].count("opening-size-unknown") == 1
+
+
+@pytest.mark.parametrize("glass_at", [0.017, 0.03, 0.15])
+def test_od1_glass_without_a_reveal_gives_no_depth(glass_at):
+    """Review 1 of PR #76: the glass position is no depth; glass in a closed wall takes the default, marked."""
+    obj = {k: v for k, v in at().items() if k != "opening_depth_default_m"}
+    spec, report = extract_spec(building(boxes=[], extra=[pane("Glass", 2.0, 3.5, 1.0, 2.0, y=glass_at)]), obj)
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.depth_m is None and spec.opening_depth_default_m == 0.4
+    assert report["openings"]["openings_depth_by_default"] == 1
+
+
+def test_od1_revit_openings_take_the_default_and_are_listed():
+    """A Revit opening's 'depth' is its host wall's thickness, not a reveal (#36): the default, now listed."""
+    walls, t = ring()
+    curtain = wall(90, (3.0, 0.15), (6.0, 0.15), t=0.025, z0=1.0, z1=2.8)
+    curtain["function"] = "curtain"
+    b = {**band(walls + [curtain]), "materials": GLASS,
+         "curtainPanels": [panel(91, 90, 3.05, 4.45, 1.05, 2.75), panel(92, 90, 4.55, 5.95, 1.05, 2.75)]}
+    spec, report = extract_spec(to_dump([b], [roof_obj(t)]), OBJ)
+    assert [o.depth_m for o in spec.expanded_floors()[0].openings] == [None]
+    assert report["openings"]["openings_depth_by_default"] == 1
