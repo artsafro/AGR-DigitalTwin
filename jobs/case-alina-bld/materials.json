@@ -1,0 +1,10 @@
+{
+  "object": "case-alina-bld",
+  "scheme": "material id ranges of standards/material_id_ranges.yaml (ADR 0001); provisional, finishes not mapped yet (a question)",
+  "note": "The source's finishes are 3ds Max sub-material slots (Corona). Slot 5 (refraction 1.0) is glass: split into <mesh>_glass (glass_id 12, as K01). Every other slot is 0 (unassigned) until the user gives the finish table; UV and materials are out of scope of this run (user 2026-10-12).",
+  "slots": {},
+  "glass_slots": [
+    5
+  ],
+  "glass_id": 12
+}

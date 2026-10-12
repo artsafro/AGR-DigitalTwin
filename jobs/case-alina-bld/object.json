@@ -1,0 +1,168 @@
+{
+  "id": "case-alina-bld",
+  "note": "Provisional object id (the real <site>-<code> is a question to the user). Colleague case alina-bld run through the harness (user 2026-10-12): source = layer 'Геометрия исходная' of C:/Users/artsafro/Downloads/alina_bld.max, exported read-only to data/sources/case-alina-bld/source-geometry-v001.fbx.",
+  "frame": {
+    "to_object": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "derived_from": "source coordinates kept (metres, Z up); no zero-mark shift decided yet"
+  },
+  "levels": [
+    {
+      "name": "L00",
+      "elev_m": 0.0
+    },
+    {
+      "name": "L01",
+      "elev_m": 6.5
+    },
+    {
+      "name": "L02",
+      "elev_m": 9.8
+    },
+    {
+      "name": "L03",
+      "elev_m": 13.1
+    },
+    {
+      "name": "L04",
+      "elev_m": 16.4
+    },
+    {
+      "name": "L05",
+      "elev_m": 19.7
+    },
+    {
+      "name": "L06",
+      "elev_m": 23.0
+    },
+    {
+      "name": "L07",
+      "elev_m": 26.3
+    },
+    {
+      "name": "L08",
+      "elev_m": 29.6
+    },
+    {
+      "name": "L09",
+      "elev_m": 32.9
+    },
+    {
+      "name": "L10",
+      "elev_m": 36.2
+    },
+    {
+      "name": "L11",
+      "elev_m": 39.5
+    },
+    {
+      "name": "L12",
+      "elev_m": 42.8
+    },
+    {
+      "name": "L13",
+      "elev_m": 46.1
+    },
+    {
+      "name": "L14",
+      "elev_m": 49.4
+    },
+    {
+      "name": "L15",
+      "elev_m": 52.7
+    },
+    {
+      "name": "L16",
+      "elev_m": 56.0
+    },
+    {
+      "name": "L17",
+      "elev_m": 59.3
+    },
+    {
+      "name": "L18",
+      "elev_m": 62.6
+    },
+    {
+      "name": "L19",
+      "elev_m": 65.9
+    },
+    {
+      "name": "L20",
+      "elev_m": 69.2
+    },
+    {
+      "name": "L21",
+      "elev_m": 72.5
+    },
+    {
+      "name": "L22",
+      "elev_m": 75.8
+    },
+    {
+      "name": "L23",
+      "elev_m": 79.1
+    },
+    {
+      "name": "L24",
+      "elev_m": 82.4
+    },
+    {
+      "name": "L25",
+      "elev_m": 85.7
+    },
+    {
+      "name": "L26",
+      "elev_m": 89.0
+    },
+    {
+      "name": "L27",
+      "elev_m": 92.3
+    },
+    {
+      "name": "L28",
+      "elev_m": 95.75
+    },
+    {
+      "name": "roof",
+      "elev_m": 96.55
+    }
+  ],
+  "levels_derived_from": "user 2026-10-12 'уровни сними с плит': tops of up-facing faces of slab object Shape211223725 (6.5 ... 92.3 every 3.3, 95.75, roof 96.55); L00 0.0 = the bottom of the building (no slab). Read with 3ds Max MCP, read only. Open: 95.75 vs 96.55 (0.8 m apart), terrace decks 56.2 / 69.4 / 82.6 (Shape211223718) 0.2 above the slabs.",
+  "opening_depth_default_m": 0.4,
+  "materials": "jobs/case-alina-bld/materials.json",
+  "build": {
+    "parapet_thickness_m": null,
+    "ids": {
+      "facade": 1,
+      "reveal": 6,
+      "roof": 21,
+      "opening": 11,
+      "decor": 26
+    }
+  }
+}
