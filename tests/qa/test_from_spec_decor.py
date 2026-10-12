@@ -76,8 +76,7 @@ def test_the_extractor_reads_the_built_decor_back():
     ([dict(BELT, z_m=2.0)], "covers the opening"),
     ([dict(BELT, material_id=None)], "no material_id"),
     ([dict(COLUMN, footprint=[5.8, -0.4, 6.2, 0.0])], "touches the body"),
-    ([BELT, dict(PILASTER, wall=0, x_m=6.0, h_m=2.6)], "touch or overlap"),
-    ([BELT, dict(PILASTER, wall=0, x_m=6.0, z_m=2.7, h_m=0.5)], "touch or overlap"),
+    ([BELT, dict(PILASTER, wall=0, x_m=6.0, h_m=2.6)], "side by side or cross"),
     ([dict(PILASTER, wall=0, x_m=3.5, w_m=0.0005, z_m=1.0, h_m=1.0)], "nothing left"),
 ])
 def test_what_the_pattern_does_not_decide_is_an_error(decor, message):
@@ -227,3 +226,85 @@ def test_a_concave_corner_end_is_an_error():
     data["decor"] = [dict(BELT, wall=4, x_m=0.0, w_m=5.0, z_m=1.0, material_id=26)]   # wall 4 ends at the concave (5, 5)
     with pytest.raises(BuildError, match="concave corner"):
         build(Spec.model_validate(data), INPUTS)
+
+
+# --- meeting of two decor elements (user 2026-10-12): the subordinate runs 0.02 m into the main one ------
+
+def decor_faces(dump, mid=None):
+    m = meshes(dump)["decor"]
+    v = np.array(m["vertices"])
+    return [v[q] for k, q in enumerate(m["polygons"]) if mid is None or m["material_ids"][2 * k] == mid]
+
+
+@pytest.mark.parametrize("strip, z_end, hidden", [
+    (dict(PILASTER, wall=0, x_m=6.0, z_m=0.0, h_m=2.4), ("top", 2.425), 2),       # under the belt (moved to 2.405)
+    (dict(PILASTER, wall=0, x_m=6.0, z_m=2.7, h_m=0.6), ("bottom", 2.68), 1),     # on top of the belt
+])
+def test_a_strip_runs_into_the_belt(strip, z_end, hidden):
+    plain = meshes(build(spec(), INPUTS))["body"]
+    dump = build(spec(BELT, strip), INPUTS)
+    assert meshes(dump)["body"] == plain                              # the body is not cut
+    faces = decor_faces(dump)
+    assert len(faces) == 5 + 4                                         # belt whole, the strip without its hidden end
+    zs = np.concatenate([q[:, 2] for q in decor_faces(dump, 27)])
+    end, z = z_end
+    assert (zs.max() if end == "top" else zs.min()) == pytest.approx(z)
+    assert len(decor_faces(dump, 26)) == 5                             # the main element is not cut
+
+
+def test_the_longer_of_one_rank_is_main():
+    short = dict(BELT, x_m=6.0, w_m=2.0, z_m=2.45, h_m=0.2, projection_m=0.1 + 0.02, material_id=27)
+    long_ = dict(BELT, x_m=0.5, w_m=5.5, z_m=2.4, h_m=0.3)
+    faces = decor_faces(build(spec(long_, short), INPUTS))
+    xs = np.concatenate([q[:, 0] for q in faces])
+    assert xs.min() == pytest.approx(0.5) and len(faces) == 5 + 4
+    short_faces = [q for q in faces if q[:, 0].max() <= 8.0 + 1e-9 and q[:, 0].min() >= 5.98 - 1e-9]
+    assert min(q[:, 0].min() for q in short_faces) == pytest.approx(5.98)   # 0.02 m into the long one
+
+
+@pytest.mark.parametrize("decor, message", [
+    ([BELT, dict(PILASTER, wall=0, x_m=6.0, z_m=0.0, h_m=2.4, projection_m=0.2)], "stands out"),
+    ([dict(BELT, x_m=0.5, w_m=2.0), dict(BELT, x_m=2.5, w_m=2.0, z_m=2.45, h_m=0.2, material_id=27)], "one length"),
+    ([dict(BELT, x_m=8.0, w_m=2.0, z_m=1.0), dict(PILASTER, x_m=0.0, w_m=2.0, z_m=1.0, h_m=0.3, kind="band",
+                                                    projection_m=0.15)], "across walls"),
+])
+def test_meetings_the_rule_does_not_cover(decor, message):
+    with pytest.raises(BuildError, match=message):
+        build(spec(*decor), INPUTS)
+
+
+UNDER = dict(PILASTER, wall=0, x_m=6.0, z_m=0.0, h_m=2.4)
+
+
+def test_a_run_in_meeting_reads_back_and_passes_the_checker():
+    sp = spec(BELT, UNDER)
+    dump = build(sp, INPUTS)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+    obj = {"id": "bench-synth-box", "frame": {"to_object": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    back, rep = extract_spec(dump, obj)
+    strip = next(d for d in back.decor if d.kind == "strip")
+    assert (strip.z_m, round(strip.h_m, 4)) == (0.0, 2.405)        # clipped at the belt's bottom, not run-in
+    assert not [q for q in rep["questions"] if q["kind"].startswith("decor")]
+
+
+def butt(dump):
+    """The strip's top moved down to the belt's bottom face: a butt joint."""
+    for p in meshes(dump)["decor"]["vertices"]:
+        if abs(p[2] - 2.425) < 1e-9:
+            p[2] = 2.405
+    return dump
+
+
+def test_a_butt_joint_fails():
+    sp = spec(BELT, UNDER)
+    assert any(p.startswith("butt joint") for p in problems(decor_check(butt(build(sp, INPUTS)), sp)))
+
+
+def test_a_run_in_over_the_inset_fails():
+    sp = spec(BELT, UNDER)
+    dump = build(sp, INPUTS)
+    for p in meshes(dump)["decor"]["vertices"]:
+        if abs(p[2] - 2.425) < 1e-9:
+            p[2] = 2.46                                                 # 0.055 m into the belt
+    assert any("over decor_inset_m" in p for p in problems(decor_check(dump, sp)))

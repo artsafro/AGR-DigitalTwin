@@ -113,22 +113,48 @@ def _covered(t, normals, coords, axis, sign, floor=None):
     return target.area > 0 and cover.intersection(target).area >= COVER * target.area
 
 
-def _is_box(t, u, n, c):
+def _is_box(t, u, n, c, hosts=()):
     """A box in the wall frame (reviews 1-3 of PR #74): faces axis-aligned, two depths only (back and front,
     no stepped profile), and front, top, bottom and both ends each covering their whole rectangle; the back
-    may be open (inset decor). Inner s / z values are allowed: pieces of a row or a stack welded into one."""
+    may be open (inset decor). Inner s / z values are allowed: pieces of a row or a stack welded into one.
+    An end (top, bottom or a side end) may be missing where it lies inside another element of the wall line
+    (hosts: {s0, s1, z0, z1, d1} absolute): a subordinate element run into a main one (user 2026-10-12); its
+    extent is then clipped at the main one's face. Returns the clip {key: value} (empty when whole), or None
+    when it is no box."""
     normals, _, t = _normals(t)
     axes = np.array([[*u, 0.0], [*n, 0.0], [0.0, 0.0, 1.0]])
     if not len(normals) or not (np.abs(normals @ axes.T).max(axis=1) >= AXIS_COS).all():
-        return False
+        return None
     coords = (t[..., :2] @ u, t[..., :2] @ n, t[..., 2])
     local = normals @ axes.T
     # two depths out of the wall face: the face and the front (the inset part inside the body is not seen)
     seen = np.maximum(coords[1].ravel(), c)
     if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(seen, DEPTH_TOL_M)) != 2:
-        return False
+        return None
     face = {1: c}                                      # out of the wall face (c along n) only
-    return all(_covered(t, local, coords, axis, sign, face) for axis, sign in ((1, 1), (2, 1), (2, -1), (0, 1), (0, -1)))
+    if not _covered(t, local, coords, 1, 1, face):
+        return None
+    lo = {k: float(coords[k].min()) for k in (0, 2)}
+    hi = {k: float(coords[k].max()) for k in (0, 2)}
+    front = float(coords[1].max())
+    clip = {}
+    for axis, sign in ((2, 1), (2, -1), (0, 1), (0, -1)):
+        if _covered(t, local, coords, axis, sign, face):
+            continue
+        end = hi[axis] if sign > 0 else lo[axis]
+        other = 2 if axis == 0 else 0
+        key = {0: ("s0", "s1"), 2: ("z0", "z1")}
+        host = next((h for h in hosts
+                     if h[key[axis][0]] + DEPTH_TOL_M < end < h[key[axis][1]] - DEPTH_TOL_M
+                     and h[key[other][0]] - DEPTH_TOL_M <= lo[other] and hi[other] <= h[key[other][1]] + DEPTH_TOL_M
+                     and front <= h["d1"] + DEPTH_TOL_M), None)
+        if host is None:
+            return None
+        if sign > 0:
+            clip[key[axis][1]] = host[key[axis][0]]
+        else:
+            clip[key[axis][0]] = host[key[axis][1]]
+    return clip
 
 
 def _is_column(t):
@@ -168,7 +194,8 @@ def _piece(v, part_tris, levels, contours, polys):
         # every storey it crosses has a wall on the same line holding its span (review 1 of PR #74)
         crossed = range(li, _storey(levels, z1 - SAME_M) + 1)
         on_walls = all(_wall_at(contours[k], u, c, pc["s0"], pc["s1"]) is not None for k in crossed)
-        pc["type"] = "wall" if on_walls and _is_box(t, u, n, c) else "shape"
+        pc["type"] = "wall" if on_walls and _is_box(t, u, n, c) is not None else "shape"
+        pc["t"], pc["on_walls"] = t, on_walls
         return pc
     lo, hi = p[:, :2].min(axis=0), p[:, :2].max(axis=0)
     foot = shapely.box(*lo, *hi)                          # clear of the body in every storey it crosses
@@ -279,11 +306,22 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
     of the parts other than the body; contours / polys: per storey."""
     seam = plate_gap_m * SEAM_FACTOR
     found, questions, kept = [], [], 0
+    pieces = []
     for part in parts:
         pc = _piece(v, tris[part], levels, contours, polys)
         if pc is None:
             kept += 1
             continue
+        pieces.append((part, pc))
+    whole = [pc for _, pc in pieces if pc["type"] == "wall"]
+    for part, pc in pieces:                           # a subordinate element run into a main one (user 2026-10-12)
+        if pc["type"] == "shape" and pc["on_walls"]:
+            hosts = [{"s0": h["s0"], "s1": h["s1"], "z0": h["z0"], "z1": h["z1"], "d1": h["c"] + h["out"]}
+                     for h in whole if h is not pc and h["u"] @ pc["u"] >= AXIS_COS and abs(h["c"] - pc["c"]) <= SAME_M]
+            clip = _is_box(pc["t"], pc["u"], pc["n"], pc["c"], hosts) if hosts else None
+            if clip:
+                pc.update(clip, type="wall", inset_into=True)
+    for part, pc in pieces:
         pc["ids"] = set(int(i) for i in np.unique(mats[part]))
         if pc["type"] in ("shape", "wall") and pc["out"] > ATTACHMENT_FROM_M:
             pc["type"] = "deep"

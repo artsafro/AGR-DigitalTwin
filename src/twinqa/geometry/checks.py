@@ -12,7 +12,7 @@ import numpy as np
 import shapely
 import yaml
 
-from dt_ai.geometry.from_spec import SEAT_SHARE
+from dt_ai.geometry.from_spec import DECOR_INSET_M, SEAT_SHARE
 from dt_ai.spec.model import Spec
 from twinqa.clearance import near_parallel_overlaps
 from twinqa.geometry import measure
@@ -483,6 +483,7 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
     normal = np.divide(nv, norm[:, None], out=np.zeros_like(nv), where=norm[:, None] > 0)
     cos = np.cos(np.radians(5.0))
     rows = [r for r in opening_planes(spec, ("window", "door", None))]
+    solids = []                                     # built wall elements: (row, a, u, n, s, z, d ranges)
     decor_tris = np.zeros(len(c), bool)
     elements = []
     for k, e in enumerate(spec.decor):
@@ -508,7 +509,8 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
             s = (c[..., :2] - a) @ u
             d = (c[..., :2] - a) @ n
             S0, S1 = e.x_m, e.x_m + e.w_m
-            inside = ((s >= S0 - dt) & (s <= S1 + dt) & (c[..., 2] >= z0 - dt) & (c[..., 2] <= z1 + dt)
+            run = 2 * (dt + DECOR_INSET_M + spec.plate_gap_m)   # a run-in end may pass its spec extent
+            inside = ((s >= S0 - run) & (s <= S1 + run) & (c[..., 2] >= z0 - run) & (c[..., 2] <= z1 + run)
                       & (d >= -dt - 0.05) & (d <= (TEXTURE_LOOK_M if e.texture else e.projection_m) + dt)).all(axis=1) \
                 & (d.max(axis=1) > FACE_M)
             hit = inside
@@ -543,6 +545,7 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
                         if gap < spec.plate_gap_m - 1e-4:
                             problems.append(f"{gap:.4f} m from an opening")
                     row["built"] = [round(ms0, 4), round(mz0, 4), round(ms1, 4), round(mz1, 4)]
+                    solids.append((row, a, u, n, (ms0, ms1), (mz0, mz1), (float(d[inside].min()), float(d[inside].max()))))
         if not e.texture and hit.any():
             ids = sorted({int(m) for m in model.material_ids[hit]})
             row["material_ids"] = ids
@@ -550,6 +553,21 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
                 problems.append(f"ids {ids}")
         row["problems"] = problems
         elements.append(row)
+    # two elements meet only by a run-in of the subordinate one, at most decor_inset_m (+ decor_tol_m); no face of
+    # one lies in the plane of a face of the other (no butt joint; user 2026-10-12)
+    for i, (ra, aa, ua, na, sa, za, da) in enumerate(solids):
+        for rb, ab, ub, nb, sb, zb, db in solids[i + 1:]:
+            if ua @ ub < 1 - 1e-6 or abs(float((ab - aa) @ na)) > dt:
+                continue
+            off = float((ab - aa) @ ua)
+            sb2 = (sb[0] + off, sb[1] + off)
+            ov = [min(x[1], y[1]) - max(x[0], y[0]) for x, y in ((sa, sb2), (za, zb), (da, db))]
+            if all(o > FACE_M for o in ov):
+                depth = min(ov[0], ov[1])
+                if depth > DECOR_INSET_M + dt:
+                    ra["problems"].append(f"runs {depth:.3f} m into decor element {rb['index']} (over decor_inset_m)")
+            elif sum(o > FACE_M for o in ov) == 2 and any(abs(o) <= FACE_M for o in ov):
+                ra["problems"].append(f"butt joint with decor element {rb['index']}: a face in the plane of its face")
     # nothing outside the body that the spec does not list (review 1 of PR #75): unclaimed triangles out of
     # the floor contour of their height
     names = [lv.name for lv in spec.levels]

@@ -65,8 +65,14 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - A decor face that would come closer than `plate_gap_m` (5 mm) to an opening face (a window head, a
   jamb) is moved back to that clearance: no shared face, no edge-to-edge joint. Decor over an opening is a
   build error.
-- Two decor elements that touch or overlap (a lesene under a belt) are a build error until the user
-  decides how they meet.
+- **Two decor elements meet by a run-in, not a gap** (user 2026-10-12): the subordinate element runs
+  `decor_inset_m` (0.02) into the main one through its end, the hidden end face is deleted, the main one's
+  mesh is not cut - the same rule as into the wall. Horizontal (band: belt, cornice; panel: spandrel) is
+  main, vertical (strip: lesene, pilaster) is subordinate; of one rank (a belt into a belt) the longer
+  continues and the other runs into it. Ends closer than `plate_gap_m` meet (an end moved off an opening
+  still meets). The 5 mm gap stays only against an opening face. Not built yet (build error): a meeting
+  across walls at a building corner, side by side or crossing, one rank and one length, a subordinate
+  standing out of the main one.
 - ID: the element's `material_id`, else the object's decor ID (`object.json` build ids `decor`).
 - A free-standing column: its own ID and UV island, a separate part attached to the body in the
   final mesh (not welded). A column or pilaster touching the wall follows the inset rule above.
@@ -80,7 +86,11 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - Per spec element: built (front covers `decor_cover_min` of its rectangle at its projection); ids in
   26-30 (its own id when given); at least `plate_gap_m` off every opening of its wall line; the body not
   cut (no body vertex on its outline on the wall face); a texture element has nothing built over it; a
-  column covers its four sides. Decor parts are open at the back: `open_part_groups` lists `attachment`.
+  column covers its four sides; two elements: no face of one in the plane of a face of the other (no butt
+  joint) and a run-in of at most `decor_inset_m` + `decor_tol_m`; nothing outside the body that the spec
+  does not list. Decor parts are open at the back: `open_part_groups` lists `attachment`.
+- The extractor reads a run-in element back with its extent clipped at the main element's face (the
+  source's extent), not with the run-in.
 
 ## Traps
 
