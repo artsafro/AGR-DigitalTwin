@@ -509,7 +509,7 @@
       "type": "array"
     },
     "opening_depth_default_m": {
-      "default": 0.2,
+      "default": 0.4,
       "minimum": 0,
       "title": "Opening Depth Default M",
       "type": "number"

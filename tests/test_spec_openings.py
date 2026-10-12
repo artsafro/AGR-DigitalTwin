@@ -42,10 +42,10 @@ def openings(spec, level=0):
 def test_hole_with_glass_is_one_opening():
     spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)],
                                          extra=[pane("Glass", 2.1, 3.4, 1.0, 2.3)]), OBJECT)
-    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, 0.0, "hole+glass")]
-    # glass flush with the facade: depth 0, relief or a drawing? (C24 final, user decision 2026-10-10)
-    assert [q["kind"] for q in report["questions"]] == ["opening-flush"]
-    assert report["openings"]["openings_flush"] == 1
+    assert openings(spec) == [(0, 2.0, 0.9, 1.5, 1.5, None, "hole+glass")]
+    # no reveal: the default depth, marked in the report, never 0 and no question (OD1, user 2026-10-11)
+    assert report["questions"] == []
+    assert report["openings"]["openings_depth_by_default"] == 1
 
 
 def test_glass_in_a_closed_wall_is_an_opening():
@@ -58,7 +58,7 @@ def test_glass_in_a_closed_wall_is_an_opening():
 def test_glass_panes_split_by_a_mullion_are_one_opening():
     spec, report = extract_spec(building(extra=[pane("glass", 2.0, 2.7, 1.0, 2.0), pane("glass2", 2.8, 3.5, 1.0, 2.0)]),
                                 OBJECT)
-    assert openings(spec) == [(0, 2.0, 1.0, 1.5, 1.0, 0.0, "glass")]
+    assert openings(spec) == [(0, 2.0, 1.0, 1.5, 1.0, None, "glass")]
 
 
 def test_hole_with_a_reveal_is_an_opening_not_a_recess_question():
@@ -76,7 +76,7 @@ def test_hole_with_a_reveal_is_an_opening_not_a_recess_question():
 def test_door_from_the_floor_does_not_open_the_storey_end():
     spec, report = extract_spec(building(boxes=[(0, 4.0, 5.0, 0.0, 2.1, 0.0)]), OBJECT)
     assert close(spec.expanded_floors()[0].contour, SQUARE10)
-    assert openings(spec) == [(0, 4.0, 0.0, 1.0, 2.1, 0.0, "hole")]
+    assert openings(spec) == [(0, 4.0, 0.0, 1.0, 2.1, None, "hole")]
     assert report["floors"]["L0"]["contour_rule"] == "single shape"
 
 
@@ -116,7 +116,7 @@ def test_horizontal_glass_is_not_an_opening():
 
 def test_stacked_windows_are_two_openings():
     spec, _ = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.6, 1.2, 0.0), (0, 2.0, 3.5, 1.8, 2.6, 0.0)]), OBJECT)
-    assert openings(spec) == [(0, 2.0, 0.6, 1.5, 0.6, 0.0, "hole"), (0, 2.0, 1.8, 1.5, 0.8, 0.0, "hole")]
+    assert openings(spec) == [(0, 2.0, 0.6, 1.5, 0.6, None, "hole"), (0, 2.0, 1.8, 1.5, 0.8, None, "hole")]
 
 
 @pytest.mark.parametrize("width, found", [(7.9, True), (8.1, False)])
@@ -386,7 +386,7 @@ def planed(reveal_depth, plane_at):
 
 @pytest.mark.parametrize("reveal_depth, plane_at, depth_m, flush", [
     (0.0, 0.2, 0.2, False),      # Codex review 1 of PR #52: a recessed plane without reveal is not flush
-    (0.4, 0.0, 0.0, True),       # a plane flush with the facade over a 0.4 m reveal is flush
+    (0.4, 0.0, None, False),     # a plane flush with the facade gives no depth: the default (OD1)
     (0.4, 0.4, None, False),     # the plane at the back of the reveal: depth 0.4 = the default
 ])
 def test_depth_is_the_back_polygon_position(reveal_depth, plane_at, depth_m, flush):
@@ -408,3 +408,27 @@ def test_glass_position_never_sets_the_depth(glass_y):
     spec, _ = extract_spec(d, {**OBJECT, "opening_depth_default_m": 0.6})
     (o,) = spec.expanded_floors()[0].openings
     assert o.depth_m == 0.2
+
+
+def test_od1_default_depth_is_0_4_and_marked():
+    """OD1 (user 2026-10-11): without a value in object.json the default is 0.4; openings whose source gives no
+    depth take it and are listed in the report as 'depth by default', never 0 or a minimum."""
+    obj = {k: v for k, v in OBJECT.items() if k != "opening_depth_default_m"}
+    spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)]), obj)
+    assert spec.opening_depth_default_m == 0.4
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.depth_m is None
+    rows = report["openings"]["depth_by_default"]
+    assert report["openings"]["depth_default_m"] == 0.4 and len(rows) == 1 and rows[0]["x_m"] == 2.0
+
+
+def test_od1_a_measured_reveal_is_kept():
+    obj = {k: v for k, v in OBJECT.items() if k != "opening_depth_default_m"}
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, 6.6, [(0, 2.0, 3.5, 0.9, 2.4, 0.0)])
+    reveal(b, 2.0, 3.5, 0.9, 2.4, 0.2)
+    flat(b, Polygon(SQUARE10), 6.6, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    spec, report = extract_spec(dump_of(b), obj)
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.depth_m == 0.2 and report["openings"]["openings_depth_by_default"] == 0

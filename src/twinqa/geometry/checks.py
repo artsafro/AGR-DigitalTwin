@@ -452,6 +452,7 @@ def slabs(spec: Spec) -> dict:
 
 
 FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
+STRAY_EMBED_MAX_M = 0.5   # an unlisted box set into the body at most this deep counts as decor-like
 
 
 def _matches(e, d, dt, elev, contours):
@@ -485,8 +486,10 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         return result("decor", True, 0, 0, {"elements": []})
     from dt_ai.spec import decor as reader                 # one reading for the extractor and the checker
     dt, weld_m = tol["decor_tol_m"], tol["weld_m"]
-    group = ranges["groups"]["attachment"]
-    attachment = frozenset(range(group["first"], group["last"] + 1))
+    # decor ids by the element's material (user 2026-10-12): metal 16-20, plaster / stone / tile 26-30; the
+    # finish behind an id is the object's materials table's (ADR 0001), so the check is the group, one per element
+    groups = [ranges["groups"][g] for g in ("metal", "attachment")]
+    attachment = frozenset(i for g in groups for i in range(g["first"], g["last"] + 1))
     names = [lv.name for lv in spec.levels]
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     contours = {f.level: f.contour for f in spec.expanded_floors()}
@@ -514,7 +517,8 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         row["read"], row["k"] = got[k], k
         ids = sorted({int(m) for m in model.material_ids[owned[k]]})
         row["material_ids"] = ids
-        if not set(ids) <= attachment or (e.material_id is not None and ids != [e.material_id]):
+        one_group = len({next((g["first"] for g in groups if g["first"] <= i <= g["last"]), None) for i in ids}) == 1
+        if not set(ids) <= attachment or not one_group or (e.material_id is not None and ids != [e.material_id]):
             row["problems"].append(f"ids {ids}")
     def over_texture(d):
         """The spec texture element a read-back element lies over (wall line, absolute height), or None."""
@@ -544,7 +548,9 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         else:
             rows.append({"index": None, "kind": d["kind"], "level": d["level"],
                          "problems": [f"decor the spec does not list ({d['kind']} at {d['level']} z {d['z_m']})"]})
-    for q in asked:
+    for q in asked:                                      # over 0.8 m is an attachment candidate, no decor (EG2,
+        if q["kind"] == "decor-deep":                    # user 2026-10-12)
+            continue
         rows.append({"index": None, "kind": q["kind"], "level": q["levels"][0],
                      "problems": [f"decor the extractor cannot read ({q['kind']}, {q['count']} piece(s))"]})
     openings = opening_planes(spec, ("window", "door", None))
@@ -552,17 +558,29 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
     for o in owned:
         decor_owned[o] = True
     bv = np.unique(model.triangles[~decor_owned])        # everything but the decor read back
-    # any other part out of the building's outline is geometry the spec does not list, read or not (review 3)
-    outline = shapely.union_all(polys).buffer(FACE_M)
+    # a box on one wall set into the body deeper than decor is (reader.EMBED_MAX_M) is decor-like geometry the
+    # spec does not list, read or not (review 3 of PR #75); attachments - a coping ring round the roof, ladder
+    # rungs, anything deeper than 0.8 m - are no decor (K01, PR #76)
     stray = 0
     for part in others:
         free = part[~decor_owned[part]]
-        if len(free):
-            centre = model.corners()[free].mean(axis=1)
-            stray += int(sum(not outline.contains(shapely.Point(x, y)) for x, y in centre[:, :2]))
+        if not len(free):
+            continue
+        t3 = model.corners()[free]
+        p = model.vertices[np.unique(model.triangles[free])]
+        z0 = float(p[:, 2].min())
+        storey = reader._storey(levels, z0)
+        for a, u, n, length in reader._walls(storeys[storey]):
+            s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
+            # set into the body deeper than decor is, but in front of this wall only (a coping ring round the
+            # roof reaches across the building); along the wall it may run on past the corner (review 3 of #76)
+            if (-STRAY_EMBED_MAX_M <= dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
+                    and reader._is_box(t3, u, n, float(a @ n)) is not None):
+                stray += len(free)
+                break
     if stray:
         rows.append({"index": None, "kind": "unspecified", "level": None,
-                     "problems": [f"{stray} triangles out of the building that no spec decor lists"]})
+                     "problems": [f"{stray} triangles set into the body and standing out of it that no spec decor lists"]})
     for row, e in zip(rows, spec.decor):
         if e.kind == "column" or "read" not in row:
             continue

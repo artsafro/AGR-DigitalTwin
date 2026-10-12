@@ -21,7 +21,7 @@ from dt_ai.spec import decor as dc
 from dt_ai.spec import floors as fl
 from dt_ai.spec.markup import MarkupError, revit_level_helpers
 from dt_ai.spec import openings as op
-from dt_ai.spec.model import Spec
+from dt_ai.spec.model import OPENING_DEPTH_DEFAULT_M, Spec
 
 LEVEL_PREFIX = "LEVEL_"
 # pattern markup-helpers (user 2026-10-10): LEVEL_<name>, the name a letter then letters, digits or "_";
@@ -1253,7 +1253,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     recesses = [[pc for pc in pcs if pc["kind"] == "recess"] for pcs in pieces]
     per_floor, footprints, breaks, glass_report = op.assemble(levels, floors, polys, mouths, panes,
                                                               _planes(v, plane_tris), doors, recesses, sources,
-                                                              obj_cfg.get("opening_depth_default_m", 0.2), thresholds)
+                                                              obj_cfg.get("opening_depth_default_m", OPENING_DEPTH_DEFAULT_M), thresholds)
     cleared = 0
     for li, floor in enumerate(floors):
         floor["openings"] = per_floor[li]
@@ -1322,7 +1322,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     # facade decor (pattern facade-decor-inset, spec v0.5): non-body parts on a wall or free-standing columns
     decor, decor_questions, report["decor"] = dc.extract(
         v, tris, mats, parts[1:], levels, [f["contour"] for f in floors], polys,
-        plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("attachment"))
+        plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("metal") | _group_ids("attachment"))   # decor ids by material
     questions += decor_questions
     if decor_questions and not asked:
         questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
@@ -1344,5 +1344,5 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                 # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
                 **({"terraces": terraces} if terraces else {}), **({"decor": decor} if decor else {}),
                 **({"spec_version": "0.5"} if decor else {"spec_version": "0.4"} if terraces else {}),
-                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", 0.2), **plate)
+                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", OPENING_DEPTH_DEFAULT_M), **plate)
     return spec, report

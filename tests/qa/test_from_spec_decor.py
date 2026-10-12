@@ -531,3 +531,47 @@ def test_priority_uses_the_original_lengths():
 def test_review_3_build_errors(decor, message):
     with pytest.raises(BuildError, match=message):
         build(spec(*decor), INPUTS)
+
+
+# --- PR #76: attachments are no decor ------------------------------------------------------------------
+
+def test_attachments_beside_decor_are_not_flagged():
+    """K01 (PR #76): an attachment candidate over 0.8 m and a flat rung set into the wall are no decor."""
+    sp = spec(BELT)
+    dump = build(sp, INPUTS)
+    porch = Mesh("Porch")
+    porch.box((5.0, -1.4, 0.05), (7.0, 0.0, 2.3))
+    rung = Mesh("Rung")
+    rung.quad((9.0, -0.3, 4.0), (9.0, 0.2, 4.0), (9.0, 0.2, 4.03), (9.0, -0.3, 4.03))
+    dump["meshes"] += [porch.dump(), rung.dump()]
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+# --- decor ids by material (user 2026-10-12): metal 16-20 or 26-30, one group per element -----------------
+
+@pytest.mark.parametrize("mid, ok", [(17, True), (26, True), (3, False)])
+def test_decor_id_group_by_material(mid, ok):
+    sp = spec(dict(BELT, material_id=mid))
+    report = decor_check(build(sp, INPUTS), sp)
+    assert (report["status"] == "pass") == ok, problems(report)
+
+
+def test_unlisted_decor_running_past_a_corner_fails():
+    """Review 2 of PR #76: a box set 0.06 m in and running 11 mm past the wall end is unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((8.0, -0.15, 1.0), (10.011, 0.06, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_unlisted_decor_running_far_past_a_corner_fails():
+    """Review 3 of PR #76: the same box 0.801 m past the wall end is still unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((8.0, -0.15, 1.0), (10.801, 0.06, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"

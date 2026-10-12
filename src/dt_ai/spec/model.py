@@ -95,6 +95,7 @@ class Terrace(SpecPart):
     parapet_h_m: Positive
 
 
+OPENING_DEPTH_DEFAULT_M = 0.4   # OD1 (user 2026-10-11): one opening depth per building unless the source gives one
 DECOR_TEXTURE_M = 0.10   # pattern facade-decor-inset (user 2026-10-11): projection <= this is texture, boundary included
 
 
@@ -115,7 +116,8 @@ class Decor(SpecPart):
     footprint: list[Finite] | None = Field(default=None, min_length=4, max_length=4)
     # projection <= DECOR_TEXTURE_M: texture on the wall, nothing built
     texture: bool = False
-    # material id from the source when all its faces carry one id of the attachment group (26-30)
+    # material id from the source when all its faces carry one decor id: metal 16-20 or plaster / stone / tile
+    # 26-30, by the element's material (user 2026-10-12)
     material_id: int | None = None
     # source pieces merged into it (same cross-section, one axis, seams <= plate_gap_m x 12)
     pieces: int = Field(default=1, ge=1)
@@ -152,7 +154,7 @@ class Spec(SpecPart):
     terraces: list[Terrace] = []
     attachments: list[dict] = []
     decor: list[Decor] = []
-    opening_depth_default_m: NonNegative = 0.2
+    opening_depth_default_m: NonNegative = OPENING_DEPTH_DEFAULT_M
     # pattern roof-inset-plane (user 2026-10-10): every slab is a separate plate plate_gap_m above its level
     # that overlaps its hole by plate_overlap_m; building parameters, the etalons' 5 mm / 20 mm by default
     plate_gap_m: Positive = 0.005

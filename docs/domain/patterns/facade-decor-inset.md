@@ -10,7 +10,8 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   material_id, pieces}]` — position as an opening's: `wall` of the contour of the floor `level` (the storey of
   its bottom), `x_m` along it, `z_m` from the level; `projection_m` off the wall face. A free-standing column
   has `footprint: [x0, y0, x1, y1]` instead of a wall. `material_id` only when the source gives one id of the
-  attachment group 26-30 (`standards/material_id_ranges.yaml`); `pieces` = source pieces merged.
+  decor group of its material (`standards/material_id_ranges.yaml`): **metal 16-20** (flashing, metal belt,
+  bracket), **plaster / stone / tile 26-30** (user 2026-10-12); `pieces` = source pieces merged.
 - `kind` by shape in the wall plane: `band` (width >= 3 x height: belt, cornice, tile band), `strip`
   (height >= 3 x width: pilaster, lesene), `panel` (spandrel and the rest), `column`.
 - Threshold (user 2026-10-11), the same as facade relief: **projection <= 0.10 -> texture; > 0.10 ->
@@ -95,13 +96,20 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - The model's decor is read back by the extractor itself and matched one to one with the spec.
 
 - Per spec element: built (front covers `decor_cover_min` of its rectangle at its projection); ids in
-  26-30 (its own id when given); at least `plate_gap_m` off every opening of its wall line; the body not
+  the decor group of its material, metal 16-20 or 26-30, one group per element (its own id when given); at least `plate_gap_m` off every opening of its wall line; the body not
   cut (no body vertex on its outline on the wall face); a texture element has nothing built over it; a
   column covers its four sides; two elements: no face of one in the plane of a face of the other (no butt
   joint) and a run-in of at most `decor_inset_m` + `decor_tol_m`; nothing outside the body that the spec
   does not list. Decor parts are open at the back: `open_part_groups` lists `attachment`.
 - The extractor reads a run-in element back with its extent clipped at the main element's face (the
   source's extent), not with the run-in.
+
+## Decor ids by material (user 2026-10-12)
+
+- The id says the material: metal (a flashing, a metal belt, a bracket) 16-20, plaster / stone / tile 26-30;
+  the finish behind an id comes from the object's materials table. Case K01: a strip 0.074 x 0.30 m, 0.22 m
+  out, on the east wall at 3.6 m, id 17 = `Metal_RAL5015` - a metal bracket, so id 17 is right (it failed the
+  first rule, 26-30 only).
 
 ## Traps
 

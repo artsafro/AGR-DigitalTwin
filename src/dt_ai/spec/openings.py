@@ -257,9 +257,12 @@ def _project(parts, levels, floors, polys, kind):
                 or polys[li].exterior.distance(shapely.Point(centre)) > PANE_WALL_M):
             skipped += 1
             continue
+        at = max(0.0, -float((centre - origin) @ wall_n))
+        # the glass position is no depth (C24, OD1; review 2 of PR #76): kept as glass_at for the searches only
         out.append({"level": li, "wall": w, "x0": float(along.min()), "x1": float(along.max()),
                     "z0": float(pts[:, 2].min()), "z1": float(pts[:, 2].max()),
-                    "depth": max(0.0, -float((centre - origin) @ wall_n)), "source": kind, "parts": 1})
+                    "depth": 0.0 if kind == "glass" else at, "glass_at": at if kind == "glass" else 0.0,
+                    "source": kind, "parts": 1})
     return out, skipped
 
 
@@ -300,7 +303,7 @@ def _merge_panes(items):
                 box = (min(m["x0"], o["x0"]), max(m["x1"], o["x1"]), min(m["z0"], o["z0"]), max(m["z1"], o["z1"]))
                 if not _covered(m["rects"] + o["rects"], box):
                     continue
-                m.update(x0=box[0], x1=box[1], z0=box[2], z1=box[3], depth=max(m["depth"], o["depth"]),
+                m.update(x0=box[0], x1=box[1], z0=box[2], z1=box[3], depth=max(m["depth"], o["depth"]), glass_at=max(_g(m), _g(o)),
                          parts=m["parts"] + o["parts"], rects=m["rects"] + o["rects"])
                 del groups[j]
                 merged = True
@@ -400,6 +403,7 @@ def _across_levels(by_level, levels, floors):
                     continue
                 _join_material(low, up)
                 low.update(x0=low["x0"] + box[0], x1=low["x0"] + box[1], z1=box[3], depth=max(low["depth"], up["depth"]),
+                           glass_at=max(_g(low), _g(up)),
                            parts=low.get("parts", 0) + up.get("parts", 0),
                            glass_z=low.get("glass_z", []) + up.get("glass_z", []),
                            glass_world=low.get("glass_world", []) + up.get("glass_world", []),
@@ -447,6 +451,15 @@ def _inward(contour, u):
     return side * np.array([-u[1], u[0]])
 
 
+def _g(o):
+    return o.get("glass_at", 0.0)
+
+
+def _reach(o):
+    """How far into the wall an opening's geometry goes, for the searches: its depth, or its glass."""
+    return max(o["depth"], o.get("glass_at", 0.0))
+
+
 def _reveal(o, recesses, contour):
     """The rough opening around a glass group from the reveal of the body (spec v0.3, #36): the
     recess pieces of its level that touch the glass footprint, in the height run that overlaps the
@@ -455,7 +468,7 @@ def _reveal(o, recesses, contour):
     p0, p1, u = _span_world(contour, o["wall"], o["x0"], o["x1"])
     n = _inward(contour, u)
     foot = Polygon([p0 - u * MATCH_M - n * MATCH_M, p1 + u * MATCH_M - n * MATCH_M,
-                    p1 + u * MATCH_M + n * (o["depth"] + MATCH_M), p0 - u * MATCH_M + n * (o["depth"] + MATCH_M)])
+                    p1 + u * MATCH_M + n * (_reach(o) + MATCH_M), p0 - u * MATCH_M + n * (_reach(o) + MATCH_M)])
     near = [r for r in recesses if r["geom"].intersects(foot) and r["geom"].intersection(foot).area > 1e-6]
     spans = sorted(((a, b, r) for r in near for a, b in r["spans"]), key=lambda t: (t[0], t[1]))
     runs = []
@@ -521,7 +534,7 @@ def _source_items(items, li, contour):
 
 
 def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None, recesses=None, sources=None,
-             depth_default=0.2, thresholds=None):
+             depth_default=0.4, thresholds=None):
     """Openings per floor, the plan footprints that clear recess questions, break questions, report.
     planes: vertical opening-plane parts as (points, normal, material id or None when mixed);
     doors: door recesses per level (mesh._door_recesses); recesses: recess pieces per level (the
@@ -566,7 +579,8 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                 holes.append(d)
             else:
                 same.update(x0=min(same["x0"], d["x0"]), x1=max(same["x1"], d["x1"]), z0=min(same["z0"], d["z0"]),
-                            z1=max(same["z1"], d["z1"]), depth=max(same["depth"], d["depth"]))
+                            z1=max(same["z1"], d["z1"]), depth=max(same["depth"], d["depth"]),
+                            glass_at=max(_g(same), _g(d)))
         breaks.extend({**b, "level": li} for b in off)
         for g in [g for g in glass if g["level"] == li]:
             matches = [h for h in holes if _overlap(h, g)]
@@ -596,7 +610,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
             if o.get("no_reveal"):
                 p0, p1, _ = _world(o, floors[li]["contour"])
                 breaks.append({"kind": "opening-size-unknown", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
-    per_floor, footprints = [], []
+    per_floor, footprints, by_default = [], [], []
     for li, (floor, holes) in enumerate(zip(floors, by_level)):
         elev = levels[li]["elev_m"]
         pts = np.array([q[:2] for q in floor["contour"]], dtype=float)
@@ -609,11 +623,17 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                     "kind": o.get("kind_fixed") or _kind(o, frame),
                     "panes": (o.get("parts") or None) if (o.get("glass_z") or o.get("glazed")) else None,
                     **_glass_size(o, floor["contour"])}
-            if not o.get("kind_fixed") and abs(o["depth"] - depth_default) > depth_exception:
-                item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
-            if not o.get("kind_fixed") and o.get("back") and o["depth"] <= FLUSH_M:
+            # no depth in the source: no reveal, no plane or one flush with the facade (glass never gives one); an
+            # opening a source lists (Revit: its "depth" is the host wall's thickness, not a reveal, #36)
+            no_depth = o.get("kind_fixed") or o["depth"] <= FLUSH_M
+            depth = o["depth"]
+            if no_depth:
+                # the default, marked in the report, never 0 or a minimum (OD1, user decision 2026-10-11)
                 p0, p1, _ = _world(o, floor["contour"])
-                breaks.append({"kind": "opening-flush", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
+                by_default.append({"level": levels[li]["name"], "wall": o["wall"], "x_m": item["x_m"],
+                                   "sill_m": item["sill_m"], "at": [round(float(c), 2) for c in (p0 + p1) / 2]})
+            elif abs(depth - depth_default) > depth_exception:
+                item["depth_m"] = round(depth, 3)   # a measured reveal off the default: an exception (#36)
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
             items.append(item)
@@ -621,7 +641,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
             u = _unit(pts[(o["wall"] + 1) % len(pts)] - a)
             n = np.array([u[1], -u[0]])
             p0, p1 = a + u * o["x0"], a + u * o["x1"]
-            out_, in_ = MATCH_M, o["depth"] + MATCH_M
+            out_, in_ = MATCH_M, _reach(o) + MATCH_M
             geom = Polygon([p0 + n * out_, p1 + n * out_, p1 - n * in_, p0 - n * in_])
             for lj in range(li, o.get("level_to", li) + 1):
                 footprints.append({"level": lj, "z0": o["z0"], "z1": o["z1"], "geom": geom})
@@ -637,7 +657,8 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
               "openings_with_conflicting_planes": sum(1 for f in per_floor for o in f if o.get("plane_conflict")),
               "breaks_off_contour": sum(b["kind"] == "wall-break-off-contour" for b in breaks),
               "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks),
-              "openings_flush": sum(b["kind"] == "opening-flush" for b in breaks)}
+              "openings_depth_by_default": len(by_default), "depth_by_default": by_default,
+              "depth_default_m": depth_default}
     return per_floor, footprints, breaks, report
 
 
@@ -665,7 +686,7 @@ def _join_same_reveal(glass):
             same.update(x0=min(same["x0"], g["x0"]), x1=max(same["x1"], g["x1"]), z0=min(same["z0"], g["z0"]),
                         z1=max(same["z1"], g["z1"]), parts=same["parts"] + g["parts"], rects=same["rects"] + g["rects"],
                         glass_z=same["glass_z"] + g["glass_z"], glass_world=same["glass_world"] + g["glass_world"],
-                        depth=max(same["depth"], g["depth"]))
+                        depth=max(same["depth"], g["depth"]), glass_at=max(_g(same), _g(g)))
     return out
 
 
@@ -682,7 +703,7 @@ def break_questions(breaks, levels):
     out = []
     for b in breaks:
         mid = (b["p"] + b["q"]) / 2
-        out.append({"priority": "normal" if b["kind"] in ("opening-size-unknown", "opening-flush") else "high",
+        out.append({"priority": "normal" if b["kind"] == "opening-size-unknown" else "high",
                     "kind": b["kind"], "levels": [levels[b["level"]]["name"]], "wall": None,
                     "depth_m": None, "length_m": round(float(np.linalg.norm(b["p"] - b["q"])), 3),
                     "facade_share": None, "heights_m": [round(b["z0"], 3), round(b["z1"], 3)],
