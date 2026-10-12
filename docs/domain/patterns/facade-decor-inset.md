@@ -87,7 +87,9 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 
 - `npm_min` and `mid`: the same solids; `mid` may add profile detail later (not decided).
 
-## Check (`twinqa.geometry.checks.check_decor`, thresholds `decor_tol_m`, `decor_cover_min`)
+## Check (`twinqa.geometry.checks.check_decor`, thresholds `decor_tol_m`, `weld_m`)
+
+- The model's decor is read back by the extractor itself and matched one to one with the spec.
 
 - Per spec element: built (front covers `decor_cover_min` of its rectangle at its projection); ids in
   26-30 (its own id when given); at least `plate_gap_m` off every opening of its wall line; the body not

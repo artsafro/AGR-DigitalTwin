@@ -423,11 +423,12 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
 
 
 DECOR_INSET_M = 0.02   # pattern facade-decor-inset: a wall element runs this far into the body (user 2026-10-11)
+CORNER_END_M = 0.0005  # at a building corner its end face starts this far off the wall face (no shared point)
 
 
 def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
     """The `decor` mesh (pattern facade-decor-inset): one box per geometry element; see the module docstring."""
-    from dt_ai.spec.decor import COLUMN_MAX_M, COLUMN_MIN_H_M, COLUMN_MIN_M   # the extractor's column rule
+    from dt_ai.spec.decor import COLUMN_MAX_M, COLUMN_MIN_H_M, COLUMN_MIN_M, SHARE_TOL_M   # the extractor's rules
     out = _Mesh()
     names = [f.level for f in floors]
     z_hi = [elev[j + 1] if j < len(floors) - 1 else top for j in range(len(floors))]   # wall tops per floor
@@ -452,8 +453,9 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
                                  f"{COLUMN_MIN_M}-{COLUMN_MAX_M} m a side; not built")
             foot = shapely.box(x0, y0, x1, y1)
             for j, poly in enumerate(polys):
-                if min(z1, z_hi[j]) - max(z0, elev[j]) > KEY_M and poly.distance(foot) <= KEY_M:
-                    raise BuildError(f"{where}: the column touches the body at floor {names[j]}; not built")
+                if min(z1, z_hi[j]) - max(z0, elev[j]) > KEY_M and poly.distance(foot) <= SHARE_TOL_M + KEY_M:
+                    raise BuildError(f"{where}: the column is within {SHARE_TOL_M} m of the body at floor {names[j]} "
+                                     "(the extractor reads it so); not built (review 2 of PR #75)")
             c = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
             for i in range(4):
                 (ax, ay), (bx, by) = c[i], c[(i + 1) % 4]
@@ -520,10 +522,10 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
                 continue
             if turn < 0:                                # a right turn of a counter-clockwise contour: concave
                 raise BuildError(f"{where}: it ends at a concave corner, into the next wall; not built")
-            if which == 0:
-                e0 = 0.0
+            if which == 0:                              # 0.5 mm off the wall face: no point shared with the
+                e0 = CORNER_END_M                        # body's corner edge (review 2 of PR #75)
             else:
-                e1 = 0.0
+                e1 = CORNER_END_M
         walls.append({"a": a, "u": u, "n": n, "c": float(a @ n), "o": float(a @ u), "s0": s0, "s1": s1, "z0": z0,
                       "z1": z1, "d0": d0, "d1": d1, "e0": e0, "e1": e1, "mid": mid, "where": where, "skip": set(),
                       "rank": 0 if e.kind == "strip" else 1, "length": length})
@@ -560,6 +562,8 @@ def _corner(A, B):
     if len(meet) != 1:
         raise BuildError(f"{A['where']} and {B['where']} touch across walls away from a shared corner; not built")
     (ia, _), (ib, _) = meet[0]
+    if abs(float(A["u"] @ B["u"])) > 1e-9:               # the run-on by the other's projection is a right angle's
+        raise BuildError(f"{A['where']} and {B['where']} meet at an oblique corner; not built (review 2 of PR #75)")
     if A["rank"] != B["rank"]:
         main, sub_, im, is_ = (A, B, ia, ib) if A["rank"] > B["rank"] else (B, A, ib, ia)
     else:
@@ -620,6 +624,9 @@ def _meet(walls, columns, gap):
                 raise BuildError(f"{where}: it stands out of the main element, its end would show; not built")
             inside_s = ss[0] >= ms[0] - KEY_M and ss[1] <= ms[1] + KEY_M
             inside_z = sub_["z0"] >= main["z0"] - KEY_M and sub_["z1"] <= main["z1"] + KEY_M
+            if min(main["z1"] - main["z0"], ms[1] - ms[0]) <= DECOR_INSET_M + KEY_M:
+                raise BuildError(f"{where}: the main element is no deeper than the run-in, the end would show "
+                                 "through it; not built (review 2 of PR #75)")
             if inside_s and abs(sub_["z1"] - main["z0"]) <= reach and sub_["z0"] < main["z0"]:
                 sub_["z1"], end = main["z0"] + DECOR_INSET_M, "top"
             elif inside_s and abs(sub_["z0"] - main["z1"]) <= reach and sub_["z1"] > main["z1"]:

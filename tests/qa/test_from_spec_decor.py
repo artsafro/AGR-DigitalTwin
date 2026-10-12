@@ -75,7 +75,7 @@ def test_the_extractor_reads_the_built_decor_back():
 @pytest.mark.parametrize("decor, message", [
     ([dict(BELT, z_m=2.0)], "covers the opening"),
     ([dict(BELT, material_id=None)], "no material_id"),
-    ([dict(COLUMN, footprint=[5.8, -0.4, 6.2, 0.0])], "touches the body"),
+    ([dict(COLUMN, footprint=[5.8, -0.4, 6.2, 0.0])], "within 0.005 m of the body"),
     ([BELT, dict(PILASTER, wall=0, x_m=6.0, h_m=2.6)], "side by side or cross"),
     ([dict(PILASTER, wall=0, x_m=3.5, w_m=0.0005, z_m=1.0, h_m=1.0)], "nothing left"),
 ])
@@ -101,7 +101,7 @@ def test_decor_id_from_object_json():
 from twinqa.geometry import checks
 from twinqa.geometry.mesh import from_dump
 
-DECOR_TOL = {"decor_tol_m": 0.01, "decor_cover_min": 0.95}
+DECOR_TOL = {"decor_tol_m": 0.01, "decor_cover_min": 0.95, "weld_m": 0.0001}
 
 
 def decor_check(dump, sp):
@@ -203,7 +203,7 @@ def test_geometry_over_a_texture_rectangle_fails():
 def test_decor_the_spec_does_not_list_fails():
     strip = dict(PILASTER, z_m=1.0, h_m=2.0)
     built = build(spec(strip, dict(strip, wall=3)), INPUTS)
-    assert any("no spec decor lists" in p for p in problems(decor_check(built, spec(strip))))
+    assert any("the spec does not list" in p for p in problems(decor_check(built, spec(strip))))
 
 
 def test_a_full_width_belt_passes_every_check():
@@ -290,17 +290,13 @@ def test_a_run_in_meeting_reads_back_and_passes_the_checker():
     assert not [q for q in rep["questions"] if q["kind"].startswith("decor")]
 
 
-def butt(dump):
-    """The strip's top moved down to the belt's bottom face: a butt joint."""
-    for p in meshes(dump)["decor"]["vertices"]:
-        if abs(p[2] - 2.425) < 1e-9:
-            p[2] = 2.405
-    return dump
-
-
 def test_a_butt_joint_fails():
-    sp = spec(BELT, UNDER)
-    assert any(p.startswith("butt joint") for p in problems(decor_check(butt(build(sp, INPUTS)), sp)))
+    """A closed strip whose top lies in the plane of the belt's bottom: a butt joint, not a run-in."""
+    dump = build(spec(BELT, dict(UNDER, h_m=2.3)), INPUTS)
+    for p in meshes(dump)["decor"]["vertices"]:
+        if abs(p[2] - 2.3) < 1e-9:
+            p[2] = 2.405
+    assert any(p.startswith("butt joint") for p in problems(decor_check(dump, spec(BELT, UNDER))))
 
 
 def test_a_run_in_over_the_inset_fails():
@@ -340,3 +336,86 @@ def test_a_corner_meeting_reads_back_as_the_source():
     got = sorted((d.wall, round(d.x_m, 4), round(d.w_m, 4), d.projection_m, d.material_id) for d in back.decor)
     assert got == [(0, 6.0, 4.0, 0.15, 26), (1, 0.0, 2.0, 0.12, 27)]
     assert not [q for q in rep["questions"] if q["kind"].startswith("decor")]
+
+
+# --- review 2 of PR #75 ------------------------------------------------------------------------------
+
+FULL_TOL = {**json.loads((ROOT / "benchmark/bench-b01-box/tolerances.json").read_text(encoding="utf-8"))["geometry"],
+            **DECOR_TOL, "open_part_groups": ["attachment"]}
+CORNER_MAIN = dict(BELT, x_m=6.0, w_m=4.0, z_m=1.0, h_m=0.3, projection_m=0.15)
+CORNER_SUB = dict(BELT, wall=1, x_m=0.0, w_m=2.0, z_m=1.0, h_m=0.3, projection_m=0.12, material_id=27)
+
+
+def test_an_unlisted_box_next_to_an_element_fails():
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    built = build(spec(strip, dict(strip, x_m=5.02, w_m=0.02, projection_m=0.11)), INPUTS)
+    assert any("the spec does not list" in p for p in problems(decor_check(built, spec(strip))))
+
+
+def test_a_corner_run_in_over_the_inset_fails():
+    sp = spec(CORNER_MAIN, CORNER_SUB)
+    dump = build(sp, INPUTS)
+    m = meshes(dump)["decor"]
+    for k, q in enumerate(m["polygons"]):
+        if m["material_ids"][2 * k] == 27:
+            for i in q:
+                if abs(m["vertices"][i][1] - 0.02) < 1e-9:
+                    m["vertices"][i][1] = -0.04            # 60 mm past the main element's back plane
+    assert decor_check(dump, sp)["status"] == "fail"
+
+
+def test_three_belts_round_two_corners_read_back():
+    walls = [dict(BELT, x_m=0.0, w_m=10.0, z_m=3.0, h_m=0.2, projection_m=0.15),
+             dict(BELT, wall=1, x_m=0.0, w_m=2.0, z_m=3.0, h_m=0.2, projection_m=0.12, material_id=27),
+             dict(BELT, wall=3, x_m=8.0, w_m=2.0, z_m=3.0, h_m=0.2, projection_m=0.12, material_id=28)]
+    sp = spec(*walls)
+    dump = build(sp, INPUTS)
+    assert decor_check(dump, sp)["status"] == "pass", problems(decor_check(dump, sp))
+    obj = {"id": "bench-synth-box", "frame": {"to_object": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    back, _ = extract_spec(dump, obj)
+    assert sorted((d.wall, round(d.x_m, 4), round(d.w_m, 4)) for d in back.decor) == [(0, 0.0, 10.0), (1, 0.0, 2.0),
+                                                                                     (3, 8.0, 2.0)]
+
+
+def test_a_corner_pilaster_passes_every_check():
+    sp = spec(dict(PILASTER, x_m=0.0, h_m=3.3))
+    model = from_dump(build(sp, INPUTS))
+    report = checks.run(model, model, sp, FULL_TOL)
+    assert report["passed"], [(c["id"], c["value"]) for c in report["checks"] if c["status"] != "pass"]
+
+
+def test_a_full_width_band_on_a_propagated_body_line_is_no_cut():
+    sp = spec(dict(BELT, wall=2, x_m=0.0, w_m=10.0, z_m=2.4, h_m=0.3))
+    report = decor_check(build(sp, INPUTS), sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_a_texture_element_alone_passes():
+    report = decor_check(build(spec(BAND), INPUTS), spec(BAND))
+    assert report["status"] == "pass", problems(report)
+
+
+@pytest.mark.parametrize("decor, message", [
+    ([dict(COLUMN, footprint=[5.8, -0.401, 6.2, -0.001])], "within 0.005 m of the body"),
+    ([dict(COLUMN, footprint=[5.8, -0.404, 6.2, -0.004])], "within 0.005 m of the body"),
+    ([dict(BELT, wall=3, x_m=1.0, w_m=5.0, z_m=1.0, h_m=0.01), dict(PILASTER, wall=3, x_m=3.0, w_m=0.2, z_m=0.0, h_m=1.0)],
+     "no deeper than the run-in"),
+])
+def test_review_2_build_errors(decor, message):
+    with pytest.raises(BuildError, match=message):
+        build(spec(*decor), INPUTS)
+
+
+def test_an_oblique_corner_meeting_is_an_error():
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    data["roof"] = None
+    shape = [[0, 0], [10, 0], [10, 5], [8, 10], [0, 10]]
+    for f in data["floors"]:
+        if f.get("contour"):
+            f["contour"] = shape
+            f["openings"] = []
+    data["decor"] = [dict(BELT, wall=1, x_m=1.0, w_m=4.0, z_m=1.0), dict(BELT, wall=2, x_m=0.0, w_m=2.0, z_m=1.0,
+                                                                          projection_m=0.12, material_id=27)]
+    with pytest.raises(BuildError, match="oblique corner"):
+        build(Spec.model_validate(data), INPUTS)

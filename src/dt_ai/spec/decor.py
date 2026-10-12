@@ -87,6 +87,7 @@ def _normals(t):
     return nv[keep] / (2 * area[keep, None]), area[keep], t[keep]
 
 
+AT_FACE_M = 0.0006        # a face this close to the wall face is at it (the engine's corner ends start 0.5 mm off)
 DEPTH_TOL_M = 1e-4        # depths of one face (a thin box keeps its two faces, review 3 of PR #74)
 
 
@@ -129,7 +130,7 @@ def _is_box(t, u, n, c, hosts=()):
     coords = (t[..., :2] @ u, t[..., :2] @ n, t[..., 2])
     local = normals @ axes.T
     # two depths out of the wall face: the face and the front (the inset part inside the body is not seen)
-    seen = np.maximum(coords[1].ravel(), c)
+    seen = np.maximum(coords[1].ravel(), c + AT_FACE_M)
     if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(seen, DEPTH_TOL_M)) != 2:
         return None
     face = {1: c}                                      # out of the wall face (c along n) only
@@ -223,38 +224,47 @@ def _piece(v, part_tris, levels, contours, polys):
 
 
 def _corner_arms(v, tris, part, levels, contours):
-    """A part round a convex building corner (two elements meeting there, or one belt wrapped round it), split
-    into one arm per wall, or None (user 2026-10-12: of one rank the longer continues). A triangle belongs to
-    the wall whose span holds its centre; the corner block past both wall ends goes to the longer arm."""
+    """A part round one or more convex building corners (elements meeting there, or a belt wrapped round),
+    split into one arm per wall, or None (user 2026-10-12: of one rank the longer continues; review 2 of PR
+    #75: any number of corners). A triangle belongs to the wall whose span holds its centre (in front of that
+    wall); a corner block past two wall ends goes to the longer of the two arms; an oblique corner: None."""
     p = v[np.unique(tris[part])]
     li = _storey(levels, float(p[:, 2].min()))
     walls = _walls(contours[li])
     centre = v[tris[part]].mean(axis=1)[:, :2]
-    for w in range(len(walls)):
-        (a0, u0, n0, l0), (a1, u1, n1, l1) = walls[w], walls[(w + 1) % len(walls)]
-        if u0[0] * u1[1] - u0[1] * u1[0] <= 0:      # convex corners only (a left turn of a counter-clockwise contour)
-            continue
-        zone = all((((p[:, :2] - a) @ n >= -EMBED_MAX_M) & ((p[:, :2] - a) @ n <= PROJECTION_MAX_M)
-                    & ((p[:, :2] - a) @ u >= -RUN_ON_MAX_M) & ((p[:, :2] - a) @ u <= length + RUN_ON_MAX_M)).any()
-                   for a, u, n, length in ((a0, u0, n0, l0), (a1, u1, n1, l1)))
-        s0 = (centre - a0) @ u0
-        s1 = (centre - a1) @ u1
-        near = (((p[:, :2] - a0) @ n0 <= PROJECTION_MAX_M) | ((p[:, :2] - a1) @ n1 <= PROJECTION_MAX_M)).all()
-        if not zone or not near:
-            continue
-        on0 = s0 <= l0 - EMBED_MAX_M                     # before the corner along wall w
-        on1 = s1 >= EMBED_MAX_M                          # after the corner along wall w + 1
-        if (on0 & on1).any() or not on0.any() or not on1.any():
-            continue
-        block = ~on0 & ~on1
-        len0 = float(l0 - s0[on0].min()) if on0.any() else 0.0
-        len1 = float(s1[on1].max()) if on1.any() else 0.0
-        if abs(len0 - len1) <= SAME_M:
-            return None                                  # one length: which continues is the user's
-        arm0 = on0 | (block if len0 > len1 else False)
-        arm1 = on1 | (block if len1 > len0 else False)
-        return [part[arm0], part[arm1]]
-    return None
+    own = np.full(len(part), -1)
+    for w, (a, u, n, length) in enumerate(walls):
+        s, d = (centre - a) @ u, (centre - a) @ n
+        hit = (s > EMBED_MAX_M) & (s < length - EMBED_MAX_M) & (d >= -EMBED_MAX_M) & (d <= PROJECTION_MAX_M)
+        if (hit & (own >= 0)).any():
+            return None
+        own[hit] = w
+    arms = sorted(set(own[own >= 0]))
+    if len(arms) < 2:
+        return None
+    reach = {}
+    for w in arms:
+        a, u, _, length = walls[w]
+        s = (centre[own == w] - a) @ u
+        reach[w] = float(s.max() - s.min())
+    for k in np.flatnonzero(own < 0):                  # corner blocks
+        near = []
+        for w in arms:
+            nxt = (w + 1) % len(walls)
+            if nxt in arms:
+                corner = walls[nxt][0]
+                if np.linalg.norm(centre[k] - corner) <= RUN_ON_MAX_M + EMBED_MAX_M:
+                    near.append((w, nxt))
+        if len(near) != 1:
+            return None
+        w0, w1 = near[0]
+        u0, u1 = walls[w0][1], walls[w1][1]
+        if abs(float(u0 @ u1)) > 1 - AXIS_COS or u0[0] * u1[1] - u0[1] * u1[0] <= 0:
+            return None                                # an oblique or concave corner: not read
+        if abs(reach[w0] - reach[w1]) <= SAME_M:
+            return None                                # one length: which continues is the user's
+        own[k] = w0 if reach[w0] > reach[w1] else w1
+    return [part[own == w] for w in arms]
 
 
 def _texture(out):
@@ -310,7 +320,8 @@ def _merge(pieces, seam):
         if filled.area >= (s1 - s0 + 2 * half) * (z1 - z0 + 2 * half) - 1e-6 and max(outs) - min(outs) <= SAME_M:
             elements.append(dict(g[0], s0=s0, s1=s1, z0=z0, z1=z1, li=min(p["li"] for p in g), pieces=len(g),
                                  out=max(p["out"] for p in g), embed=max(p["embed"] for p in g),
-                                 ids=set().union(*(p["ids"] for p in g))))
+                                 ids=set().union(*(p["ids"] for p in g)),
+                                 part=np.concatenate([p["part"] for p in g])))
         else:
             ambiguous.append(g)
             elements += [dict(p, pieces=1) for p in g]
@@ -349,9 +360,10 @@ def _grouped(questions, names):
     return groups
 
 
-def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachment_ids):
+def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachment_ids, with_parts=False):
     """(decor entries for the spec, questions, report) from the non-body parts. parts: triangle-index arrays
-    of the parts other than the body; contours / polys: per storey."""
+    of the parts other than the body; contours / polys: per storey. with_parts: also the triangle indices of
+    every entry, in the entries' order (the checker reads the model with it)."""
     seam = plate_gap_m * SEAM_FACTOR
     found, questions, kept = [], [], 0
     pieces = []
@@ -383,6 +395,7 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             if clip:
                 pc.update(clip, type="wall", inset_into=True)
     for part, pc in pieces:
+        pc["part"] = part
         pc["ids"] = set(int(i) for i in np.unique(mats[part]))
         if pc["type"] in ("shape", "wall") and pc["out"] > ATTACHMENT_FROM_M:
             pc["type"] = "deep"
@@ -400,7 +413,7 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         q["wall"] = (_wall_at(contours[li], g[0]["u"], g[0]["c"], s0, s1) or (None,))[0]
         questions.append(q)
     columns = [dict(p, pieces=1) for p in found if p["type"] == "column"]
-    decor = []
+    decor, owned = [], []
     for e in walls + columns:
         li = e["li"]
         lv = levels[li]
@@ -411,6 +424,7 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             x0, y0, x1, y1 = e["box"]
             decor.append({"kind": "column", **entry, "w_m": round(max(x1 - x0, y1 - y0), ROUND),
                           "footprint": [round(x0, ROUND), round(y0, ROUND), round(x1, ROUND), round(y1, ROUND)]})
+            owned.append(e["part"])
             continue
         at = _wall_at(contours[li], e["u"], e["c"], e["s0"], e["s1"])
         if at is None:                                    # cannot happen for a checked piece; never guess
@@ -422,13 +436,16 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         out = round(e["out"], ROUND_OUT)
         decor.append({"kind": kind, **entry, "wall": at[0], "x_m": round(at[1], ROUND), "w_m": round(w_m, ROUND),
                       "projection_m": out, "texture": _texture(out)})
+        owned.append(e["part"])
     names = [lv["name"] for lv in levels]
     questions = _grouped(questions, names)
     candidates = [{"projection_m": q["depth_m"], "h_m": round(q["heights_m"][1] - q["heights_m"][0], 3),
                    "count": q["count"], "levels": q["levels"], "at": q["positions"]}
                   for q in questions if q["kind"] == "decor-deep"]
-    decor.sort(key=lambda d: (names.index(d["level"]), d.get("wall") or 0, d.get("x_m") or 0.0, d["z_m"]))
+    order = sorted(range(len(decor)), key=lambda k: (names.index(decor[k]["level"]), decor[k].get("wall") or 0,
+                                                     decor[k].get("x_m") or 0.0, decor[k]["z_m"]))
+    decor, owned = [decor[k] for k in order], [owned[k] for k in order]
     report = {"pieces": len(found), "elements": len(decor), "texture": sum(d.get("texture", False) for d in decor),
               "columns": len(columns), "seam_m": round(seam, 4), "not_decor_parts": kept,
               "ambiguous_groups": len(ambiguous), "attachment_candidates": candidates, "questions": len(questions)}
-    return decor, questions, report
+    return (decor, questions, report, owned) if with_parts else (decor, questions, report)

@@ -451,180 +451,149 @@ def slabs(spec: Spec) -> dict:
     return out
 
 
-FACE_M = 0.001        # a decor triangle reaches this far out of the wall face; a body vertex on the face within it
-TEXTURE_LOOK_M = 1.5  # a texture element: nothing may be built over its rectangle up to this far out
+FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
 
 
-def _cover(points2d, rect):
-    """Share of rect covered by the union of triangles (n, 3, 2)."""
-    if not len(points2d):
-        return 0.0
-    area = shapely.union_all(shapely.polygons(points2d), grid_size=1e-5)
-    return float(shapely.intersection(area, rect).area / rect.area) if rect.area > 0 else 0.0
+def _matches(e, d, dt, elev, contours):
+    """A model element read back (d) is the spec element (e) within dt: same kind, same wall line (whatever
+    storey it is filed under), same absolute height, extent and projection."""
+    if e.kind != d["kind"]:
+        return False
+    ez0, dz0 = elev[e.level] + e.z_m, elev[d["level"]] + d["z_m"]
+    if abs(ez0 - dz0) > dt or abs(e.h_m - d["h_m"]) > dt:
+        return False
+    if e.kind == "column":
+        return all(abs(x - y) <= dt for x, y in zip(e.footprint, d["footprint"]))
+    ea, eu, en = _wall(contours[e.level], e.wall)
+    da, du, dn = _wall(contours[d["level"]], d["wall"])
+    if eu @ du < 1 - 1e-6 or abs(float((da - ea) @ en)) > dt:
+        return False
+    dx = float((da - ea) @ eu) + d["x_m"]
+    return all(abs(x - y) <= dt for x, y in ((e.x_m, dx), (e.w_m, d["w_m"]), (e.projection_m, d["projection_m"])))
 
 
 def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
-    """Facade decor (pattern facade-decor-inset, spec v0.5) in the model, element by element of the spec:
-    a geometry element is built (its front covers decor_cover_min of its rectangle at its projection, within
-    decor_tol_m), with ids of the attachment group (its own id when the spec gives one), at least plate_gap_m
-    off every opening of its wall line, and the body is not cut along its outline (no body vertex on it); a
-    texture element (projection <= 0.10 m) has nothing built; a column covers its four sides. No decor in
-    the spec: nothing to check (pass)."""
+    """Facade decor (pattern facade-decor-inset, spec v0.5). The model's decor is read back as the extractor
+    reads a source (dt_ai.spec.decor: boxes, merged pieces, run-ins, corner arms; reviews of PR #75) and
+    matched one to one with the spec within decor_tol_m: every geometry element built, with ids of the
+    attachment group (its own id when the spec gives one); nothing built over a texture element; nothing the
+    spec does not list; no decor the extractor cannot read. Built elements keep plate_gap_m off every opening
+    of their wall line, do not cut the body (no body vertex on their outline that is not on a line the body
+    has anyway), meet another element only by a run-in of at most decor_inset_m + decor_tol_m and never with
+    a face in the plane of the other's face. No decor in the spec: nothing to check (pass)."""
     if not spec.decor:
         return result("decor", True, 0, 0, {"elements": []})
-    dt, cover_min = tol["decor_tol_m"], tol["decor_cover_min"]
+    from dt_ai.spec import decor as reader                 # one reading for the extractor and the checker
+    dt, weld_m = tol["decor_tol_m"], tol["weld_m"]
     group = ranges["groups"]["attachment"]
-    attachment = set(range(group["first"], group["last"] + 1))
+    attachment = frozenset(range(group["first"], group["last"] + 1))
+    names = [lv.name for lv in spec.levels]
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     contours = {f.level: f.contour for f in spec.expanded_floors()}
-    c = model.corners()
-    nv = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
-    norm = np.linalg.norm(nv, axis=1)
-    normal = np.divide(nv, norm[:, None], out=np.zeros_like(nv), where=norm[:, None] > 0)
-    cos = np.cos(np.radians(5.0))
-    rows = [r for r in opening_planes(spec, ("window", "door", None))]
-    solids = []                                     # built wall elements: (row, a, u, n, s, z, d ranges)
-    decor_tris = np.zeros(len(c), bool)
-    elements = []
-    for k, e in enumerate(spec.decor):
-        z0 = elev[e.level] + e.z_m
-        z1 = z0 + e.h_m
-        problems, row = [], {"index": k, "kind": e.kind, "level": e.level, "texture": e.texture}
-        if e.kind == "column":
-            x0, y0, x1, y1 = e.footprint
-            inside = ((c[..., 0] >= x0 - dt) & (c[..., 0] <= x1 + dt) & (c[..., 1] >= y0 - dt) & (c[..., 1] <= y1 + dt)
-                      & (c[..., 2] >= z0 - dt) & (c[..., 2] <= z1 + dt)).all(axis=1)
-            decor_tris |= inside
-            worst = 1.0
-            for axis, sign, at, (i, j), rect in ((0, 1, x1, (1, 2), (y0, z0, y1, z1)), (0, -1, x0, (1, 2), (y0, z0, y1, z1)),
-                                                 (1, 1, y1, (0, 2), (x0, z0, x1, z1)), (1, -1, y0, (0, 2), (x0, z0, x1, z1))):
-                side = inside & (sign * normal[:, axis] >= cos) & (np.abs(c[..., axis] - at) <= dt).all(axis=1)
-                worst = min(worst, _cover(c[side][..., [i, j]], shapely.box(*rect)))
-            row["cover"] = round(worst, 4)
-            if worst < cover_min:
-                problems.append("not built")
-            hit = inside
-        else:
-            a, u, n = _wall(contours[e.level], e.wall)
-            s = (c[..., :2] - a) @ u
-            d = (c[..., :2] - a) @ n
-            S0, S1 = e.x_m, e.x_m + e.w_m
-            run = 2 * (dt + DECOR_INSET_M + spec.plate_gap_m)   # a run-in end may pass its spec extent
-            pts = np.asarray([q[:2] for q in contours[e.level]], float)
-            wall_len = float(np.linalg.norm(pts[(e.wall + 1) % len(pts)] - pts[e.wall]))
-            # at a building corner the main element runs on past the wall end by the other's projection
-            lo_s = -TEXTURE_LOOK_M if S0 <= dt else S0 - run
-            hi_s = wall_len + TEXTURE_LOOK_M if S1 >= wall_len - dt else S1 + run
-            inside = ((s >= lo_s) & (s <= hi_s) & (c[..., 2] >= z0 - run) & (c[..., 2] <= z1 + run)
-                      & (d >= -dt - 0.05) & (d <= (TEXTURE_LOOK_M if e.texture else e.projection_m) + dt)).all(axis=1) \
-                & (d.max(axis=1) > FACE_M)
-            # past a wall end, a face looking out along n is the end face of the other element's run-on, not ours
-            beyond = (s.mean(axis=1) < -FACE_M) | (s.mean(axis=1) > wall_len + FACE_M)
-            inside &= ~(beyond & (normal[:, :2] @ n >= cos))
-            hit = inside
-            decor_tris |= inside
-            if e.texture:                              # anything built over its rectangle (review 1 of PR #75)
-                eps = FACE_M
-                over = ((s.max(axis=1) > S0 + eps) & (s.min(axis=1) < S1 - eps) & (c[..., 2].max(axis=1) > z0 + eps)
-                        & (c[..., 2].min(axis=1) < z1 - eps) & (d.max(axis=1) > FACE_M)
-                        & (d.min(axis=1) >= -dt - 0.05) & (d.max(axis=1) <= TEXTURE_LOOK_M))
-                decor_tris |= over
-                if over.any():
-                    problems.append("texture built as geometry")
-            else:
-                front = inside & (normal[:, :2] @ n >= cos) & (np.abs(d - e.projection_m) <= dt).all(axis=1)
-                cov = _cover(np.stack([s[front], c[front][..., 2]], axis=2), shapely.box(S0, z0, S1, z1))
-                row["cover"] = round(cov, 4)
-                if cov < cover_min:
-                    problems.append("not built")
-                if inside.any():
-                    ms0, ms1 = float(s[inside].min()), float(s[inside].max())
-                    mz0, mz1 = float(c[inside][..., 2].min()), float(c[inside][..., 2].max())
-                    built = shapely.box(ms0, mz0, ms1, mz1)
-                    for r in rows:                         # openings on its wall line, any floor
-                        oa, ou, on = _wall(r["contour"], r["opening"].wall)
-                        if ou @ u < 1 - 1e-6 or abs(float((oa - a) @ n)) > dt:
-                            continue
-                        os0 = float((oa - a) @ u) + r["opening"].x_m
-                        orect = shapely.box(os0, r["z0"], os0 + r["opening"].w_m, r["z0"] + r["opening"].h_m)
-                        gap = built.distance(orect)
-                        row.setdefault("opening_gap_m", round(gap, 4))
-                        row["opening_gap_m"] = min(row["opening_gap_m"], round(gap, 4))
-                        if gap < spec.plate_gap_m - 1e-4:
-                            problems.append(f"{gap:.4f} m from an opening")
-                    row["built"] = [round(ms0, 4), round(mz0, 4), round(ms1, 4), round(mz1, 4)]
-                    solids.append((row, a, u, n, (ms0, ms1), (mz0, mz1), (float(d[inside].min()), float(d[inside].max()))))
-        if not e.texture and hit.any():
-            ids = sorted({int(m) for m in model.material_ids[hit]})
-            row["material_ids"] = ids
-            if not set(ids) <= attachment or (e.material_id is not None and ids != [e.material_id]):
-                problems.append(f"ids {ids}")
-        row["problems"] = problems
-        elements.append(row)
-    # two elements meet only by a run-in of the subordinate one, at most decor_inset_m (+ decor_tol_m); no face of
-    # one lies in the plane of a face of the other (no butt joint; user 2026-10-12)
-    for i, (ra, aa, ua, na, sa, za, da) in enumerate(solids):
-        for rb, ab, ub, nb, sb, zb, db in solids[i + 1:]:
-            if ua @ ub < 1 - 1e-6 or abs(float((ab - aa) @ na)) > dt:
-                continue
-            off = float((ab - aa) @ ua)
-            sb2 = (sb[0] + off, sb[1] + off)
-            ov = [min(x[1], y[1]) - max(x[0], y[0]) for x, y in ((sa, sb2), (za, zb), (da, db))]
-            if all(o > FACE_M for o in ov):
-                depth = min(ov[0], ov[1])
-                if depth > DECOR_INSET_M + dt:
-                    ra["problems"].append(f"runs {depth:.3f} m into decor element {rb['index']} (over decor_inset_m)")
-            elif sum(o > FACE_M for o in ov) == 2 and any(abs(o) <= FACE_M for o in ov):
-                ra["problems"].append(f"butt joint with decor element {rb['index']}: a face in the plane of its face")
-    # nothing outside the body that the spec does not list (review 1 of PR #75): unclaimed triangles out of
-    # the floor contour of their height
-    names = [lv.name for lv in spec.levels]
-    top = spec.levels[-1].elev_m + (spec.roof.parapet_h_m if spec.roof else 0.0)
-    polys = [shapely.Polygon(contours[n]) for n in names[:-1]]
-    centre = c[~decor_tris].mean(axis=1)
-    extra = 0
-    for p in centre:
-        if not (spec.levels[0].elev_m - FACE_M <= p[2] <= top + FACE_M):
-            extra += 1
+    storeys = [contours[n] for n in names[:-1]]
+    polys = [shapely.Polygon(c) for c in storeys]
+    tri_part = parts(model.triangles, weld(model.vertices, weld_m))
+    area = np.linalg.norm(np.cross(*(model.corners()[:, k] - model.corners()[:, 0] for k in (1, 2))), axis=1) / 2
+    labels = np.unique(tri_part)
+    body = labels[np.argmax([area[tri_part == p].sum() for p in labels])]
+    others = [np.flatnonzero(tri_part == p) for p in labels if p != body]
+    levels = [{"name": lv.name, "elev_m": lv.elev_m} for lv in spec.levels]
+    got, asked, _, owned = reader.extract(model.vertices, model.triangles, model.material_ids, others, levels, storeys,
+                                          polys, spec.plate_gap_m, attachment, with_parts=True)
+    rows = [{"index": k, "kind": e.kind, "level": e.level, "texture": e.texture, "problems": []}
+            for k, e in enumerate(spec.decor)]
+    used = set()
+    for row, e in zip(rows, spec.decor):
+        if e.texture:
             continue
-        k = max(i for i in range(len(polys)) if spec.levels[i].elev_m <= p[2] + FACE_M)
-        k = min(k, len(polys) - 1)
-        if polys[k].distance(shapely.Point(p[0], p[1])) > FACE_M and not polys[k].contains(shapely.Point(p[0], p[1])):
-            extra += 1
-    if extra:
-        elements.append({"index": None, "kind": "unspecified", "problems": [f"{extra} triangles outside the body "
-                                                                             "that no spec decor lists"]})
-    # the body is not cut: no body vertex on the outline of a built wall element (on the wall face), except at
-    # the body's own lines - wall ends, levels, the top, openings of that wall line (review 1 of PR #75)
-    body_v = np.unique(model.triangles[~decor_tris])
-    z_lines = [lv.elev_m for lv in spec.levels] + [top]
-    for row, e in zip(elements, spec.decor):
-        if e.kind == "column" or e.texture or "built" not in row:
+        k = next((k for k, d in enumerate(got) if k not in used and not d.get("texture") and _matches(e, d, dt, elev, contours)), None)
+        if k is None:
+            row["problems"].append("not built")
+            continue
+        used.add(k)
+        row["read"], row["k"] = got[k], k
+        ids = sorted({int(m) for m in model.material_ids[owned[k]]})
+        row["material_ids"] = ids
+        if not set(ids) <= attachment or (e.material_id is not None and ids != [e.material_id]):
+            row["problems"].append(f"ids {ids}")
+    for k, d in enumerate(got):                          # read back but not in the spec (or over a texture element)
+        if k in used:
+            continue
+        over = next((row for row, e in zip(rows, spec.decor) if e.texture and e.wall == d.get("wall")
+                     and e.level == d["level"] and d.get("x_m") is not None
+                     and min(e.x_m + e.w_m, d["x_m"] + d["w_m"]) > max(e.x_m, d["x_m"]) + FACE_M
+                     and min(e.z_m + e.h_m, d["z_m"] + d["h_m"]) > max(e.z_m, d["z_m"]) + FACE_M), None)
+        if over is not None and not d.get("texture"):
+            over["problems"].append("texture built as geometry")
+        elif not d.get("texture") or over is None:
+            rows.append({"index": None, "kind": d["kind"], "level": d["level"],
+                         "problems": [f"decor the spec does not list ({d['kind']} at {d['level']} z {d['z_m']})"]})
+    for q in asked:
+        rows.append({"index": None, "kind": q["kind"], "level": q["levels"][0],
+                     "problems": [f"decor the extractor cannot read ({q['kind']}, {q['count']} piece(s))"]})
+    openings = opening_planes(spec, ("window", "door", None))
+    decor_owned = np.zeros(len(model.triangles), bool)
+    for o in owned:
+        decor_owned[o] = True
+    bv = np.unique(model.triangles[~decor_owned])        # everything but the decor read back
+    for row, e in zip(rows, spec.decor):
+        if e.kind == "column" or "read" not in row:
             continue
         a, u, n = _wall(contours[e.level], e.wall)
-        p = model.vertices[body_v]
-        s, d, z = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n, p[:, 2]
-        ms0, mz0, ms1, mz1 = row["built"]
-        pts = np.asarray([q[:2] for q in contours[e.level]], float)
-        s_lines = [0.0, float(np.linalg.norm(pts[(e.wall + 1) % len(pts)] - pts[e.wall]))]
-        zs = list(z_lines)
-        for r in rows:
+        d = row["read"]
+        z0 = elev[d["level"]] + d["z_m"]
+        da, _, _ = _wall(contours[d["level"]], d["wall"])
+        x0 = float((da - a) @ u) + d["x_m"]                # in the spec wall's frame
+        rect = shapely.box(x0, z0, x0 + d["w_m"], z0 + d["h_m"])
+        for r in openings:                               # openings on its wall line, any floor
             oa, ou, _ = _wall(r["contour"], r["opening"].wall)
-            if ou @ u >= 1 - 1e-6 and abs(float((oa - a) @ n)) <= dt:
-                os0 = float((oa - a) @ u) + r["opening"].x_m
-                s_lines += [os0, os0 + r["opening"].w_m]
-                zs += [r["z0"], r["z0"] + r["opening"].h_m]
-        own = (np.min(np.abs(s[:, None] - np.array(s_lines)[None]), axis=1) <= FACE_M) | \
-              (np.min(np.abs(z[:, None] - np.array(zs)[None]), axis=1) <= FACE_M)
-        on_face = np.abs(d) <= FACE_M
-        within = (s >= ms0 - FACE_M) & (s <= ms1 + FACE_M) & (z >= mz0 - FACE_M) & (z <= mz1 + FACE_M)
-        edge = (np.minimum.reduce([np.abs(s - ms0), np.abs(s - ms1)]) <= FACE_M) | \
-               (np.minimum.reduce([np.abs(z - mz0), np.abs(z - mz1)]) <= FACE_M)
-        cut = int((on_face & within & edge & ~own).sum())
+            if ou @ u < 1 - 1e-6 or abs(float((oa - a) @ n)) > dt:
+                continue
+            os0 = float((oa - a) @ u) + r["opening"].x_m
+            gap = rect.distance(shapely.box(os0, r["z0"], os0 + r["opening"].w_m, r["z0"] + r["opening"].h_m))
+            row["opening_gap_m"] = min(row.get("opening_gap_m", gap), round(gap, 4))
+            if gap < spec.plate_gap_m - 1e-4:
+                row["problems"].append(f"{gap:.4f} m from an opening")
+        # the body is not cut: a body vertex on its outline only on a line the body has anyway
+        p = model.vertices[bv]
+        s, dd, z = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n, p[:, 2]
+        ms0, ms1, mz0, mz1 = x0, x0 + d["w_m"], z0, z0 + d["h_m"]
+        face = np.abs(dd) <= FACE_M
+        under = face & (s >= ms0 - FACE_M) & (s <= ms1 + FACE_M) & (z >= mz0 - FACE_M) & (z <= mz1 + FACE_M)
+        cut = 0
+        for zl in (mz0, mz1):                            # horizontal outline edges
+            on = under & (np.abs(z - zl) <= FACE_M)
+            elsewhere = (np.abs(z - zl) <= FACE_M) & ~under
+            cut += int(on.sum()) if on.any() and not elsewhere.any() else 0
+        for sl in (ms0, ms1):                            # vertical outline edges
+            on = under & (np.abs(s - sl) <= FACE_M)
+            elsewhere = face & (np.abs(s - sl) <= FACE_M) & ((z < mz0 - FACE_M) | (z > mz1 + FACE_M))
+            cut += int(on.sum()) if on.any() and not elsewhere.any() else 0
         if cut:
             row["problems"].append(f"body cut: {cut} body vertices on its outline")
-    bad = sum(bool(r["problems"]) for r in elements)
-    return result("decor", bad == 0, bad, 0, {"elements": elements})
+    # meetings: a run-in of at most decor_inset_m (+ decor_tol_m), no face in the plane of another's face
+    built = [(row, owned[row["k"]]) for row in rows if "read" in row]
+    for i, (ra, ta) in enumerate(built):
+        for rb, tb in built[i + 1:]:
+            ca, cb = model.vertices[np.unique(model.triangles[ta])], model.vertices[np.unique(model.triangles[tb])]
+            za, zb = (ca[:, 2].min(), ca[:, 2].max()), (cb[:, 2].min(), cb[:, 2].max())
+            zov = min(za[1], zb[1]) - max(za[0], zb[0])
+            fa, fb = shapely.MultiPoint(ca[:, :2]).convex_hull, shapely.MultiPoint(cb[:, :2]).convex_hull
+            meet = fa.intersection(fb)
+            if zov < -FACE_M or fa.distance(fb) > FACE_M:
+                continue
+            if meet.area > FACE_M * FACE_M and zov > FACE_M:
+                box = meet.minimum_rotated_rectangle
+                side = min(np.linalg.norm(np.diff(np.asarray(box.exterior.coords)[:3], axis=0), axis=1)) \
+                    if box.geom_type == "Polygon" else 0.0
+                depth = min(float(side), float(zov))
+                if depth > DECOR_INSET_M + dt:
+                    ra["problems"].append(f"runs {depth:.3f} m into decor element {rb['index']} (over decor_inset_m)")
+            elif ra["kind"] != "column" and rb["kind"] != "column" and spec.decor[ra["index"]].wall == \
+                    spec.decor[rb["index"]].wall and spec.decor[ra["index"]].level == spec.decor[rb["index"]].level:
+                ra["problems"].append(f"butt joint with decor element {rb['index']}: a face in the plane of its face")
+    bad = sum(bool(r["problems"]) for r in rows)
+    return result("decor", bad == 0, bad, 0, {"elements": [{k: v for k, v in r.items() if k != "k"} for r in rows]})
 
 
 def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None) -> dict:
