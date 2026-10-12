@@ -127,6 +127,11 @@ spec.report.json, check.json; new job scripts name an engine gap EG1-EG4); OD1 o
 as boxes (band / strip / panel), free-standing columns on a level, split pieces merged up to 0.06 m seams,
 <= 0.10 m texture; > 0.8 m = attachment candidates (EG2, report only); questions one per type. B01/B02/B02t
 unchanged 8/8; K01: 1 decor strip, 6 attachment-candidate types.
+#75 merged (3 Codex rounds): the engine builds facade decor in its own mesh (body never cut; 0.02 m inset,
+5 mm off openings, run-in meetings: horizontal main over vertical, of one rank the longer; convex corners with
+the main element running on and keeping its back outside the wall; `decor-corner` when the other is higher);
+`check_decor` reads the model back with the extractor and matches it to the spec one to one (replaced the
+first checker). Post-merge on main: B01 / B02 / B02t 9/9 etalon and model.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -221,7 +226,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: decor PR 3 (engine + checker), PR 4 (K02 run); OD1; intake IN2-IN8; MH3; the
+   Claude: decor PR 4 (K02 run, once the user gives the fragment); OD1; intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).
