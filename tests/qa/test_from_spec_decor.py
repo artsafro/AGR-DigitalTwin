@@ -679,3 +679,54 @@ def test_unlisted_decor_following_a_concave_recess_fails():
     back = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.06], [6, 0.06], [6, 0.02], [4, 0.02], [4, 0.06], [3.8, 0.06]]
     dump["meshes"].append(prism("Extra", back, 1.0, 1.3).dump())
     assert decor_check(dump, sp)["status"] == "fail"
+
+
+def stacked(contours, part):
+    """A body of one prism per storey over its own contour, the spec to match, and an extra part."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    data = spec(strip).model_dump(exclude_none=True)
+    data["floors"] = [{"level": f"L{i}", "contour": c, "openings": []} for i, c in enumerate(contours)]
+    sp = Spec.model_validate(data)
+    dump = build(spec(strip), INPUTS)
+    body, zs = Mesh("Body"), [lv.elev_m for lv in sp.levels]
+    for i, outline in enumerate(contours):
+        for a, b in zip(outline, outline[1:] + outline[:1]):
+            body.quad((*a, zs[i]), (*b, zs[i]), (*b, zs[i + 1]), (*a, zs[i + 1]))
+    bd = body.dump()
+    bd["material_ids"] = [FACADE] * len(body.triangles)
+    dump["meshes"][0] = bd
+    dump["meshes"].append(part.dump())
+    return dump, sp
+
+
+SQUARE = [[0, 0], [10, 0], [10, 10], [0, 10]]
+
+
+def test_box_through_the_body_with_partial_caps_is_no_decor():
+    """Review 2 of #78: the caps cover only the front strip; the sides still give the whole footprint."""
+    m = Mesh("Through")
+    m.box((2, -0.15, 1), (3, 10.15, 1.3))
+    for v in m.vertices[:8]:
+        v[1] = min(v[1], 0)
+    dump, sp = stacked([SQUARE, SQUARE], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_box_through_the_body_by_a_hair_is_no_decor():
+    """Review 2 of #78: 0.15 mm out on the far side is past the weld distance (0.1 mm): a second piece."""
+    m = Mesh("Through")
+    m.box((2, -0.15, 1), (2.006, 10.00015, 1.3))
+    dump, sp = stacked([SQUARE, SQUARE], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_box_through_an_upper_storey_it_enters_by_half_a_millimetre_is_no_decor():
+    """Review 2 of #78: every storey the box stands in by more than a weld counts; above 3.3 m the thin
+    upper storey is crossed through."""
+    m = Mesh("Through")
+    m.box((2, -0.15, 3), (3, 1, 3.3005))
+    dump, sp = stacked([SQUARE, [[0, 0], [10, 0], [10, 0.5], [0, 0.5]]], m)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)

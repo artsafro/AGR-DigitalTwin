@@ -454,9 +454,22 @@ def slabs(spec: Spec) -> dict:
 FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
 
 
-def _pieces(g) -> int:
-    """Pieces of a plan region larger than a FACE_M square (slivers along a shared face do not count)."""
-    return sum(1 for q in getattr(g, "geoms", [g]) if q.area > FACE_M * FACE_M)
+def _pieces(g, weld_m) -> int:
+    """Pieces of a plan region wider than the weld distance: a sliver along a shared face is one surface
+    welded, not a piece (review 2 of #78: no area threshold of its own)."""
+    return sum(1 for q in getattr(g, "geoms", [g]) if not q.buffer(-weld_m / 2).is_empty)
+
+
+def _footprint(t3):
+    """Real plan footprint of a part: its faces projected to the plan, the outline of its vertical faces
+    included (review 2 of #78: caps may be partial or missing), recesses left open."""
+    xy = t3[..., :2]
+    e1, e2 = xy[:, 1] - xy[:, 0], xy[:, 2] - xy[:, 0]
+    flat = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) > 1e-12
+    edges = shapely.union_all([shapely.LineString(q[[i, j]]) for q in xy for i, j in ((0, 1), (1, 2), (2, 0))
+                               if np.linalg.norm(q[i] - q[j]) > 1e-12])
+    return shapely.union_all([*polygonize(getattr(edges, "geoms", [edges])),
+                              *(shapely.Polygon(q) for q in xy[flat])]).buffer(0)
 
 
 def _matches(e, d, dt, elev, contours):
@@ -575,12 +588,9 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         z0 = float(p[:, 2].min())
         z1 = float(p[:, 2].max())
         storey = reader._storey(levels, z0)
-        bands = [i for i in range(len(storeys))          # the storeys the box stands in, by their bands
-                 if min(z1, levels[i + 1]["elev_m"]) - max(z0, levels[i]["elev_m"]) > FACE_M] or [storey]
-        xy = t3[..., :2]                                 # its real plan footprint, not its bounding rectangle
-        e1, e2 = xy[:, 1] - xy[:, 0], xy[:, 2] - xy[:, 0]                              # (review 1 of #78)
-        flat = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) > 1e-12
-        plan = shapely.union_all([shapely.Polygon(q) for q in xy[flat]]).buffer(0)
+        bands = [i for i in range(len(storeys))          # every storey it stands in by more than a weld
+                 if min(z1, levels[i + 1]["elev_m"]) - max(z0, levels[i]["elev_m"]) > weld_m] or [storey]
+        plan = _footprint(t3)                            # its real footprint, not its bounding rectangle (#78)
         for a, u, n, length in reader._walls(storeys[storey]):
             s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
             # set into the body deeper than decor is, and not through it: in every storey it stands in, the
@@ -589,7 +599,7 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
             # too and is an attachment (user 2026-10-12: against the body between storey contours, no new number)
             if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
                     and s.max() > FACE_M and s.min() < length - FACE_M
-                    and all(_pieces(plan.difference(polys[i])) == 1 for i in bands)
+                    and all(_pieces(plan.difference(polys[i]), weld_m) == 1 for i in bands)
                     and reader._is_box(t3, u, n, float(a @ n)) is not None):
                 stray += len(free)
                 break
