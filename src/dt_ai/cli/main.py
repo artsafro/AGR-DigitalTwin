@@ -10,7 +10,7 @@ from dt_ai.core.models import BuildJob, MaterialRegistry, SCHEMAS
 from dt_ai.core.profiles import load_profiles
 from dt_ai.drawing.index import index_pdf
 from dt_ai.materials.registry import merge_proposals
-from dt_ai.spec import extract_spec
+from dt_ai.spec import SpecStops, extract_spec
 from dt_ai.spec.compare import compare_specs, markdown as spec_compare_markdown
 from dt_ai.spec import revit_twin
 from dt_ai.spec.mesh import questions_markdown
@@ -41,6 +41,9 @@ def parser():
     spec.add_argument("--object", type=Path, help="extract: object.json with id and frame")
     spec.add_argument("--output", type=Path, help="extract: new spec.json; report and questions beside it")
     spec.add_argument("--profile", choices=["npm_min", "mid"], default="npm_min")
+    spec.add_argument("--collect-stops", action="store_true",
+                      help="extract: list every stop of one pass in <spec>.report.json (no spec written, exit 3); "
+                           "nothing is substituted")
     spec.add_argument("--report", type=Path, help="merge-questions: <spec>.report.json of one version")
     spec.add_argument("--version", help="merge-questions: the spec version, e.g. v002")
     spec.add_argument("--into", type=Path, help="merge-questions: the object's questions.md (created if missing)")
@@ -127,7 +130,15 @@ def main(argv=None):
             if dump.get("kind") == "revit-twin":         # band folders beside the index (#29)
                 dump = revit_twin.load(args.dump)
             thresholds = read_json(args.tolerances.read_bytes()).get("spec_extract") if args.tolerances else None
-            result, report = extract_spec(dump, read_json(args.object.read_bytes()), args.profile, thresholds)
+            try:
+                result, report = extract_spec(dump, read_json(args.object.read_bytes()), args.profile, thresholds,
+                                              collect_stops=args.collect_stops)
+            except SpecStops as exc:                     # rule 5: every stop listed, no spec written
+                write_json(outputs[1], {**(exc.report or {}), "stops": exc.stops})
+                for s in exc.stops:
+                    print(f"STOP {s['level'] or s['stage']}: {s['message']}", file=sys.stderr)
+                print(f"Stops: {len(exc.stops)}; report {outputs[1]}; no spec written", file=sys.stderr)
+                return 3
             write_json(args.output, result.model_dump(exclude_none=True))
             write_json(outputs[1], report)
             if report["questions"]:

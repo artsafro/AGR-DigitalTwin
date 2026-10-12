@@ -531,3 +531,60 @@ def test_a_roof_value_not_read_is_never_guessed(field):
 def test_the_3_cm_agreement_limit_itself_agrees(roof):
     given = [{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": roof}]
     extract_spec(revit_box(), {**OBJECT, "revit_levels": REVIT_TABLE, "levels": given})
+
+
+# rule 5 (user 2026-10-12): `dt spec extract --collect-stops` - one pass, every stop listed, nothing substituted
+
+OPEN_SOUTH = {(i, k) for i in range(3) for k in range(6)}       # the south wall missing on both storeys
+
+
+def test_collect_stops_lists_every_storey_that_stops():
+    from dt_ai.spec import SpecStops
+    with pytest.raises(SpecError, match="level L0: none of"):   # without the flag: the first stop only
+        extract_spec(box_building(holes=OPEN_SOUTH), OBJECT)
+    with pytest.raises(SpecStops) as caught:
+        extract_spec(box_building(holes=OPEN_SOUTH), OBJECT, collect_stops=True)
+    stops = caught.value.stops
+    assert [(s["stage"], s["level"]) for s in stops] == [("contour", "L0"), ("contour", "L1")]
+    assert stops[1]["after_stop_below"] is True and "L1: none of" in stops[1]["message"]
+    assert caught.value.report["parts"] == 2 and caught.value.report["floors"] == {}
+
+
+def test_collect_stops_keeps_the_storeys_it_read_and_substitutes_nothing():
+    from dt_ai.spec import SpecStops
+    with pytest.raises(SpecStops) as caught:                    # L1 stops, L0 is read
+        extract_spec(box_building(holes={(i, k) for i in range(3) for k in range(3, 6)}), OBJECT,
+                     collect_stops=True)
+    assert [s["level"] for s in caught.value.stops] == ["L1"]
+    assert list(caught.value.report["floors"]) == ["L0"]
+
+
+def test_collect_stops_after_the_contours_and_before_them():
+    from dt_ai.spec import SpecStops
+    with pytest.raises(SpecStops) as caught:                    # contours read, the roof stops
+        extract_spec(box_building(roof=False), OBJECT, collect_stops=True)
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("after contours", None)]
+    assert "no up-facing roof surface" in caught.value.stops[0]["message"]
+    dump = box_building()
+    dump["helpers"].append({"name": "LEVEL_L1b", "location": [0.0, 0.0, 3.3]})
+    with pytest.raises(SpecStops) as caught:                    # nothing read before the levels
+        extract_spec(dump, OBJECT, collect_stops=True)
+    assert caught.value.stops[0]["stage"] == "levels and body" and caught.value.report is None
+
+
+def test_collect_stops_without_stops_is_the_plain_extraction():
+    plain = extract_spec(box_building(), OBJECT)
+    collected = extract_spec(box_building(), OBJECT, collect_stops=True)
+    assert plain[0] == collected[0] and plain[1] == collected[1]
+
+
+def test_cli_collect_stops_writes_the_stops_and_no_spec(tmp_path, capsys):
+    dump, obj, out = tmp_path / "dump.json", tmp_path / "object.json", tmp_path / "spec-v001.json"
+    dump.write_text(json.dumps(box_building(holes=OPEN_SOUTH)), encoding="utf-8")
+    obj.write_text(json.dumps(OBJECT), encoding="utf-8")
+    args = ["spec", "extract", "--dump", str(dump), "--object", str(obj), "--output", str(out), "--collect-stops"]
+    assert main(args) == 3 and not out.exists()
+    report = json.loads(out.with_suffix(".report.json").read_text(encoding="utf-8"))
+    assert [s["level"] for s in report["stops"]] == ["L0", "L1"]
+    err = capsys.readouterr().err
+    assert "STOP L0" in err and "STOP L1" in err and "no spec written" in err
