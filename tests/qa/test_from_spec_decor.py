@@ -598,3 +598,44 @@ def test_box_reaching_across_the_body_is_no_decor():
     dump["meshes"].append(extra.dump())
     report = decor_check(dump, spec(strip))
     assert report["status"] == "pass", problems(report)
+
+
+L_SHAPE = [[0, 0], [10, 0], [10, 4], [6, 4], [6, 10], [0, 10]]   # concave corner at (6, 4), walls 2 and 3
+
+
+def l_spec(*decor):
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    for f in data["floors"]:
+        if "contour" in f:
+            f["contour"], f["openings"] = L_SHAPE, []
+    data["decor"] = list(decor)
+    return Spec.model_validate(data)
+
+
+L_STRIP = dict(PILASTER, wall=1, x_m=1.5, z_m=1.0, h_m=2.0)
+
+
+@pytest.mark.parametrize("lo, hi", [
+    ((5.0, 3.94, 1.0), (8.0, 4.15, 1.3)),      # on wall 2, run into the concave corner and on into the wing
+    ((5.94, 3.0, 1.0), (6.15, 5.0, 1.3)),      # on wall 3, run back past the concave corner into the body
+    ((6.5, 3.3, 1.0), (8.0, 4.15, 1.3)),       # on wall 2 by the concave corner, 0.7 m into the body
+])
+def test_unlisted_decor_at_a_concave_corner_fails(lo, hi):
+    """User 2026-10-12 (#78): the embedded part is judged against the body, not one wall's span."""
+    sp = l_spec(L_STRIP)
+    dump = build(sp, INPUTS)
+    extra = Mesh("Extra")
+    extra.box(lo, hi)
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, sp)["status"] == "fail"
+
+
+def test_box_through_the_body_at_a_concave_corner_is_no_decor():
+    sp = l_spec(L_STRIP)
+    dump = build(sp, INPUTS)
+    extra = Mesh("Through")
+    extra.box((7.0, -0.15, 1.0), (8.0, 4.15, 1.3))
+    dump["meshes"].append(extra.dump())
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)

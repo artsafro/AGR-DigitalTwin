@@ -454,6 +454,11 @@ def slabs(spec: Spec) -> dict:
 FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
 
 
+def _pieces(g) -> int:
+    """Pieces of a plan region larger than a FACE_M square (slivers along a shared face do not count)."""
+    return sum(1 for q in getattr(g, "geoms", [g]) if q.area > FACE_M * FACE_M)
+
+
 def _matches(e, d, dt, elev, contours):
     """A model element read back (d) is the spec element (e) within dt: same kind, same wall line (whatever
     storey it is filed under), same absolute height, extent and projection."""
@@ -568,16 +573,21 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         t3 = model.corners()[free]
         p = model.vertices[np.unique(model.triangles[free])]
         z0 = float(p[:, 2].min())
+        z1 = float(p[:, 2].max())
         storey = reader._storey(levels, z0)
+        bands = [i for i in range(len(storeys))          # the storeys the box stands in, by their bands
+                 if min(z1, levels[i + 1]["elev_m"]) - max(z0, levels[i]["elev_m"]) > FACE_M] or [storey]
         for a, u, n, length in reader._walls(storeys[storey]):
             s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
-            # set into the body deeper than decor is, and within the body behind this wall: its embedded part
-            # over the wall's span lies inside the storey contour (a coping ring round the roof reaches across
-            # the building and out); along the wall it may run on past the corner (user 2026-10-12, no new number)
-            s0, s1 = max(float(s.min()), 0.0), min(float(s.max()), length)
-            back = shapely.Polygon([a + u * s0, a + u * s1, a + u * s1 + n * dd.min(), a + u * s0 + n * dd.min()])
-            if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M and s1 > s0
-                    and polys[storey].buffer(FACE_M).contains(back)
+            # set into the body deeper than decor is, and not through it: in every storey it stands in, the
+            # part of its plan outside the body is one piece (in front of the wall, past a corner or into a
+            # concave one); a box through the building (a coping ring round the roof) comes out on the far side
+            # too and is an attachment (user 2026-10-12: against the body between storey contours, no new number)
+            plan = shapely.Polygon([a + u * s.min() + n * dd.min(), a + u * s.max() + n * dd.min(),
+                                    a + u * s.max() + n * dd.max(), a + u * s.min() + n * dd.max()])
+            if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
+                    and s.max() > FACE_M and s.min() < length - FACE_M
+                    and all(_pieces(plan.difference(polys[i])) == 1 for i in bands)
                     and reader._is_box(t3, u, n, float(a @ n)) is not None):
                 stray += len(free)
                 break
