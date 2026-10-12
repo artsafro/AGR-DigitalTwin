@@ -229,3 +229,23 @@ def test_od1_revit_openings_take_the_default_and_are_listed():
     spec, report = extract_spec(to_dump([b], [roof_obj(t)]), OBJ)
     assert [o.depth_m for o in spec.expanded_floors()[0].openings] == [None]
     assert report["openings"]["openings_depth_by_default"] == 1
+
+
+def test_od1_a_measured_plane_behind_glass_keeps_its_depth():
+    """Review 2 of PR #76: glass at 0.03 m and an opening plane at 0.6 m: the plane gives the depth."""
+    obj = {k: v for k, v in at().items() if k != "opening_depth_default_m"}
+    plane = pane("Plane", 2.0, 3.5, 1.0, 2.0, y=0.6)
+    d = building(boxes=[], extra=[pane("Glass", 2.0, 3.5, 1.0, 2.0, y=0.03)])
+    d["meshes"].append({**plane.dump(), "material_ids": [11, 11]})
+    spec, report = extract_spec(d, obj)
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.depth_m == pytest.approx(0.6, abs=0.01) and report["openings"]["openings_depth_by_default"] == 0
+
+
+def test_od1_glass_deep_in_a_hole_without_reveal_gives_no_depth():
+    """Review 2 of PR #76: hole + glass merged; the glass position (0.6 m) never becomes the depth."""
+    obj = {k: v for k, v in at().items() if k != "opening_depth_default_m"}
+    spec, report = extract_spec(building(boxes=[(0, 2.0, 3.5, 0.9, 2.4, 0.0)],
+                                         extra=[pane("Glass", 2.1, 3.4, 1.0, 2.3, y=0.6)]), obj)
+    (o,) = spec.expanded_floors()[0].openings
+    assert o.depth_m is None and report["openings"]["openings_depth_by_default"] == 1

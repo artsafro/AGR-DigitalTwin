@@ -572,7 +572,7 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         for a, u, n, length in reader._walls(storeys[storey]):
             s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
             if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
-                    and s.min() >= -reader.SPAN_TOL_M and s.max() <= length + reader.SPAN_TOL_M
+                    and s.min() >= -reader.RUN_ON_MAX_M and s.max() <= length + reader.RUN_ON_MAX_M   # a corner too
                     and reader._is_box(t3, u, n, float(a @ n)) is not None):
                 stray += len(free)
                 break

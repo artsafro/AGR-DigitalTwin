@@ -555,3 +555,13 @@ def test_decor_id_group_by_material(mid, ok):
     sp = spec(dict(BELT, material_id=mid))
     report = decor_check(build(sp, INPUTS), sp)
     assert (report["status"] == "pass") == ok, problems(report)
+
+
+def test_unlisted_decor_running_past_a_corner_fails():
+    """Review 2 of PR #76: a box set 0.06 m in and running 11 mm past the wall end is unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((8.0, -0.15, 1.0), (10.011, 0.06, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"
