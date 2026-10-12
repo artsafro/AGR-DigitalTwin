@@ -38,3 +38,31 @@ Tops of up-facing faces of slab object `Shape211223725`: L00 0.0 (bottom, no sla
 
 Next: the user's decision on where the envelope comes from (see the questions in the session summary);
 then intake files, extract, engine, checks.
+
+## Stops so far (run 1, 2026-10-12)
+
+1. Body: the largest connected part is the inner mass `Shape211223721`, not the envelope; the facade is
+   8884 RailClone panels (no closed shell).
+2. L00 (on that inner mass): no section shape over the full storey; the shape changes at 6.3 m (wall
+   0-6.3, slab edge 6.3-6.5) - `contour_at_m.L00` asked.
+3. L27 (92.3-95.75, same body): a provisional mid-storey section was not closed. (Provisional values were
+   used only to list this stop and were removed; the user forbids them, rule 5 below.)
+
+## User decisions for the next run (2026-10-12, not in code yet)
+
+1. Source class "panel facade without a shell": intake (IN2) checks first whether there is a closed body;
+   if not, the path is "contours by slabs + panels as finish / decor", and the extractor is not run on such
+   a source by default. Into case alina-bld as the second reason the first run went by scripts.
+2. Contours by slabs: 104-221 vertices follow the slab relief; simplify by the relief rule (deviations
+   <= 0.10 m from the wall line collapse); check against the envelope of the panels' outer faces. Areas
+   611 / 599 / 582 / 522 go into the report as `measured by slabs`.
+3. Contour section rule: a storey's contour is taken at mid storey height (`level + 0.5 h`). A change of
+   section within <= 0.3 m under the next level is the slab edge (floor-step / belt), not the contour.
+   The `contour_at_m` question stays only when the section changes within the wall band itself.
+4. Parapet thickness: measured from the source when it gives a closed section (0.3 / 0.4 / 0.6, always
+   from the project); otherwise `parapet_thickness_default_m` (the value already in object.json /
+   tolerances, 0.3 or 0.4), report mark "parapet thickness by default", no question to the user.
+5. No provisional values, not even to collect stops: `dt spec extract --collect-stops` - one pass, every
+   stop listed, no value substituted. Into the harness rules.
+
+Order: OD1 (#76) -> slots (#77) -> this job with rules 1-5.
