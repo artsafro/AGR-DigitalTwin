@@ -575,3 +575,26 @@ def test_unlisted_decor_running_far_past_a_corner_fails():
     extra.box((8.0, -0.15, 1.0), (10.801, 0.06, 1.3))
     dump["meshes"].append(extra.dump())
     assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_unlisted_box_set_deep_into_the_body_fails():
+    """User 2026-10-12 (follow-up to #76): no depth bound by number; a box 0.7 m into the body on one wall
+    still lies inside the storey contour behind that wall, so it is unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Extra")
+    extra.box((2.0, -0.15, 1.0), (3.0, 0.7, 1.3))
+    dump["meshes"].append(extra.dump())
+    assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_box_reaching_across_the_body_is_no_decor():
+    """A box through the whole body (like a coping ring round the roof) leaves the storey contour behind the
+    wall: an attachment, not unlisted decor."""
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    dump = build(spec(strip), INPUTS)
+    extra = Mesh("Through")
+    extra.box((2.0, -0.15, 1.0), (3.0, 10.15, 1.3))
+    dump["meshes"].append(extra.dump())
+    report = decor_check(dump, spec(strip))
+    assert report["status"] == "pass", problems(report)

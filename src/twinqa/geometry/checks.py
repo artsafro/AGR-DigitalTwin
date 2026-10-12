@@ -452,7 +452,6 @@ def slabs(spec: Spec) -> dict:
 
 
 FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
-STRAY_EMBED_MAX_M = 0.5   # an unlisted box set into the body at most this deep counts as decor-like
 
 
 def _matches(e, d, dt, elev, contours):
@@ -572,9 +571,13 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         storey = reader._storey(levels, z0)
         for a, u, n, length in reader._walls(storeys[storey]):
             s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
-            # set into the body deeper than decor is, but in front of this wall only (a coping ring round the
-            # roof reaches across the building); along the wall it may run on past the corner (review 3 of #76)
-            if (-STRAY_EMBED_MAX_M <= dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
+            # set into the body deeper than decor is, and within the body behind this wall: its embedded part
+            # over the wall's span lies inside the storey contour (a coping ring round the roof reaches across
+            # the building and out); along the wall it may run on past the corner (user 2026-10-12, no new number)
+            s0, s1 = max(float(s.min()), 0.0), min(float(s.max()), length)
+            back = shapely.Polygon([a + u * s0, a + u * s1, a + u * s1 + n * dd.min(), a + u * s0 + n * dd.min()])
+            if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M and s1 > s0
+                    and polys[storey].buffer(FACE_M).contains(back)
                     and reader._is_box(t3, u, n, float(a @ n)) is not None):
                 stray += len(free)
                 break
