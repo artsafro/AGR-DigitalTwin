@@ -516,16 +516,32 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         row["material_ids"] = ids
         if not set(ids) <= attachment or (e.material_id is not None and ids != [e.material_id]):
             row["problems"].append(f"ids {ids}")
-    for k, d in enumerate(got):                          # read back but not in the spec (or over a texture element)
-        if k in used:
-            continue
-        over = next((row for row, e in zip(rows, spec.decor) if e.texture and e.wall == d.get("wall")
-                     and e.level == d["level"] and d.get("x_m") is not None
-                     and min(e.x_m + e.w_m, d["x_m"] + d["w_m"]) > max(e.x_m, d["x_m"]) + FACE_M
-                     and min(e.z_m + e.h_m, d["z_m"] + d["h_m"]) > max(e.z_m, d["z_m"]) + FACE_M), None)
-        if over is not None and not d.get("texture"):
+    def over_texture(d):
+        """The spec texture element a read-back element lies over (wall line, absolute height), or None."""
+        if d.get("wall") is None:
+            return None
+        da, du, dn = _wall(contours[d["level"]], d["wall"])
+        dz0 = elev[d["level"]] + d["z_m"]
+        for row, e in zip(rows, spec.decor):
+            if not e.texture:
+                continue
+            ea, eu, en = _wall(contours[e.level], e.wall)
+            if eu @ du < 1 - 1e-6 or abs(float((da - ea) @ en)) > dt:
+                continue
+            dx = float((da - ea) @ eu) + d["x_m"]
+            ez0 = elev[e.level] + e.z_m
+            if (min(e.x_m + e.w_m, dx + d["w_m"]) > max(e.x_m, dx) + FACE_M
+                    and min(ez0 + e.h_m, dz0 + d["h_m"]) > max(ez0, dz0) + FACE_M):
+                return row
+        return None
+
+    for k, d in enumerate(got):                          # read back but not in the spec (or over a texture element);
+        if k in used:                                    # a read-back element is built geometry whatever its
+            continue                                     # projection (review 3 of PR #75)
+        over = over_texture(d)
+        if over is not None:
             over["problems"].append("texture built as geometry")
-        elif not d.get("texture") or over is None:
+        else:
             rows.append({"index": None, "kind": d["kind"], "level": d["level"],
                          "problems": [f"decor the spec does not list ({d['kind']} at {d['level']} z {d['z_m']})"]})
     for q in asked:
@@ -536,6 +552,17 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
     for o in owned:
         decor_owned[o] = True
     bv = np.unique(model.triangles[~decor_owned])        # everything but the decor read back
+    # any other part out of the building's outline is geometry the spec does not list, read or not (review 3)
+    outline = shapely.union_all(polys).buffer(FACE_M)
+    stray = 0
+    for part in others:
+        free = part[~decor_owned[part]]
+        if len(free):
+            centre = model.corners()[free].mean(axis=1)
+            stray += int(sum(not outline.contains(shapely.Point(x, y)) for x, y in centre[:, :2]))
+    if stray:
+        rows.append({"index": None, "kind": "unspecified", "level": None,
+                     "problems": [f"{stray} triangles out of the building that no spec decor lists"]})
     for row, e in zip(rows, spec.decor):
         if e.kind == "column" or "read" not in row:
             continue
@@ -561,9 +588,12 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         face = np.abs(dd) <= FACE_M
         under = face & (s >= ms0 - FACE_M) & (s <= ms1 + FACE_M) & (z >= mz0 - FACE_M) & (z <= mz1 + FACE_M)
         cut = 0
-        for zl in (mz0, mz1):                            # horizontal outline edges
-            on = under & (np.abs(z - zl) <= FACE_M)
-            elsewhere = (np.abs(z - zl) <= FACE_M) & ~under
+        wall_pts = np.asarray([q[:2] for q in contours[e.level]], float)
+        wall_len = float(np.linalg.norm(wall_pts[(e.wall + 1) % len(wall_pts)] - wall_pts[e.wall]))
+        ends = face & ((np.abs(s) <= FACE_M) | (np.abs(s - wall_len) <= FACE_M))
+        for zl in (mz0, mz1):                            # horizontal outline edges: a body line runs on along this
+            on = under & (np.abs(z - zl) <= FACE_M)      # wall or reaches its corners (review 3: not another wall)
+            elsewhere = (np.abs(z - zl) <= FACE_M) & ((face & ~under) | ends)
             cut += int(on.sum()) if on.any() and not elsewhere.any() else 0
         for sl in (ms0, ms1):                            # vertical outline edges
             on = under & (np.abs(s - sl) <= FACE_M)

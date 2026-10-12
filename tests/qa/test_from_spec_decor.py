@@ -456,3 +456,78 @@ def test_a_source_corner_with_the_other_higher_is_asked():
     got, rep = extract_spec(dump, obj)
     assert [(d.wall, d.x_m, d.w_m) for d in got.decor] == [(0, 6.0, 4.0)]          # the main one is read
     assert [q["kind"] for q in rep["questions"] if q["kind"].startswith("decor")] == ["decor-corner"]
+
+
+# --- review 3 of PR #75 ------------------------------------------------------------------------------
+
+def moved(dump, mid, axis, old, new):
+    m = meshes(dump)["decor"]
+    for k, q in enumerate(m["polygons"]):
+        if m["material_ids"][2 * k] == mid:
+            for i in q:
+                if abs(m["vertices"][i][axis] - old) < 1e-9:
+                    m["vertices"][i][axis] = new
+    return dump
+
+
+def test_shallow_geometry_over_a_texture_element_fails():
+    dump = moved(build(spec(dict(BAND, projection_m=0.15, texture=False, material_id=29)), INPUTS), 29, 0, -0.15, -0.05)
+    assert "texture built as geometry" in problems(decor_check(dump, spec(BAND)))
+
+
+def test_an_unreadable_extra_box_fails():
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    extra = dict(BELT, wall=3, x_m=1.0, w_m=3.0, z_m=1.0, h_m=0.3, projection_m=0.15)
+    dump = moved(build(spec(strip, extra), INPUTS), 26, 0, 0.02, 0.06)     # its back 60 mm into the body
+    assert decor_check(dump, spec(strip))["status"] == "fail"
+
+
+def test_a_body_line_on_another_wall_does_not_excuse_a_cut():
+    dump = build(spec(BELT), INPUTS)
+    body = meshes(dump)["body"]
+    for quad in ([[5.0, 0.0, 2.405], [5.1, 0.0, 2.405], [5.1, 0.0, 2.5], [5.0, 0.0, 2.5]],      # on the belt's outline
+                 [[5.0, 10.0, 2.405], [4.9, 10.0, 2.405], [4.9, 10.0, 2.5], [5.0, 10.0, 2.5]]):  # the opposite wall
+        n = len(body["vertices"])
+        body["vertices"] += quad
+        body["triangles"] += [[n, n + 1, n + 2], [n, n + 2, n + 3]]
+        body["material_ids"] += [FACADE, FACADE]
+        body["polygon_sizes"] += [4]
+    assert any(p.startswith("body cut") for p in problems(decor_check(dump, spec(BELT))))
+
+
+def test_a_horizontal_run_in_into_a_thin_but_long_band_builds():
+    sp = spec(dict(BELT, wall=3, x_m=1.0, w_m=5.0, z_m=1.0, h_m=0.015), dict(BELT, wall=3, x_m=6.0, w_m=1.0,
+                                                                             z_m=1.0025, h_m=0.01, projection_m=0.12,
+                                                                             material_id=27))
+    report = decor_check(build(sp, INPUTS), sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def wide_spec(*decor):
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    for f in data["floors"]:
+        if f.get("contour"):
+            f["contour"] = [[0, 0], [20, 0], [20, 10], [0, 10]]
+            f["openings"] = []
+    data["decor"] = list(decor)
+    return Spec.model_validate(data)
+
+
+def test_priority_uses_the_original_lengths():
+    sp = wide_spec(dict(BELT, x_m=1.0, w_m=5.0, z_m=1.0), dict(BELT, x_m=6.0, w_m=4.99, z_m=1.0, projection_m=0.12,
+                                                               material_id=27),
+                   dict(BELT, x_m=10.99, w_m=5.0, z_m=1.0, material_id=28))
+    report = decor_check(build(sp, INPUTS), sp)
+    assert report["status"] == "pass", problems(report)
+
+
+@pytest.mark.parametrize("decor, message", [
+    ([dict(PILASTER, wall=0, x_m=9.5, w_m=0.5, z_m=0.0, h_m=3.0), dict(PILASTER, wall=1, x_m=0.0, w_m=0.3, z_m=0.0,
+                                                                       h_m=3.0, material_id=28)], "one rank and one length"),
+    ([dict(PILASTER, wall=3, x_m=3.0, w_m=0.004, z_m=0.5, h_m=2.0)], "would not read it back"),
+    ([dict(BELT, wall=3, x_m=1.0, w_m=5.0, z_m=1.0, projection_m=0.800001)], "would not read it back"),
+])
+def test_review_3_build_errors(decor, message):
+    with pytest.raises(BuildError, match=message):
+        build(spec(*decor), INPUTS)

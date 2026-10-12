@@ -428,7 +428,8 @@ CORNER_END_M = 0.0005  # at a building corner its end face starts this far off t
 
 def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
     """The `decor` mesh (pattern facade-decor-inset): one box per geometry element; see the module docstring."""
-    from dt_ai.spec.decor import COLUMN_MAX_M, COLUMN_MIN_H_M, COLUMN_MIN_M, SHARE_TOL_M   # the extractor's rules
+    from dt_ai.spec.decor import (ATTACHMENT_FROM_M, COLUMN_MAX_M, COLUMN_MIN_H_M, COLUMN_MIN_M, SAME_M,
+                                  SHARE_TOL_M)                # the extractor's rules: build only what it reads back
     out = _Mesh()
     names = [f.level for f in floors]
     z_hi = [elev[j + 1] if j < len(floors) - 1 else top for j in range(len(floors))]   # wall tops per floor
@@ -510,6 +511,9 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
                                      f"plate_gap_m; which face to move is not decided; not built")
         if s1 - s0 < MIN_FEATURE_M or z1 - z0 < MIN_FEATURE_M:
             raise BuildError(f"{where}: nothing left after the clearance to the openings; not built")
+        if min(s1 - s0, z1 - z0) <= SAME_M + KEY_M or e.projection_m > ATTACHMENT_FROM_M:
+            raise BuildError(f"{where}: {SAME_M} m or less across, or over {ATTACHMENT_FROM_M} m deep (an attachment): "
+                             "the extractor would not read it back as decor; not built (review 3 of PR #75)")
         d0, d1 = -DECOR_INSET_M, e.projection_m
         # at a wall end the inset part of its end face would lie on the next wall's face (review 1 of PR #75):
         # that end face starts at the wall face; at a concave corner it would run into the next wall
@@ -528,7 +532,8 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
                 e1 = CORNER_END_M
         walls.append({"a": a, "u": u, "n": n, "c": float(a @ n), "o": float(a @ u), "s0": s0, "s1": s1, "z0": z0,
                       "z1": z1, "d0": d0, "d1": d1, "e0": e0, "e1": e1, "mid": mid, "where": where, "skip": set(),
-                      "rank": 0 if e.kind == "strip" else 1, "length": length})
+                      "rank": 0 if e.kind == "strip" else 1, "length": length,
+                      "run": (z1 - z0) if e.kind == "strip" else (s1 - s0)})   # its length, for priority
     _meet(walls, columns, gap)
     for w in walls:
         a, u, n, s0, s1, z0, z1, d0, d1, e0, e1, mid = (w[k] for k in ("a", "u", "n", "s0", "s1", "z0", "z1", "d0", "d1",
@@ -573,7 +578,7 @@ def _corner(A, B):
     if A["rank"] != B["rank"]:
         main, sub_, im, is_ = (A, B, ia, ib) if A["rank"] > B["rank"] else (B, A, ib, ia)
     else:
-        la, lb = A["s1"] - A["s0"], B["s1"] - B["s0"]
+        la, lb = A["run"], B["run"]                     # review 3 of PR #75: one length rule
         if abs(la - lb) <= KEY_M:
             raise BuildError(f"{A['where']} and {B['where']} meet at a corner with one rank and one length: which "
                              "continues is not decided; not built")
@@ -619,8 +624,7 @@ def _meet(walls, columns, gap):
             if A["rank"] != B["rank"]:
                 main, sub_ = (A, B) if A["rank"] > B["rank"] else (B, A)
             else:
-                la = (sa[1] - sa[0]) if A["rank"] else (A["z1"] - A["z0"])
-                lb = (sb[1] - sb[0]) if B["rank"] else (B["z1"] - B["z0"])
+                la, lb = A["run"], B["run"]             # original lengths: an earlier run-in changes nothing
                 if abs(la - lb) <= KEY_M:
                     raise BuildError(f"{A['where']} and {B['where']} meet with one rank and one length: which "
                                      "continues is not decided; not built")
@@ -631,9 +635,6 @@ def _meet(walls, columns, gap):
                 raise BuildError(f"{where}: it stands out of the main element, its end would show; not built")
             inside_s = ss[0] >= ms[0] - KEY_M and ss[1] <= ms[1] + KEY_M
             inside_z = sub_["z0"] >= main["z0"] - KEY_M and sub_["z1"] <= main["z1"] + KEY_M
-            if min(main["z1"] - main["z0"], ms[1] - ms[0]) <= DECOR_INSET_M + KEY_M:
-                raise BuildError(f"{where}: the main element is no deeper than the run-in, the end would show "
-                                 "through it; not built (review 2 of PR #75)")
             if inside_s and abs(sub_["z1"] - main["z0"]) <= reach and sub_["z0"] < main["z0"]:
                 sub_["z1"], end = main["z0"] + DECOR_INSET_M, "top"
             elif inside_s and abs(sub_["z0"] - main["z1"]) <= reach and sub_["z1"] > main["z1"]:
@@ -645,6 +646,10 @@ def _meet(walls, columns, gap):
             else:
                 raise BuildError(f"{A['where']} and {B['where']} touch side by side or cross: not an end into the "
                                  "main element (pattern facade-decor-inset); not built")
+            depth = (main["z1"] - main["z0"]) if end in ("top", "bottom") else (ms[1] - ms[0])
+            if depth <= DECOR_INSET_M + KEY_M:              # along the direction it enters (review 3 of PR #75)
+                raise BuildError(f"{where}: the main element is no deeper than the run-in, the end would show "
+                                 "through it; not built")
             sub_["skip"].add(end)
     for i, (fa, za0, za1, wa) in enumerate(columns):    # a column meets nothing (no rule)
         others = [(fb, zb0, zb1, wb) for fb, zb0, zb1, wb in columns[i + 1:]]
