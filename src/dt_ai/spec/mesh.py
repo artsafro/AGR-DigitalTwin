@@ -1181,9 +1181,15 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None, collect_stop
     except SpecStops:
         raise
     except SpecError as exc:
-        stage = "after contours" if found["report"] is not None else "levels and body"
+        stage = found.get("stage") or ("contours" if found["report"] is not None else "levels and body")
         raise SpecStops([*found["stops"], {"stage": stage, "level": None, "message": str(exc)}],
                         found["report"]) from exc
+
+
+def _stage(found, name):
+    """--collect-stops: the stage now running, so a stop raised in it is listed with it (review 1 of #80)."""
+    if found is not None:
+        found["stage"] = name
 
 
 def _extract(dump, obj_cfg, profile, thresholds, found):
@@ -1240,6 +1246,7 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
             poly, rep, dev, ms, dr, parapet, raw = _level_contour(
                 v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]), below=prev,
                 extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
+            points = _contour_points(poly)               # its own check too, inside the storey (review 1 of #80)
         except SpecError as exc:
             if found is None:
                 raise
@@ -1257,7 +1264,7 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
         doors.append(dr)
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
-        floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
+        floors.append({"level": lv["name"], "contour": points, "openings": []})
         if polys:                                  # anything else standing on a ledge (both contours final)
             # neither the final contour (a door recess filled) nor the raw section shape (a relief left out of
             # the contour) is ledge (review 1 of PR #66)
@@ -1271,6 +1278,7 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
         pieces.append(dev)
     if found is not None and found["stops"]:
         raise SpecStops(found["stops"], report)
+    _stage(found, "openings")
     panes, flat_glass = _glass(dump, m)
     source_skipped, sources = 0, [[] for _ in floors]
     for d in dump.get("openings", []):                   # openings a source gives explicitly (Revit, #29, #36)
@@ -1326,6 +1334,7 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     report["questions"] = questions
     report["section_relief_parts"] = stats["section_relief_parts"]
     others = [tris[pt] for pt in parts[1:]]
+    _stage(found, "roof")
     roof_parts = _roof_parts(v, others, levels[-1], polys[-1])
     roof_z, top_z, closed, roof_stats = _roof(v, body, levels[-2], levels[-1], polys[-1],
                                               np.vstack(roof_parts) if roof_parts else None,
@@ -1341,6 +1350,7 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     # parameters read from the source; plates that disagree by more than PLATE_SAME_M between themselves,
     # or that cannot be read, are a question; none read leaves the defaults (review 1 of PR #64)
     extra = np.vstack(others) if others else None
+    _stage(found, "plates")
     plates, problems = {}, {}
     inset = dump.get("source") != "revit"            # Revit holds the design; the inset is the model's joint
     if inset and roof_stats["parapet"]:
@@ -1365,6 +1375,7 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
         if max(gaps) - min(gaps) > same or max(overlaps) - min(overlaps) > same:
             asked = sorted(set(asked) | {name for name, ps in plates.items() if ps}, key=names.index)
     # facade decor (pattern facade-decor-inset, spec v0.5): non-body parts on a wall or free-standing columns
+    _stage(found, "decor")
     decor, decor_questions, report["decor"] = dc.extract(
         v, tris, mats, parts[1:], levels, [f["contour"] for f in floors], polys,
         plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("metal") | _group_ids("attachment"))   # decor ids by material

@@ -563,7 +563,7 @@ def test_collect_stops_after_the_contours_and_before_them():
     from dt_ai.spec import SpecStops
     with pytest.raises(SpecStops) as caught:                    # contours read, the roof stops
         extract_spec(box_building(roof=False), OBJECT, collect_stops=True)
-    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("after contours", None)]
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("roof", None)]
     assert "no up-facing roof surface" in caught.value.stops[0]["message"]
     dump = box_building()
     dump["helpers"].append({"name": "LEVEL_L1b", "location": [0.0, 0.0, 3.3]})
@@ -588,3 +588,19 @@ def test_cli_collect_stops_writes_the_stops_and_no_spec(tmp_path, capsys):
     assert [s["level"] for s in report["stops"]] == ["L0", "L1"]
     err = capsys.readouterr().err
     assert "STOP L0" in err and "STOP L1" in err and "no spec written" in err
+
+
+def test_collect_stops_keeps_the_contour_check_inside_each_storey():
+    """Review 1 of #80: the wrong-units contour check stops each storey on its own, and a storey that stops
+    publishes no floor data."""
+    from dt_ai.spec import SpecStops
+    dump = box_building()
+    for m in dump["meshes"]:
+        m["vertices"] = [[x / 100, y / 100, z / 100] for x, y, z in m["vertices"]]
+    for h in dump["helpers"]:
+        h["location"] = [c / 100 for c in h["location"]]
+    with pytest.raises(SpecStops) as caught:
+        extract_spec(dump, OBJECT, collect_stops=True)
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("contour", "L0"), ("contour", "L1")]
+    assert all("check its units" in s["message"] for s in caught.value.stops)
+    assert caught.value.report["floors"] == {}
