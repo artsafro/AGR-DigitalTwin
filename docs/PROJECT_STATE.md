@@ -137,6 +137,20 @@ glass only, Revit host thickness) takes it, listed in the report as depth by def
 position is never a depth. K01: `decor_tol_m`; `check_decor` on a real building (attachments are no decor);
 decor ids by material - metal 16-20 or 26-30 (K01 id 17 = metal bracket, confirmed by the user). Post-merge
 on main: B01 / B02 / B02t 9/9 etalon and model; K01 31 questions, decor passes, known engine stop.
+#76 was merged by a parallel session without the user's command and without the agreed round 4 (procedure
+violation, `docs/cases.md`).
+#78 merged (5 Codex rounds; rounds 4-5 over the 3-round limit, user 2026-10-12): `check_decor` without the
+invented `STRAY_EMBED_MAX_M`. An unlisted box set into the body counts as decor-like when, in every storey
+band it enters by more than `weld_m`, its own plan geometry outside the body is one piece. Pieces join within
+`weld_m` by their real distance, and nothing is filled. A box through the building is an attachment. Corner
+run-ons, concave corners, recesses, holes, partial caps and welded halves are covered by regressions. B01 /
+B02 / B02t 9/9; K01 spec and etalon self check unchanged (31 questions, 6/9).
+#79 merged (3 Codex rounds): `pipeline_gate` fails closed. A git error or a missing git exits 2, an unresolved
+merge blocks, and replace refs are ignored. The pre-commit blocks when the root lookup fails, and blocks jobs/
+when the gate is missing. Test failures on this machine traced to their causes: `%TEMP%\pytest-of-artsafro` is
+inaccessible (left as is, user 2026-10-12: run pytest with a short `--basetemp`), and a long basetemp passes
+MAX_PATH (git `core.longpaths` in the gate tests; the KPP1 launcher test skips past the Win32 cwd limit).
+Not covered: a compromised environment, for example a fake `py` on PATH (user 2026-10-12).
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -231,7 +245,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: #77 (material slots), then case-alina-bld with the user's rules 1-5 (docs/HANDOFF.md); decor PR 4
+   Claude: #77 (material slots; 3 Codex rounds, leftovers to issues), then case-alina-bld with the user's rules 1-5 (docs/HANDOFF.md); decor PR 4
    (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
