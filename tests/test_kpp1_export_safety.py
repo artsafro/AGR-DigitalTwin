@@ -218,9 +218,10 @@ def test_long_safe_version_works_through_real_stage_launcher(shell_run):
     outputs, run = shell_run
     version = "v" + "2" * 63
     deepest_cwd = outputs / f"package-npm-{version}" / "0000_Kpp_1"     # run_all.sh cd's here to zip the NPM
-    if os.name == "nt" and len(str(deepest_cwd)) > WIN32_CWD_MAX:
+    units = len(str(deepest_cwd).encode("utf-16-le")) // 2      # Win32 counts UTF-16 units (review 1 of #79)
+    if os.name == "nt" and units > WIN32_CWD_MAX:
         pytest.skip(f"basetemp too long for this test: run_all.sh's working directory would be "
-                    f"{len(str(deepest_cwd))} > {WIN32_CWD_MAX} characters (Win32 limit); use a shorter --basetemp")
+                    f"{units} > {WIN32_CWD_MAX} UTF-16 units (Win32 limit); use a shorter --basetemp")
     result = run(version)
     assert result.returncode == 0, result.stdout + result.stderr
     assert (outputs / f"build-{version}/KPP1_VPM_v006_ucx.blend").exists()

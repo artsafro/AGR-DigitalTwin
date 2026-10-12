@@ -127,7 +127,11 @@ class GitError(RuntimeError):
 
 def _git(root, *args):
     # core.longpaths: deep job paths under a long checkout pass MAX_PATH on Windows
-    return subprocess.run(["git", "-c", "core.longpaths=true", *args], cwd=root, capture_output=True, check=False)
+    try:
+        return subprocess.run(["git", "-c", "core.longpaths=true", *args], cwd=root, capture_output=True,
+                              check=False)
+    except OSError as exc:                           # git not found or not startable (review 1 of PR #79)
+        raise GitError(f"git {' '.join(args)}: {exc}") from exc
 
 
 def _git_ok(root, *args):
@@ -141,13 +145,17 @@ def staged(root):
     """Errors of the commit being made, read from the index."""
     out = _git_ok(root, "diff", "--cached", "--name-status", "--no-renames", "-z").stdout.decode("utf-8").split("\0")
     changes = list(zip(out[0::2], out[1::2]))
-    blobs = {}                                       # path -> its blob in the index (stage 0)
+    blobs, unmerged = {}, set()                      # path -> its blob in the index (stage 0)
     for entry in _git_ok(root, "ls-files", "-s", "-z").stdout.decode("utf-8").split("\0"):
         if entry:
             meta, path = entry.split("\t", 1)
             _, blob, stage = meta.split()
             if stage == "0":
                 blobs[path] = blob
+            else:
+                unmerged.add(path)
+    if unmerged:                                     # an unresolved merge is no state to judge (review 1 of #79)
+        return [f"{path}: unresolved merge in the index" for path in sorted(unmerged)]
 
     def read(path):                                  # None only when the index has no such path
         return _git_ok(root, "cat-file", "blob", blobs[path]).stdout if path in blobs else None
@@ -209,7 +217,11 @@ def main(argv=None):
     group.add_argument("--staged", action="store_true", help="check the index (pre-commit)")
     group.add_argument("--job", help="check one jobs/<JOB> folder on the working tree (delivery)")
     args = ap.parse_args(argv)
-    top = _git(Path.cwd(), "rev-parse", "--show-toplevel")
+    try:
+        top = _git(Path.cwd(), "rev-parse", "--show-toplevel")
+    except GitError as exc:
+        print(f"pipeline_gate: {exc}", file=sys.stderr)
+        return 2
     if top.returncode != 0:
         print("pipeline_gate: not inside a git repository", file=sys.stderr)
         return 2

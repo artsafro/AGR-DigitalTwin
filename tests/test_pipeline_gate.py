@@ -228,6 +228,43 @@ def test_git_failure_blocks_the_commit(repo, monkeypatch, failing):
     assert gate.main(["--staged"]) == 2
 
 
+def test_unresolved_merge_blocks(repo):
+    """Review 1 of #79: STATE.md only at merge stages 1-3 (no stage 0) is not 'absent'."""
+    write(repo, "jobs/J/STATE.md", state("draft"))
+    git(repo, "add", "-A")
+    git(repo, "commit", "-qm", "draft")
+    git(repo, "checkout", "-qb", "other")
+    write(repo, "jobs/J/STATE.md", state("checked"))
+    git(repo, "commit", "-qam", "checked")
+    git(repo, "checkout", "-q", "-")
+    write(repo, "jobs/J/STATE.md", state("built"))
+    git(repo, "commit", "-qam", "built", "--no-verify")
+    subprocess.run(["git", "merge", "-q", "other"], cwd=repo, capture_output=True)   # conflicts
+    errors = gate.staged(repo)
+    assert errors and all("unresolved merge" in e for e in errors)
+
+
+def test_git_not_found_blocks(repo, monkeypatch):
+    """Review 1 of #79: a git that cannot start is a controlled block (exit 2), not a traceback."""
+    def missing(argv, **kw):
+        raise FileNotFoundError(2, "git not found")
+    monkeypatch.setattr(gate.subprocess, "run", missing)
+    monkeypatch.chdir(repo)
+    assert gate.main(["--staged"]) == 2
+
+
+def test_pre_commit_blocks_without_a_root(tmp_path):
+    """Review 1 of #79: when git cannot name the repository root the hook must not skip its checks."""
+    import shutil
+    bash = "C:/Program Files/Git/bin/bash.exe" if Path("C:/Program Files/Git/bin/bash.exe").exists()         else shutil.which("bash")
+    if not bash:
+        pytest.skip("bash unavailable")
+    env = {**__import__("os").environ, "GIT_DIR": str(tmp_path / "nowhere")}
+    result = subprocess.run([bash, str(ROOT / "tools/git-hooks/pre-commit")], cwd=tmp_path, env=env,
+                            capture_output=True, text=True)
+    assert result.returncode == 1 and "blocked" in result.stderr
+
+
 # --- Claude Code PreToolUse hook ------------------------------------------------------------------------
 
 def hook(payload):
