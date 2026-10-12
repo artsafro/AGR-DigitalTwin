@@ -485,8 +485,10 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         return result("decor", True, 0, 0, {"elements": []})
     from dt_ai.spec import decor as reader                 # one reading for the extractor and the checker
     dt, weld_m = tol["decor_tol_m"], tol["weld_m"]
-    group = ranges["groups"]["attachment"]
-    attachment = frozenset(range(group["first"], group["last"] + 1))
+    # decor ids by the element's material (user 2026-10-12): metal 16-20, plaster / stone / tile 26-30; the
+    # finish behind an id is the object's materials table's (ADR 0001), so the check is the group, one per element
+    groups = [ranges["groups"][g] for g in ("metal", "attachment")]
+    attachment = frozenset(i for g in groups for i in range(g["first"], g["last"] + 1))
     names = [lv.name for lv in spec.levels]
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     contours = {f.level: f.contour for f in spec.expanded_floors()}
@@ -514,7 +516,8 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         row["read"], row["k"] = got[k], k
         ids = sorted({int(m) for m in model.material_ids[owned[k]]})
         row["material_ids"] = ids
-        if not set(ids) <= attachment or (e.material_id is not None and ids != [e.material_id]):
+        one_group = len({next((g["first"] for g in groups if g["first"] <= i <= g["last"]), None) for i in ids}) == 1
+        if not set(ids) <= attachment or not one_group or (e.material_id is not None and ids != [e.material_id]):
             row["problems"].append(f"ids {ids}")
     def over_texture(d):
         """The spec texture element a read-back element lies over (wall line, absolute height), or None."""

@@ -79,7 +79,7 @@ class BuildInputs:
     roof_id: int
     opening_id: int                       # default plane ID when the opening has none of its own
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
-    decor_id: int | None = None           # default decor ID (attachment group 26-30) for elements without one
+    decor_id: int | None = None           # default decor ID (26-30, or metal 16-20) for elements without one
 
     @classmethod
     def from_object(cls, obj_cfg: dict) -> "BuildInputs":

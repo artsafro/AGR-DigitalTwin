@@ -116,7 +116,8 @@ class Decor(SpecPart):
     footprint: list[Finite] | None = Field(default=None, min_length=4, max_length=4)
     # projection <= DECOR_TEXTURE_M: texture on the wall, nothing built
     texture: bool = False
-    # material id from the source when all its faces carry one id of the attachment group (26-30)
+    # material id from the source when all its faces carry one decor id: metal 16-20 or plaster / stone / tile
+    # 26-30, by the element's material (user 2026-10-12)
     material_id: int | None = None
     # source pieces merged into it (same cross-section, one axis, seams <= plate_gap_m x 12)
     pieces: int = Field(default=1, ge=1)

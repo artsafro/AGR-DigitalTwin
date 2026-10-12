@@ -546,3 +546,12 @@ def test_attachments_beside_decor_are_not_flagged():
     dump["meshes"] += [porch.dump(), rung.dump()]
     report = decor_check(dump, sp)
     assert report["status"] == "pass", problems(report)
+
+
+# --- decor ids by material (user 2026-10-12): metal 16-20 or 26-30, one group per element -----------------
+
+@pytest.mark.parametrize("mid, ok", [(17, True), (26, True), (3, False)])
+def test_decor_id_group_by_material(mid, ok):
+    sp = spec(dict(BELT, material_id=mid))
+    report = decor_check(build(sp, INPUTS), sp)
+    assert (report["status"] == "pass") == ok, problems(report)

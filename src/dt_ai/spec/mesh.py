@@ -1322,7 +1322,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     # facade decor (pattern facade-decor-inset, spec v0.5): non-body parts on a wall or free-standing columns
     decor, decor_questions, report["decor"] = dc.extract(
         v, tris, mats, parts[1:], levels, [f["contour"] for f in floors], polys,
-        plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("attachment"))
+        plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("metal") | _group_ids("attachment"))   # decor ids by material
     questions += decor_questions
     if decor_questions and not asked:
         questions.sort(key=lambda q: (q["priority"] != "high", names.index(q["levels"][0]), q["kind"]))
