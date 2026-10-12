@@ -94,15 +94,48 @@ def assign_material_ids(dump: dict, table: dict) -> dict:
     """A copy of a dump whose material ids come from an object's materials table (jobs/<object>/materials.json,
     K01, user 2026-10-11): a mesh named in table["meshes"] takes that id; otherwise every triangle takes the id
     of its UDIM tile (`udim_tiles` of the dump; finishes as tiles, not slots); a tile the table does not name is
-    0, unassigned. A mesh with neither keeps its slot ids."""
-    tiles = {int(f["udim"]): int(f["id"]) for f in table["finishes"].values()}
+    0, unassigned. A source whose finishes are material slots (3ds Max sub-material ids) uses table["slots"]
+    {slot: id} instead (an unlisted slot is 0), and table["glass_slots"] [slot, ...] moves the triangles of those
+    slots into a mesh "<name>_glass" of id table["glass_id"] (0 when absent), so the extractor finds glass by
+    mesh name. A mesh with neither tiles nor a slot table keeps its slot ids."""
+    tiles = {int(f["udim"]): int(f["id"]) for f in table.get("finishes", {}).values()}
     by_mesh = {k: int(v) for k, v in table.get("meshes", {}).items()}
+    slots = {int(k): int(v) for k, v in table["slots"].items()} if "slots" in table else None
+    glass = {int(s) for s in table.get("glass_slots", [])}
+    glass_id = int(table.get("glass_id", 0))
     meshes = []
     for mesh in dump["meshes"]:
         mesh = dict(mesh)
+        src = mesh.get("material_ids") or [0] * len(mesh["triangles"])
+        if glass and mesh["name"] not in by_mesh and any(s in glass for s in src):
+            keep = [k for k, s in enumerate(src) if s not in glass]
+            moved = [k for k, s in enumerate(src) if s in glass]
+            meshes.append(_subset(mesh, moved, f"{mesh['name']}_glass", glass_id))
+            mesh = _subset(mesh, keep, mesh["name"], None)
+            src = [src[k] for k in keep]
+            if not keep:
+                continue
         if mesh["name"] in by_mesh:
             mesh["material_ids"] = [by_mesh[mesh["name"]]] * len(mesh["triangles"])
+        elif slots is not None:
+            mesh["material_ids"] = [slots.get(int(s), 0) for s in src]
         elif "udim_tiles" in mesh:
             mesh["material_ids"] = [tiles.get(int(t), 0) for t in mesh["udim_tiles"]]
         meshes.append(mesh)
     return {**dump, "meshes": meshes}
+
+
+def _subset(mesh: dict, rows: list, name: str, mid) -> dict:
+    """The triangles `rows` of a dumped mesh as a mesh of its own (vertices renumbered); mid: one id for all,
+    or None to keep the per-triangle lists."""
+    tris = [mesh["triangles"][k] for k in rows]
+    used = sorted({i for tr in tris for i in tr})
+    new = {old: k for k, old in enumerate(used)}
+    out = {"name": name, "vertices": [mesh["vertices"][i] for i in used],
+           "triangles": [[new[i] for i in tr] for tr in tris]}
+    for key in ("material_ids", "udim_tiles"):
+        if key in mesh:
+            out[key] = [mesh[key][k] for k in rows]
+    if mid is not None:
+        out["material_ids"] = [mid] * len(tris)
+    return out
