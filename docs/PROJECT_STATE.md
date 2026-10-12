@@ -132,6 +132,11 @@ unchanged 8/8; K01: 1 decor strip, 6 attachment-candidate types.
 the main element running on and keeping its back outside the wall; `decor-corner` when the other is higher);
 `check_decor` reads the model back with the extractor and matches it to the spec one to one (replaced the
 first checker). Post-merge on main: B01 / B02 / B02t 9/9 etalon and model.
+#76 merged (3 Codex rounds): OD1 - opening depth default 0.4; a source with no depth (no reveal, flush plane,
+glass only, Revit host thickness) takes it, listed in the report as depth by default, never 0; the glass
+position is never a depth. K01: `decor_tol_m`; `check_decor` on a real building (attachments are no decor);
+decor ids by material - metal 16-20 or 26-30 (K01 id 17 = metal bracket, confirmed by the user). Post-merge
+on main: B01 / B02 / B02t 9/9 etalon and model; K01 31 questions, decor passes, known engine stop.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -226,7 +231,8 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: decor PR 4 (K02 run, once the user gives the fragment); OD1; intake IN2-IN8; MH3; the
+   Claude: #77 (material slots), then case-alina-bld with the user's rules 1-5 (docs/HANDOFF.md); decor PR 4
+   (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
    Codex review per PR).

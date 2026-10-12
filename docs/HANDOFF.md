@@ -43,14 +43,15 @@ unsolved work: `docs/backlog.md`.
   run-in meetings, convex corners: the main element runs on and keeps its back outside the wall, the other
   higher -> `decor-corner`); `check_decor` reads the model back with the extractor. Post-merge B01 / B02 /
   B02t 9/9 etalon and model.
+- #76 — OD1: opening depth default 0.4, "depth by default" in the report (never 0; the glass position is
+  never a depth); K01 `decor_tol_m`; `check_decor` on a real building; decor ids by material (metal 16–20
+  or 26–30). Post-merge B01 / B02 / B02t 9/9; K01 31 questions, decor passes, known engine stop.
 
 ## In work
 
 | What | Branch / PR | Status | Left to do |
 |---|---|---|---|
-| OD1: opening depth default 0.4, "depth by default" in the report | `harness/od1-opening-depth`, PR #76, head `9190781` | Codex rounds 1–2 fixed; **round 3 running** in `C:/x/cr-76` (result `C:/x/cr-76/review3-76.md`); **not merged** | read round 3, fix, merge, update PROJECT_STATE on main |
-| (inside #76) K01 `decor_tol_m`; `check_decor` on a real building (attachments are no decor); decor ids by material (metal 16–20 or 26–30) | same | same | same |
-| Materials table: 3ds Max slots and glass slots | `harness/source-slot-table`, PR #77, `9b70e92` | open, **waits for OD1, no review started** | 3 Codex rounds after #76, merge |
+| Materials table: 3ds Max slots and glass slots | `harness/source-slot-table`, PR #77, `9b70e92` | open, OD1 merged (#76): **next — 3 Codex rounds** | 3 Codex rounds after #76, merge |
 | Colleague building through the harness | `job/case-alina-bld-pipeline` (on top of #77's branch), `f8ae02d`; `jobs/case-alina-bld/` | `Pipeline status: draft`; run 1 stopped (no body); rules 1–5 below not in code | implement rules 1–5, rerun, compare with the colleague's v001 |
 
 Local state outside git:
@@ -84,7 +85,7 @@ Local state outside git:
 5. No provisional values, not even to collect stops: `dt spec extract --collect-stops` — one pass, every
    stop listed, nothing substituted. Into the harness rules.
 
-Decor ids by material (metal 16–20, plaster / stone / tile 26–30): **implemented in #76, not on main**. The
+Decor ids by material (metal 16–20, plaster / stone / tile 26–30): **in code since #76**. The
 K01 strip with id 17 was identified from `jobs/KPP1/materials.json` as `Metal_RAL5015` (0.074 x 0.30 m,
 0.22 m out, east wall at 3.6 m: a metal bracket); recorded in the pattern; **confirmed by the user 2026-10-12**
 ("металлический кронштейн, правило верное").
@@ -102,12 +103,11 @@ Corner of decor elements of different heights (back kept outside the wall, the o
 
 ## Next steps, in order
 
-1. OD1 (#76): finish round 3, merge, PROJECT_STATE.
-2. #77 slots: 3 Codex rounds, merge.
-3. `case-alina-bld` with rules 1–5 (intake check for a closed body, contours by slabs, mid-storey section,
+1. #77 slots: 3 Codex rounds, merge (OD1 merged as #76).
+2. `case-alina-bld` with rules 1–5 (intake check for a closed body, contours by slabs, mid-storey section,
    parapet default, `--collect-stops`), then the full chain and the comparison with the colleague's v001.
-4. K02 PR 4 (decor run on the fragment) once the user gives source + etalon.
-5. EG2 balconies / attachments over 0.8 m.
+3. K02 PR 4 (decor run on the fragment) once the user gives source + etalon.
+4. EG2 balconies / attachments over 0.8 m.
 
 ## Harness rules that were broken and must not be again
 
@@ -140,8 +140,7 @@ Paste this as the first message of the new chat:
 
 1. Прочитай по порядку: AGENTS.md, CLAUDE.md, docs/HANDOFF.md, docs/PROJECT_STATE.md, docs/backlog.md.
 2. Проверь фактическое состояние: git status и git log -1 на main; открытые PR (gh pr list) и их статус;
-   ветки harness/od1-opening-depth, harness/source-slot-table, job/case-alina-bld-pipeline; результат
-   Codex-ревью раунда 3 по #76 в C:/x/cr-76/review3-76.md (если файла нет — ревью не завершилось).
+   ветки harness/source-slot-table (#77), job/case-alina-bld-pipeline.
 3. Сверь это с docs/HANDOFF.md и доложи расхождения (коротко, списком) до начала работы.
 4. Затем продолжи с первого пункта раздела «Next steps» в HANDOFF. Новых направлений без пользователя не
    начинай.
