@@ -513,8 +513,13 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
                 & (d.max(axis=1) > FACE_M)
             hit = inside
             decor_tris |= inside
-            if e.texture:
-                if inside.any():
+            if e.texture:                              # anything built over its rectangle (review 1 of PR #75)
+                eps = FACE_M
+                over = ((s.max(axis=1) > S0 + eps) & (s.min(axis=1) < S1 - eps) & (c[..., 2].max(axis=1) > z0 + eps)
+                        & (c[..., 2].min(axis=1) < z1 - eps) & (d.max(axis=1) > FACE_M)
+                        & (d.min(axis=1) >= -dt - 0.05) & (d.max(axis=1) <= TEXTURE_LOOK_M))
+                decor_tris |= over
+                if over.any():
                     problems.append("texture built as geometry")
             else:
                 front = inside & (normal[:, :2] @ n >= cos) & (np.abs(d - e.projection_m) <= dt).all(axis=1)
@@ -545,8 +550,28 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
                 problems.append(f"ids {ids}")
         row["problems"] = problems
         elements.append(row)
-    # the body is not cut: no body vertex on the outline of a built wall element (on the wall face)
+    # nothing outside the body that the spec does not list (review 1 of PR #75): unclaimed triangles out of
+    # the floor contour of their height
+    names = [lv.name for lv in spec.levels]
+    top = spec.levels[-1].elev_m + (spec.roof.parapet_h_m if spec.roof else 0.0)
+    polys = [shapely.Polygon(contours[n]) for n in names[:-1]]
+    centre = c[~decor_tris].mean(axis=1)
+    extra = 0
+    for p in centre:
+        if not (spec.levels[0].elev_m - FACE_M <= p[2] <= top + FACE_M):
+            extra += 1
+            continue
+        k = max(i for i in range(len(polys)) if spec.levels[i].elev_m <= p[2] + FACE_M)
+        k = min(k, len(polys) - 1)
+        if polys[k].distance(shapely.Point(p[0], p[1])) > FACE_M and not polys[k].contains(shapely.Point(p[0], p[1])):
+            extra += 1
+    if extra:
+        elements.append({"index": None, "kind": "unspecified", "problems": [f"{extra} triangles outside the body "
+                                                                             "that no spec decor lists"]})
+    # the body is not cut: no body vertex on the outline of a built wall element (on the wall face), except at
+    # the body's own lines - wall ends, levels, the top, openings of that wall line (review 1 of PR #75)
     body_v = np.unique(model.triangles[~decor_tris])
+    z_lines = [lv.elev_m for lv in spec.levels] + [top]
     for row, e in zip(elements, spec.decor):
         if e.kind == "column" or e.texture or "built" not in row:
             continue
@@ -554,11 +579,22 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         p = model.vertices[body_v]
         s, d, z = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n, p[:, 2]
         ms0, mz0, ms1, mz1 = row["built"]
+        pts = np.asarray([q[:2] for q in contours[e.level]], float)
+        s_lines = [0.0, float(np.linalg.norm(pts[(e.wall + 1) % len(pts)] - pts[e.wall]))]
+        zs = list(z_lines)
+        for r in rows:
+            oa, ou, _ = _wall(r["contour"], r["opening"].wall)
+            if ou @ u >= 1 - 1e-6 and abs(float((oa - a) @ n)) <= dt:
+                os0 = float((oa - a) @ u) + r["opening"].x_m
+                s_lines += [os0, os0 + r["opening"].w_m]
+                zs += [r["z0"], r["z0"] + r["opening"].h_m]
+        own = (np.min(np.abs(s[:, None] - np.array(s_lines)[None]), axis=1) <= FACE_M) | \
+              (np.min(np.abs(z[:, None] - np.array(zs)[None]), axis=1) <= FACE_M)
         on_face = np.abs(d) <= FACE_M
         within = (s >= ms0 - FACE_M) & (s <= ms1 + FACE_M) & (z >= mz0 - FACE_M) & (z <= mz1 + FACE_M)
         edge = (np.minimum.reduce([np.abs(s - ms0), np.abs(s - ms1)]) <= FACE_M) | \
                (np.minimum.reduce([np.abs(z - mz0), np.abs(z - mz1)]) <= FACE_M)
-        cut = int((on_face & within & edge).sum())
+        cut = int((on_face & within & edge & ~own).sum())
         if cut:
             row["problems"].append(f"body cut: {cut} body vertices on its outline")
     bad = sum(bool(r["problems"]) for r in elements)

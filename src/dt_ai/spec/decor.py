@@ -98,19 +98,22 @@ def _levels_of(values, tol):
     return out
 
 
-def _covered(t, normals, coords, axis, sign):
+def _covered(t, normals, coords, axis, sign, floor=None):
     """Whether the faces facing `sign` along `axis` at that extreme cover the whole rectangle of the other two
-    coordinates (reviews 1-3 of PR #74: summed areas or one face do not prove a solid)."""
+    coordinates (reviews 1-3 of PR #74: summed areas or one face do not prove a solid). floor: {axis: lowest
+    value} that clips the rectangle (a wall element: only its part out of the wall face must be closed; the
+    engine's end faces start at the wall face at a building corner, review 1 of PR #75)."""
     c = coords[axis]
     end = c.max() if sign > 0 else c.min()
     face = (sign * normals[:, axis] >= AXIS_COS) & (np.abs(c - end).max(axis=1) <= DEPTH_TOL_M)
     i, j = [k for k in range(3) if k != axis]
-    full = np.ptp(coords[i]) * np.ptp(coords[j])
+    lo = [max(coords[k].min(), (floor or {}).get(k, -np.inf)) for k in (i, j)]
+    target = shapely.box(lo[0], lo[1], coords[i].max(), coords[j].max())
     cover = unary_union([shapely.Polygon(np.column_stack([coords[i][k], coords[j][k]])) for k in np.flatnonzero(face)])
-    return full > 0 and cover.area >= COVER * full
+    return target.area > 0 and cover.intersection(target).area >= COVER * target.area
 
 
-def _is_box(t, u, n):
+def _is_box(t, u, n, c):
     """A box in the wall frame (reviews 1-3 of PR #74): faces axis-aligned, two depths only (back and front,
     no stepped profile), and front, top, bottom and both ends each covering their whole rectangle; the back
     may be open (inset decor). Inner s / z values are allowed: pieces of a row or a stack welded into one."""
@@ -120,9 +123,12 @@ def _is_box(t, u, n):
         return False
     coords = (t[..., :2] @ u, t[..., :2] @ n, t[..., 2])
     local = normals @ axes.T
-    if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(coords[1].ravel(), DEPTH_TOL_M)) != 2:
+    # two depths out of the wall face: the face and the front (the inset part inside the body is not seen)
+    seen = np.maximum(coords[1].ravel(), c)
+    if np.ptp(coords[0]) <= SAME_M or np.ptp(coords[2]) <= SAME_M or len(_levels_of(seen, DEPTH_TOL_M)) != 2:
         return False
-    return all(_covered(t, local, coords, axis, sign) for axis, sign in ((1, 1), (2, 1), (2, -1), (0, 1), (0, -1)))
+    face = {1: c}                                      # out of the wall face (c along n) only
+    return all(_covered(t, local, coords, axis, sign, face) for axis, sign in ((1, 1), (2, 1), (2, -1), (0, 1), (0, -1)))
 
 
 def _is_column(t):
@@ -162,7 +168,7 @@ def _piece(v, part_tris, levels, contours, polys):
         # every storey it crosses has a wall on the same line holding its span (review 1 of PR #74)
         crossed = range(li, _storey(levels, z1 - SAME_M) + 1)
         on_walls = all(_wall_at(contours[k], u, c, pc["s0"], pc["s1"]) is not None for k in crossed)
-        pc["type"] = "wall" if on_walls and _is_box(t, u, n) else "shape"
+        pc["type"] = "wall" if on_walls and _is_box(t, u, n, c) else "shape"
         return pc
     lo, hi = p[:, :2].min(axis=0), p[:, :2].max(axis=0)
     foot = shapely.box(*lo, *hi)                          # clear of the body in every storey it crosses

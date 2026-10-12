@@ -172,3 +172,58 @@ def test_run_includes_decor():
     report = checks.run(model, model, sp, tol)
     assert "decor" in {c["id"] for c in report["checks"]}
     assert next(c for c in report["checks"] if c["id"] == "decor")["status"] == "pass"
+
+
+# --- review 1 of PR #75 ------------------------------------------------------------------------------
+
+@pytest.mark.parametrize("decor, message", [
+    ([dict(BELT, x_m=3.5, w_m=1.0, z_m=2.4)], "from the corner of"),          # touches the window's corner
+    ([dict(BELT, x_m=3.501, w_m=1.0, z_m=2.401)], "from the corner of"),
+    ([dict(COLUMN, z_m=1.0)], "a column stands on its level"),
+    ([dict(COLUMN, h_m=1.0)], "a column stands on its level"),
+    ([dict(BELT, z_m=8.0)], "runs off the walls"),
+    ([dict(BELT, z_m=-1.0)], "runs off the walls"),
+])
+def test_review_1_build_errors(decor, message):
+    with pytest.raises(BuildError, match=message):
+        build(spec(*decor), INPUTS)
+
+
+@pytest.mark.parametrize("element", [dict(PILASTER, x_m=0.0, h_m=3.3), dict(BELT, z_m=3.3, h_m=0.3)])
+def test_body_lines_under_decor_are_no_cut(element):
+    sp = spec(element)
+    report = decor_check(build(sp, INPUTS), sp)
+    assert report["status"] == "pass", problems(report)
+
+
+def test_geometry_over_a_texture_rectangle_fails():
+    big = dict(BAND, x_m=0.25, w_m=9.5, z_m=0.5, h_m=1.5, projection_m=0.15, texture=False, material_id=26)
+    assert "texture built as geometry" in problems(decor_check(build(spec(big), INPUTS), spec(BAND)))
+
+
+def test_decor_the_spec_does_not_list_fails():
+    strip = dict(PILASTER, z_m=1.0, h_m=2.0)
+    built = build(spec(strip, dict(strip, wall=3)), INPUTS)
+    assert any("no spec decor lists" in p for p in problems(decor_check(built, spec(strip))))
+
+
+def test_a_full_width_belt_passes_every_check():
+    """The inset end faces at the building corners start at the wall face: no overlap with the next wall."""
+    sp = spec(BELT)
+    model = from_dump(build(sp, INPUTS))
+    tol = {**json.loads((ROOT / "benchmark/bench-b01-box/tolerances.json").read_text(encoding="utf-8"))["geometry"],
+           **DECOR_TOL, "open_part_groups": ["attachment"]}
+    report = checks.run(model, model, sp, tol)
+    assert report["passed"], [(c["id"], c["value"]) for c in report["checks"] if c["status"] != "pass"]
+
+
+def test_a_concave_corner_end_is_an_error():
+    data = json.loads(json.dumps(FIXTURE))
+    data["spec_version"] = "0.5"
+    l_shape = [[0, 0], [10, 0], [10, 10], [5, 10], [5, 5], [0, 5]]
+    for f in data["floors"]:
+        if f.get("contour"):
+            f["contour"] = l_shape
+    data["decor"] = [dict(BELT, wall=4, x_m=0.0, w_m=5.0, z_m=1.0, material_id=26)]   # wall 4 ends at the concave (5, 5)
+    with pytest.raises(BuildError, match="concave corner"):
+        build(Spec.model_validate(data), INPUTS)

@@ -415,17 +415,19 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         _quads(mesh, ptraps, _propagate(ptraps, [], {}))   # cuts carried across, no T-junction in the plate
         joints += [z, zp]
     _hold(mesh, joints)
-    decor = _decor(spec, floors, contours, openings, inputs, elev, polys)
+    decor = _decor(spec, floors, contours, openings, inputs, elev, polys, top)
     return mesh.dump(spec.levels, [("decor", decor)])
 
 
 DECOR_INSET_M = 0.02   # pattern facade-decor-inset: a wall element runs this far into the body (user 2026-10-11)
 
 
-def _decor(spec, floors, contours, openings, inputs, elev, polys):
+def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
     """The `decor` mesh (pattern facade-decor-inset): one box per geometry element; see the module docstring."""
+    from dt_ai.spec.decor import COLUMN_MAX_M, COLUMN_MIN_H_M, COLUMN_MIN_M   # the extractor's column rule
     out = _Mesh()
     names = [f.level for f in floors]
+    z_hi = [elev[j + 1] if j < len(floors) - 1 else top for j in range(len(floors))]   # wall tops per floor
     gap = spec.plate_gap_m
     boxes = []
     for e in spec.decor:
@@ -440,9 +442,14 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys):
         z1 = z0 + e.h_m
         if e.kind == "column":
             x0, y0, x1, y1 = e.footprint
+            # the extractor reads exactly these back (review 1 of PR #75): bottom on a level, height, sides
+            if abs(e.z_m) > KEY_M or e.h_m < COLUMN_MIN_H_M - KEY_M or not (
+                    COLUMN_MIN_M - KEY_M <= min(x1 - x0, y1 - y0) and max(x1 - x0, y1 - y0) <= COLUMN_MAX_M + KEY_M):
+                raise BuildError(f"{where}: a column stands on its level, {COLUMN_MIN_H_M} m high or more, "
+                                 f"{COLUMN_MIN_M}-{COLUMN_MAX_M} m a side; not built")
             foot = shapely.box(x0, y0, x1, y1)
             for j, poly in enumerate(polys):
-                if min(z1, elev[j + 1]) - max(z0, elev[j]) > KEY_M and poly.distance(foot) <= KEY_M:
+                if min(z1, z_hi[j]) - max(z0, elev[j]) > KEY_M and poly.distance(foot) <= KEY_M:
                     raise BuildError(f"{where}: the column touches the body at floor {names[j]}; not built")
             c = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
             for i in range(4):
@@ -458,8 +465,10 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys):
         n = np.array([u[1], -u[0]])                     # outward of a counter-clockwise contour
         s0, s1 = e.x_m, e.x_m + e.w_m
         line = {"a": a, "u": u, "s0": s0, "s1": s1}
+        if z0 < elev[0] - KEY_M or z1 > top + KEY_M:       # walls hold it over its whole height (review 1 of PR #75)
+            raise BuildError(f"{where}: it runs off the walls ({z0:.3f}-{z1:.3f} m, walls {elev[0]}-{top} m); not built")
         for j, pj in enumerate(contours):               # every storey it crosses holds it on a wall of its line
-            if min(z1, elev[j + 1]) - max(z0, elev[j]) <= KEY_M:
+            if min(z1, z_hi[j]) - max(z0, elev[j]) <= KEY_M:
                 continue
             held = False
             for w in range(len(pj)):
@@ -489,15 +498,35 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys):
                     s0 = os1 + gap
                 if -KEY_M <= os0 - s1 < gap:
                     s1 = os0 - gap
+            if not over_s and not over_z:               # diagonal to a corner: no face to move (review 1 of PR #75)
+                near = shapely.box(s0, z0, s1, z1).distance(shapely.box(os0, o["z0"], os1, o["z1"]))
+                if near < gap - KEY_M:
+                    raise BuildError(f"{where}: {near * 1000:.1f} mm from the corner of {o['where']}, under "
+                                     f"plate_gap_m; which face to move is not decided; not built")
         if s1 - s0 < MIN_FEATURE_M or z1 - z0 < MIN_FEATURE_M:
             raise BuildError(f"{where}: nothing left after the clearance to the openings; not built")
         d0, d1 = -DECOR_INSET_M, e.projection_m
+        # at a wall end the inset part of its end face would lie on the next wall's face (review 1 of PR #75):
+        # that end face starts at the wall face; at a concave corner it would run into the next wall
+        e0 = e1 = d0
+        prev_u = pts[e.wall] - pts[e.wall - 1]
+        next_u = pts[(e.wall + 2) % len(pts)] - b
+        for at_end, turn, which in ((s0 <= KEY_M, float(prev_u[0] * u[1] - prev_u[1] * u[0]), 0),
+                                    (s1 >= length - KEY_M, float(u[0] * next_u[1] - u[1] * next_u[0]), 1)):
+            if not at_end:
+                continue
+            if turn < 0:                                # a right turn of a counter-clockwise contour: concave
+                raise BuildError(f"{where}: it ends at a concave corner, into the next wall; not built")
+            if which == 0:
+                e0 = 0.0
+            else:
+                e1 = 0.0
         P = lambda s, d, z: [*(a + u * s + n * d), z]   # noqa: E731
         out.quad([P(s0, d1, z0), P(s1, d1, z0), P(s1, d1, z1), P(s0, d1, z1)], mid, [*n, 0])      # front
         out.quad([P(s0, d0, z1), P(s1, d0, z1), P(s1, d1, z1), P(s0, d1, z1)], mid, [0, 0, 1])     # top
         out.quad([P(s0, d0, z0), P(s1, d0, z0), P(s1, d1, z0), P(s0, d1, z0)], mid, [0, 0, -1])    # bottom
-        out.quad([P(s0, d0, z0), P(s0, d1, z0), P(s0, d1, z1), P(s0, d0, z1)], mid, [*-u, 0])     # ends
-        out.quad([P(s1, d0, z0), P(s1, d1, z0), P(s1, d1, z1), P(s1, d0, z1)], mid, [*u, 0])
+        out.quad([P(s0, e0, z0), P(s0, d1, z0), P(s0, d1, z1), P(s0, e0, z1)], mid, [*-u, 0])     # ends
+        out.quad([P(s1, e1, z0), P(s1, d1, z0), P(s1, d1, z1), P(s1, e1, z1)], mid, [*u, 0])
         foot = shapely.Polygon([P(s0, d0, 0)[:2], P(s1, d0, 0)[:2], P(s1, d1, 0)[:2], P(s0, d1, 0)[:2]])
         boxes.append((foot, z0, z1, where))
     for i, (fa, za0, za1, wa) in enumerate(boxes):      # meeting elements: the rule is the user's (not decided)
