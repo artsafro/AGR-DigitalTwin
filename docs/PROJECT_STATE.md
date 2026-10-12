@@ -150,7 +150,14 @@ merge blocks, and replace refs are ignored. The pre-commit blocks when the root 
 when the gate is missing. Test failures on this machine traced to their causes: `%TEMP%\pytest-of-artsafro` is
 inaccessible (left as is, user 2026-10-12: run pytest with a short `--basetemp`), and a long basetemp passes
 MAX_PATH (git `core.longpaths` in the gate tests; the KPP1 launcher test skips past the Win32 cwd limit).
-Not covered: a compromised environment, for example a fake `py` on PATH (user 2026-10-12).
+Not covered: a compromised environment, for example a fake `py` on PATH (user 2026-10-12). The installed
+`.git/hooks/pre-commit` was updated to the #79 version (the old one is backed up in
+`C:/x/pre-commit.backup-2026-10-12b`). It blocks a built status without `pipeline/` on this machine.
+#77 merged (3 Codex rounds): the materials table reads `slots` {slot: id} (1-based dump slots; an unlisted slot
+is 0) and `glass_slots` + `glass_id`. Glass triangles move into `<name>_glass` for the extractor, and source
+polygon sizes stay with their triangles. On the alina-bld FBX with the run table, 30 296 glass triangles get
+id 12 and the other 387 034 get 0, because the finish table by slot is still awaited from the user. B01 / B02
+/ B02t 9/9; K01 unchanged.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -245,7 +252,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: #77 (material slots; 3 Codex rounds, leftovers to issues), then case-alina-bld with the user's rules 1-5 (docs/HANDOFF.md); decor PR 4
+   Claude: case-alina-bld with the user's rules 1-5 (docs/HANDOFF.md); decor PR 4
    (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
