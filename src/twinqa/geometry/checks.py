@@ -474,12 +474,22 @@ def _pieces_outside(plan, body, weld_m) -> int:
     out = plan.difference(body)
     if out.is_empty:
         return 0
-    groups = out.buffer(weld_m / 2)
-    count = 0
-    for g in getattr(groups, "geoms", [groups]):
-        x0, y0, x1, y1 = out.intersection(g).bounds
-        count += max(x1 - x0, y1 - y0) > weld_m
-    return count
+    bits = [g for g in getattr(out, "geoms", [out]) if not g.is_empty]
+    group = list(range(len(bits)))                   # grouped by their real distance, not a faceted buffer
+
+    def root(i):                                     # (review 5 of #78)
+        while group[i] != i:
+            group[i] = group[group[i]]
+            i = group[i]
+        return i
+    for i, j in zip(*shapely.STRtree(bits).query(bits, predicate="dwithin", distance=weld_m)):
+        group[root(int(i))] = root(int(j))
+    bounds = {}
+    for i, g in enumerate(bits):
+        x0, y0, x1, y1 = g.bounds
+        b = bounds.get(root(i), (x0, y0, x1, y1))
+        bounds[root(i)] = (min(b[0], x0), min(b[1], y0), max(b[2], x1), max(b[3], y1))
+    return sum(max(x1 - x0, y1 - y0) > weld_m for x0, y0, x1, y1 in bounds.values())
 
 
 def _matches(e, d, dt, elev, contours):

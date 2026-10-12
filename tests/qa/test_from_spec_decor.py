@@ -828,3 +828,15 @@ def test_holed_part_through_the_body_is_no_decor(kind):
     dump, sp = stacked([NOTCHED, NOTCHED], ring_variant(kind), wall=5)
     report = decor_check(dump, sp)
     assert report["status"] == "pass", problems(report)
+
+
+def test_outside_bits_closer_than_a_weld_diagonally_are_one_piece():
+    """Review 5 of #78: two outside groups 0.0000999 m apart across a diagonal gap (weld_m 0.0001) are one
+    piece; a faceted buffer split them and unlisted decor passed."""
+    dx, dy = 0.00009977966607489673, 0.00000490186066530906
+    contour = [[0, 0], [4, 0], [4, -0.3], [6, -0.3], [6, dy], [4 + dx, dy], [4 + dx, 1], [6.1, 1], [6.1, 0],
+               [10, 0], [10, 10], [0, 10]]
+    m = Mesh("Extra")
+    m.box((3, -0.15, 1), (5, 0.7, 1.3))
+    dump, sp = stacked([contour, contour], m, wall=9)
+    assert decor_check(dump, sp)["status"] == "fail"
