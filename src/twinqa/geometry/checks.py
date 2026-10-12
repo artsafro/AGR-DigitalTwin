@@ -454,31 +454,32 @@ def slabs(spec: Spec) -> dict:
 FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
 
 
-def _pieces(g, weld_m) -> int:
-    """Pieces of a plan region wider than the weld distance: a sliver along a shared face is one surface
-    welded, not a piece (review 2 of #78: no area threshold of its own)."""
-    return sum(1 for q in getattr(g, "geoms", [g]) if not q.buffer(-weld_m / 2).is_empty)
-
-
-def _footprint(t3):
-    """Real plan footprint of a part: its caps projected to the plan, and the even-odd fill of the outline
-    its vertical faces draw (review 2 of #78: caps may be partial or missing; review 3: a hole stays a hole,
-    a recess stays open)."""
+def _plan(t3):
+    """A part's own geometry in the plan: its non-vertical faces as polygons, its vertical faces as segments.
+    Nothing is filled: a hole, a recess or a missing cap adds no area (reviews 1-4 of #78)."""
     xy = t3[..., :2]
     e1, e2 = xy[:, 1] - xy[:, 0], xy[:, 2] - xy[:, 0]
     flat = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) > 1e-12
-    sides = []                                       # a vertical face is a segment in the plan
-    for q in xy[~flat]:
-        k = np.argmax([np.linalg.norm(q[i] - q[j]) for i, j in ((0, 1), (1, 2), (2, 0))])
-        a, b = ((0, 1), (1, 2), (2, 0))[k]
+    out = [shapely.Polygon(q) for q in xy[flat]]
+    for q in xy[~flat]:                              # a vertical face is a segment: its two farthest corners
+        a, b = max(((0, 1), (1, 2), (2, 0)), key=lambda ij: float(np.linalg.norm(q[ij[0]] - q[ij[1]])))
         if np.linalg.norm(q[a] - q[b]) > 1e-12:
-            sides.append(shapely.LineString(q[[a, b]]))
-    fill = shapely.Polygon()
-    if sides:
-        lines = shapely.union_all(sides)             # noded, duplicates merged
-        for face in polygonize(getattr(lines, "geoms", [lines])):
-            fill = fill.symmetric_difference(shapely.Polygon(face.exterior))   # even-odd over nested loops
-    return shapely.union_all([fill, *(shapely.Polygon(q) for q in xy[flat])]).buffer(0)
+            out.append(shapely.LineString(q[[a, b]]))
+    return shapely.union_all(out)
+
+
+def _pieces_outside(plan, body, weld_m) -> int:
+    """Connected pieces of a part's own geometry outside the body: closer than the weld distance is one piece,
+    a bit smaller than it is a weld, not a piece (no threshold of its own; review 2 of #78)."""
+    out = plan.difference(body)
+    if out.is_empty:
+        return 0
+    groups = out.buffer(weld_m / 2)
+    count = 0
+    for g in getattr(groups, "geoms", [groups]):
+        x0, y0, x1, y1 = out.intersection(g).bounds
+        count += max(x1 - x0, y1 - y0) > weld_m
+    return count
 
 
 def _matches(e, d, dt, elev, contours):
@@ -599,7 +600,7 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         storey = reader._storey(levels, z0)
         bands = [i for i in range(len(storeys))          # every storey it stands in by more than a weld
                  if min(z1, levels[i + 1]["elev_m"]) - max(z0, levels[i]["elev_m"]) > weld_m] or [storey]
-        plan = _footprint(t3)                            # its real footprint, not its bounding rectangle (#78)
+        plan = _plan(t3)                                 # its own geometry, not its bounding rectangle (#78)
         for a, u, n, length in reader._walls(storeys[storey]):
             s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
             # set into the body deeper than decor is, and not through it: in every storey it stands in, the
@@ -608,7 +609,7 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
             # too and is an attachment (user 2026-10-12: against the body between storey contours, no new number)
             if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
                     and s.max() > FACE_M and s.min() < length - FACE_M
-                    and all(_pieces(plan.difference(polys[i]), weld_m) == 1 for i in bands)
+                    and all(_pieces_outside(plan, polys[i], weld_m) == 1 for i in bands)
                     and reader._is_box(t3, u, n, float(a @ n)) is not None):
                 stray += len(free)
                 break

@@ -757,3 +757,74 @@ def test_part_with_a_hole_through_the_body_is_no_decor():
     dump, sp = stacked([contour, contour], m, wall=5)
     report = decor_check(dump, sp)
     assert report["status"] == "pass", problems(report)
+
+
+RING_OUTER = [[3.8, -0.15], [6.2, -0.15], [6.2, 0.7], [3.8, 0.7]]
+RING_HOLE = [[3.9, 0.02], [6.1, 0.02], [6.1, 0.05], [3.9, 0.05]]
+NOTCHED = [[0, 0], [4, 0], [4, 1], [6, 1], [6, 0], [10, 0], [10, 10], [0, 10]]
+
+
+def ring(name, rings=(RING_OUTER, RING_HOLE), caps=True, sides=True):
+    from shapely.geometry import Polygon
+    from shapely.ops import triangulate
+    m = Mesh(name)
+    if sides:
+        for coords in rings:
+            for a, b in zip(coords, coords[1:] + coords[:1]):
+                m.quad((*a, 1.0), (*b, 1.0), (*b, 1.3), (*a, 1.3))
+    if caps:
+        poly = Polygon(rings[0], rings[1:])
+        for tri in triangulate(poly):
+            if poly.covers(tri):
+                pts = list(tri.exterior.coords)[:-1]
+                for z, q in ((1.0, pts[::-1]), (1.3, pts)):
+                    k = len(m.vertices)
+                    m.vertices.extend([[x, y, z] for x, y in q])
+                    m.triangles.append([k, k + 1, k + 2])
+    return m
+
+
+def joined(name, meshes):
+    m = Mesh(name)
+    for s in meshes:
+        k = len(m.vertices)
+        m.vertices.extend(s.vertices)
+        m.triangles.extend([[v + k for v in q] for q in s.triangles])
+    return m
+
+
+def ring_variant(kind):
+    left = [[3.8, -0.15], [5, -0.15], [5, 0.02], [3.9, 0.02], [3.9, 0.05], [5, 0.05], [5, 0.7], [3.8, 0.7]]
+    right = [[5, -0.15], [6.2, -0.15], [6.2, 0.7], [5, 0.7], [5, 0.05], [6.1, 0.05], [6.1, 0.02], [5, 0.02]]
+    if kind == "sides only":
+        return ring("R", caps=False)
+    if kind == "welded halves":
+        return joined("R", [prism("L", left, 1.0, 1.3), prism("R", right, 1.0, 1.3)])
+    if kind.startswith("T-junction"):
+        m = ring("R", rings=([[3.8, -0.15], [5, -0.15], [6.2, -0.15], [6.2, 0.7], [5, 0.7], [3.8, 0.7]],
+                             [[3.9, 0.02], [5, 0.02], [6.1, 0.02], [6.1, 0.05], [5, 0.05], [3.9, 0.05]]),
+                 caps=kind.endswith("caps"))
+        for a, b in (((5, -0.15), (5, 0.02)), ((5, 0.05), (5, 0.7))):
+            m.quad((*a, 1.0), (*b, 1.0), (*b, 1.3), (*a, 1.3))
+        return m
+    if kind.startswith("open outer side"):
+        m = ring("R")
+        side = int(kind[-1])
+        m.triangles = [q for i, q in enumerate(m.triangles) if i not in (2 * side, 2 * side + 1)]
+        return m
+    if kind == "duplicate front side":
+        m = ring("R")
+        m.quad((3.8, -0.15, 1.0), (6.2, -0.15, 1.0), (6.2, -0.15, 1.3), (3.8, -0.15, 1.3))
+        return m
+    return ring("R")
+
+
+@pytest.mark.parametrize("kind", ["closed", "sides only", "welded halves", "T-junction", "T-junction caps",
+                                  "open outer side 1", "open outer side 2", "open outer side 3",
+                                  "duplicate front side"])
+def test_holed_part_through_the_body_is_no_decor(kind):
+    """Reviews 3-4 of #78: a hole in a part's plan stays empty whatever its linework - internal shared faces,
+    T-junctions, an open side, duplicate sides; outside the body it is two pieces: an attachment."""
+    dump, sp = stacked([NOTCHED, NOTCHED], ring_variant(kind), wall=5)
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
