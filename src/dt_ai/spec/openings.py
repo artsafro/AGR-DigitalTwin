@@ -521,7 +521,7 @@ def _source_items(items, li, contour):
 
 
 def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=None, recesses=None, sources=None,
-             depth_default=0.2, thresholds=None):
+             depth_default=0.4, thresholds=None):
     """Openings per floor, the plan footprints that clear recess questions, break questions, report.
     planes: vertical opening-plane parts as (points, normal, material id or None when mixed);
     doors: door recesses per level (mesh._door_recesses); recesses: recess pieces per level (the
@@ -596,7 +596,7 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
             if o.get("no_reveal"):
                 p0, p1, _ = _world(o, floors[li]["contour"])
                 breaks.append({"kind": "opening-size-unknown", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
-    per_floor, footprints = [], []
+    per_floor, footprints, by_default = [], [], []
     for li, (floor, holes) in enumerate(zip(floors, by_level)):
         elev = levels[li]["elev_m"]
         pts = np.array([q[:2] for q in floor["contour"]], dtype=float)
@@ -609,11 +609,14 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
                     "kind": o.get("kind_fixed") or _kind(o, frame),
                     "panes": (o.get("parts") or None) if (o.get("glass_z") or o.get("glazed")) else None,
                     **_glass_size(o, floor["contour"])}
-            if not o.get("kind_fixed") and abs(o["depth"] - depth_default) > depth_exception:
-                item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
-            if not o.get("kind_fixed") and o.get("back") and o["depth"] <= FLUSH_M:
+            if not o.get("kind_fixed") and o["depth"] <= FLUSH_M:
+                # no depth in the source (no reveal, or a plane flush with the facade): the default, marked in the
+                # report, never 0 or a minimum (OD1, user decision 2026-10-11); the glass never gives a depth
                 p0, p1, _ = _world(o, floor["contour"])
-                breaks.append({"kind": "opening-flush", "p": p0, "q": p1, "z0": o["z0"], "z1": o["z1"], "level": li})
+                by_default.append({"level": levels[li]["name"], "wall": o["wall"], "x_m": item["x_m"],
+                                   "sill_m": item["sill_m"], "at": [round(float(c), 2) for c in (p0 + p1) / 2]})
+            elif not o.get("kind_fixed") and abs(o["depth"] - depth_default) > depth_exception:
+                item["depth_m"] = round(o["depth"], 3)   # an exception to the default; a source gives none (#36)
             if "level_to" in o:
                 item["level_from"], item["level_to"] = levels[li]["name"], levels[o["level_to"]]["name"]
             items.append(item)
@@ -637,7 +640,8 @@ def assemble(levels, floors, polys, mouth_spans_by_level, panes, planes, doors=N
               "openings_with_conflicting_planes": sum(1 for f in per_floor for o in f if o.get("plane_conflict")),
               "breaks_off_contour": sum(b["kind"] == "wall-break-off-contour" for b in breaks),
               "unresolved_breaks": sum(b["kind"] == "unresolved-break" for b in breaks),
-              "openings_flush": sum(b["kind"] == "opening-flush" for b in breaks)}
+              "openings_depth_by_default": len(by_default), "depth_by_default": by_default,
+              "depth_default_m": depth_default}
     return per_floor, footprints, breaks, report
 
 
@@ -682,7 +686,7 @@ def break_questions(breaks, levels):
     out = []
     for b in breaks:
         mid = (b["p"] + b["q"]) / 2
-        out.append({"priority": "normal" if b["kind"] in ("opening-size-unknown", "opening-flush") else "high",
+        out.append({"priority": "normal" if b["kind"] == "opening-size-unknown" else "high",
                     "kind": b["kind"], "levels": [levels[b["level"]]["name"]], "wall": None,
                     "depth_m": None, "length_m": round(float(np.linalg.norm(b["p"] - b["q"])), 3),
                     "facade_share": None, "heights_m": [round(b["z0"], 3), round(b["z1"], 3)],
