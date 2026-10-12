@@ -56,14 +56,18 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   one cross-section (projection and height within 5 mm), repeated on the facade, is one question with its
   count and all positions — never one question per piece.
 
-## How to build it
+## How to build it (`src/dt_ai/geometry/from_spec.py`, mesh `decor`)
 
-- One simple solid per element (a box along the wall for a belt or a pilaster).
+- One simple solid per element (a box along the wall for a belt or a pilaster), in a mesh of its own.
 - Embedded into the body by `decor_inset_m` = 0.02: the solid runs 0.02 m into the wall and its face
   inside the body is deleted.
 - The body mesh is not cut: the wall under the decor stays as without decor.
-- A decor face that would coincide with an opening face (a window head, a reveal) is shifted away by
-  `plate_gap_m` (5 mm): no shared face, no edge-to-edge joint.
+- A decor face that would come closer than `plate_gap_m` (5 mm) to an opening face (a window head, a
+  jamb) is moved back to that clearance: no shared face, no edge-to-edge joint. Decor over an opening is a
+  build error.
+- Two decor elements that touch or overlap (a lesene under a belt) are a build error until the user
+  decides how they meet.
+- ID: the element's `material_id`, else the object's decor ID (`object.json` build ids `decor`).
 - A free-standing column: its own ID and UV island, a separate part attached to the body in the
   final mesh (not welded). A column or pilaster touching the wall follows the inset rule above.
 
@@ -71,10 +75,12 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 
 - `npm_min` and `mid`: the same solids; `mid` may add profile detail later (not decided).
 
-## Check (PR 3)
+## Check (`twinqa.geometry.checks.check_decor`, thresholds `decor_tol_m`, `decor_cover_min`)
 
-- No decor face within 5 mm of an opening face; no body edge cut by decor; decor ids in 26-30;
-  nothing of 0.10 m or less built as geometry.
+- Per spec element: built (front covers `decor_cover_min` of its rectangle at its projection); ids in
+  26-30 (its own id when given); at least `plate_gap_m` off every opening of its wall line; the body not
+  cut (no body vertex on its outline on the wall face); a texture element has nothing built over it; a
+  column covers its four sides. Decor parts are open at the back: `open_part_groups` lists `attachment`.
 
 ## Traps
 

@@ -451,6 +451,120 @@ def slabs(spec: Spec) -> dict:
     return out
 
 
+FACE_M = 0.001        # a decor triangle reaches this far out of the wall face; a body vertex on the face within it
+TEXTURE_LOOK_M = 1.5  # a texture element: nothing may be built over its rectangle up to this far out
+
+
+def _cover(points2d, rect):
+    """Share of rect covered by the union of triangles (n, 3, 2)."""
+    if not len(points2d):
+        return 0.0
+    area = shapely.union_all(shapely.polygons(points2d), grid_size=1e-5)
+    return float(shapely.intersection(area, rect).area / rect.area) if rect.area > 0 else 0.0
+
+
+def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
+    """Facade decor (pattern facade-decor-inset, spec v0.5) in the model, element by element of the spec:
+    a geometry element is built (its front covers decor_cover_min of its rectangle at its projection, within
+    decor_tol_m), with ids of the attachment group (its own id when the spec gives one), at least plate_gap_m
+    off every opening of its wall line, and the body is not cut along its outline (no body vertex on it); a
+    texture element (projection <= 0.10 m) has nothing built; a column covers its four sides. No decor in
+    the spec: nothing to check (pass)."""
+    if not spec.decor:
+        return result("decor", True, 0, 0, {"elements": []})
+    dt, cover_min = tol["decor_tol_m"], tol["decor_cover_min"]
+    group = ranges["groups"]["attachment"]
+    attachment = set(range(group["first"], group["last"] + 1))
+    elev = {lv.name: lv.elev_m for lv in spec.levels}
+    contours = {f.level: f.contour for f in spec.expanded_floors()}
+    c = model.corners()
+    nv = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+    norm = np.linalg.norm(nv, axis=1)
+    normal = np.divide(nv, norm[:, None], out=np.zeros_like(nv), where=norm[:, None] > 0)
+    cos = np.cos(np.radians(5.0))
+    rows = [r for r in opening_planes(spec, ("window", "door", None))]
+    decor_tris = np.zeros(len(c), bool)
+    elements = []
+    for k, e in enumerate(spec.decor):
+        z0 = elev[e.level] + e.z_m
+        z1 = z0 + e.h_m
+        problems, row = [], {"index": k, "kind": e.kind, "level": e.level, "texture": e.texture}
+        if e.kind == "column":
+            x0, y0, x1, y1 = e.footprint
+            inside = ((c[..., 0] >= x0 - dt) & (c[..., 0] <= x1 + dt) & (c[..., 1] >= y0 - dt) & (c[..., 1] <= y1 + dt)
+                      & (c[..., 2] >= z0 - dt) & (c[..., 2] <= z1 + dt)).all(axis=1)
+            decor_tris |= inside
+            worst = 1.0
+            for axis, sign, at, (i, j), rect in ((0, 1, x1, (1, 2), (y0, z0, y1, z1)), (0, -1, x0, (1, 2), (y0, z0, y1, z1)),
+                                                 (1, 1, y1, (0, 2), (x0, z0, x1, z1)), (1, -1, y0, (0, 2), (x0, z0, x1, z1))):
+                side = inside & (sign * normal[:, axis] >= cos) & (np.abs(c[..., axis] - at) <= dt).all(axis=1)
+                worst = min(worst, _cover(c[side][..., [i, j]], shapely.box(*rect)))
+            row["cover"] = round(worst, 4)
+            if worst < cover_min:
+                problems.append("not built")
+            hit = inside
+        else:
+            a, u, n = _wall(contours[e.level], e.wall)
+            s = (c[..., :2] - a) @ u
+            d = (c[..., :2] - a) @ n
+            S0, S1 = e.x_m, e.x_m + e.w_m
+            inside = ((s >= S0 - dt) & (s <= S1 + dt) & (c[..., 2] >= z0 - dt) & (c[..., 2] <= z1 + dt)
+                      & (d >= -dt - 0.05) & (d <= (TEXTURE_LOOK_M if e.texture else e.projection_m) + dt)).all(axis=1) \
+                & (d.max(axis=1) > FACE_M)
+            hit = inside
+            decor_tris |= inside
+            if e.texture:
+                if inside.any():
+                    problems.append("texture built as geometry")
+            else:
+                front = inside & (normal[:, :2] @ n >= cos) & (np.abs(d - e.projection_m) <= dt).all(axis=1)
+                cov = _cover(np.stack([s[front], c[front][..., 2]], axis=2), shapely.box(S0, z0, S1, z1))
+                row["cover"] = round(cov, 4)
+                if cov < cover_min:
+                    problems.append("not built")
+                if inside.any():
+                    ms0, ms1 = float(s[inside].min()), float(s[inside].max())
+                    mz0, mz1 = float(c[inside][..., 2].min()), float(c[inside][..., 2].max())
+                    built = shapely.box(ms0, mz0, ms1, mz1)
+                    for r in rows:                         # openings on its wall line, any floor
+                        oa, ou, on = _wall(r["contour"], r["opening"].wall)
+                        if ou @ u < 1 - 1e-6 or abs(float((oa - a) @ n)) > dt:
+                            continue
+                        os0 = float((oa - a) @ u) + r["opening"].x_m
+                        orect = shapely.box(os0, r["z0"], os0 + r["opening"].w_m, r["z0"] + r["opening"].h_m)
+                        gap = built.distance(orect)
+                        row.setdefault("opening_gap_m", round(gap, 4))
+                        row["opening_gap_m"] = min(row["opening_gap_m"], round(gap, 4))
+                        if gap < spec.plate_gap_m - 1e-4:
+                            problems.append(f"{gap:.4f} m from an opening")
+                    row["built"] = [round(ms0, 4), round(mz0, 4), round(ms1, 4), round(mz1, 4)]
+        if not e.texture and hit.any():
+            ids = sorted({int(m) for m in model.material_ids[hit]})
+            row["material_ids"] = ids
+            if not set(ids) <= attachment or (e.material_id is not None and ids != [e.material_id]):
+                problems.append(f"ids {ids}")
+        row["problems"] = problems
+        elements.append(row)
+    # the body is not cut: no body vertex on the outline of a built wall element (on the wall face)
+    body_v = np.unique(model.triangles[~decor_tris])
+    for row, e in zip(elements, spec.decor):
+        if e.kind == "column" or e.texture or "built" not in row:
+            continue
+        a, u, n = _wall(contours[e.level], e.wall)
+        p = model.vertices[body_v]
+        s, d, z = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n, p[:, 2]
+        ms0, mz0, ms1, mz1 = row["built"]
+        on_face = np.abs(d) <= FACE_M
+        within = (s >= ms0 - FACE_M) & (s <= ms1 + FACE_M) & (z >= mz0 - FACE_M) & (z <= mz1 + FACE_M)
+        edge = (np.minimum.reduce([np.abs(s - ms0), np.abs(s - ms1)]) <= FACE_M) | \
+               (np.minimum.reduce([np.abs(z - mz0), np.abs(z - mz1)]) <= FACE_M)
+        cut = int((on_face & within & edge).sum())
+        if cut:
+            row["problems"].append(f"body cut: {cut} body vertices on its outline")
+    bad = sum(bool(r["problems"]) for r in elements)
+    return result("decor", bad == 0, bad, 0, {"elements": elements})
+
+
 def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None) -> dict:
     """All §5 checks; tol is the `geometry` block of tolerances.json."""
     ranges = ranges or load_ranges()
@@ -458,7 +572,8 @@ def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = 
               check_floor_areas(model, etalon, spec, tol), check_silhouettes(model, etalon, tol),
               check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m)),
               check_budget(model, tol),
-              check_opening_planes(model, spec, tol, ranges), check_material_ids(model, tol, ranges)]
+              check_opening_planes(model, spec, tol, ranges), check_material_ids(model, tol, ranges),
+              check_decor(model, spec, tol, ranges)]
     return {"passed": all(c["status"] == "pass" for c in checks),
             "failed": [c["id"] for c in checks if c["status"] == "fail"],
             "not_measured": [c["id"] for c in checks if c["status"] == "not_measured"],

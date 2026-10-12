@@ -26,6 +26,13 @@ What it builds (patterns wall-from-contour, opening-plane, typical-floor-repeat,
 - a terrace (pattern terrace, spec v0.4 `terraces`): on a ledge, a parapet along its outer edges -
   outer face (facade ID), inner face and cap (roof ID), thickness `parapet_thickness_m` - and the
   walkable rest of the ledge (roof ID); the wall cells of the floor above behind its ends are hidden.
+- facade decor (pattern facade-decor-inset, spec v0.5 `decor`, user decisions 2026-10-11/12), as a separate
+  mesh `decor`: the body is never cut. A wall element is one box from `DECOR_INSET_M` inside the wall face to
+  its projection, its face inside the body deleted; a face that would come closer than `plate_gap_m` to an
+  opening's face is moved back to that clearance; an element over an opening, or touching another element
+  (the meeting rule is not decided), is a BuildError. A free-standing column is a box with its own ID, top
+  closed, bottom open. Texture elements (projection <= 0.10 m) build nothing. ID: the element's
+  `material_id`, else the object's decor ID (build ids `decor`), else a BuildError.
 
 Topology: quads only, welded, no T-junctions. Wall cuts run at every contour vertex and opening
 edge, Z cuts at every level, sill, head, roof and parapet top, and cuts are propagated through the
@@ -69,6 +76,7 @@ class BuildInputs:
     roof_id: int
     opening_id: int                       # default plane ID when the opening has none of its own
     opening_ids_by_type: dict | None = None  # window_type -> plane ID
+    decor_id: int | None = None           # default decor ID (attachment group 26-30) for elements without one
 
     @classmethod
     def from_object(cls, obj_cfg: dict) -> "BuildInputs":
@@ -81,7 +89,7 @@ class BuildInputs:
             ids = b["ids"]
             by_type = {int(k): int(v) for k, v in (b.get("opening_ids_by_type") or {}).items()}
             return cls(float(b["parapet_thickness_m"]), int(ids["facade"]), int(ids["reveal"]), int(ids["roof"]),
-                       int(ids["opening"]), by_type or None)
+                       int(ids["opening"]), by_type or None, int(ids["decor"]) if "decor" in ids else None)
         except (KeyError, TypeError, ValueError) as exc:
             raise BuildError(f"object.json build block: {exc!r}") from exc
 
@@ -105,14 +113,17 @@ class _Mesh:
             pts = pts[::-1]
         self.faces.append(([self.vertex(p) for p in pts], mid))
 
-    def dump(self, levels):
+    def mesh(self, name):
         tris, mids = [], []
         for ids, mid in self.faces:
             tris += [[ids[0], ids[1], ids[2]], [ids[0], ids[2], ids[3]]]
             mids += [mid, mid]
-        body = {"name": "body", "vertices": self.vertices, "triangles": tris, "material_ids": mids,
+        return {"name": name, "vertices": self.vertices, "triangles": tris, "material_ids": mids,
                 "polygon_sizes": [4] * len(self.faces), "polygons": [ids for ids, _ in self.faces]}
-        return {"source": "from_spec", "units": "m", "meshes": [body],
+
+    def dump(self, levels, extra=()):
+        meshes = [self.mesh("body")] + [m.mesh(name) for name, m in extra if m.faces]
+        return {"source": "from_spec", "units": "m", "meshes": meshes,
                 "helpers": [{"name": f"LEVEL_{lv.name}", "location": [0.0, 0.0, lv.elev_m]} for lv in levels]}
 
 
@@ -404,7 +415,96 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         _quads(mesh, ptraps, _propagate(ptraps, [], {}))   # cuts carried across, no T-junction in the plate
         joints += [z, zp]
     _hold(mesh, joints)
-    return mesh.dump(spec.levels)
+    decor = _decor(spec, floors, contours, openings, inputs, elev, polys)
+    return mesh.dump(spec.levels, [("decor", decor)])
+
+
+DECOR_INSET_M = 0.02   # pattern facade-decor-inset: a wall element runs this far into the body (user 2026-10-11)
+
+
+def _decor(spec, floors, contours, openings, inputs, elev, polys):
+    """The `decor` mesh (pattern facade-decor-inset): one box per geometry element; see the module docstring."""
+    out = _Mesh()
+    names = [f.level for f in floors]
+    gap = spec.plate_gap_m
+    boxes = []
+    for e in spec.decor:
+        if e.texture:
+            continue
+        mid = e.material_id if e.material_id is not None else inputs.decor_id
+        where = f"decor {e.kind} at {e.level} z {e.z_m}"
+        if mid is None:
+            raise BuildError(f"{where}: no material_id and no decor ID in the build inputs (object.json build ids)")
+        k = names.index(e.level)
+        z0 = elev[k] + e.z_m
+        z1 = z0 + e.h_m
+        if e.kind == "column":
+            x0, y0, x1, y1 = e.footprint
+            foot = shapely.box(x0, y0, x1, y1)
+            for j, poly in enumerate(polys):
+                if min(z1, elev[j + 1]) - max(z0, elev[j]) > KEY_M and poly.distance(foot) <= KEY_M:
+                    raise BuildError(f"{where}: the column touches the body at floor {names[j]}; not built")
+            c = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+            for i in range(4):
+                (ax, ay), (bx, by) = c[i], c[(i + 1) % 4]
+                out.quad([(ax, ay, z0), (bx, by, z0), (bx, by, z1), (ax, ay, z1)], mid, [by - ay, ax - bx, 0])
+            out.quad([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], mid, [0, 0, 1])
+            boxes.append((foot, z0, z1, where))
+            continue
+        pts = contours[k]
+        a, b = pts[e.wall], pts[(e.wall + 1) % len(pts)]
+        length = float(np.linalg.norm(b - a))
+        u = (b - a) / length
+        n = np.array([u[1], -u[0]])                     # outward of a counter-clockwise contour
+        s0, s1 = e.x_m, e.x_m + e.w_m
+        line = {"a": a, "u": u, "s0": s0, "s1": s1}
+        for j, pj in enumerate(contours):               # every storey it crosses holds it on a wall of its line
+            if min(z1, elev[j + 1]) - max(z0, elev[j]) <= KEY_M:
+                continue
+            held = False
+            for w in range(len(pj)):
+                wa, wb = pj[w], pj[(w + 1) % len(pj)]
+                wl = float(np.linalg.norm(wb - wa))
+                span = _on_line(line, wa, (wb - wa) / wl)
+                if span is not None and span[0] >= -KEY_M and span[1] <= wl + KEY_M:
+                    held = True
+            if not held:
+                raise BuildError(f"{where}: no wall of floor {names[j]} holds it; not built")
+        for o in openings:                              # pattern: 5 mm (plate_gap_m) off every opening face
+            span = _on_line(o, a, u)
+            if span is None:
+                continue
+            os0, os1 = span
+            over_s = min(s1, os1) - max(s0, os0) > KEY_M
+            over_z = min(z1, o["z1"]) - max(z0, o["z0"]) > KEY_M
+            if over_s and over_z:
+                raise BuildError(f"{where}: it covers the opening {o['where']}; not built")
+            if over_s:
+                if -KEY_M <= z0 - o["z1"] < gap:
+                    z0 = o["z1"] + gap
+                if -KEY_M <= o["z0"] - z1 < gap:
+                    z1 = o["z0"] - gap
+            if over_z:
+                if -KEY_M <= s0 - os1 < gap:
+                    s0 = os1 + gap
+                if -KEY_M <= os0 - s1 < gap:
+                    s1 = os0 - gap
+        if s1 - s0 < MIN_FEATURE_M or z1 - z0 < MIN_FEATURE_M:
+            raise BuildError(f"{where}: nothing left after the clearance to the openings; not built")
+        d0, d1 = -DECOR_INSET_M, e.projection_m
+        P = lambda s, d, z: [*(a + u * s + n * d), z]   # noqa: E731
+        out.quad([P(s0, d1, z0), P(s1, d1, z0), P(s1, d1, z1), P(s0, d1, z1)], mid, [*n, 0])      # front
+        out.quad([P(s0, d0, z1), P(s1, d0, z1), P(s1, d1, z1), P(s0, d1, z1)], mid, [0, 0, 1])     # top
+        out.quad([P(s0, d0, z0), P(s1, d0, z0), P(s1, d1, z0), P(s0, d1, z0)], mid, [0, 0, -1])    # bottom
+        out.quad([P(s0, d0, z0), P(s0, d1, z0), P(s0, d1, z1), P(s0, d0, z1)], mid, [*-u, 0])     # ends
+        out.quad([P(s1, d0, z0), P(s1, d1, z0), P(s1, d1, z1), P(s1, d0, z1)], mid, [*u, 0])
+        foot = shapely.Polygon([P(s0, d0, 0)[:2], P(s1, d0, 0)[:2], P(s1, d1, 0)[:2], P(s0, d1, 0)[:2]])
+        boxes.append((foot, z0, z1, where))
+    for i, (fa, za0, za1, wa) in enumerate(boxes):      # meeting elements: the rule is the user's (not decided)
+        for fb, zb0, zb1, wb in boxes[i + 1:]:
+            if min(za1, zb1) - max(za0, zb0) >= -KEY_M and fa.distance(fb) <= KEY_M:
+                raise BuildError(f"{wa} and {wb} touch or overlap: how decor elements meet is not decided; not built")
+    return out
 
 
 CHECK_WELD_M = 1e-4   # the benchmark checkers' weld (tolerances weld_m): the built mesh must hold under it
