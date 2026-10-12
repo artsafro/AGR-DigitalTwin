@@ -409,6 +409,34 @@ def test_pre_commit_gate_sees_the_index_after_linking(repo):
     assert "spec.json missing" in result.stderr
 
 
+def test_pre_commit_without_the_gate_blocks_jobs_only(repo):
+    """Review 3 of #79: no pipeline_gate.py in the work tree - a commit touching jobs/ is blocked, any other
+    commit has nothing to check and passes (branches older than #73)."""
+    import shutil
+    shutil.copy(ROOT / "tools/git-hooks/pre-commit", repo / ".git/hooks/pre-commit")
+    write(repo, "jobs/J/STATE.md", state("built"))
+    git(repo, "add", "-A")
+    result = subprocess.run(["git", "commit", "-qm", "built"], cwd=repo, capture_output=True, text=True)
+    assert result.returncode != 0 and "pipeline_gate.py is missing" in result.stderr, result.stderr
+    git(repo, "reset", "-q")
+    write(repo, "docs/note.md", "note\n")
+    git(repo, "add", "docs/note.md")
+    result = subprocess.run(["git", "commit", "-qm", "note"], cwd=repo, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_replace_refs_do_not_hide_the_staged_state(repo):
+    """Review 3 of #79: `git replace` showing a draft for the staged built STATE.md must not fool the gate."""
+    write(repo, "jobs/J/STATE.md", state("built"))
+    git(repo, "add", "-A")
+    staged = git(repo, "rev-parse", ":jobs/J/STATE.md").stdout.strip()
+    draft = subprocess.run(["git", "hash-object", "-w", "--stdin"], cwd=repo, input=state("draft"),
+                           capture_output=True, text=True, check=True).stdout.strip()
+    git(repo, "replace", staged, draft)
+    errors = gate.staged(repo)
+    assert any("spec.json missing" in e for e in errors), errors
+
+
 def test_hook_state_name_case_blind(tmp_path):
     (tmp_path / ".git").mkdir()                       # the repository root (review 3 of PR #73)
     target = tmp_path / "jobs/J/state.md"

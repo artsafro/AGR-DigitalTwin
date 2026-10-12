@@ -126,10 +126,11 @@ class GitError(RuntimeError):
 
 
 def _git(root, *args):
-    # core.longpaths: deep job paths under a long checkout pass MAX_PATH on Windows
+    # core.longpaths: deep job paths under a long checkout pass MAX_PATH on Windows; --no-replace-objects: a
+    # replace ref must not show the gate other content than the one committed (review 3 of #79)
     try:
-        return subprocess.run(["git", "-c", "core.longpaths=true", *args], cwd=root, capture_output=True,
-                              check=False)
+        return subprocess.run(["git", "--no-replace-objects", "-c", "core.longpaths=true", *args], cwd=root,
+                              capture_output=True, check=False)
     except OSError as exc:                           # git not found or not startable (review 1 of PR #79)
         raise GitError(f"git {' '.join(args)}: {exc}") from exc
 

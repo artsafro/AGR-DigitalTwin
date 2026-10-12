@@ -15,5 +15,16 @@ fi
 gate="$top/tools/git-hooks/pipeline_gate.py"
 if [ -f "$gate" ]; then
     py -3 "$gate" --staged || exit 1
+else
+    # no gate in this work tree (a branch older than #73, a redirected work tree): a commit touching jobs/
+    # cannot be checked, so it is blocked; other commits have nothing to check (review 3 of PR #79)
+    names="$(git -c core.quotepath=false diff --cached --name-only)" || {
+        echo "pre-commit: cannot read the index; blocked" >&2
+        exit 1
+    }
+    if printf '%s\n' "$names" | grep -qi '^"\{0,1\}jobs/'; then
+        echo "pre-commit: tools/git-hooks/pipeline_gate.py is missing and jobs/ is staged; blocked" >&2
+        exit 1
+    fi
 fi
 exit 0
