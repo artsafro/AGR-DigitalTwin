@@ -72,13 +72,16 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   continues and the other runs into it. Ends closer than `plate_gap_m` meet (an end moved off an opening
   still meets). The 5 mm gap stays only against an opening face.
 - **At a convex building corner** (a belt into a belt): the main element runs on past the corner by the
-  other's projection and keeps its whole end face; the other starts at the main one's back plane
-  (`decor_inset_m` from the corner) without its end, so no face of one lies in a face of the other. Both
-  must have one height (past the corner the main one's open back is closed by the other). The extractor
-  reads a part wrapped round a corner as one arm per wall (the corner block to the longer arm), each with
-  its source extent to the corner.
+  other's projection and keeps its whole end face. General rule (user 2026-10-12): a back face is deleted
+  only where it is set into the wall (or closed by another element); past the corner, outside the wall, the
+  main one keeps its back above and below the other. The other, of any height within the main one's, runs in
+  without its end: it starts on the main one's back plane (`decor_inset_m` from the corner; a deeper run-in
+  would put its front in the plane of the main one's end face). The other higher than the main one (its
+  part beyond is closed by nothing): a build error, the `decor-corner` question. The extractor reads a part
+  wrapped round a corner as one arm per wall (the corner block to the longer arm), each with its source
+  extent to the corner, and asks `decor-corner` when the other arm is higher.
 - Build errors (the rule does not cover them): side by side or crossing, one rank and one length, a
-  subordinate standing out of the main one, a corner meeting of different heights or at a concave corner.
+  subordinate standing out of the main one, a corner meeting at a concave or an oblique corner.
 - ID: the element's `material_id`, else the object's decor ID (`object.json` build ids `decor`).
 - A free-standing column: its own ID and UV island, a separate part attached to the body in the
   final mesh (not welded). A column or pilaster touching the wall follows the inset rule above.

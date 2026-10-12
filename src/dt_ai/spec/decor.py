@@ -204,7 +204,8 @@ def _piece(v, part_tris, levels, contours, polys):
         if best[2]:                                       # a run-on: the source extent ends at the wall end
             s0, s1 = max(s0, o) if s0 < o - SPAN_TOL_M else s0, min(s1, o + length) if s1 > o + length + SPAN_TOL_M else s1
         pc = {"li": li, "u": u, "n": n, "c": c, "o": o, "length": length, "s0": s0, "s1": s1, "z0": z0, "z1": z1,
-              "out": float(d.max() - c), "embed": float(c - d.min())}
+              "out": float(d.max() - c), "embed": float(c - d.min()), "run_on": best[2],
+              "foot": shapely.MultiPoint(p[:, :2]).convex_hull}
         # every storey it crosses has a wall on the same line holding its span (review 1 of PR #74)
         crossed = range(li, _storey(levels, z1 - SAME_M) + 1)
         on_walls = all(_wall_at(contours[k], u, c, pc["s0"], pc["s1"]) is not None for k in crossed)
@@ -227,7 +228,7 @@ def _corner_arms(v, tris, part, levels, contours):
     """A part round one or more convex building corners (elements meeting there, or a belt wrapped round),
     split into one arm per wall, or None (user 2026-10-12: of one rank the longer continues; review 2 of PR
     #75: any number of corners). A triangle belongs to the wall whose span holds its centre (in front of that
-    wall); a corner block past two wall ends goes to the longer of the two arms; an oblique corner: None."""
+    wall); a corner block past two wall ends goes to the longer of the two arms; an oblique corner: None; the other higher than the longer: "decor-corner"."""
     p = v[np.unique(tris[part])]
     li = _storey(levels, float(p[:, 2].min()))
     walls = _walls(contours[li])
@@ -264,6 +265,11 @@ def _corner_arms(v, tris, part, levels, contours):
         if abs(reach[w0] - reach[w1]) <= SAME_M:
             return None                                # one length: which continues is the user's
         own[k] = w0 if reach[w0] > reach[w1] else w1
+        main_w, other_w = (w0, w1) if reach[w0] > reach[w1] else (w1, w0)
+        zm = v[tris[part[own == main_w]]][..., 2]
+        zo = v[tris[part[own == other_w]]][..., 2]
+        if zo.min() < zm.min() - SAME_M or zo.max() > zm.max() + SAME_M:
+            return "decor-corner"                        # the other higher than the main one (user 2026-10-12)
     return [part[own == w] for w in arms]
 
 
@@ -371,6 +377,12 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         pc = _piece(v, tris[part], levels, contours, polys)
         if pc is None or pc["type"] == "shape":
             arms = _corner_arms(v, tris, part, levels, contours)
+            if arms == "decor-corner":                # its part above the main one is closed by nothing
+                p = v[np.unique(tris[part])]
+                questions.append(_question("decor-corner", levels, _storey(levels, float(p[:, 2].min())), 0.0, 0.0,
+                                           0.0, float(p[:, 2].min()), float(p[:, 2].max()),
+                                           [round(float(c), 2) for c in p[:, :2].mean(axis=0)]))
+                continue
             if arms:                                  # a belt round a building corner: one element per wall
                 found_arms = [(arm, _piece(v, tris[arm], levels, contours, polys)) for arm in arms]
                 if all(a_pc is not None for _, a_pc in found_arms):
@@ -380,6 +392,15 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
             kept += 1
             continue
         pieces.append((part, pc))
+    for _, m in pieces:                               # a corner's other element higher than the main one (run on)
+        if not m.get("run_on"):
+            continue
+        for part, o in pieces:
+            if (o is m or "foot" not in o or o.get("type") == "corner" or abs(float(o["u"] @ m["u"])) > 1 - AXIS_COS
+                    or o["foot"].distance(m["foot"]) > AT_FACE_M):
+                continue
+            if o["z0"] < m["z0"] - SAME_M or o["z1"] > m["z1"] + SAME_M:
+                o["type"] = "corner"                     # user 2026-10-12: its part beyond the main one is open
     whole = [pc for _, pc in pieces if pc["type"] == "wall"]
     for part, pc in pieces:                           # a subordinate element run into a main one (user 2026-10-12)
         if pc["type"] == "shape" and pc["on_walls"]:
@@ -399,9 +420,10 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         pc["ids"] = set(int(i) for i in np.unique(mats[part]))
         if pc["type"] in ("shape", "wall") and pc["out"] > ATTACHMENT_FROM_M:
             pc["type"] = "deep"
-        if pc["type"] in ("shape", "deep", "column-off-level"):
+        if pc["type"] in ("shape", "deep", "column-off-level", "corner"):
             at = [round(float(c), 2) for c in v[np.unique(tris[part])][:, :2].mean(axis=0)]
-            kind = {"shape": "decor-shape", "deep": "decor-deep", "column-off-level": "decor-column"}[pc["type"]]
+            kind = {"shape": "decor-shape", "deep": "decor-deep", "column-off-level": "decor-column",
+                    "corner": "decor-corner"}[pc["type"]]
             questions.append(_question(kind, levels, pc["li"], pc["out"], pc["s0"], pc["s1"], pc["z0"], pc["z1"], at))
             continue
         found.append(pc)

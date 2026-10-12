@@ -8,6 +8,7 @@ import pytest
 from dt_ai.geometry.from_spec import BuildError, BuildInputs, build
 from dt_ai.spec import extract_spec
 from dt_ai.spec.model import Spec
+from test_spec_extract import Mesh
 from test_geometry_checks import FACADE, PLANE, REVEAL, ROOF
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -267,8 +268,6 @@ def test_the_longer_of_one_rank_is_main():
     ([dict(BELT, x_m=0.5, w_m=2.0), dict(BELT, x_m=2.5, w_m=2.0, z_m=2.45, h_m=0.2, material_id=27)], "one length"),
     ([dict(BELT, x_m=8.0, w_m=2.0, z_m=1.0), dict(PILASTER, x_m=0.0, w_m=2.0, z_m=1.0, h_m=0.3, kind="band",
                                                     projection_m=0.15)], "one rank and one length"),
-    ([dict(BELT, x_m=8.0, w_m=2.0, z_m=1.0), dict(PILASTER, x_m=0.0, w_m=1.0, z_m=1.0, h_m=0.25, kind="band",
-                                                    projection_m=0.15)], "different heights"),
 ])
 def test_meetings_the_rule_does_not_cover(decor, message):
     with pytest.raises(BuildError, match=message):
@@ -318,7 +317,7 @@ def test_two_belts_at_a_corner_the_longer_runs_on():
     other = np.concatenate(decor_faces(dump, 27))
     assert main[:, 0].max() == pytest.approx(10.12)                    # past the corner by the other's projection
     assert other[:, 1].min() == pytest.approx(0.02)                    # from the main one's back plane
-    assert len(decor_faces(dump, 26)) == 5 and len(decor_faces(dump, 27)) == 4
+    assert len(decor_faces(dump, 26)) == 5 and len(decor_faces(dump, 27)) == 4   # equal height: the other closes the back
     report = decor_check(dump, sp)
     assert report["status"] == "pass", problems(report)
     model = from_dump(dump)
@@ -419,3 +418,41 @@ def test_an_oblique_corner_meeting_is_an_error():
                                                                           projection_m=0.12, material_id=27)]
     with pytest.raises(BuildError, match="oblique corner"):
         build(Spec.model_validate(data), INPUTS)
+
+
+# --- corner of different heights (user 2026-10-12): the back is deleted only where it is set into the wall --
+
+@pytest.mark.parametrize("z_m, h_m", [(1.0, 0.3), (1.05, 0.2)])        # equal height, the other lower
+def test_a_corner_with_the_other_of_equal_or_lower_height(z_m, h_m):
+    other = dict(CORNER_SUB, z_m=z_m, h_m=h_m)
+    sp = spec(CORNER_MAIN, other)
+    dump = build(sp, INPUTS)
+    back = [q for q in decor_faces(dump, 26) if np.allclose(q[:, 1], 0.02)]   # the main one's back past the corner
+    assert len(back) == (0 if h_m == 0.3 else 2)                              # above and below a lower other one
+    assert all(q[:, 0].min() == pytest.approx(10.0) and q[:, 0].max() == pytest.approx(10.12) for q in back)
+    assert decor_check(dump, sp)["status"] == "pass", problems(decor_check(dump, sp))
+    model = from_dump(dump)
+    full = checks.run(model, model, sp, FULL_TOL)
+    assert full["passed"], [(c["id"], c["value"]) for c in full["checks"] if c["status"] != "pass"]
+    obj = {"id": "bench-synth-box", "frame": {"to_object": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    got, rep = extract_spec(dump, obj)
+    assert sorted((d.wall, round(d.x_m, 4), round(d.w_m, 4), round(d.z_m, 4), round(d.h_m, 4)) for d in got.decor) ==         [(0, 6.0, 4.0, 1.0, 0.3), (1, 0.0, 2.0, z_m, h_m)]
+    assert not [q for q in rep["questions"] if q["kind"].startswith("decor")]
+
+
+def test_a_corner_with_the_other_higher_is_the_decor_corner_question():
+    with pytest.raises(BuildError, match="decor-corner"):
+        build(spec(CORNER_MAIN, dict(CORNER_SUB, z_m=0.9, h_m=0.5)), INPUTS)
+
+
+def test_a_source_corner_with_the_other_higher_is_asked():
+    """An L part whose shorter arm is higher than the longer one: the decor-corner question, nothing guessed."""
+    dump = build(spec(), INPUTS)
+    m = Mesh("Corner")
+    m.box((6.0, -0.15, 1.0), (10.12, 0.02, 1.3))           # the longer arm, run on past the corner
+    m.box((9.98, 0.02, 0.9), (10.12, 2.0, 1.4))            # the shorter arm, higher
+    dump["meshes"].append(m.dump())
+    obj = {"id": "bench-synth-box", "frame": {"to_object": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    got, rep = extract_spec(dump, obj)
+    assert [(d.wall, d.x_m, d.w_m) for d in got.decor] == [(0, 6.0, 4.0)]          # the main one is read
+    assert [q["kind"] for q in rep["questions"] if q["kind"].startswith("decor")] == ["decor-corner"]

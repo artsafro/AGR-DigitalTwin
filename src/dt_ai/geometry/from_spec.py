@@ -539,6 +539,10 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
                  "bottom": ([P(s0, d0, z0), P(s1, d0, z0), P(s1, d1, z0), P(s0, d1, z0)], [0, 0, -1]),
                  "end0": ([P(s0, e0, z0), P(s0, d1, z0), P(s0, d1, z1), P(s0, e0, z1)], [*-u, 0]),
                  "end1": ([P(s1, e1, z0), P(s1, d1, z0), P(s1, d1, z1), P(s1, e1, z1)], [*u, 0])}
+        for sa, sb, oz0, oz1 in w.get("backs", []):     # the back outside the wall, past a corner, where the
+            for za, zb in ((z0, oz0), (oz1, z1)):        # other element does not close it
+                if zb - za > MIN_FEATURE_M:
+                    quads[f"back {sa} {za}"] = ([P(sa, d0, za), P(sb, d0, za), P(sb, d0, zb), P(sa, d0, zb)], [*-n, 0])
         for name, (pts4, facing) in quads.items():
             if name not in w["skip"]:
                 out.quad(pts4, mid, facing)
@@ -548,9 +552,11 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
 def _corner(A, B):
     """Two elements meeting at a convex building corner (user 2026-10-12): the main one (horizontal over
     vertical, else the longer) runs on past the corner by the other's projection and keeps its full end face;
-    the other runs into it up to its back plane (decor_inset_m from the corner): its end and the parts inside
-    the main one are dropped, so no face of one lies in a face of the other. Both must have one height (past
-    the corner the main one's back is open and the other closes it). Else a BuildError."""
+    a back face is deleted only where it is set into the wall or closed by another element, so past the corner
+    the main one keeps its back above and below the other. The other, of any height within the main one's, starts on that back face without its
+    end (a run-in of 0 there: one of 0.02 would put its front in the plane of the main one's end face). Higher
+    than the main one (its part above would be closed by nothing): a BuildError, the `decor-corner`
+    question."""
     def corner_end(w):
         ends = []
         if w["s0"] <= KEY_M:
@@ -572,14 +578,15 @@ def _corner(A, B):
             raise BuildError(f"{A['where']} and {B['where']} meet at a corner with one rank and one length: which "
                              "continues is not decided; not built")
         main, sub_, im, is_ = (A, B, ia, ib) if la > lb else (B, A, ib, ia)
-    if abs(sub_["z0"] - main["z0"]) > KEY_M or abs(sub_["z1"] - main["z1"]) > KEY_M:
-        # past the corner the main one's back is open; only an element of its full height closes it
-        raise BuildError(f"{sub_['where']} and {main['where']} meet at a corner with different heights: "
-                         "the main one's back past the corner would be open; not built")
-    if im == 1:                                         # the main one runs on past the corner, end face whole
-        main["s1"], main["e1"] = main["length"] + sub_["d1"], main["d0"]
+    if sub_["z0"] < main["z0"] - KEY_M or sub_["z1"] > main["z1"] + KEY_M:
+        raise BuildError(f"{sub_['where']} is higher than {main['where']} at the corner: its part beyond the main one "
+                         "is closed by nothing (question decor-corner, user 2026-10-12); not built")
+    if im == 1:                                         # the main one runs on past the corner, end face whole,
+        main["s1"], main["e1"] = main["length"] + sub_["d1"], main["d0"]       # back kept outside the wall
+        main.setdefault("backs", []).append((main["length"], main["s1"], sub_["z0"], sub_["z1"]))
     else:
         main["s0"], main["e0"] = -sub_["d1"], main["d0"]
+        main.setdefault("backs", []).append((main["s0"], 0.0, sub_["z0"], sub_["z1"]))
     if is_ == 0:                                        # the other starts at the main one's back plane
         sub_["s0"] = -main["d0"]
     else:
