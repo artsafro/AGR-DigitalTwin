@@ -452,7 +452,44 @@ def slabs(spec: Spec) -> dict:
 
 
 FACE_M = 0.001        # a body vertex on the wall face within this; one line of the body within this
-STRAY_EMBED_MAX_M = 0.5   # an unlisted box set into the body at most this deep counts as decor-like
+
+
+def _plan(t3):
+    """A part's own geometry in the plan: its non-vertical faces as polygons, its vertical faces as segments.
+    Nothing is filled: a hole, a recess or a missing cap adds no area (reviews 1-4 of #78)."""
+    xy = t3[..., :2]
+    e1, e2 = xy[:, 1] - xy[:, 0], xy[:, 2] - xy[:, 0]
+    flat = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) > 1e-12
+    out = [shapely.Polygon(q) for q in xy[flat]]
+    for q in xy[~flat]:                              # a vertical face is a segment: its two farthest corners
+        a, b = max(((0, 1), (1, 2), (2, 0)), key=lambda ij: float(np.linalg.norm(q[ij[0]] - q[ij[1]])))
+        if np.linalg.norm(q[a] - q[b]) > 1e-12:
+            out.append(shapely.LineString(q[[a, b]]))
+    return shapely.union_all(out)
+
+
+def _pieces_outside(plan, body, weld_m) -> int:
+    """Connected pieces of a part's own geometry outside the body: closer than the weld distance is one piece,
+    a bit smaller than it is a weld, not a piece (no threshold of its own; review 2 of #78)."""
+    out = plan.difference(body)
+    if out.is_empty:
+        return 0
+    bits = [g for g in getattr(out, "geoms", [out]) if not g.is_empty]
+    group = list(range(len(bits)))                   # grouped by their real distance, not a faceted buffer
+
+    def root(i):                                     # (review 5 of #78)
+        while group[i] != i:
+            group[i] = group[group[i]]
+            i = group[i]
+        return i
+    for i, j in zip(*shapely.STRtree(bits).query(bits, predicate="dwithin", distance=weld_m)):
+        group[root(int(i))] = root(int(j))
+    bounds = {}
+    for i, g in enumerate(bits):
+        x0, y0, x1, y1 = g.bounds
+        b = bounds.get(root(i), (x0, y0, x1, y1))
+        bounds[root(i)] = (min(b[0], x0), min(b[1], y0), max(b[2], x1), max(b[3], y1))
+    return sum(max(x1 - x0, y1 - y0) > weld_m for x0, y0, x1, y1 in bounds.values())
 
 
 def _matches(e, d, dt, elev, contours):
@@ -569,12 +606,20 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
         t3 = model.corners()[free]
         p = model.vertices[np.unique(model.triangles[free])]
         z0 = float(p[:, 2].min())
+        z1 = float(p[:, 2].max())
         storey = reader._storey(levels, z0)
+        bands = [i for i in range(len(storeys))          # every storey it stands in by more than a weld
+                 if min(z1, levels[i + 1]["elev_m"]) - max(z0, levels[i]["elev_m"]) > weld_m] or [storey]
+        plan = _plan(t3)                                 # its own geometry, not its bounding rectangle (#78)
         for a, u, n, length in reader._walls(storeys[storey]):
             s, dd = (p[:, :2] - a) @ u, (p[:, :2] - a) @ n
-            # set into the body deeper than decor is, but in front of this wall only (a coping ring round the
-            # roof reaches across the building); along the wall it may run on past the corner (review 3 of #76)
-            if (-STRAY_EMBED_MAX_M <= dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
+            # set into the body deeper than decor is, and not through it: in every storey it stands in, the
+            # part of its plan outside the body is one piece (in front of the wall, past a corner or into a
+            # concave one); a box through the building (a coping ring round the roof) comes out on the far side
+            # too and is an attachment (user 2026-10-12: against the body between storey contours, no new number)
+            if (dd.min() < -reader.EMBED_MAX_M and 0 < dd.max() <= reader.ATTACHMENT_FROM_M
+                    and s.max() > FACE_M and s.min() < length - FACE_M
+                    and all(_pieces_outside(plan, polys[i], weld_m) == 1 for i in bands)
                     and reader._is_box(t3, u, n, float(a @ n)) is not None):
                 stray += len(free)
                 break
