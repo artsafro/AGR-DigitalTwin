@@ -70,9 +70,15 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   mesh is not cut - the same rule as into the wall. Horizontal (band: belt, cornice; panel: spandrel) is
   main, vertical (strip: lesene, pilaster) is subordinate; of one rank (a belt into a belt) the longer
   continues and the other runs into it. Ends closer than `plate_gap_m` meet (an end moved off an opening
-  still meets). The 5 mm gap stays only against an opening face. Not built yet (build error): a meeting
-  across walls at a building corner, side by side or crossing, one rank and one length, a subordinate
-  standing out of the main one.
+  still meets). The 5 mm gap stays only against an opening face.
+- **At a convex building corner** (a belt into a belt): the main element runs on past the corner by the
+  other's projection and keeps its whole end face; the other starts at the main one's back plane
+  (`decor_inset_m` from the corner) without its end, so no face of one lies in a face of the other. Both
+  must have one height (past the corner the main one's open back is closed by the other). The extractor
+  reads a part wrapped round a corner as one arm per wall (the corner block to the longer arm), each with
+  its source extent to the corner.
+- Build errors (the rule does not cover them): side by side or crossing, one rank and one length, a
+  subordinate standing out of the main one, a corner meeting of different heights or at a concave corner.
 - ID: the element's `material_id`, else the object's decor ID (`object.json` build ids `decor`).
 - A free-standing column: its own ID and UV island, a separate part attached to the body in the
   final mesh (not welded). A column or pilaster touching the wall follows the inset rule above.

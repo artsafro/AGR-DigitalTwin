@@ -32,7 +32,8 @@ SHARE_TOL_M = 0.005       # a piece's back at the wall face within this
 EMBED_MAX_M = 0.05        # ... or embedded into the wall up to this
 PROJECTION_MAX_M = 1.5    # deeper than this off a wall is no facade decor (canopy, balcony)
 ATTACHMENT_FROM_M = 0.8   # projection over this: an attachment candidate, not decor (user 2026-10-12)
-SPAN_TOL_M = 0.01         # a piece lies within its wall's span within this
+SPAN_TOL_M = 0.01         # a piece lies within its wall's span within this ...
+RUN_ON_MAX_M = 0.8        # ... or runs on past a building corner by at most this (an element's projection)
 SAME_M = 0.005            # one cross-section / one axis within this
 COVER = 0.99              # a box's front face covers this share of its front rectangle
 SEAM_FACTOR = 12          # seams up to plate_gap_m x 12 (0.06 m by default) join pieces (user 2026-10-12)
@@ -144,13 +145,19 @@ def _is_box(t, u, n, c, hosts=()):
         end = hi[axis] if sign > 0 else lo[axis]
         other = 2 if axis == 0 else 0
         key = {0: ("s0", "s1"), 2: ("z0", "z1")}
-        host = next((h for h in hosts
-                     if h[key[axis][0]] + DEPTH_TOL_M < end < h[key[axis][1]] - DEPTH_TOL_M
-                     and h[key[other][0]] - DEPTH_TOL_M <= lo[other] and hi[other] <= h[key[other][1]] + DEPTH_TOL_M
-                     and front <= h["d1"] + DEPTH_TOL_M), None)
-        if host is None:
+        def holds(h):
+            if h.get("corner"):                       # across walls: the end lies on the main one's back plane
+                inside = h[key[axis][0]] - DEPTH_TOL_M <= end <= h[key[axis][1]] + DEPTH_TOL_M
+            else:
+                inside = h[key[axis][0]] + DEPTH_TOL_M < end < h[key[axis][1]] - DEPTH_TOL_M
+            return (inside and h[key[other][0]] - DEPTH_TOL_M <= lo[other] and hi[other] <= h[key[other][1]] + DEPTH_TOL_M
+                    and front <= h["d1"] + DEPTH_TOL_M)
+        host = next((h for h in hosts if holds(h)), None)
+        if host is None or (axis == 2 and host.get("corner")):
             return None
-        if sign > 0:
+        if host.get("corner"):                        # the source extent reaches the corner
+            clip[key[axis][1] if sign > 0 else key[axis][0]] = host["to1"] if sign > 0 else host["to0"]
+        elif sign > 0:
             clip[key[axis][1]] = host[key[axis][0]]
         else:
             clip[key[axis][0]] = host[key[axis][1]]
@@ -180,16 +187,22 @@ def _piece(v, part_tris, levels, contours, polys):
     for w, (a, u, n, length) in enumerate(_walls(contours[li])):
         s = (p[:, :2] - a) @ u
         d = (p[:, :2] - a) @ n
+        # at a building corner the main element runs on past the wall end by the other's projection
+        # (user 2026-10-12); a piece fully inside the span is preferred
         if (d.min() < -EMBED_MAX_M or d.min() > SHARE_TOL_M or d.max() > PROJECTION_MAX_M or d.max() <= 0
-                or s.min() < -SPAN_TOL_M or s.max() > length + SPAN_TOL_M):
+                or s.min() < -RUN_ON_MAX_M or s.max() > length + RUN_ON_MAX_M):
             continue
-        if best is None or abs(d.min()) < abs(best[1]):
-            best = (w, float(d.min()))
+        over = s.min() < -SPAN_TOL_M or s.max() > length + SPAN_TOL_M
+        if best is None or (over, abs(d.min())) < (best[2], abs(best[1])):
+            best = (w, float(d.min()), over)
     if best is not None:
-        a, u, n, _ = _walls(contours[li])[best[0]]
+        a, u, n, length = _walls(contours[li])[best[0]]
         s, d = p[:, :2] @ u, p[:, :2] @ n                 # absolute along / out, comparable across storeys
-        c = float(a @ n)
-        pc = {"li": li, "u": u, "n": n, "c": c, "s0": float(s.min()), "s1": float(s.max()), "z0": z0, "z1": z1,
+        c, o = float(a @ n), float(a @ u)
+        s0, s1 = float(s.min()), float(s.max())
+        if best[2]:                                       # a run-on: the source extent ends at the wall end
+            s0, s1 = max(s0, o) if s0 < o - SPAN_TOL_M else s0, min(s1, o + length) if s1 > o + length + SPAN_TOL_M else s1
+        pc = {"li": li, "u": u, "n": n, "c": c, "o": o, "length": length, "s0": s0, "s1": s1, "z0": z0, "z1": z1,
               "out": float(d.max() - c), "embed": float(c - d.min())}
         # every storey it crosses has a wall on the same line holding its span (review 1 of PR #74)
         crossed = range(li, _storey(levels, z1 - SAME_M) + 1)
@@ -206,6 +219,41 @@ def _piece(v, part_tris, levels, contours, polys):
         return {"type": "column" if grounded else "column-off-level", "li": li,
                 "box": [float(lo[0]), float(lo[1]), float(hi[0]), float(hi[1])], "z0": z0, "z1": z1,
                 "out": float((hi - lo).max()), "s0": 0.0, "s1": float((hi - lo).min())}
+    return None
+
+
+def _corner_arms(v, tris, part, levels, contours):
+    """A part round a convex building corner (two elements meeting there, or one belt wrapped round it), split
+    into one arm per wall, or None (user 2026-10-12: of one rank the longer continues). A triangle belongs to
+    the wall whose span holds its centre; the corner block past both wall ends goes to the longer arm."""
+    p = v[np.unique(tris[part])]
+    li = _storey(levels, float(p[:, 2].min()))
+    walls = _walls(contours[li])
+    centre = v[tris[part]].mean(axis=1)[:, :2]
+    for w in range(len(walls)):
+        (a0, u0, n0, l0), (a1, u1, n1, l1) = walls[w], walls[(w + 1) % len(walls)]
+        if u0[0] * u1[1] - u0[1] * u1[0] <= 0:      # convex corners only (a left turn of a counter-clockwise contour)
+            continue
+        zone = all((((p[:, :2] - a) @ n >= -EMBED_MAX_M) & ((p[:, :2] - a) @ n <= PROJECTION_MAX_M)
+                    & ((p[:, :2] - a) @ u >= -RUN_ON_MAX_M) & ((p[:, :2] - a) @ u <= length + RUN_ON_MAX_M)).any()
+                   for a, u, n, length in ((a0, u0, n0, l0), (a1, u1, n1, l1)))
+        s0 = (centre - a0) @ u0
+        s1 = (centre - a1) @ u1
+        near = (((p[:, :2] - a0) @ n0 <= PROJECTION_MAX_M) | ((p[:, :2] - a1) @ n1 <= PROJECTION_MAX_M)).all()
+        if not zone or not near:
+            continue
+        on0 = s0 <= l0 - EMBED_MAX_M                     # before the corner along wall w
+        on1 = s1 >= EMBED_MAX_M                          # after the corner along wall w + 1
+        if (on0 & on1).any() or not on0.any() or not on1.any():
+            continue
+        block = ~on0 & ~on1
+        len0 = float(l0 - s0[on0].min()) if on0.any() else 0.0
+        len1 = float(s1[on1].max()) if on1.any() else 0.0
+        if abs(len0 - len1) <= SAME_M:
+            return None                                  # one length: which continues is the user's
+        arm0 = on0 | (block if len0 > len1 else False)
+        arm1 = on1 | (block if len1 > len0 else False)
+        return [part[arm0], part[arm1]]
     return None
 
 
@@ -309,6 +357,13 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
     pieces = []
     for part in parts:
         pc = _piece(v, tris[part], levels, contours, polys)
+        if pc is None or pc["type"] == "shape":
+            arms = _corner_arms(v, tris, part, levels, contours)
+            if arms:                                  # a belt round a building corner: one element per wall
+                found_arms = [(arm, _piece(v, tris[arm], levels, contours, polys)) for arm in arms]
+                if all(a_pc is not None for _, a_pc in found_arms):
+                    pieces += found_arms
+                    continue
         if pc is None:
             kept += 1
             continue
@@ -318,6 +373,12 @@ def extract(v, tris, mats, parts, levels, contours, polys, plate_gap_m, attachme
         if pc["type"] == "shape" and pc["on_walls"]:
             hosts = [{"s0": h["s0"], "s1": h["s1"], "z0": h["z0"], "z1": h["z1"], "d1": h["c"] + h["out"]}
                      for h in whole if h is not pc and h["u"] @ pc["u"] >= AXIS_COS and abs(h["c"] - pc["c"]) <= SAME_M]
+            for h in whole:                           # the main one of a building corner, on the next wall
+                if h is pc or abs(float(h["u"] @ pc["u"])) > 1 - AXIS_COS:
+                    continue
+                hs, hd = h["t"][..., :2] @ pc["u"], h["t"][..., :2] @ pc["n"]
+                hosts.append({"s0": float(hs.min()), "s1": float(hs.max()), "z0": h["z0"], "z1": h["z1"],
+                              "d1": float(hd.max()), "corner": True, "to0": pc["o"], "to1": pc["o"] + pc["length"]})
             clip = _is_box(pc["t"], pc["u"], pc["n"], pc["c"], hosts) if hosts else None
             if clip:
                 pc.update(clip, type="wall", inset_into=True)

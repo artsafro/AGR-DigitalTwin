@@ -526,7 +526,7 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
                 e1 = 0.0
         walls.append({"a": a, "u": u, "n": n, "c": float(a @ n), "o": float(a @ u), "s0": s0, "s1": s1, "z0": z0,
                       "z1": z1, "d0": d0, "d1": d1, "e0": e0, "e1": e1, "mid": mid, "where": where, "skip": set(),
-                      "rank": 0 if e.kind == "strip" else 1})
+                      "rank": 0 if e.kind == "strip" else 1, "length": length})
     _meet(walls, columns, gap)
     for w in walls:
         a, u, n, s0, s1, z0, z1, d0, d1, e0, e1, mid = (w[k] for k in ("a", "u", "n", "s0", "s1", "z0", "z1", "d0", "d1",
@@ -543,6 +543,46 @@ def _decor(spec, floors, contours, openings, inputs, elev, polys, top):
     return out
 
 
+def _corner(A, B):
+    """Two elements meeting at a convex building corner (user 2026-10-12): the main one (horizontal over
+    vertical, else the longer) runs on past the corner by the other's projection and keeps its full end face;
+    the other runs into it up to its back plane (decor_inset_m from the corner): its end and the parts inside
+    the main one are dropped, so no face of one lies in a face of the other. Both must have one height (past
+    the corner the main one's back is open and the other closes it). Else a BuildError."""
+    def corner_end(w):
+        ends = []
+        if w["s0"] <= KEY_M:
+            ends.append((0, w["a"]))
+        if w["s1"] >= w["length"] - KEY_M:
+            ends.append((1, w["a"] + w["u"] * w["length"]))
+        return ends
+    meet = [(ea, eb) for ea in corner_end(A) for eb in corner_end(B) if np.linalg.norm(ea[1] - eb[1]) <= KEY_M]
+    if len(meet) != 1:
+        raise BuildError(f"{A['where']} and {B['where']} touch across walls away from a shared corner; not built")
+    (ia, _), (ib, _) = meet[0]
+    if A["rank"] != B["rank"]:
+        main, sub_, im, is_ = (A, B, ia, ib) if A["rank"] > B["rank"] else (B, A, ib, ia)
+    else:
+        la, lb = A["s1"] - A["s0"], B["s1"] - B["s0"]
+        if abs(la - lb) <= KEY_M:
+            raise BuildError(f"{A['where']} and {B['where']} meet at a corner with one rank and one length: which "
+                             "continues is not decided; not built")
+        main, sub_, im, is_ = (A, B, ia, ib) if la > lb else (B, A, ib, ia)
+    if abs(sub_["z0"] - main["z0"]) > KEY_M or abs(sub_["z1"] - main["z1"]) > KEY_M:
+        # past the corner the main one's back is open; only an element of its full height closes it
+        raise BuildError(f"{sub_['where']} and {main['where']} meet at a corner with different heights: "
+                         "the main one's back past the corner would be open; not built")
+    if im == 1:                                         # the main one runs on past the corner, end face whole
+        main["s1"], main["e1"] = main["length"] + sub_["d1"], main["d0"]
+    else:
+        main["s0"], main["e0"] = -sub_["d1"], main["d0"]
+    if is_ == 0:                                        # the other starts at the main one's back plane
+        sub_["s0"] = -main["d0"]
+    else:
+        sub_["s1"] = sub_["length"] + main["d0"]
+    sub_["skip"].add(f"end{is_}")
+
+
 def _meet(walls, columns, gap):
     """Decor elements that meet (pattern facade-decor-inset, user 2026-10-12): the subordinate one runs
     DECOR_INSET_M into the main one through its end, which is deleted; the main one is not cut. Ends closer
@@ -557,8 +597,7 @@ def _meet(walls, columns, gap):
                                            ((w["s0"], w["d0"]), (w["s1"], w["d0"]), (w["s1"], w["d1"]), (w["s0"], w["d1"]))])
                           for w in (A, B))
                 if min(A["z1"], B["z1"]) - max(A["z0"], B["z0"]) >= -KEY_M and fa.distance(fb) <= KEY_M:
-                    raise BuildError(f"{A['where']} and {B['where']} meet across walls (a building corner): "
-                                     "the longer continues, the other runs into it - not built yet")
+                    _corner(A, B)
                 continue
             S = {id(w): (w["o"] + w["s0"], w["o"] + w["s1"]) for w in (A, B)}
             sa, sb = S[id(A)], S[id(B)]

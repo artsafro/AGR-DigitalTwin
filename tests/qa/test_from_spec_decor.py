@@ -266,7 +266,9 @@ def test_the_longer_of_one_rank_is_main():
     ([BELT, dict(PILASTER, wall=0, x_m=6.0, z_m=0.0, h_m=2.4, projection_m=0.2)], "stands out"),
     ([dict(BELT, x_m=0.5, w_m=2.0), dict(BELT, x_m=2.5, w_m=2.0, z_m=2.45, h_m=0.2, material_id=27)], "one length"),
     ([dict(BELT, x_m=8.0, w_m=2.0, z_m=1.0), dict(PILASTER, x_m=0.0, w_m=2.0, z_m=1.0, h_m=0.3, kind="band",
-                                                    projection_m=0.15)], "across walls"),
+                                                    projection_m=0.15)], "one rank and one length"),
+    ([dict(BELT, x_m=8.0, w_m=2.0, z_m=1.0), dict(PILASTER, x_m=0.0, w_m=1.0, z_m=1.0, h_m=0.25, kind="band",
+                                                    projection_m=0.15)], "different heights"),
 ])
 def test_meetings_the_rule_does_not_cover(decor, message):
     with pytest.raises(BuildError, match=message):
@@ -308,3 +310,33 @@ def test_a_run_in_over_the_inset_fails():
         if abs(p[2] - 2.425) < 1e-9:
             p[2] = 2.46                                                 # 0.055 m into the belt
     assert any("over decor_inset_m" in p for p in problems(decor_check(dump, sp)))
+
+
+def test_two_belts_at_a_corner_the_longer_runs_on():
+    """User 2026-10-12: of one rank at a corner the longer continues, the other runs into it."""
+    long_ = dict(BELT, x_m=6.0, w_m=4.0, z_m=1.0, h_m=0.3, projection_m=0.15)                 # wall 0, ends at (10, 0)
+    short = dict(BELT, wall=1, x_m=0.0, w_m=2.0, z_m=1.0, h_m=0.3, projection_m=0.12, material_id=27)   # wall 1
+    sp = spec(long_, short)
+    dump = build(sp, INPUTS)
+    main = np.concatenate(decor_faces(dump, 26))
+    other = np.concatenate(decor_faces(dump, 27))
+    assert main[:, 0].max() == pytest.approx(10.12)                    # past the corner by the other's projection
+    assert other[:, 1].min() == pytest.approx(0.02)                    # from the main one's back plane
+    assert len(decor_faces(dump, 26)) == 5 and len(decor_faces(dump, 27)) == 4
+    report = decor_check(dump, sp)
+    assert report["status"] == "pass", problems(report)
+    model = from_dump(dump)
+    tol = {**json.loads((ROOT / "benchmark/bench-b01-box/tolerances.json").read_text(encoding="utf-8"))["geometry"],
+           **DECOR_TOL, "open_part_groups": ["attachment"]}
+    full = checks.run(model, model, sp, tol)
+    assert full["passed"], [(c["id"], c["value"]) for c in full["checks"] if c["status"] != "pass"]
+
+
+def test_a_corner_meeting_reads_back_as_the_source():
+    long_ = dict(BELT, x_m=6.0, w_m=4.0, z_m=1.0, h_m=0.3, projection_m=0.15)
+    short = dict(BELT, wall=1, x_m=0.0, w_m=2.0, z_m=1.0, h_m=0.3, projection_m=0.12, material_id=27)
+    obj = {"id": "bench-synth-box", "frame": {"to_object": [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]}}
+    back, rep = extract_spec(build(spec(long_, short), INPUTS), obj)
+    got = sorted((d.wall, round(d.x_m, 4), round(d.w_m, 4), d.projection_m, d.material_id) for d in back.decor)
+    assert got == [(0, 6.0, 4.0, 0.15, 26), (1, 0.0, 2.0, 0.12, 27)]
+    assert not [q for q in rep["questions"] if q["kind"].startswith("decor")]

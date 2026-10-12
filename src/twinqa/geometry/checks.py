@@ -510,9 +510,17 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
             d = (c[..., :2] - a) @ n
             S0, S1 = e.x_m, e.x_m + e.w_m
             run = 2 * (dt + DECOR_INSET_M + spec.plate_gap_m)   # a run-in end may pass its spec extent
-            inside = ((s >= S0 - run) & (s <= S1 + run) & (c[..., 2] >= z0 - run) & (c[..., 2] <= z1 + run)
+            pts = np.asarray([q[:2] for q in contours[e.level]], float)
+            wall_len = float(np.linalg.norm(pts[(e.wall + 1) % len(pts)] - pts[e.wall]))
+            # at a building corner the main element runs on past the wall end by the other's projection
+            lo_s = -TEXTURE_LOOK_M if S0 <= dt else S0 - run
+            hi_s = wall_len + TEXTURE_LOOK_M if S1 >= wall_len - dt else S1 + run
+            inside = ((s >= lo_s) & (s <= hi_s) & (c[..., 2] >= z0 - run) & (c[..., 2] <= z1 + run)
                       & (d >= -dt - 0.05) & (d <= (TEXTURE_LOOK_M if e.texture else e.projection_m) + dt)).all(axis=1) \
                 & (d.max(axis=1) > FACE_M)
+            # past a wall end, a face looking out along n is the end face of the other element's run-on, not ours
+            beyond = (s.mean(axis=1) < -FACE_M) | (s.mean(axis=1) > wall_len + FACE_M)
+            inside &= ~(beyond & (normal[:, :2] @ n >= cos))
             hit = inside
             decor_tris |= inside
             if e.texture:                              # anything built over its rectangle (review 1 of PR #75)
