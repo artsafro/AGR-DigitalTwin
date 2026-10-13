@@ -175,6 +175,20 @@ draft (`pipeline_gate`). Without the flag nothing changed; B01 / B02 / B02t / K0
   thickness (one per building, user 2026-10-13). Measuring terrace parapets is issue #82.
 - B01 / B02 / B02t read 0.3 and K01 reads 0.555, the same as their build values. Models and checks are
   identical to main; the specs gain only version 0.6 and the thickness.
+#83 merged (3 Codex rounds): rules 1 and 2 for OBJ03 (user 2026-10-13), a panel facade without a shell.
+- `object.json` `source_class: "panelised"` and `slabs` switch the path on. Without them, the extractor stops
+  with a hint and slab candidates when more than 50 % of the surface lies outside the body.
+- The storey contour is the envelope of the panels' outer faces at mid storey, with glass included. Parts
+  further than 0.8 m from the slab are left out whole. Joints up to 0.10 m close. The envelope is simplified by
+  Douglas–Peucker at 0.10 m.
+- The slab gives data, not questions: `facade_offset_m`, `slab_area_m2` and `slab_inside_facade_share`.
+- A facade that does not close is a stop, with facts. A terrace is the ledge between panel contours, with a
+  parapet on its edge. The roof is measured on every part.
+- Small slab openings (both sizes < 0.7 m) are listed, not openings: pattern `roof-inset-plane`.
+- The id ranges are cached per file. On OBJ03 extraction took 193 s instead of 1102 s.
+- Issues #84 (simplified contour vs the roof check) and #85 (an open facade joined to an inner ring reads as a
+  recess) are open.
+- OBJ03 probe: L00–L15 are read by panels; L16–L28 stop as open facades.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
@@ -269,7 +283,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: case-alina-bld with the user's rules 1-5 (docs/HANDOFF.md); decor PR 4
+   Claude: subagents PR (harness/subagents, review procedure of 2026-10-13), then the OBJ03 run (--collect-stops, stops to the user, then the model); no new harness PRs until the user has seen the OBJ03 model (user 2026-10-13); decor PR 4
    (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
