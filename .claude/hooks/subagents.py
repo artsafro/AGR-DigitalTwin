@@ -128,11 +128,15 @@ def deny_geometry(payload):
               "built")
     if tool == "Bash":                               # the checker runs tools/ and modules, it reads no source:
         low = str(args.get("command", "")).lower().replace("\\", "/")      # no path into src at all (review 2)
+        recursive = SEARCH.search(low) and re.search(r"\s-[A-Za-z]*[rR][A-Za-z]*\b|--recursive|\brecurse\b|\bfind\b|"
+                                                     r"\brg\b", str(args.get("command", "")))
+        tokens = re.findall(r"[^\s'\"]+", low)
+        root = any(t in (".", "./", "..", "../", "*", "./*", "~") or t.endswith("agr-digitaltwin") for t in tokens)
+        allowed = re.search(r"(^|\s)(docs|benchmark|jobs|tools|tests|standards|c:/x)\S*", low)
         if "from_spec" in low or ("dt_ai" in low and "geometry" in low) \
                 or re.search(r"(^|[\s'\"=:(/.])src(/|\s|$|['\")*])", low) \
-                or (SEARCH.search(low) and re.search(r"\s-[A-Za-z]*[rR][A-Za-z]*\b|--recursive|\brecurse\b|\bfind\b|\brg\b",
-                                                     str(args.get("command", ""))) and not re.search(
-                    r"(^|\s)(docs|benchmark|jobs|tools|tests|standards|c:/x)\S*", low)):
+                or re.search(r"\bgit\b[^|;&\n]*\sgrep\b", low) \
+                or (recursive and (root or not allowed)):   # a root operand searches src too (review 3 of #86)
             return _deny(reason)
         return {}
     for key in ("file_path", "path", "notebook_path"):

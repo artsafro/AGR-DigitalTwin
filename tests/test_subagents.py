@@ -136,6 +136,8 @@ def test_guard_denies_plain_writes_in_bash(command, denied):
     ("Bash", {"command": "grep -R FORBIDDEN ./src"}, True),                       # review 2 of #86
     ("Bash", {"command": "cat src/dt_ai/*/*.py"}, True),
     ("Bash", {"command": "grep -rn plane ."}, True),
+    ("Bash", {"command": "git grep FORBIDDEN"}, True),                            # review 3 of #86
+    ("Bash", {"command": "grep -R FORBIDDEN . docs"}, True),
     ("Bash", {"command": "grep -rn plane docs/domain/patterns"}, False),
     ("Read", {"file_path": "src/twinqa/geometry/checks.py"}, False),
     ("Grep", {"pattern": "opening", "path": "docs/domain/patterns"}, False),
