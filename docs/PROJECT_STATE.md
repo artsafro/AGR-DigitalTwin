@@ -155,9 +155,15 @@ Not covered: a compromised environment, for example a fake `py` on PATH (user 20
 `C:/x/pre-commit.backup-2026-10-12b`). It blocks a built status without `pipeline/` on this machine.
 #77 merged (3 Codex rounds): the materials table reads `slots` {slot: id} (1-based dump slots; an unlisted slot
 is 0) and `glass_slots` + `glass_id`. Glass triangles move into `<name>_glass` for the extractor, and source
-polygon sizes stay with their triangles. On the alina-bld FBX with the run table, 30 296 glass triangles get
-id 12 and the other 387 034 get 0, because the finish table by slot is still awaited from the user. B01 / B02
-/ B02t 9/9; K01 unchanged.
+polygon sizes stay with their triangles. On the OBJ03 source FBX with the run table, 30 296 glass triangles get
+id 12 and the other 387 034 get 0. Finish slots are not mapped to ids (user 2026-10-13): the engine sets the
+output ids by group, and the material of a slot is asked only when a decision needs it. B01 / B02 / B02t 9/9;
+K01 unchanged.
+#80 merged (3 Codex rounds): rule 5 for OBJ03 (user 2026-10-12): `dt spec extract --collect-stops` makes one
+pass and substitutes nothing. Each storey's contour is read on its own, and a stopped storey is left out. Every
+stop goes to `<spec>.report.json` → `stops` with its stage (levels and body / contour / openings / roof /
+plates / decor). No spec is written and the exit code is 3. A report with stops backs no job status above
+draft (`pipeline_gate`). Without the flag nothing changed; B01 / B02 / B02t / K01 are identical.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
