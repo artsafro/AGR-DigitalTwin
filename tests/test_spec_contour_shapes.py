@@ -491,3 +491,167 @@ def test_open_slab_edge_keeps_the_contour_and_is_asked():
     assert edge["open_m"] == [[3.0, 3.3]] and edge["closed_shapes"] == 0
     q = [q for q in report["questions"] if q["kind"] == "slab-edge-open"]
     assert [(x["levels"], x["heights_m"]) for x in q] == [(["L0"], [3.0, 3.3])]
+
+
+# --- rules 1-2 (user 2026-10-13): a panel facade without a shell - contours by the panels' outer faces
+
+def _panel(name, a, b, z0, z1, out=0.1):
+    """A panel `out` thick standing outward of the CCW wall a -> b; it covers the outer corner at its start and
+    leaves a 0.02 m joint at both ends."""
+    a, b = np.asarray(a, float), np.asarray(b, float)
+    t = (b - a) / np.linalg.norm(b - a)
+    n = np.array([t[1], -t[0]])
+    a0, b0 = a - 0.1 * t + 0.02 * t, b - 0.02 * t
+    m = Mesh(name)
+    walls(m, [list(a0), list(b0), list(b0 + out * n), list(a0 + out * n)], z0, z1)
+    return m
+
+
+def panelised(outlines=(SQUARE10, SQUARE10), slab=SQUARE10, levels=LEVELS, extra=(), slabs_at=None, mass_m=2.0):
+    """An inner mass 2 x 2 m; per storey a panel shell 0.1 m outside its outline (one part per wall); slab plates
+    at every level above the ground (mesh 'Slabs', the given outline)."""
+    mass = Mesh("Mass")
+    lo, hi = 5 - mass_m / 2, 5 + mass_m / 2
+    inner = [[lo, lo], [hi, lo], [hi, hi], [lo, hi]]
+    walls(mass, inner, 0.0, levels[-1][1])
+    flat(mass, Polygon(inner), levels[-1][1], up=True)
+    flat(mass, Polygon(inner), 0.0, up=False)
+    meshes = [mass]
+    for k, ((_, z0), (_, z1)) in enumerate(zip(levels, levels[1:])):
+        pts = outlines[k]
+        meshes += [_panel(f"Panel_{k}_{w}", pts[w], pts[(w + 1) % len(pts)], z0 + 0.01, z1 - 0.01)
+                   for w in range(len(pts))]
+    slabs = Mesh("Slabs")
+    for k, (_, z) in enumerate(levels[1:]):
+        outline = (slabs_at or {}).get(k + 1, slab)
+        flat(slabs, Polygon(outline), z, up=True)
+        flat(slabs, Polygon(outline), z - 0.2, up=False)
+    meshes += [slabs, *extra]
+    return {"source": "synthetic-shapes", "meshes": [m.dump() for m in meshes],
+            "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]} for n, z in levels]}
+
+
+PANEL_OBJECT = {**OBJECT, "source_class": "panelised", "slabs": ["Slabs"]}
+OUTER10 = [[-0.1, -0.1], [10.1, -0.1], [10.1, 10.1], [-0.1, 10.1]]
+
+
+def test_panel_facade_without_a_shell_is_hinted_with_slab_candidates():
+    with pytest.raises(SpecError, match=r"panel facade without a shell.*source_class.*Slabs \(2 levels\)"):
+        extract_spec(panelised(), OBJECT)
+
+
+def test_contour_is_the_panels_outer_face_and_the_slab_is_data():
+    spec, report = extract_spec(panelised(), PANEL_OBJECT)
+    assert all(close(f.contour, OUTER10, tol=0.03) for f in spec.expanded_floors())
+    rep = report["floors"]["L0"]
+    assert rep["measured_by"] == "panels" and rep["contour_rule"] == "panels at 1.650 m (rule 2)"
+    assert rep["slab_area_m2"] == 100.0 and rep["facade_offset_m"] == pytest.approx(0.1, abs=0.011)
+    assert not [q for q in report["questions"] if "slab" in q["kind"]]          # data, not a question
+
+
+def test_a_slab_overhanging_the_panels_is_data_and_the_contour_stays_the_panels():
+    wide = [[0, 0], [10, 0], [10, 10], [-0.5, 10], [-0.5, 0]]
+    spec, report = extract_spec(panelised(slab=wide), PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L0"]["facade_offset_range_m"][0] == pytest.approx(-0.4, abs=0.011)
+
+
+def test_a_balcony_beyond_0_8_m_is_left_out_of_the_contour():
+    balcony = _panel("Balcony", [4, -0.1], [6, -0.1], 1.0, 2.0, out=1.5)
+    spec, report = extract_spec(panelised(extra=[balcony]), PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L0"]["attachment_pieces_left_out"] >= 1
+
+
+def test_a_storey_without_its_ceiling_slab_is_read_by_its_panels():
+    dump = panelised()
+    slabs = next(m for m in dump["meshes"] if m["name"] == "Slabs")
+    slabs["triangles"] = [tr for tr in slabs["triangles"] if min(slabs["vertices"][i][2] for i in tr) > 5.0]
+    spec, report = extract_spec(dump, PANEL_OBJECT)                # no slab at 3.3 m: L0 has no ceiling slab
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L0"]["slab"] == "no ceiling slab at 3.3 m"
+
+
+def test_an_open_facade_stops_and_is_not_filled():
+    from dt_ai.spec import SpecStops
+    dump = panelised()
+    dump["meshes"] = [m for m in dump["meshes"] if m["name"] != "Panel_0_0"]          # the south wall missing
+    with pytest.raises(SpecStops) as caught:
+        extract_spec(dump, PANEL_OBJECT, collect_stops=True)
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("contour", "L0")]
+    assert "do not close round the building" in caught.value.stops[0]["message"]
+
+
+def test_a_setback_with_a_parapet_on_the_ledge_is_a_terrace():
+    upper = [[0, 0], [6, 0], [6, 10], [0, 10]]
+    parapet = [_panel(f"Parapet_{w}", a, b, 3.3, 4.4) for w, (a, b) in
+               enumerate([([6, 0], [10, 0]), ([10, 0], [10, 10]), ([10, 10], [6, 10])])]
+    spec, report = extract_spec(panelised(outlines=(SQUARE10, upper), extra=parapet, slabs_at={2: upper}),
+                                PANEL_OBJECT)
+    assert [t.model_dump() for t in spec.terraces] == [{"level": "L1", "parapet_h_m": pytest.approx(1.09, abs=0.02)}]
+    t = report["floors"]["L1"]["terrace"]
+    assert t["walkable_m2"] > 30 and t["rule"] == "panels on the ledge edge (rule 2)"
+
+
+def test_contours_by_panels_need_the_slabs_named():
+    with pytest.raises(SpecError, match=r"needs object.json slabs.*not in the source: \['Nope'\]"):
+        extract_spec(panelised(), {**PANEL_OBJECT, "slabs": ["Nope"]})
+
+
+def test_a_small_roof_hole_is_no_opening_and_is_listed():
+    """User 2026-10-13 (pattern roof-inset-plane): a slab opening with both sizes under 0.7 m that is no shaft
+    is no body opening - left out and listed (OBJ03: 0.04 m2 at 96.55 m); a larger one still asks."""
+    def roofed(hole):
+        b = Mesh("Body")
+        walls(b, SQUARE10, 0.0, 6.6)
+        flat(b, Polygon(SQUARE10, [hole]), 6.6, up=True)
+        flat(b, Polygon(SQUARE10), 0.0, up=False)
+        return dump_of(b)
+    spec, report = extract_spec(roofed([[5, 5], [5.2, 5], [5.2, 5.2], [5, 5.2]]), OBJECT)
+    assert report["roof"]["holes_ignored"] == [{"area_m2": 0.04, "at": [5.1, 5.1], "sizes_m": [0.2, 0.2]}]
+    with pytest.raises(SpecError, match="that is not a shaft"):
+        extract_spec(roofed([[5, 5], [5.2, 5], [5.2, 5.8], [5, 5.8]]), OBJECT)    # 0.2 x 0.8 m: an opening
+
+
+def test_the_id_ranges_cache_follows_the_file(tmp_path, monkeypatch):
+    """User 2026-10-13: the cache of standards/material_id_ranges.yaml follows the file - another path, or the
+    same path rewritten, is read again (review 2 of #83: the test must fail on a per-group cache)."""
+    import os
+    from dt_ai.spec import mesh as M
+    (tmp_path / "standards").mkdir()
+    ranges = tmp_path / "standards/material_id_ranges.yaml"
+    ranges.write_text("groups:\n  opening: {first: 41, last: 42}\n", encoding="utf-8")
+    monkeypatch.setattr("dt_ai.core.io.repo_root", lambda: tmp_path)
+    assert M._opening_ids() == frozenset({41, 42})
+    ranges.write_text("groups:\n  opening: {first: 43, last: 43}\n", encoding="utf-8")
+    os.utime(ranges, ns=(ranges.stat().st_atime_ns, ranges.stat().st_mtime_ns + 10**9))
+    assert M._opening_ids() == frozenset({43})
+
+
+def test_an_inner_mass_does_not_decide_whether_the_facade_closes():
+    """Review 2 of #83: a 3 x 3 m inner mass (more material than the panel ring) inside a closed facade."""
+    spec, report = extract_spec(panelised(mass_m=3.0), PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+
+
+def test_an_inner_ring_is_no_facade_when_the_outer_one_is_open():
+    """Review 2 of #83: the south facade missing, an inner panel ring round [1, 1]-[9, 9]: a stop, not the ring."""
+    from dt_ai.spec import SpecStops
+    inner = [_panel(f"Inner_{w}", a, b, 0.01, 3.29) for w, (a, b) in
+             enumerate([([1, 1], [9, 1]), ([9, 1], [9, 9]), ([9, 9], [1, 9]), ([1, 9], [1, 1])])]
+    dump = panelised(extra=inner)
+    dump["meshes"] = [m for m in dump["meshes"] if m["name"] != "Panel_0_0"]
+    with pytest.raises(SpecStops) as caught:
+        extract_spec(dump, PANEL_OBJECT, collect_stops=True)
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("contour", "L0")]
+
+
+def test_a_parapet_on_the_slab_edge_inside_the_facade_line_is_found():
+    """Review 2 of #83: the parapet stands on the walkable slab's edge (x 9.8-10), 0.1 m inside the lower facade's
+    outer line."""
+    upper = [[0, 0], [6, 0], [6, 10], [0, 10]]
+    parapet = Mesh("Parapet")
+    walls(parapet, [[9.8, 0], [10, 0], [10, 10], [9.8, 10]], 3.3, 4.4)
+    spec, report = extract_spec(panelised(outlines=(SQUARE10, upper), extra=[parapet], slabs_at={2: upper}),
+                                PANEL_OBJECT)
+    assert [(t.level, round(t.parapet_h_m, 2)) for t in spec.terraces] == [("L1", 1.1)]
