@@ -693,14 +693,19 @@ def _terrace(v, tris, groups, closed, z0, z1, below, extra=None):
                       "inner_face_m2": round(face, 3)}
 
 
+def _slab_band_from(z0, z1):
+    """Bottom of the slab edge band under the next level; in a storey up to 0.6 m it ends at mid storey
+    (review 1 of #81)."""
+    return z1 - min(SLAB_EDGE_BAND_M, 0.5 * (z1 - z0))
+
+
 def _mid_storey_shape(groups, closed, z0, z1):
     """Rule 3 (user 2026-10-12): the contour is the section at mid storey; a section that changes only in the
     band SLAB_EDGE_BAND_M under the next level is the slab edge (floor-step / belt), not the contour. Taken
     when one shape holds the whole wall band below that band - from the storey bottom, through mid storey,
     with no other closed shape in it; otherwise (None) the section changes in the wall band itself and the
     user names the height (contour_at_m). Returns (group, rule) or None."""
-    wall_top = z1 - min(SLAB_EDGE_BAND_M, 0.5 * (z1 - z0))   # a storey up to 0.6 m: the band ends at mid storey
-                                                              # (review 1 of #81)
+    wall_top = _slab_band_from(z0, z1)
     wall = [(a, b) for a, b, _ in closed if a < wall_top - EVENT_MIN_M]
     if not wall or wall[0][0] - z0 >= EVENT_MIN_M:
         return None
@@ -778,6 +783,13 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
                         "object.json to a height of the wall shape (HARNESS_PLAN §4)")
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
+    if rule.startswith("mid storey"):                # the slab edge stays in the report, closed or not, with its
+        band = _slab_band_from(z0, z1)               # heights (review 2 of #81: an open band vanished)
+        done = {(a, b) for a, b, _ in closed}
+        report["slab_edge"] = {
+            "band_m": [round(band, 3), round(z1, 3)],
+            "closed_shapes": len(groups) - 1,
+            "open_m": [[round(a, 3), round(b, 3)] for a, b, _ in spans if b > band + EVENT_MIN_M and (a, b) not in done]}
     others = [g for g in groups if g is not base]
     if terrace is not None:                    # the parapet shape is the terrace, not a question
         report["terrace"] = {"parapet_h_m": round(zt - z0, 3), **areas}
@@ -1379,6 +1391,11 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     questions = (_questions(levels, floors, polys, pieces, stats) + op.break_questions(breaks, levels) + suspects
                  + _source_questions(dump, levels))
     for name, rep in report["floors"].items():        # structure on a ledge that is no terrace (review 1 of PR #61)
+        if rep.get("slab_edge", {}).get("open_m"):    # rule 3: the contour stands, the open slab edge is asked
+            opened = rep["slab_edge"]["open_m"]        # (review 2 of #81)
+            questions.append({"priority": "high", "kind": "slab-edge-open", "levels": [name], "wall": None,
+                              "depth_m": None, "length_m": None, "facade_share": None,
+                              "heights_m": [opened[0][0], opened[-1][1]], "at": None})
         if "ledge_structure" in rep:
             q = rep["ledge_structure"]
             questions.append({"priority": "high", "kind": "ledge-structure", "levels": [name], "wall": None,

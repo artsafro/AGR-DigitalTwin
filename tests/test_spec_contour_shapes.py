@@ -479,3 +479,15 @@ def test_short_storey_with_a_slab_edge_on_top_keeps_the_mid_storey_rule(h):
     spec, report = extract_spec(dump, OBJECT)
     assert close(spec.expanded_floors()[0].contour, SQUARE10)
     assert report["floors"]["L0"]["contour_rule"].startswith("mid storey, slab edge")
+
+
+def test_open_slab_edge_keeps_the_contour_and_is_asked():
+    """Review 2 of #81: the south face missing only at 3.0-3.3 m (an open slab edge band) - the mid-storey
+    contour stands, the open band is in the report and a question, never filled silently."""
+    dump = prism(SQUARE10, boxes=[(0, 0.0, 10.0, 3.0, 3.3, 0.0)])
+    spec, report = extract_spec(dump, OBJECT)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
+    edge = report["floors"]["L0"]["slab_edge"]
+    assert edge["open_m"] == [[3.0, 3.3]] and edge["closed_shapes"] == 0
+    q = [q for q in report["questions"] if q["kind"] == "slab-edge-open"]
+    assert [(x["levels"], x["heights_m"]) for x in q] == [(["L0"], [3.0, 3.3])]
