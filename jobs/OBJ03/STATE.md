@@ -40,6 +40,8 @@ what the engine lacks (`EG<n>`), and a count of decor elements against the colle
   `harness/from-source-modules`, three Codex rounds, old path regression unchanged, merge on command; at most
   three attempts per failing module, then report with numbers and a picture.
 - 2026-10-13 retro review of #99 / #100: four P1 (#101-#104), one P2 (#105).
+- 2026-10-13 modules confirmed (`modules/modules.json`): the inner core Shape211223721 is not built; slot 72
+  (spandrel planes) and slot 70 are wall finishes (ids 4, 5); the roof slat band Shape211223719 is a texture.
 - 2026-10-13 **lamellas** of the east facade slot (0.05 x 0.20 x 3.28 m fins, 0.10 m pitch, 11 per storey): NPM as a
   **texture** on the slot back, no geometry (as at Butovskaya, user 2026-10-07).
 - 2026-10-13 disputed geometry: look first, then classify (`WORKFLOW.md`); questions to the user only with a picture.

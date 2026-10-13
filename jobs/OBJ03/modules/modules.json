@@ -63,7 +63,7 @@
      ]
     }
    ],
-   "confidence": "medium",
+   "confidence": "confirmed",
    "note": "panelised source: no closed wall; these planes are the face the windows and decor stand on"
   },
   {
@@ -98,7 +98,7 @@
      ]
     }
    ],
-   "confidence": "high"
+   "confidence": "confirmed"
   },
   {
    "module": "walls",
@@ -130,8 +130,8 @@
      ]
     }
    ],
-   "confidence": "low",
-   "build": "not built (interior); to confirm"
+   "confidence": "confirmed",
+   "build": "not built (interior; user 2026-10-13)"
   },
   {
    "module": "slabs",
@@ -165,7 +165,7 @@
      ]
     }
    ],
-   "confidence": "high",
+   "confidence": "confirmed",
    "build": "inset plates (roof, walkable); edges as facade band"
   },
   {
@@ -200,7 +200,7 @@
      ]
     }
    ],
-   "confidence": "high"
+   "confidence": "confirmed"
   },
   {
    "module": "parapets",
@@ -284,7 +284,7 @@
      ]
     }
    ],
-   "confidence": "medium"
+   "confidence": "confirmed"
   },
   {
    "module": "parapets",
@@ -318,8 +318,8 @@
      ]
     }
    ],
-   "confidence": "medium",
-   "note": "slats like the lamellas: texture on a plane is the same question"
+   "confidence": "confirmed",
+   "build": "texture on the roof parapet plane, no slat geometry (user 2026-10-13)"
   },
   {
    "module": "decor",
@@ -353,7 +353,7 @@
      ]
     }
    ],
-   "confidence": "high"
+   "confidence": "confirmed"
   },
   {
    "module": "decor",
@@ -387,7 +387,7 @@
      ]
     }
    ],
-   "confidence": "high"
+   "confidence": "confirmed"
   },
   {
    "module": "decor",
@@ -421,7 +421,7 @@
      ]
     }
    ],
-   "confidence": "high"
+   "confidence": "confirmed"
   },
   {
    "module": "decor",
@@ -455,7 +455,7 @@
      ]
     }
    ],
-   "confidence": "medium"
+   "confidence": "confirmed"
   },
   {
    "module": "decor",
@@ -489,11 +489,11 @@
      ]
     }
    ],
-   "confidence": "medium"
+   "confidence": "confirmed"
   },
   {
-   "module": "decor",
-   "what": "flat spandrel panels under the windows (planes)",
+   "module": "walls",
+   "what": "flat spandrel panels under the windows - a facade finish",
    "ids": {
     "RailClone2146__slot72": 4
    },
@@ -523,12 +523,12 @@
      ]
     }
    ],
-   "confidence": "low",
-   "note": "a finish plane (facade id) or decor - to confirm"
+   "confidence": "confirmed",
+   "build": "wall finish, facade id 4 (user 2026-10-13)"
   },
   {
-   "module": "decor",
-   "what": "small flat plates and vertical strips (planes, 2 triangles each)",
+   "module": "walls",
+   "what": "small flat plates and vertical strips - a facade finish (as listed)",
    "ids": {
     "RailClone2146__slot70": 5
    },
@@ -558,8 +558,8 @@
      ]
     }
    ],
-   "confidence": "low",
-   "note": "not identified - to confirm on the picture"
+   "confidence": "confirmed as listed",
+   "build": "wall finish, facade id 5 (user 2026-10-13: the rest ok)"
   },
   {
    "module": "glazing",
@@ -593,7 +593,7 @@
      ]
     }
    ],
-   "confidence": "high",
+   "confidence": "confirmed",
    "build": "opening = glass, depth 0.4 (OD1), plane at the depth"
   },
   {
@@ -628,7 +628,7 @@
      ]
     }
    ],
-   "confidence": "high",
+   "confidence": "confirmed",
    "build": "npm_min: in the opening plane texture"
   },
   {
@@ -661,7 +661,7 @@
      ]
     }
    ],
-   "confidence": "high",
+   "confidence": "confirmed",
    "build": "texture on Shape211223774, no geometry (user 2026-10-13)"
   },
   {
@@ -746,7 +746,7 @@
      ]
     }
    ],
-   "confidence": "high",
+   "confidence": "confirmed",
    "build": "skipped, marked (attachments)"
   },
   {
@@ -781,7 +781,7 @@
      ]
     }
    ],
-   "confidence": "high",
+   "confidence": "confirmed",
    "build": "planes on the screens' outline (decision 2a)"
   },
   {
@@ -816,7 +816,8 @@
      ]
     }
    ],
-   "confidence": "medium"
+   "confidence": "confirmed"
   }
- ]
+ ],
+ "confirmed": "user 2026-10-13: 721 not built, slot 72 a finish, 719 as texture, the rest ok"
 }
