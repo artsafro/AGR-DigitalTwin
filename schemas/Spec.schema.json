@@ -620,6 +620,12 @@
       },
       "title": "Terraces",
       "type": "array"
+    },
+    "weld_m": {
+      "default": 0.003,
+      "exclusiveMinimum": 0,
+      "title": "Weld M",
+      "type": "number"
     }
   },
   "required": [

@@ -312,9 +312,9 @@ def test_roof_without_a_parapet_has_none_whatever_the_plane_height(roof_z):
 
 
 
-@pytest.mark.parametrize("gap", [0.002, 0.010])
+@pytest.mark.parametrize("gap", [0.004, 0.010])
 def test_a_low_real_parapet_does_not_depend_on_the_roof_plane(gap):
-    # Codex review 2 of PR #54: parapet inner faces 6.600-6.625 m, an inset plane 2 or 10 mm up
+    # Codex review 2 of PR #54: parapet inner faces 6.600-6.625 m, an inset plane 4 or 10 mm up (past the weld)
     b = Mesh("Body")
     inner = [[0.3, 0.3], [9.7, 0.3], [9.7, 9.7], [0.3, 9.7]]
     for w in range(4):

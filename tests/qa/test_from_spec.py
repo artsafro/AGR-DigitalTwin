@@ -64,7 +64,7 @@ def test_model_is_all_quads_welded_and_open_only_at_the_bottom_and_the_roof_inse
     body = dump["meshes"][0]
     assert set(body["polygon_sizes"]) == {4} and len(body["triangles"]) == 2 * len(body["polygon_sizes"])
     soup = from_dump(dump)
-    ids = weld(soup.vertices, 1e-4)
+    ids = weld(soup.vertices, TOL["weld_m"])
     edges, counts, _ = edge_uses(soup.triangles, ids)
     assert counts.max() <= 2                                   # no fin
     assert t_junctions(dump) == 0
@@ -147,7 +147,7 @@ def horizontal(soup, z, mid, up):
 
 def topology_ok(dump):
     soup = from_dump(dump)
-    _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
+    _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, TOL["weld_m"]))
     loops = checks.check_mesh(soup, TOL, checks.load_ranges())["details"]["open_loops"]
     # open only at the bottom and at the inset slab joints (pattern roof-inset-plane, user rule 2026-10-10)
     return counts.max() <= 2 and t_junctions(dump) == 0 and all(lp["allowed"] for lp in loops)         and [lp["kind"] for lp in loops].count("bottom") == 1
@@ -277,7 +277,7 @@ def test_rectilinear_contours_build_without_t_junctions(contour):
         d["floors"][0]["contour"] = contour
     dump = build(edited(edit), INPUTS)
     soup = from_dump(dump)
-    _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, 1e-4))
+    _, counts, _ = edge_uses(soup.triangles, weld(soup.vertices, TOL["weld_m"]))
     assert counts.max() <= 2 and t_junctions(dump) == 0
 
 
@@ -564,10 +564,10 @@ def test_near_degenerate_inputs_build_clean_or_stop(contour, window):
 
 
 @pytest.mark.parametrize("contour, wall, x_m", [
-    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 0.0001),               # exactly 0.1 mm from the start (review 2 of #58)
-    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 8.9999),               # exactly 0.1 mm from the end
+    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 0.0031),               # just past the 3 mm weld from the start
+    ([[0, 0], [10, 0], [10, 10], [0, 10]], 0, 8.9969),               # just past it from the end (user 2026-10-13)
 ])
-def test_windows_at_the_0_1_mm_limit_are_built(contour, wall, x_m):
+def test_windows_just_past_the_weld_are_built(contour, wall, x_m):
     def edit(d):
         d["floors"][0]["contour"] = contour
         d["floors"][0]["openings"] = [{"wall": wall, "x_m": x_m, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
@@ -576,21 +576,22 @@ def test_windows_at_the_0_1_mm_limit_are_built(contour, wall, x_m):
     assert topology_ok(dump) and PLANE in set(from_dump(dump).material_ids.tolist())
 
 
-def test_window_closer_than_0_1_mm_to_a_wall_end_is_an_error():
+def test_window_within_the_weld_of_a_wall_end_is_welded_to_it():
+    # user 2026-10-13: 3 mm (inclusive) is the building's weld - the window's end is the wall's end, a corner opening
     def edit(d):
-        d["floors"][0]["openings"] = [{"wall": 0, "x_m": 0.00005, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
-    with pytest.raises(BuildError, match="closer than 0.1 mm to the wall end"):
+        d["floors"][0]["openings"] = [{"wall": 0, "x_m": 0.003, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
+    with pytest.raises(BuildError, match="reaches the wall end"):
         build(edited(edit), INPUTS)
 
 
 
 def test_window_close_to_a_steep_oblique_corner_is_a_clear_error():
-    # Codex review 2 of PR #58: 1 mm along a steep oblique wall is 0.03 mm in x; the strips would put
-    # vertices closer than the checkers' 0.1 mm weld, so this is a BuildError, not merged geometry
+    # Codex review 2 of PR #58: 1 mm along a steep oblique wall is 0.03 mm in x; under the 3 mm weld (user
+    # 2026-10-13) the window's end is the corner, a clear error, never merged geometry
     def edit(d):
         d["floors"][0]["contour"] = [[0, 0], [10, 0], [10, 6], [9.9, 9], [0, 9]]
         d["floors"][0]["openings"] = [{"wall": 2, "x_m": 0.001, "sill_m": 0.9, "w_m": 1.0, "h_m": 1.5, "kind": "window"}]
-    with pytest.raises(BuildError, match="strip lines closer than 0.1 mm"):
+    with pytest.raises(BuildError, match="reaches the wall end"):
         build(edited(edit), INPUTS)
 
 
@@ -608,9 +609,10 @@ def test_inputs_at_the_limit_that_would_break_under_the_weld_are_errors():
                        {"level": "L1", "contour": [[0, 0], [10, 0], [10, 5.9999], [9.9999, 8.9999], [0, 8.9999]],
                         "openings": []}]
         d["roof"] = {"parapet_h_m": 0.0}
-    for edit in (window_case, step_case):
-        with pytest.raises(BuildError):
-            build(edited(edit), INPUTS)
+    with pytest.raises(BuildError):
+        build(edited(window_case), INPUTS)
+    # user 2026-10-13: the two floors 0.1 mm apart are one line under the 3 mm weld - built, closed
+    assert topology_ok(build(edited(step_case), INPUTS))
 
 
 # pattern terrace (spec v0.4, user decisions 2026-10-10): a parapet along a ledge's outer edges
@@ -837,7 +839,13 @@ def test_a_slab_joint_the_spec_implies_no_slab_for_is_not_allowed():
     assert mesh["status"] == "fail" and mesh["value"]["open_loops_not_allowed"] == 4
 
 
-@pytest.mark.parametrize("gap, embed", [(0.001, 0.02), (0.012, 0.02), (0.005, 0.009), (0.005, 0.051)])
+def test_a_plate_gap_within_the_weld_is_no_spec():
+    # user 2026-10-13: every gap of the spec lies beyond weld_m, else it would weld shut
+    with pytest.raises(ValueError, match="larger than weld_m"):
+        Spec.model_validate({**spec().model_dump(), "plate_gap_m": 0.003})
+
+
+@pytest.mark.parametrize("gap, embed", [(0.012, 0.02), (0.005, 0.009), (0.005, 0.051)])
 def test_inset_inputs_outside_the_pattern_are_build_errors(gap, embed):
     with pytest.raises(BuildError, match="outside the pattern"):
         build(Spec.model_validate({**spec().model_dump(), "plate_gap_m": gap, "plate_overlap_m": embed}), INPUTS)
@@ -1136,3 +1144,31 @@ def test_a_shaft_top_on_a_screen_outline_is_no_screen_bottom():
     loops = checks.check_mesh(from_dump(dump), TOL, checks.load_ranges(),
                               structures=[(shapely.Polygon(ring), 6.6)])["details"]["open_loops"]
     assert not any(lp["kind"] == "roof-structure" for lp in loops) and not all(lp["allowed"] for lp in loops)
+
+
+# the building's weld (spec weld_m 3 mm inclusive, user 2026-10-13): lines closer than it are one, never an error
+
+
+@pytest.mark.parametrize("off, merged", [(0.002, True), (0.003, True), (0.0035, False)])
+def test_floor_lines_within_the_weld_are_one_line(off, merged):
+    """Two floors whose walls stand off by up to 3 mm (a panelised source's jitter) are welded into one line and
+    built closed; 3.5 mm stays a step of its own (closer than the old 0.1 mm limit was an error)."""
+    def edit(d):
+        d["floors"] = [{"level": "L0", "contour": [[0, 0], [10, 0], [10, 6], [0, 6]], "openings": []},
+                       {"level": "L1", "contour": [[0, 0], [10 + off, 0], [10 + off, 6], [0, 6]], "openings": []}]
+        d["roof"] = {"parapet_h_m": 0.0}
+    dump = build(edited(edit), INPUTS)
+    xs = {round(v[0], 6) for m in dump["meshes"] for v in m["vertices"]}
+    assert topology_ok(dump)
+    assert (10 + off not in xs) == merged and 10.0 in xs
+
+
+def test_a_near_axis_wall_is_welded_straight():
+    """A wall 1 mm off an axis (OBJ03: 56.415 -> 56.416) is straightened by the weld, not a triangle sliver."""
+    def edit(d):
+        d["floors"][0]["contour"] = [[0, 0], [10, 0], [10.001, 3], [10.002, 6], [0, 6]]
+        d["floors"][0]["openings"] = []
+        d["roof"] = {"parapet_h_m": 0.0}
+    dump = build(edited(edit), INPUTS)
+    assert topology_ok(dump)
+    assert {round(v[0], 6) for m in dump["meshes"] for v in m["vertices"]} <= {0.0, 10.0}
