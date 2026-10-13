@@ -282,14 +282,18 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         faces.append((inner, roof, inputs.roof_id, 1))      # no parapet: nothing to inset the roof into
     names = [lv.name for lv in spec.levels]
     terraces = {names.index(tr.level): tr.parapet_h_m for tr in spec.terraces}
+    # one parapet thickness per building (user 2026-10-13, Q10 a): a terrace parapet takes the spec's roof
+    # thickness when it has one, else the build input; measured terrace thicknesses are an issue
+    tt = measured if measured is not None else inputs.parapet_thickness_m
     tp_walls, tp_solids, tp_tops = [], [], []
     for k in range(len(polys) - 1):
         ledge = polys[k].difference(polys[k + 1])
         if k + 1 in terraces:                           # pattern terrace: a parapet along the ledge's outer edges
-            if inputs.parapet_thickness_m <= 0:
-                raise BuildError("a terrace parapet needs parapet_thickness_m in the build inputs")
+            if tt <= 0:
+                raise BuildError("a terrace parapet needs a thickness: roof.parapet_thickness_m in the spec or "
+                                 "parapet_thickness_m in the build inputs")
             walk, band, pw = _terrace(ledge, polys[k + 1], elev[k + 1], elev[k + 1] + terraces[k + 1],
-                                      inputs.parapet_thickness_m, spec.levels[k + 1].name)
+                                      tt, spec.levels[k + 1].name)
             slabs += [(part, elev[k + 1], f"the terrace at {spec.levels[k + 1].name}", polys[k])
                       for part in shapely.get_parts(walk)]
             faces.append((band, elev[k + 1] + terraces[k + 1], inputs.roof_id, 1))

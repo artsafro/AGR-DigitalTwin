@@ -1056,3 +1056,18 @@ def test_engine_takes_the_parapet_thickness_from_the_spec():
     assert back.roof.parapet_thickness_m == 0.45
     with pytest.raises(BuildError, match="a parapet needs a thickness"):
         build(spec(), replace(INPUTS, parapet_thickness_m=0.0))
+
+
+def test_terrace_parapet_takes_the_roof_thickness_of_the_spec():
+    """Review 1 of #81 / user 2026-10-13 (Q10 a): one parapet thickness per building - with the spec's roof
+    thickness 0.2 and a build input of 0.3 the terrace parapet is 0.2 too and the model builds."""
+    from dt_ai.spec import extract_spec
+
+    def edit(d):
+        west_ledge(d)
+        d["spec_version"] = "0.6"
+        d["terraces"] = [{"level": "L1", "parapet_h_m": 0.6}]
+        d["roof"] = {**d["roof"], "parapet_thickness_m": 0.2}
+    s = edited(edit)
+    back, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
+    assert back.roof.parapet_thickness_m == 0.2 and [t.level for t in back.terraces] == ["L1"]
