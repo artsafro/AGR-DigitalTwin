@@ -1,0 +1,174 @@
+{
+  "id": "obj03-decor",
+  "note": "Object OBJ03 (user 2026-10-13); spec id obj03-decor (the spec id needs a hyphen). Source: layer 'Геометрия исходная' of the source .max (local, read only), exported to data/sources/OBJ03/source-geometry-v001.fbx.",
+  "frame": {
+    "to_object": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "derived_from": "source coordinates kept (metres, Z up); no zero-mark shift decided yet"
+  },
+  "levels": [
+    {
+      "name": "L00",
+      "elev_m": 0.0
+    },
+    {
+      "name": "L01",
+      "elev_m": 6.5
+    },
+    {
+      "name": "L02",
+      "elev_m": 9.8
+    },
+    {
+      "name": "L03",
+      "elev_m": 13.1
+    },
+    {
+      "name": "L04",
+      "elev_m": 16.4
+    },
+    {
+      "name": "L05",
+      "elev_m": 19.7
+    },
+    {
+      "name": "L06",
+      "elev_m": 23.0
+    },
+    {
+      "name": "L07",
+      "elev_m": 26.3
+    },
+    {
+      "name": "L08",
+      "elev_m": 29.6
+    },
+    {
+      "name": "L09",
+      "elev_m": 32.9
+    },
+    {
+      "name": "L10",
+      "elev_m": 36.2
+    },
+    {
+      "name": "L11",
+      "elev_m": 39.5
+    },
+    {
+      "name": "L12",
+      "elev_m": 42.8
+    },
+    {
+      "name": "L13",
+      "elev_m": 46.1
+    },
+    {
+      "name": "L14",
+      "elev_m": 49.4
+    },
+    {
+      "name": "L15",
+      "elev_m": 52.7
+    },
+    {
+      "name": "L16",
+      "elev_m": 56.2
+    },
+    {
+      "name": "L17",
+      "elev_m": 59.3
+    },
+    {
+      "name": "L18",
+      "elev_m": 62.6
+    },
+    {
+      "name": "L19",
+      "elev_m": 65.9
+    },
+    {
+      "name": "L20",
+      "elev_m": 69.4
+    },
+    {
+      "name": "L21",
+      "elev_m": 72.5
+    },
+    {
+      "name": "L22",
+      "elev_m": 75.8
+    },
+    {
+      "name": "L23",
+      "elev_m": 79.1
+    },
+    {
+      "name": "L24",
+      "elev_m": 82.6
+    },
+    {
+      "name": "L25",
+      "elev_m": 85.7
+    },
+    {
+      "name": "L26",
+      "elev_m": 89.0
+    },
+    {
+      "name": "L27",
+      "elev_m": 92.3
+    },
+    {
+      "name": "roof",
+      "elev_m": 96.55
+    }
+  ],
+  "levels_derived_from": "user 2026-10-12 'уровни сними с плит': tops of up-facing faces of slab object Shape211223725 (6.5 ... 92.3 every 3.3, roof 96.55); L00 0.0 = the bottom of the building (no slab). Terrace levels L16 / L20 / L24 = the walkable tops of the decks Shape211223718 (56.2 / 69.4 / 82.6), 0.2 above the slabs (user 2026-10-13: the terrace level is the walkable top; the structural slab is not modelled). User 2026-10-13 (2a): 96.55 is the roof, 95.75 is no level (the top storey runs 92.3-96.55).",
+  "opening_depth_default_m": 0.4,
+  "materials": "jobs/OBJ03/materials.json",
+  "build": {
+    "parapet_thickness_m": null,
+    "ids": {
+      "facade": 1,
+      "reveal": 6,
+      "roof": 21,
+      "opening": 11,
+      "decor": 26
+    }
+  },
+  "task": "decor on a panelised source",
+  "source_class": "panelised",
+  "slabs": [
+    "Shape211223725",
+    "Shape211223718"
+  ],
+  "roof_screens": [
+    "RailClone2142"
+  ],
+  "parapet_thickness_default_m": 0.3
+}

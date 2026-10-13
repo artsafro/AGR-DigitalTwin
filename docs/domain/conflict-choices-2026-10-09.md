@@ -82,6 +82,10 @@ Decision (user, 2026-10-10, final; replaces the earlier same-day decision that h
 the other way round): one opening depth per building for windows, doors and curtain walls (`opening_depth_default_m`, usually 0.2 / 0.3 / 0.4 so it reads), `depth_m` only where the reveal really differs; `npm_min`: the plane is the back polygon of the opening's extrusion, at the full depth; `mid` / VPM: the opening outline is detached and the plane with it sits at half the depth, the detailed window is built from it; the extractor measures facade -> back polygon, a back polygon flush with the facade (depth 0) is a question (relief or a drawing), no separate inset value. Engine: `src/dt_ai/geometry/from_spec.py`; checker: plane at
 the profile's seat within `opening_plane_offset_m`.
 
+Update (user, 2026-10-13, OBJ03 decision 3a): OD1 applies (`docs/domain/conflicts.md` item 24, OD1 of 2026-10-11, merged in #76). A source
+with no depth (no reveal, a back polygon flush with the facade, glass only) takes `opening_depth_default_m`
+(default 0.4) and is listed in the report as depth by default; it is no longer a question, and never 0.
+
 ## C25 — Infill recess behind the frame (`mid`)
 
 - Window library pilot: infill 30 mm behind the frame face (`jobs/REVIT-OPENINGS`, not accepted).

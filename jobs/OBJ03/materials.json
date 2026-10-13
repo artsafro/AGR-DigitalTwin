@@ -1,0 +1,10 @@
+{
+  "object": "obj03-decor",
+  "scheme": "material id ranges of standards/material_id_ranges.yaml (ADR 0001)",
+  "note": "The source's finishes are 3ds Max sub-material slots (Corona). Slot 5 (refraction 1.0) is glass: split into <mesh>_glass (glass_id 12). Other slots are not mapped (user 2026-10-13): the engine sets the output ids by group; a slot's material is asked only when a decision needs it.",
+  "slots": {},
+  "glass_slots": [
+    5
+  ],
+  "glass_id": 12
+}
