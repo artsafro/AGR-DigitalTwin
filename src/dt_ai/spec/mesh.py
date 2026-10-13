@@ -824,16 +824,23 @@ def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
 
 def _facade_ring(pieces, joint):
     """The facade's outer line when its pieces close round the building with joints up to `joint`: grown by half
-    the joint, the largest piece must enclose a void of at least FACADE_VOID_SHARE of its outline (else it is a C
-    or a lone mass); its outline filled and shrunk back (a joint at a corner cannot open again, convex corners come back
-    exactly). None when open."""
+    the joint, the outermost piece (the largest outline, not the most material: review 2 of #83) must enclose a
+    void of at least FACADE_VOID_SHARE of its outline (else it is a C or a lone mass), and the pieces further
+    than ATTACHMENT_FROM_M out of it (beyond decor and attachments) run along less than FACADE_VOID_SHARE of its
+    perimeter (a loggia railing at the slab edge is short; an open outer facade round an inner ring is long); its outline filled and shrunk
+    back (a joint at a corner cannot open again, convex corners come back exactly). None when open."""
     r = joint / 2
     grown = shapely.union_all(pieces).buffer(r)
     if grown.is_empty:
         return None
-    ring = max(shapely.get_parts(grown), key=lambda g: g.area)
+    parts = list(shapely.get_parts(grown))
+    ring = max(parts, key=lambda g: Polygon(g.exterior).area)
     outer = Polygon(ring.exterior)
     if outer.area - ring.area < FACADE_VOID_SHARE * outer.area:    # inner walls and masses may join the ring
+        return None
+    reach = outer.buffer(dc.ATTACHMENT_FROM_M)       # decor and attachments stand off the facade up to this;
+    beyond = sum(g.exterior.length / 2 for g in parts if g is not ring and not g.within(reach))   # a loggia's
+    if beyond >= FACADE_VOID_SHARE * outer.exterior.length:   # railing is a short piece, an open facade is long
         return None
     shrunk = outer.buffer(-r)
     return Polygon(max(shapely.get_parts(shrunk), key=lambda g: g.area).exterior) if not shrunk.is_empty else None
@@ -858,7 +865,11 @@ def _panel_terrace(v, slab_tris, rest, lv, nxt, poly, below):
     if ledge.area < HOLE_MIN_M2:
         return None
     walk = shapely.union_all(_up_faces_at(v, slab_tris, lv["elev_m"]) or [Polygon()]).intersection(ledge)
-    edge = below.exterior.difference(poly.buffer(PARAPET_EDGE_M))
+    # the ledge's outer edge: the lower facade's line and the walkable slab's own edge (a parapet may stand on the
+    # slab inside the facade line: review 2 of #83), off this storey's facade
+    slab_edge = shapely.union_all([g.exterior for g in shapely.get_parts(walk)]) if not walk.is_empty else None
+    edge = shapely.union_all([below.exterior] + ([slab_edge] if slab_edge is not None else [])) \
+        .difference(poly.buffer(PARAPET_EDGE_M))
     if walk.area < HOLE_MIN_M2 or edge.is_empty:
         return None
     p = v[rest]

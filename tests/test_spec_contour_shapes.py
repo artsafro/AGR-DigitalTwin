@@ -507,11 +507,12 @@ def _panel(name, a, b, z0, z1, out=0.1):
     return m
 
 
-def panelised(outlines=(SQUARE10, SQUARE10), slab=SQUARE10, levels=LEVELS, extra=(), slabs_at=None):
+def panelised(outlines=(SQUARE10, SQUARE10), slab=SQUARE10, levels=LEVELS, extra=(), slabs_at=None, mass_m=2.0):
     """An inner mass 2 x 2 m; per storey a panel shell 0.1 m outside its outline (one part per wall); slab plates
     at every level above the ground (mesh 'Slabs', the given outline)."""
     mass = Mesh("Mass")
-    inner = [[4, 4], [6, 4], [6, 6], [4, 6]]
+    lo, hi = 5 - mass_m / 2, 5 + mass_m / 2
+    inner = [[lo, lo], [hi, lo], [hi, hi], [lo, hi]]
     walls(mass, inner, 0.0, levels[-1][1])
     flat(mass, Polygon(inner), levels[-1][1], up=True)
     flat(mass, Polygon(inner), 0.0, up=False)
@@ -613,12 +614,44 @@ def test_a_small_roof_hole_is_no_opening_and_is_listed():
 
 
 def test_the_id_ranges_cache_follows_the_file(tmp_path, monkeypatch):
-    """User 2026-10-13: the cache of standards/material_id_ranges.yaml is keyed by the file's path."""
+    """User 2026-10-13: the cache of standards/material_id_ranges.yaml follows the file - another path, or the
+    same path rewritten, is read again (review 2 of #83: the test must fail on a per-group cache)."""
+    import os
     from dt_ai.spec import mesh as M
     (tmp_path / "standards").mkdir()
-    (tmp_path / "standards/material_id_ranges.yaml").write_text(
-        "groups:\n  opening: {first: 41, last: 42}\n", encoding="utf-8")
+    ranges = tmp_path / "standards/material_id_ranges.yaml"
+    ranges.write_text("groups:\n  opening: {first: 41, last: 42}\n", encoding="utf-8")
     monkeypatch.setattr("dt_ai.core.io.repo_root", lambda: tmp_path)
     assert M._opening_ids() == frozenset({41, 42})
-    monkeypatch.undo()
-    assert M._opening_ids() != frozenset({41, 42})
+    ranges.write_text("groups:\n  opening: {first: 43, last: 43}\n", encoding="utf-8")
+    os.utime(ranges, ns=(ranges.stat().st_atime_ns, ranges.stat().st_mtime_ns + 10**9))
+    assert M._opening_ids() == frozenset({43})
+
+
+def test_an_inner_mass_does_not_decide_whether_the_facade_closes():
+    """Review 2 of #83: a 3 x 3 m inner mass (more material than the panel ring) inside a closed facade."""
+    spec, report = extract_spec(panelised(mass_m=3.0), PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+
+
+def test_an_inner_ring_is_no_facade_when_the_outer_one_is_open():
+    """Review 2 of #83: the south facade missing, an inner panel ring round [1, 1]-[9, 9]: a stop, not the ring."""
+    from dt_ai.spec import SpecStops
+    inner = [_panel(f"Inner_{w}", a, b, 0.01, 3.29) for w, (a, b) in
+             enumerate([([1, 1], [9, 1]), ([9, 1], [9, 9]), ([9, 9], [1, 9]), ([1, 9], [1, 1])])]
+    dump = panelised(extra=inner)
+    dump["meshes"] = [m for m in dump["meshes"] if m["name"] != "Panel_0_0"]
+    with pytest.raises(SpecStops) as caught:
+        extract_spec(dump, PANEL_OBJECT, collect_stops=True)
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("contour", "L0")]
+
+
+def test_a_parapet_on_the_slab_edge_inside_the_facade_line_is_found():
+    """Review 2 of #83: the parapet stands on the walkable slab's edge (x 9.8-10), 0.1 m inside the lower facade's
+    outer line."""
+    upper = [[0, 0], [6, 0], [6, 10], [0, 10]]
+    parapet = Mesh("Parapet")
+    walls(parapet, [[9.8, 0], [10, 0], [10, 10], [9.8, 10]], 3.3, 4.4)
+    spec, report = extract_spec(panelised(outlines=(SQUARE10, upper), extra=[parapet], slabs_at={2: upper}),
+                                PANEL_OBJECT)
+    assert [(t.level, round(t.parapet_h_m, 2)) for t in spec.terraces] == [("L1", 1.1)]
