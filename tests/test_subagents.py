@@ -66,11 +66,17 @@ def test_start_gives_the_read_only_reminder():
     (TABLE, True),
     ("check | expected | measured | pass/fail\n---|---|---|---\nbbox | 10 | 10 | pass", True),   # no outer pipes
     ("| check | expected | measured | pass/fail |\n|---|---|---|---|\n| uv | - | - | not measured: no UV |", True),
+    ("bbox | 10 | 10 | pass", False),                                          # review 2 of #86: no table
+    ("| check | expected | measured | pass/fail |\n|---|---|---|---|\n| bbox | 10 | 10 | pass-through |", False),
 ])
 def test_stop_wants_a_verdict_table_from_the_checker(message, ok):
     run("start", {"agent_id": "t-stop"})
     out = run("stop", {"agent_type": "independent-checker", "agent_id": "t-stop", "last_assistant_message": message})
     assert (out == {}) is ok, out
+    if not ok:                                                                # a retry must comply too (review 2)
+        run("start", {"agent_id": "t-stop"})
+        assert run("stop", {"agent_type": "independent-checker", "agent_id": "t-stop", "stop_hook_active": True,
+                            "last_assistant_message": message})["decision"] == "block"
     if not ok:
         assert out["decision"] == "block" and "report the table" in out["reason"]
 
@@ -88,7 +94,9 @@ def test_stop_names_tracked_files_a_subagent_changed(tmp_path):
     out = run("stop", {"agent_type": "bench-runner", "agent_id": "t-changed", "last_assistant_message": "done"},
               root=repo)
     assert out["decision"] == "block" and "a.txt" in out["reason"]
-    assert run("stop", {"agent_type": "bench-runner", "agent_id": "t-changed", "stop_hook_active": True}, root=repo) == {}
+    retry = {"agent_type": "bench-runner", "agent_id": "t-changed", "stop_hook_active": True}
+    assert run("stop", {**retry, "last_assistant_message": "Done."}, root=repo)["decision"] == "block"   # review 2
+    assert run("stop", {**retry, "last_assistant_message": "I changed a.txt."}, root=repo) == {}
 
 
 @pytest.mark.parametrize("raw", ["not json", "[]", "null", '"x"'])
@@ -104,6 +112,8 @@ def test_hooks_fail_closed_on_bad_input(raw):
     ("git commit -qm x", True),
     ("sed -i s/a/b/ src/dt_ai/spec/mesh.py", True),
     ("rm -rf jobs/OBJ03", True),
+    ("git -C . restore docs/probe.txt", True),                                  # review 2 of #86
+    ("git -c core.x=y commit -qm x", True),
     ("uv run python tools/qa/run_benchmark.py --etalon e.fbx --object o.json --tolerances t.json --output C:/x/o", False),
     ("uv run python -m pytest -q -p no:cacheprovider --basetemp=C:/x/t tests/test_subagents.py", False),
     ("git log -1 --oneline", False),
@@ -123,6 +133,10 @@ def test_guard_denies_plain_writes_in_bash(command, denied):
     ("Glob", {"pattern": "src/dt_ai/geometry/*.py"}, True),
     ("Bash", {"command": "cd src/dt_ai && cat geometry/from_spec.py"}, True),
     ("Bash", {"command": "grep -rn build src"}, True),
+    ("Bash", {"command": "grep -R FORBIDDEN ./src"}, True),                       # review 2 of #86
+    ("Bash", {"command": "cat src/dt_ai/*/*.py"}, True),
+    ("Bash", {"command": "grep -rn plane ."}, True),
+    ("Bash", {"command": "grep -rn plane docs/domain/patterns"}, False),
     ("Read", {"file_path": "src/twinqa/geometry/checks.py"}, False),
     ("Grep", {"pattern": "opening", "path": "docs/domain/patterns"}, False),
     ("Bash", {"command": "uv run python tools/qa/check_geometry.py --model m.json"}, False),

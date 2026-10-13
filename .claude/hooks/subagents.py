@@ -24,10 +24,11 @@ from pathlib import Path
 
 REMINDER = ("Read-only subagent: report facts only - numbers, lists, tables, paths. No fixes, no proposals, no "
             "edits, no saves of any scene or file outside your report. The main agent decides.")
-VERDICT_CELL = re.compile(r"^(pass|fail|not measured)\b", re.I)
+VERDICT_CELL = re.compile(r"^(pass|fail)$|^not measured\b", re.I)
 WRITES = re.compile(r"(?<![<>=!-])>{1,2}\s*(?!&|\s*/dev/null|\s*nul\b)\S"     # a redirect into a file
                     r"|\btee\b|\bsed\s+(-\w*\s+)*-i|\b(cp|mv|rm|rmdir|del|copy|move|ren|mkdir -p\s+(src|docs|jobs))\b"
-                    r"|\bgit\s+(add|commit|push|checkout|switch|reset|restore|stash|rebase|merge|rm|mv|clean|apply)\b"
+                    r"|\bgit\b[^|;&\n]*?\s(add|commit|push|checkout|switch|reset|restore|stash|rebase|merge|rm|mv"
+                    r"|clean|apply|am|cherry-pick|revert|update-index|update-ref|config)\b"   # options may come first
                     r"|\b(Set-Content|Add-Content|Out-File|New-Item|Remove-Item|Copy-Item|Move-Item)\b"
                     r"|write_text|write_bytes|\.write\(|open\([^)]*['\"][wax]\+?b?['\"]", re.I)
 SEARCH = re.compile(r"\b(grep|rg|find|findstr|Select-String|Get-ChildItem|dir|ls|cat|type|more|head|tail)\b", re.I)
@@ -58,12 +59,24 @@ def start(payload):
     return {"hookSpecificOutput": {"hookEventName": "SubagentStart", "additionalContext": REMINDER}}
 
 
+def _cells(line):
+    return [c.strip() for c in line.strip().strip("|").split("|")] if "|" in line else []
+
+
 def _has_verdict_table(text):
-    for line in text.splitlines():
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) >= 3 and not set(cells[-1]) <= set("-: ") and VERDICT_CELL.match(cells[-1]) \
-                and cells[-1].lower() != "pass/fail":
-            return True
+    """A Markdown table: a header of 3+ cells, its delimiter row, then a data row whose last cell is exactly pass or
+    fail, or starts with "not measured" (review 2 of #86)."""
+    lines = text.splitlines()
+    for i in range(len(lines) - 2):
+        head, rule = _cells(lines[i]), _cells(lines[i + 1])
+        if len(head) < 3 or len(rule) != len(head) or not all(c and set(c) <= set("-: ") for c in rule):
+            continue
+        for row in lines[i + 2:]:
+            cells = _cells(row)
+            if len(cells) != len(head):
+                break
+            if VERDICT_CELL.match(cells[-1]):
+                return True
     return False
 
 
@@ -75,12 +88,16 @@ def stop(payload):
         reasons.append("the tracked-file check could not run; state in your report that you changed no file")
     elif now != before.read_text(encoding="utf-8"):
         changed = sorted(set(now.splitlines()) - set(before.read_text(encoding="utf-8").splitlines()))
-        reasons.append(f"tracked files changed during your run: {changed}; name them in your report (you are "
-                       "read only)")
+        paths = [line[3:].strip() for line in changed]
+        last = payload.get("last_assistant_message") or ""
+        unnamed = [p for p in paths if p not in last]
+        if unnamed:                                  # named in the report, or the stop stays blocked
+            reasons.append(f"tracked files changed during your run: {unnamed}; name each in your report (you are "
+                           "read only)")
     if payload.get("agent_type") == "independent-checker" and not _has_verdict_table(
             payload.get("last_assistant_message") or ""):
         reasons.append("report the table: check | expected | measured | pass/fail")
-    if reasons and not payload.get("stop_hook_active"):
+    if reasons:                                      # a retry (stop_hook_active) must comply too (review 2 of #86)
         return {"decision": "block", "reason": "; ".join(reasons)}
     before.unlink(missing_ok=True)
     return {}
@@ -109,12 +126,13 @@ def deny_geometry(payload):
     geo = _forbidden()
     reason = ("independent-checker does not read src/dt_ai/geometry/: it checks the model, not how it was "
               "built")
-    if tool == "Bash":
-        cmd = str(args.get("command", ""))
-        low = cmd.lower().replace("\\", "/")
+    if tool == "Bash":                               # the checker runs tools/ and modules, it reads no source:
+        low = str(args.get("command", "")).lower().replace("\\", "/")      # no path into src at all (review 2)
         if "from_spec" in low or ("dt_ai" in low and "geometry" in low) \
-                or (SEARCH.search(cmd) and re.search(r"(^|[\s'\"=])(\.|\./?|src|src/dt_ai|\.\./\S*)(/?)(\s|$|['\"])",
-                                                     low) and re.search(r"\s-\w*r|\brecurse\b|\bfind\b|\brg\b", low)):
+                or re.search(r"(^|[\s'\"=:(/.])src(/|\s|$|['\")*])", low) \
+                or (SEARCH.search(low) and re.search(r"\s-[A-Za-z]*[rR][A-Za-z]*\b|--recursive|\brecurse\b|\bfind\b|\brg\b",
+                                                     str(args.get("command", ""))) and not re.search(
+                    r"(^|\s)(docs|benchmark|jobs|tools|tests|standards|c:/x)\S*", low)):
             return _deny(reason)
         return {}
     for key in ("file_path", "path", "notebook_path"):
