@@ -251,6 +251,7 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
         for lp in planes + feet:
             if id(lp) not in paired:
                 lp["kind"] = "other"
+    _seat(model, out, tol["weld_m"])
     for lp in out:
         lp.pop("_segs")
     for lp in out:
@@ -292,7 +293,16 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, str
     """Edge- and vertex-manifold (one face fan per vertex, issue #57), no n-gons, no overlapping faces, and open edges only where the pattern
     roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
     inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
-    open_part_groups are left out of the open-edge rule."""
+    open_part_groups are left out of the open-edge rule. A mesh named DECOR_MESH is facade decor of its own
+    (pattern facade-decor-inset: the body is never cut; user 2026-10-13, 2a): it is left out of these checks -
+    its boxes may meet and overlap - and check_decor reads it. An open loop flat on a horizontal face of the
+    model at its height is closed by contact ("seated": a wall standing on a slab, user 2026-10-13); a
+    separate closed part whose top lies at a slab level over the slab's region is that slab (a slab box)."""
+    left_out = 0
+    if model.mesh_index is not None and DECOR_MESH in model.mesh_names:
+        keep = model.mesh_index != model.mesh_names.index(DECOR_MESH)
+        left_out = int((~keep).sum())
+        model = _sub_soup(model, keep)
     ids = weld(model.vertices, tol["weld_m"])
     _, counts, side_edges = edge_uses(model.triangles, ids)
     part = parts(model.triangles, ids)
@@ -315,10 +325,23 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, str
         c = model.corners()
         n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
         up = n[:, 2] > 0.99 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+        boxes = _slab_boxes(model, part, counts, side_edges)
+        boxed = set()
+        for name in slabs:                             # with no inset joint at a level, a separate closed part
+            lz, region = model.levels.get(name), slabs[name] if isinstance(slabs, dict) else None   # topped at it
+            if lz is None or name in inset:            # is that slab; beside a joint it stays a solid slab
+                continue                               # (review 2 of PR #63)
+            top = boxes & up & (np.abs(c[:, :, 2] - lz).max(axis=1) <= tol["weld_m"])
+            cover = shapely.union_all([shapely.Polygon(t[:, :2]) for t in c[top] if shapely.Polygon(t[:, :2]).area > 0]
+                                      or [shapely.Polygon()])
+            if top.any() and (region is None or cover.intersection(region).area >= 0.9 * region.area):
+                boxed.add(name)
+        inset |= boxed
         mid = c.mean(axis=1)
         for name in slabs:
             lz = model.levels.get(name)
-            flat = up & (np.abs(c[:, :, 2] - lz).max(axis=1) <= tol["weld_m"]) if lz is not None else up & False
+            mine = up & ~boxes if name in boxed else up       # a slab box's own top is no solid slab
+            flat = mine & (np.abs(c[:, :, 2] - lz).max(axis=1) <= tol["weld_m"]) if lz is not None else up & False
             region = slabs[name] if isinstance(slabs, dict) else None
             if region is None:
                 area = float(np.linalg.norm(n[flat], axis=1).sum() / 2)
@@ -348,7 +371,7 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, str
     fan_v = fan_vertices(model.triangles, ids, side_edges, tri_open)
     boundary_n = int(boundary.sum())
     corners = model.corners()
-    faces = [{"object": "model", "index": i, "points": c.tolist()} for i, c in enumerate(corners)]
+    faces = [{"object": "model", "index": i, "points": c.tolist()} for i, c in enumerate(corners)]   # decor left out
     overlaps = near_parallel_overlaps(faces, tol["overlap_m"])
     if model.polygon_sizes is None:
         ngons, ngon_measured = None, False
@@ -360,7 +383,7 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, str
                "solid_slab_m2": solid, "plates_off_spec": plate_off,
                "open_parts_allowed": len(open_ok), "ngons": ngons, "collision_meshes_left_out": model.collisions,
                "triangles_in_polygons": None if model.polygon_sizes is None else int((model.polygon_sizes == 3).sum()),
-               "overlap_pairs": len(overlaps), "overlaps": overlaps[:20]}
+               "overlap_pairs": len(overlaps), "overlaps": overlaps[:20], "decor_triangles_left_out": left_out}
     ok = (non_manifold <= tol["non_manifold_edges_max"] and not fan_v and not bad_loops and not not_inset
           and not plate_off
           and len(overlaps) <= tol["overlap_pairs_max"] and (ngons or 0) <= tol["ngons_max"])
@@ -371,6 +394,57 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, str
                                "open_loops_not_allowed": len(bad_loops), "slabs_not_inset": len(not_inset),
                                "overlaps": len(overlaps), "ngons": ngons},
                   None, details)
+
+
+DECOR_MESH = "decor"
+
+
+def _sub_soup(model: Soup, keep) -> Soup:
+    """The soup of the kept triangles (vertices unchanged)."""
+    return Soup(model.vertices, model.triangles[keep], model.material_ids[keep],
+                None if model.polygon_sizes is None else _sizes_of(model, keep), model.levels, model.collisions,
+                model.mesh_names, model.mesh_index[keep])
+
+
+def _sizes_of(model: Soup, keep):
+    """Polygon sizes of the kept triangles; a polygon is kept whole or not at all."""
+    out, k = [], 0
+    for n in model.polygon_sizes:
+        span = keep[k:k + int(n) - 2]
+        if span.all():
+            out.append(int(n))
+        elif span.any():
+            return None
+        k += int(n) - 2
+    return np.asarray(out, dtype=int)
+
+
+def _seat(model: Soup, loops, w):
+    """Mark open loops of no other kind that lie flat on a horizontal face of the model at their height as seated."""
+    c = model.corners()
+    n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+    flat = np.abs(n[:, 2]) > 0.99 * np.maximum(np.linalg.norm(n, axis=1), 1e-12)
+    zc = c[:, :, 2].mean(axis=1)
+    for lp in loops:
+        if lp["kind"] != "other" or not lp["_segs"]:
+            continue
+        at = flat & (np.abs(zc - lp["_z"]) <= w)
+        if not at.any():
+            continue
+        faces = shapely.union_all([shapely.Polygon(t[:, :2]) for t in c[at] if shapely.Polygon(t[:, :2]).area > 0]
+                                  or [shapely.Polygon()]).buffer(w)
+        if all(faces.covers(shapely.Point(*((s[0] + s[1]) / 2))) for s in lp["_segs"]):
+            lp["kind"] = "seated"
+
+
+def _slab_boxes(model: Soup, part, counts, side_edges):
+    """Triangles of separate closed parts (no open edge) other than the largest part: slab boxes, decks."""
+    if len(part) == 0:
+        return np.zeros(0, dtype=bool)
+    ids, sizes = np.unique(part, return_counts=True)
+    largest = ids[sizes.argmax()]
+    closed = {p for p in ids if p != largest and (counts[side_edges[part == p]] == 2).all()}
+    return np.array([p in closed for p in part], dtype=bool)
 
 
 def check_budget(model: Soup, tol: dict) -> dict:

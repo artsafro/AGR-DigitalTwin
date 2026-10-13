@@ -243,6 +243,9 @@ def wall_openings(poly, glass_segs, glass_z, z_lo, z_hi, w):
     return out
 
 
+WALL_SEAT_M = 0.02       # the walls stand this far inside the slab edges they sit on (no shared vertex)
+
+
 def storey_walls(mesh: _Mesh, poly, openings, z_lo, z_hi, inputs: Inputs):
     """The walls of one storey: quads per wall (columns its own, rows the storey's), holes with planes and reveals."""
     pts = np.asarray(poly.exterior.coords)[:-1]
@@ -399,18 +402,49 @@ def footprint_ring(v, t, simplify=0.02):
 
 
 def planes_along(mesh: _Mesh, ring, z0, z1, mid, top=False):
-    """One-sided planes on a ring from z0 to z1, facing out; with top, its fill at z1 facing up."""
-    c = np.asarray(ring.exterior.coords)[:-1]
-    for a, b in zip(c, np.roll(c, -1, axis=0)):
-        d = b - a
-        mesh.quad([[*a, z0], [*b, z0], [*b, z1], [*a, z1]], mid, [d[1], -d[0], 0])
+    """One-sided planes on a ring from z0 to z1, facing out; with top, its fill at z1 facing up and the planes
+    cut at every fill vertex on the ring (no T-junction at the top edge)."""
+    ring = orient(ring, 1.0)
+    cuts = [np.asarray(ring.exterior.coords)[:-1]]
     if top:
         pieces, _ = _fill(ring, FILL_STEP_M, (ring.bounds[0], ring.bounds[1]))
         for q in pieces:
             (mesh.quad if len(q) == 4 else mesh.tri)([[*x, z1] for x in q], mid, [0, 0, 1])
+        cuts = _outline_cuts(ring, pieces)[:1]
+    c = cuts[0]
+    for a, b in zip(c, np.roll(c, -1, axis=0)):
+        d = b - a
+        mesh.quad([[*a, z0], [*b, z0], [*b, z1], [*a, z1]], mid, [d[1], -d[0], 0])
 
 
-def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3):
+def _inset_ring(pts, t):
+    """A CCW ring's points moved t inward along their mitres (same count, one to one)."""
+    out = []
+    n = len(pts)
+    for i in range(n):
+        a, b, c = pts[i - 1], pts[i], pts[(i + 1) % n]
+        d1, d2 = (b - a) / np.linalg.norm(b - a), (c - b) / np.linalg.norm(c - b)
+        n1, n2 = np.array([-d1[1], d1[0]]), np.array([-d2[1], d2[0]])       # inward normals of a CCW ring
+        m = n1 + n2
+        m = m / np.linalg.norm(m) if np.linalg.norm(m) > 1e-9 else n1
+        out.append(b + m * t / max(float(m @ n1), 0.2))
+    return np.asarray(out)
+
+
+def band_box(mesh: _Mesh, ring, z0, z1, thick, mid):
+    """A closed band on a ring (a textured parapet band): outer and inner faces, top and bottom, `thick` wide."""
+    o = np.asarray(orient(ring, 1.0).exterior.coords)[:-1]
+    i = _inset_ring(o, thick)
+    for k in range(len(o)):
+        a, b, ia, ib = o[k], o[(k + 1) % len(o)], i[k], i[(k + 1) % len(o)]
+        d = b - a
+        mesh.quad([[*a, z0], [*b, z0], [*b, z1], [*a, z1]], mid, [d[1], -d[0], 0])
+        mesh.quad([[*ib, z0], [*ia, z0], [*ia, z1], [*ib, z1]], mid, [-d[1], d[0], 0])
+        mesh.quad([[*a, z1], [*b, z1], [*ib, z1], [*ia, z1]], mid, [0, 0, 1])
+        mesh.quad([[*a, z0], [*ia, z0], [*ib, z0], [*b, z0]], mid, [0, 0, -1])
+
+
+def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
     """A plane module rebuilt face by face: the source triangles grouped by plane (normal, offset) and by
     connection, each group one rectangle in its plane; a group that fills less than 90 % of its rectangle keeps
     its own triangles (counted)."""
@@ -445,7 +479,15 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3):
             o = nn * off
             corners = [o + e1 * a1.min() + e2 * a2.min(), o + e1 * a1.max() + e2 * a2.min(),
                        o + e1 * a1.max() + e2 * a2.max(), o + e1 * a1.min() + e2 * a2.max()]
+            if thick is None:
+                mesh.quad([c.tolist() for c in corners], mid, nn)
+                continue
+            back = [c - nn * thick for c in corners]          # a closed thin plate (glass of a railing)
             mesh.quad([c.tolist() for c in corners], mid, nn)
+            mesh.quad([c.tolist() for c in back[::-1]], mid, -nn)
+            for k in range(4):
+                a_, b_ = corners[k], corners[(k + 1) % 4]
+                mesh.quad([a_.tolist(), b_.tolist(), back[(k + 1) % 4].tolist(), back[k].tolist()], mid, (a_ + b_) / 2 - o - e1 * (a1.min() + a1.max()) / 2 - e2 * (a2.min() + a2.max()) / 2)
     return kept
 
 
@@ -469,6 +511,79 @@ def compare(src_v, src_t, mesh_v, mesh_t, views=("top", "x", "y")):
            "area_source_m2": round(area(a), 1), "area_model_m2": round(area(b), 1),
            "triangles_source": int(len(a)), "triangles_model": int(len(b))}
     return out
+
+
+# ---------------------------------------------------------------------------------------------- measure + spec
+
+def storeys(parts, slabs, levels, inputs: Inputs):
+    """Per storey (level name): its z range (top of the slab below to the underside of the slab above), its wall
+    contour (the outline of the slab above - the storey's footprint) and its openings from the glass module."""
+    gv, gt = next((v, t) for k, (v, t, m) in parts.items() if m["module"] == "glazing" and m["ids"].get(k) == inputs.opening_id)
+    gpieces = []
+    for pc in _pieces(gv, gt):
+        q = gv[np.unique(gt[pc])]
+        gpieces.append((pc, float(q[:, 2].min()), float(q[:, 2].max())))
+    top_of = {n: (top, under, o) for n, top, under, o in slabs}
+    out = {}
+    for k in range(len(levels) - 1):
+        name, nxt = levels[k][0], levels[k + 1][0]
+        if nxt not in top_of:
+            continue
+        z_lo = top_of[name][0] if name in top_of else levels[k][1]
+        z_hi = top_of[nxt][1] if top_of[nxt][1] is not None else levels[k + 1][1]
+        ceil = top_of[nxt][2]
+        poly = orient(Polygon(max(shapely.get_parts(ceil), key=lambda g: g.area).exterior)
+                      .simplify(SIMPLIFY_M, preserve_topology=True), 1.0)
+        poly = orient(Polygon(_inset_ring(np.asarray(poly.exterior.coords)[:-1], WALL_SEAT_M)), 1.0)   # seated, not shared
+        zm = (z_lo + z_hi) / 2
+        segs, gz = [], []
+        for pc, za, zb in gpieces:
+            if za < zm < zb:
+                for sg in _section(gv, gt[pc], zm):
+                    segs.append(sg)
+                    gz.append((za, zb))
+        out[name] = {"z": (z_lo, z_hi), "poly": poly,
+                     "openings": snap_rows(wall_openings(poly, segs, gz, z_lo, z_hi, inputs.weld_m))}
+    return out
+
+
+def snap_rows(openings):
+    """Sills and heads of one storey within ROW_SNAP_M are one row (panes of one band differ by millimetres)."""
+    rows = []
+    for z in sorted(z for ops in openings.values() for o in ops for z in o[2:4]):
+        if not rows or z - rows[-1][0] > ROW_SNAP_M:
+            rows.append([z])
+        else:
+            rows[-1].append(z)
+    reps = [float(np.median(r)) for r in rows]
+    snap = lambda z: min(reps, key=lambda r: abs(r - z))                                # noqa: E731
+    return {wi: [[o[0], o[1], snap(o[2]), snap(o[3])] for o in ops if snap(o[3]) - snap(o[2]) > 0.1]
+            for wi, ops in openings.items()}
+
+
+def spec_of(object_id, levels, stor, decks, railing_h, enclosure, inputs: Inputs) -> dict:
+    """The spec of a building measured by its modules (user 2026-10-13: the spec rebuilt by modules): levels,
+    a contour and openings per storey, no roof parapet (a textured band is no parapet), the terraces where a
+    walkable deck lies, the roof screen enclosure. The contract the checkers measure the model against."""
+    elev = dict(levels)
+    floors = []
+    for name, st in stor.items():
+        pts = np.asarray(st["poly"].exterior.coords)[:-1]
+        ops = [{"wall": wi, "x_m": round(o[0], 4), "w_m": round(o[1] - o[0], 4), "sill_m": round(o[2] - elev[name], 4),
+                "h_m": round(o[3] - o[2], 4), "kind": "window", "source": "glass", "material_id": inputs.opening_id}
+               for wi, os_ in sorted(st["openings"].items()) for o in os_]
+        floors.append({"level": name, "contour": [[round(float(x), 4), round(float(y), 4)] for x, y in pts], "openings": ops})
+    spec = {"id": object_id, "spec_version": "0.7" if enclosure is not None else "0.4", "profile": "npm_min",
+            "frame": {"object": object_id, "source": "from-modules", "to_object": np.eye(4).tolist()},
+            "levels": [{"name": n, "elev_m": z} for n, z in levels], "floors": floors, "roof": {"parapet_h_m": 0.0},
+            "terraces": [{"level": n, "parapet_h_m": round(railing_h, 3)} for n in decks],
+            "opening_depth_default_m": inputs.opening_depth_m, "weld_m": inputs.weld_m}
+    if enclosure is not None:
+        ring, z_top = enclosure
+        spec["roof_structures"] = [{"kind": "screen", "outline": [[round(float(x), 4), round(float(y), 4)]
+                                                                  for x, y in np.asarray(ring.exterior.coords)[:-1]],
+                                    "z_top_m": round(z_top, 3)}]
+    return spec
 
 
 def drop_shared_faces(mesh: _Mesh) -> int:
