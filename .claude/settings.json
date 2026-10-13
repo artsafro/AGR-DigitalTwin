@@ -65,6 +65,30 @@
           }
         ]
       }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "^(source-inspector|pattern-librarian|bench-runner|independent-checker|mesh-reader)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/subagents.py\" start",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^(source-inspector|pattern-librarian|bench-runner|independent-checker|mesh-reader)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/subagents.py\" stop",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
