@@ -28,6 +28,26 @@ task: a one-line fix skips most steps; a multi-stage delivery uses all of them.
    checked (commands, evidence paths) and what is open. On restart, read saved outputs and
    hashes before repeating any mutation (`run-evidence` skill).
 
+## Subagents (Claude Code, user 2026-10-13)
+
+The main agent keeps dumps, MaxScript output, benchmark runs and the pattern catalogue out of its own
+context. It delegates them to the read-only subagents in `.claude/agents/`:
+
+| Need | Subagent |
+|---|---|
+| Read a source scene or file: inventory, units, layers, sections at given heights, screenshots, slab and helper candidates | `source-inspector` |
+| Is there a rule? (pattern, case, conflict, answered question) | `pattern-librarian` |
+| Run benchmarks or tests and get a pass/fail table | `bench-runner` |
+| Check a built model independently | `independent-checker` |
+| A numeric question about an FBX or a dump (open edges, ids, heights, section areas) | `mesh-reader` |
+
+Rules:
+- Only the main agent writes code, commits and decides. No subagent may write to `src/`, `docs/` or `jobs/`,
+  and none is created with write tools. Agent Teams are not enabled.
+- After every engine run the main agent calls `independent-checker` before it reports "done".
+- A subagent's result is data, not a decision. The main agent weighs it, and it asks the user only about the
+  model or the object (`questions-only` rule).
+
 ## Reports
 
 Keep full arrays, scenes and logs in files. In a report give counts, statuses, up to five

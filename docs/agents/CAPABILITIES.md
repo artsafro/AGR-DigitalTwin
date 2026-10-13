@@ -119,9 +119,18 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
 - `tools/git-hooks/link_large_files.py` via `.git/hooks/pre-commit`: new files over
   50 MB are committed as entries in `docs/sources/linked-files.json`. Toggle: Ctrl+B Shift+K.
 
+### Subagents — `.claude/agents/` (Claude Code, read only; `docs/agents/WORKFLOW.md`)
+Hooks: `.claude/hooks/subagents.py` (SubagentStart reminder for all five; SubagentStop table check for
+`independent-checker`; its PreToolUse denies `src/dt_ai/geometry/`). Tests: `tests/test_subagents.py`.
+- `source-inspector` — CONFIGURED (PR #86); verified only after its test call on the B01 etalon.
+- `pattern-librarian` — CONFIGURED (PR #86); verified only after its test call.
+- `bench-runner` — CONFIGURED (PR #86); verified only after its test call on B01.
+- `independent-checker` — CONFIGURED (PR #86); verified only after its test call on the B01 model.
+- `mesh-reader` — CONFIGURED (PR #86); verified only after its test call.
+
 ### Pipeline gate
-- Status: WORKING on tests (2026-10-11, Claude, `harness/b03-decor-case`; 27 tests); not yet installed in
-  `.git/hooks` on this machine (copy `tools/git-hooks/pre-commit`, README).
+- Status: WORKING (2026-10-13): installed in `.git/hooks/pre-commit` on this machine (#79 version); a commit
+  of `Pipeline status: built` without `pipeline/` is blocked (manual test).
 - `tools/git-hooks/pipeline_gate.py --staged` (pre-commit, every agent) and `--job jobs/<JOB>` (delivery):
   `Pipeline status` above draft needs `pipeline/spec.json` + `spec.report.json` + `check.json`; new job
   scripts name an engine gap `EG<n>`; delivery needs a committed `.py` for every `.pyc`

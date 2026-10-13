@@ -12,6 +12,23 @@ confidence. Source: `docs/HARNESS_PLAN.md` §8. Post the answer as a PR comment:
 3. **Evidence.** Did the checker or the tests pass **with numbers**, run by the reviewer?
    Every regression test must fail on the commit before the fix and pass after it.
 
+## Procedure (user 2026-10-13)
+
+1. **Rounds by risk.**
+   - `src/`, hooks, `pipeline_gate`, checkers: 2 rounds; a round 3 only if round 2 found a P1.
+   - Patterns, plans, READMEs, briefs (ТЗ), benchmark specs and hashes, `object.json`: 1 round, no test run,
+     a check against the rules for contradictions.
+   - Jobs: no Codex; `independent-checker` and the user's acceptance.
+   - The ceiling stays 3 rounds. The merge waits for the user's command.
+2. **P1 in the PR, P2 to an issue.** P1 = a wrong result, a silent skip, data loss, or a hook bypass; it is
+   fixed in the PR. Everything else is an issue with a number and a link to the round, and the merge does not
+   wait for it. The reviewer's prompt carries this definition.
+3. **The review's input** is the diff, this checklist and the affected tests and benchmarks - not the whole
+   repository and not the full suite. The author runs the full suite and every benchmark once, before the
+   merge.
+4. **Timing.** Round 1 starts right after the first code commit; docs and tests are written meanwhile. The
+   last round reviews the final version.
+
 ## Running a Codex review that can execute tests
 
 Lessons of PR #15 (2026-10-08). The Codex sandbox runs as a separate Windows user
