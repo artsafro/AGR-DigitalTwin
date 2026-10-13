@@ -699,6 +699,89 @@ def _slab_band_from(z0, z1):
     return z1 - min(SLAB_EDGE_BAND_M, 0.5 * (z1 - z0))
 
 
+PANELISED = "panelised"   # object.json source_class of a panel facade without a shell (rule 1, user 2026-10-13)
+PANEL_HINT_SHARE = 0.5    # the hint to set source_class: other parts' area outside the body's plan above this share
+                          # (user 2026-10-13: the trigger of a hint, not a geometry rule)
+
+
+def _up_faces_at(v, tris, z):
+    """Up-facing near-flat faces whose centres lie within ROOF_LEVEL_TOL_M of z, as plan polygons."""
+    p = v[tris]
+    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
+    length = np.linalg.norm(n, axis=1)
+    up = (length > 1e-12) & (n[:, 2] > np.cos(np.radians(ROOF_SLOPE_MAX_DEG)) * np.maximum(length, 1e-12))
+    near = np.abs(p[:, :, 2].mean(axis=1) - z) <= ROOF_LEVEL_TOL_M
+    return [Polygon(t[:, :2]) for t in p[up & near]]
+
+
+def _slab_candidates(v, tris, owners, levels):
+    """Meshes whose up-facing faces lie at two or more input levels, most levels first (the hint, rule 1)."""
+    hits = {}
+    for name in np.unique(owners):
+        mine = tris[owners == name]
+        n = sum(1 for lv in levels[1:] if _up_faces_at(v, mine, lv["elev_m"]))
+        if n >= 2:
+            hits[str(name)] = n
+    return [f"{k} ({n} levels)" for k, n in sorted(hits.items(), key=lambda kv: -kv[1])[:10]] or "none found"
+
+
+def _panel_hint(v, tris, parts, owners, levels):
+    """Rule 1 (user 2026-10-13): when more than PANEL_HINT_SHARE of all surface (body and other parts) is other
+    parts outside the body's plan (its sections at mid storey), the source is likely a panel facade without a
+    shell; the extractor stops and asks for source_class and slabs, it never decides itself."""
+    if len(parts) < 2:
+        return
+    body = tris[parts[0]]
+    faces = []
+    for lv, nxt in zip(levels, levels[1:]):                # closed as the contour is: openings bridged
+        poly = op.close_section(_section(v, body, (lv["elev_m"] + nxt["elev_m"]) / 2))[0]
+        if poly is not None:
+            faces.append(poly)
+    plan = shapely.union_all(faces).buffer(SHARE_TOL_M) if faces else Polygon()
+    rest = np.concatenate(parts[1:])
+    area = _areas(v, tris[rest])
+    total = float(area.sum() + _areas(v, body).sum())
+    if total <= 0:
+        return
+    centres = shapely.points(v[tris[rest]][:, :, :2].mean(axis=1))
+    outside = float(area[~shapely.covered_by(centres, plan)].sum()) if not plan.is_empty else float(area.sum())
+    if outside / total > PANEL_HINT_SHARE:
+        raise SpecError(f"{outside / total:.0%} of all surface is other parts outside the body's plan: this looks "
+                        f"like a panel facade without a shell. Set object.json source_class: \"{PANELISED}\" and "
+                        f"slabs: [mesh names] (contours by slabs, rule 1); slab candidates: "
+                        f"{_slab_candidates(v, tris, owners, levels)}")
+
+
+def _slab_contour(v, slab_tris, rest, lv, nxt):
+    """Rule 2 (user 2026-10-13): a storey's contour is the outline of the slab at the next level (its ceiling),
+    deviations within RELIEF_M of the wall line collapsed (Douglas-Peucker); checked at mid storey against the
+    other parts' section (the panels): none further than RELIEF_M outside the contour and the contour nowhere
+    further than RELIEF_M from them - a larger gap is a 'slab-envelope' question, the contour stands."""
+    faces = _up_faces_at(v, slab_tris, nxt["elev_m"])
+    if not faces:
+        raise SpecError(f"level {lv['name']}: no slab top at {nxt['elev_m']} m (the ceiling of the storey) in the "
+                        "named slabs; contours by slabs need one (rule 2)")
+    raw = max(shapely.get_parts(shapely.union_all(faces).buffer(0)), key=lambda g: g.area)
+    raw = Polygon(raw.exterior)
+    poly = orient(raw.simplify(RELIEF_M, preserve_topology=True), sign=1.0)
+    rep = {"contour_rule": f"slab at {nxt['elev_m']} m (rule 2)", "measured_by": "slabs",
+           "slab_area_m2": round(raw.area, 3), "slab_vertices": len(raw.exterior.coords) - 1,
+           "contour_vertices": len(poly.exterior.coords) - 1}
+    zmid = (lv["elev_m"] + nxt["elev_m"]) / 2
+    segs = _section(v, rest, zmid) if len(rest) else []
+    if not segs:
+        rep["envelope"] = {"at_m": round(zmid, 3), "gap_m": None, "why": "no other part cut at mid storey"}
+        return poly, rep
+    lines = shapely.union_all([shapely.LineString(sg) for sg in segs])
+    out = lines.difference(poly)
+    gap_out = out.hausdorff_distance(poly.exterior) if not out.is_empty else 0.0
+    ring = poly.exterior
+    probes = shapely.points([ring.interpolate(d).coords[0] for d in np.arange(0.0, ring.length, PARAPET_SAMPLE_M)])
+    gap_in = float(shapely.distance(probes, lines).max())
+    rep["envelope"] = {"at_m": round(zmid, 3), "outside_m": round(float(gap_out), 3), "uncovered_m": round(gap_in, 3)}
+    return poly, rep
+
+
 def _mid_storey_shape(groups, closed, z0, z1):
     """Rule 3 (user 2026-10-12): the contour is the section at mid storey; a section that changes only in the
     band SLAB_EDGE_BAND_M under the next level is the slab edge (floor-step / belt), not the contour. Taken
@@ -1290,8 +1373,17 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     plane = np.isin(mats, list(_opening_ids()))        # opening planes are not body: the hole stays the anchor
     plane_tris = np.column_stack([tris[plane], mats[plane]])
     tris, owners, mats = tris[~plane], owners[~plane], mats[~plane]
-    if dump.get("body"):                                 # a source that names its body (Revit boxes do
-        mine = np.isin(owners, list(dump["body"]))      # not share vertices): body = those meshes
+    panelised = obj_cfg.get("source_class") == PANELISED
+    if panelised:                                        # rule 1 (user 2026-10-13): a panel facade without a
+        slabs = obj_cfg.get("slabs") or []               # shell - the body is the named slabs, contours by slabs
+        missing = sorted(set(slabs) - set(owners.tolist()))
+        if not slabs or missing:
+            raise SpecError(f"source_class {PANELISED} needs object.json slabs: [mesh names] of the source"
+                            + (f"; not in the source: {missing}" if missing else "")
+                            + f"; candidates: {_slab_candidates(v, tris, owners, levels)}")
+    named = obj_cfg["slabs"] if panelised else dump.get("body")
+    if named:                                            # a source that names its body (Revit boxes do
+        mine = np.isin(owners, list(named))             # not share vertices): body = those meshes
         parts = [np.flatnonzero(mine)] + _parts(v, tris[~mine]) if (~mine).any() else [np.flatnonzero(mine)]
         if len(parts) > 1:
             rest = np.flatnonzero(~mine)
@@ -1299,6 +1391,8 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     else:
         parts = _parts(v, tris)
     body = tris[parts[0]]
+    if not panelised:
+        _panel_hint(v, tris, parts, owners, levels)
     report = {"parts": len(parts), "body_triangles": int(len(body)),
               "body_area_m2": round(float(_areas(v, body).sum()), 3),
               "attachment_parts_ignored": len(parts) - 1, "floors": {},
@@ -1312,9 +1406,13 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     prev, stopped_below = None, False                    # the storey right below: its contour, or it stopped
     for lv, nxt in zip(levels, levels[1:]):
         try:
-            poly, rep, dev, ms, dr, parapet, raw = _level_contour(
-                v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]), below=prev,
-                extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
+            if panelised:
+                poly, rep = _slab_contour(v, body, tris[np.flatnonzero(~mine)], lv, nxt)
+                dev, ms, dr, parapet, raw = [], [], [], (), poly
+            else:
+                poly, rep, dev, ms, dr, parapet, raw = _level_contour(
+                    v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]), below=prev,
+                    extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
             points = _contour_points(poly)               # its own check too, inside the storey (review 1 of #80)
         except SpecError as exc:
             if found is None:
@@ -1391,6 +1489,12 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     questions = (_questions(levels, floors, polys, pieces, stats) + op.break_questions(breaks, levels) + suspects
                  + _source_questions(dump, levels))
     for name, rep in report["floors"].items():        # structure on a ledge that is no terrace (review 1 of PR #61)
+        env = rep.get("envelope", {})                 # rule 2: a slab contour off the panels is asked, it stands
+        gap = max(env.get("outside_m") or 0.0, env.get("uncovered_m") or 0.0)
+        if gap > RELIEF_M + 1e-9:
+            questions.append({"priority": "high", "kind": "slab-envelope", "levels": [name], "wall": None,
+                              "depth_m": round(gap, 3), "length_m": None, "facade_share": None,
+                              "heights_m": [env["at_m"], env["at_m"]], "at": None})
         if rep.get("slab_edge", {}).get("open_m"):    # rule 3: the contour stands, the open slab edge is asked
             opened = rep["slab_edge"]["open_m"]        # (review 2 of #81)
             questions.append({"priority": "high", "kind": "slab-edge-open", "levels": [name], "wall": None,

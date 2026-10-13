@@ -491,3 +491,82 @@ def test_open_slab_edge_keeps_the_contour_and_is_asked():
     assert edge["open_m"] == [[3.0, 3.3]] and edge["closed_shapes"] == 0
     q = [q for q in report["questions"] if q["kind"] == "slab-edge-open"]
     assert [(x["levels"], x["heights_m"]) for x in q] == [(["L0"], [3.0, 3.3])]
+
+
+# --- rules 1-2 (user 2026-10-13): a panel facade without a shell - contours by slabs
+
+def panelised(slab_outline=SQUARE10, levels=LEVELS):
+    """An inner mass 2 x 2 m, a panel shell round the 10 x 10 m outline (one separate box per wall and storey,
+    0.1 m thick outward, 0.1 m joints at the corners) and slab plates at every level above the ground (one mesh 'Slabs')."""
+    mass = Mesh("Mass")
+    inner = [[4, 4], [6, 4], [6, 6], [4, 6]]
+    walls(mass, inner, 0.0, levels[-1][1])
+    flat(mass, Polygon(inner), levels[-1][1], up=True)
+    flat(mass, Polygon(inner), 0.0, up=False)
+    meshes = [mass]
+    for (_, z0), (_, z1) in zip(levels, levels[1:]):
+        for w in range(4):
+            a, b = np.asarray(SQUARE10[w], float), np.asarray(SQUARE10[(w + 1) % 4], float)
+            t = (b - a) / np.linalg.norm(b - a)
+            n = np.array([t[1], -t[0]])
+            panel = Mesh(f"Panel_{w}_{z0}")
+            a0, b0 = a + 0.05 * t, b - 0.05 * t           # a joint at the corners: every panel a part of its own
+            ring = [list(a0), list(b0), list(b0 + 0.1 * n), list(a0 + 0.1 * n)]
+            walls(panel, ring if Polygon(ring).exterior.is_ccw else ring[::-1], z0 + 0.01, z1 - 0.01)
+            meshes.append(panel)
+    slabs = Mesh("Slabs")
+    for _, z in levels[1:]:
+        flat(slabs, Polygon(slab_outline), z, up=True)
+        flat(slabs, Polygon(slab_outline), z - 0.2, up=False)
+    meshes.append(slabs)
+    return {"source": "synthetic-shapes", "meshes": [m.dump() for m in meshes],
+            "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]} for n, z in levels]}
+
+
+PANEL_OBJECT = {**OBJECT, "source_class": "panelised", "slabs": ["Slabs"]}
+
+
+def test_panel_facade_without_a_shell_is_hinted_with_slab_candidates():
+    with pytest.raises(SpecError, match=r"panel facade without a shell.*source_class.*Slabs \(2 levels\)"):
+        extract_spec(panelised(), OBJECT)
+
+
+def test_contours_by_slabs_take_the_ceiling_slab_and_check_the_panels():
+    spec, report = extract_spec(panelised(), PANEL_OBJECT)
+    assert [close(f.contour, SQUARE10) for f in spec.expanded_floors()] == [True, True]
+    rep = report["floors"]["L0"]
+    assert rep["measured_by"] == "slabs" and rep["contour_rule"] == "slab at 3.3 m (rule 2)"
+    assert rep["slab_area_m2"] == 100.0 and rep["envelope"]["outside_m"] <= 0.1001
+    assert not [q for q in report["questions"] if q["kind"] == "slab-envelope"]
+
+
+def test_a_slab_off_the_panels_is_asked_and_the_contour_stands():
+    wide = [[0, 0], [10, 0], [10, 10], [-0.5, 10], [-0.5, 0]]      # 0.5 m past the west panels
+    spec, report = extract_spec(panelised(wide), PANEL_OBJECT)
+    q = [q for q in report["questions"] if q["kind"] == "slab-envelope"]
+    assert q and 0.4 <= q[0]["depth_m"] <= 0.6                      # 0.4 m past the panels' outer face
+    assert Polygon(spec.expanded_floors()[0].contour).area == pytest.approx(105.0)
+
+
+def test_slab_relief_within_0_10_collapses():
+    jogged = [[0, 0], [4, 0], [4, -0.05], [6, -0.05], [6, 0], [10, 0], [10, 10], [0, 10]]
+    spec, report = extract_spec(panelised(jogged), PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10, tol=0.06)
+    assert report["floors"]["L0"]["slab_vertices"] == 8 and report["floors"]["L0"]["contour_vertices"] == 4
+
+
+def test_contours_by_slabs_need_the_slabs_named():
+    with pytest.raises(SpecError, match=r"needs object.json slabs.*not in the source: \['Nope'\]"):
+        extract_spec(panelised(), {**PANEL_OBJECT, "slabs": ["Nope"]})
+
+
+def test_a_storey_without_its_ceiling_slab_stops_on_its_own():
+    from dt_ai.spec import SpecStops
+    dump = panelised()
+    slabs = next(m for m in dump["meshes"] if m["name"] == "Slabs")
+    keep = [k for k, tr in enumerate(slabs["triangles"]) if max(slabs["vertices"][i][2] for i in tr) < 5.0]
+    slabs["triangles"] = [slabs["triangles"][k] for k in keep]      # no slab at 6.6 m
+    with pytest.raises(SpecStops) as caught:
+        extract_spec(dump, PANEL_OBJECT, collect_stops=True)
+    assert [(s["stage"], s["level"]) for s in caught.value.stops] == [("contour", "L1")]
+    assert "no slab top at 6.6 m" in caught.value.stops[0]["message"]
