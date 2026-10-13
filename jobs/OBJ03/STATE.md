@@ -25,13 +25,31 @@ what the engine lacks (`EG<n>`), and a count of decor elements against the colle
 - 2026-10-13 **3a**: OD1 applies, opening depth default 0.4 (C24 record updated).
 - Parapet thickness default 0.3 (`parapet_thickness_default_m`).
 - Terrace levels L16 / L20 / L24 = walkable tops of the decks (56.2 / 69.4 / 82.6), 0.2 above the slabs.
+- 2026-10-13 roof sliver (stop at 96.55, 0.07 m2 at (57.70, 151.83)): **A** - the corner niche is open, no roof
+  over it; the niche lies outside the contour, the stop is the contour simplification (#84; fix #94 open, its P1 #95).
+- 2026-10-13 stops and build errors: never fixed in the run - the element is skipped, marked in the report, the
+  rest is built (scratch skips in `C:/x/t-obj03/run/`, local).
+- 2026-10-13 building weld `weld_m` 3 mm inclusive (merged #99) and pointed corners as triangles (merged #100).
+- 2026-10-13 horizontal faces triangulated (CDT), walls stay quads: engine PR in progress (three Codex rounds,
+  regression B01 / B02 / B02t / K01 before / after).
+- 2026-10-13 **lamellas** of the east facade slot (0.05 x 0.20 x 3.28 m fins, 0.10 m pitch, 11 per storey): NPM as a
+  **texture** on the slot back, no geometry (as at Butovskaya, user 2026-10-07).
+- 2026-10-13 disputed geometry: look first, then classify (`WORKFLOW.md`); questions to the user only with a picture.
 
 ## Runs
 
 - 2026-10-12 run 1: no body (largest part an inner mass, facade 8884 panels) -> rules 1-5.
 - 2026-10-13 probe (`C:/x/t-obj03`, local): one stop, a 0.07 m2 opening in the roof at (57.70, 151.83).
+- 2026-10-13 run 2 (spec v003 report): the same single stop. Scratch run past it: spec v004 - decor 0 (all 28 entries
+  w_m < 0, #96), 8 storeys with self-crossing contours (#97), 9 terraces not built (#98), 754 corner openings not
+  built, roof parapet not built (its cap narrows to a point). After #99 / #100 the build stops at 'cuts between
+  faces and walls do not settle' (strips across a 107-197-vertex plan) -> engine PR: triangulated horizontal faces.
+- 2026-10-13 decor triage `outputs/decor-triage.md` (local, with renders): the extractor reads the facade relief as
+  not decor on a panelised source (the contour is the panel envelope); lamellas split into 222 columns + 104 shapes;
+  ~430 window parts reach the decor set. Input for #96.
 
 ## Open issues from this job
 
 #82 terrace parapets, #84 DP contour vs roof check, #85 open facade joined to an inner ring, #90 protrusion
 root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a marked enclosure.
+#95 #84 fix P1, #96 decor widths / panelised decor, #97 self-crossing contour, #98 terraces not built.
