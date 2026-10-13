@@ -634,3 +634,32 @@ def test_unreadable_parapet_thickness_without_a_default_is_left_to_the_build_inp
     spec, report = extract_spec(_uneven_parapet(), OBJECT)
     assert spec.roof.parapet_thickness_m is None and spec.spec_version == "0.3"
     assert report["roof"]["parapet_thickness"]["by"] == "not read, no default"
+
+
+# spec v0.7 roof_structures (pattern roof-screen-enclosure, user 2026-10-13)
+
+def _with_screened_equipment():
+    """B01-like box; on its roof a screen enclosure 3-7 x 3-7 m to 9.0 m and inside it equipment with a pitched
+    top (steep faces at the roof level that would stop the roof)."""
+    dump = box_building()
+    screens, kit = Mesh("Screens"), Mesh("Kit")
+    ring = [(3, 3), (7, 3), (7, 7), (3, 7)]
+    for (x0, y0), (x1, y1) in zip(ring, ring[1:] + ring[:1]):
+        screens.quad((x0, y0, 6.6), (x1, y1, 6.6), (x1, y1, 9.0), (x0, y0, 9.0))
+    kit.quad((4, 4, 6.6), (6, 4, 6.6), (6, 5, 7.6), (4, 5, 7.6))          # a 45 degree top over 2 x 2 m
+    kit.quad((4, 5, 7.6), (6, 5, 7.6), (6, 6, 6.6), (4, 6, 6.6))
+    dump["meshes"] += [screens.dump(), kit.dump()]
+    return dump
+
+
+def test_a_marked_screen_enclosure_is_read_with_its_outline_and_top():
+    spec, report = extract_spec(_with_screened_equipment(), {**OBJECT, "roof_screens": ["Screens"]})
+    (rs,) = spec.roof_structures
+    assert spec.spec_version == "0.7" and rs.kind == "screen" and rs.z_top_m == 9.0
+    assert close(sorted(rs.outline), sorted([[3, 3], [3, 7], [7, 3], [7, 7]]), tol=0.02)
+    assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.01)
+
+
+def test_roof_screens_must_be_in_the_source():
+    with pytest.raises(SpecError, match=r"roof_screens \['Nope'\] are not in the source"):
+        extract_spec(_with_screened_equipment(), {**OBJECT, "roof_screens": ["Nope"]})

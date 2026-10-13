@@ -118,13 +118,21 @@ class _Mesh:
             pts = pts[::-1]
         self.faces.append(([self.vertex(p) for p in pts], mid))
 
+    def tri(self, pts, mid, facing):
+        """Triangle with its normal turned to `facing` (a roof structure's top, spec v0.7)."""
+        pts = [np.asarray(p, float) for p in pts]
+        n = np.cross(pts[1] - pts[0], pts[2] - pts[0])
+        if float(n @ np.asarray(facing, float)) < 0:
+            pts = pts[::-1]
+        self.faces.append(([self.vertex(p) for p in pts], mid))
+
     def mesh(self, name):
         tris, mids = [], []
         for ids, mid in self.faces:
-            tris += [[ids[0], ids[1], ids[2]], [ids[0], ids[2], ids[3]]]
-            mids += [mid, mid]
+            tris += [[ids[0], ids[1], ids[2]]] + ([[ids[0], ids[2], ids[3]]] if len(ids) == 4 else [])
+            mids += [mid] * (len(ids) - 2)
         return {"name": name, "vertices": self.vertices, "triangles": tris, "material_ids": mids,
-                "polygon_sizes": [4] * len(self.faces), "polygons": [ids for ids, _ in self.faces]}
+                "polygon_sizes": [len(ids) for ids, _ in self.faces], "polygons": [ids for ids, _ in self.faces]}
 
     def dump(self, levels, extra=()):
         meshes = [self.mesh("body")] + [m.mesh(name) for name, m in extra if m.faces]
@@ -430,7 +438,28 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         joints += [z, zp]
     _hold(mesh, joints)
     decor = _decor(spec, floors, contours, openings, inputs, elev, polys, top)
-    return mesh.dump(spec.levels, [("decor", decor)])
+    return mesh.dump(spec.levels, [("decor", decor), ("roof_structures", _roof_structures(spec, inputs, roof))])
+
+
+def _roof_structures(spec: Spec, inputs: BuildInputs, roof: float) -> "_Mesh":
+    """Pattern roof-screen-enclosure (spec v0.7, user 2026-10-13): npm_min builds a screen enclosure as planes -
+    walls on its outline from the roof level to its top, facing out, and a top plane; no bottom, no thickness;
+    roof ids (an exit to the roof). Part of the silhouette, a mesh of its own. mid / VPM (a shell) is issue #91."""
+    out = _Mesh()
+    if not spec.roof_structures:
+        return out
+    if spec.profile != "npm_min":
+        raise BuildError(f"roof_structures in profile {spec.profile}: only npm_min builds them yet (planes); the "
+                         "mid / VPM shell is issue #91")
+    for rs in spec.roof_structures:
+        poly = orient(Polygon(rs.outline), sign=1.0)
+        pts = list(poly.exterior.coords)[:-1]
+        z0, z1 = roof, rs.z_top_m
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:] + pts[:1]):
+            out.quad([[x0, y0, z0], [x1, y1, z0], [x1, y1, z1], [x0, y0, z1]], inputs.roof_id, [y1 - y0, x0 - x1, 0.0])
+        for tri in shapely.get_parts(shapely.constrained_delaunay_triangles(poly)):
+            out.tri([[x, y, z1] for x, y in list(tri.exterior.coords)[:3]], inputs.roof_id, [0.0, 0.0, 1.0])
+    return out
 
 
 DECOR_INSET_M = 0.02   # pattern facade-decor-inset: a wall element runs this far into the body (user 2026-10-11)

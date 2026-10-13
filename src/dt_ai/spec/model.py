@@ -91,6 +91,22 @@ class Roof(SpecPart):
     parapet_thickness_m: Positive | None = None
 
 
+class RoofStructure(SpecPart):
+    """A structure on the roof (spec v0.7, pattern roof-screen-enclosure, user 2026-10-13): kind "screen" - a
+    screen enclosure round roof equipment, its outer outline in plan and its top. npm_min builds it as planes
+    (walls on the outline from the roof level to z_top and a top plane, no bottom, no thickness), roof ids; it
+    is part of the body's silhouette, not an attachment."""
+    kind: Literal["screen"]
+    outline: list[list[float]] = Field(min_length=3)
+    z_top_m: float
+
+    @model_validator(mode="after")
+    def plan(self):
+        if any(len(p) != 2 for p in self.outline):
+            raise ValueError("roof structure outline: [x, y] points")
+        return self
+
+
 class Terrace(SpecPart):
     """A ledge at a floor step used as a terrace, with a parapet (upstand) along its outer edges
     (spec v0.4, pattern terrace, user decision 2026-10-10). The height is measured from the level."""
@@ -149,7 +165,8 @@ class Spec(SpecPart):
     # 0.4: terraces with a parapet at floor steps (pattern terrace, user decision 2026-10-10)
     # 0.5: facade decor (pattern facade-decor-inset, user decisions 2026-10-11/12)
     # 0.6: roof.parapet_thickness_m (rule 4, user 2026-10-12)
-    spec_version: Literal["0.1", "0.2", "0.3", "0.4", "0.5", "0.6"] = "0.3"
+    # 0.7: roof_structures (pattern roof-screen-enclosure, user 2026-10-13)
+    spec_version: Literal["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7"] = "0.3"
     profile: Literal["npm_min", "mid"]
     frame: Frame
     levels: list[Level] = Field(min_length=2)
@@ -157,6 +174,7 @@ class Spec(SpecPart):
     roof: Roof | None = None
     terraces: list[Terrace] = []
     attachments: list[dict] = []
+    roof_structures: list[RoofStructure] = []
     decor: list[Decor] = []
     opening_depth_default_m: NonNegative = OPENING_DEPTH_DEFAULT_M
     # pattern roof-inset-plane (user 2026-10-10): every slab is a separate plate plate_gap_m above its level
@@ -167,11 +185,16 @@ class Spec(SpecPart):
     @model_validator(mode="after")
     def consistent(self):
         names = [lv.name for lv in self.levels]
-        if self.terraces and self.spec_version not in ("0.4", "0.5", "0.6"):
+        if self.terraces and self.spec_version not in ("0.4", "0.5", "0.6", "0.7"):
             raise ValueError("terraces need spec_version 0.4")
-        if self.decor and self.spec_version not in ("0.5", "0.6"):
+        if self.decor and self.spec_version not in ("0.5", "0.6", "0.7"):
             raise ValueError("decor needs spec_version 0.5")
-        if self.roof is not None and self.roof.parapet_thickness_m is not None and self.spec_version != "0.6":
+        if self.roof_structures and self.spec_version != "0.7":
+            raise ValueError("roof_structures need spec_version 0.7")
+        for rs in self.roof_structures:
+            if rs.z_top_m <= self.levels[-1].elev_m:
+                raise ValueError(f"roof structure: top {rs.z_top_m} m is not above the roof level")
+        if self.roof is not None and self.roof.parapet_thickness_m is not None and self.spec_version not in ("0.6", "0.7"):
             raise ValueError("roof.parapet_thickness_m needs spec_version 0.6")
         for d in self.decor:
             if d.level not in names[:-1]:
@@ -202,7 +225,7 @@ class Spec(SpecPart):
                     raise ValueError("openings across levels need spec_version 0.2")
                 if self.spec_version in ("0.1", "0.2") and o.depth_m is None:
                     raise ValueError(f"spec {self.spec_version}: every opening has depth_m (optional from 0.3)")
-                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version not in ("0.3", "0.4", "0.5", "0.6"):
+                if (o.glass_w is not None or o.glass_h is not None) and self.spec_version not in ("0.3", "0.4", "0.5", "0.6", "0.7"):
                     raise ValueError("glass_w / glass_h need spec_version 0.3")
         full = {f.level for f in self.floors if f.contour is not None}
         owner = {}

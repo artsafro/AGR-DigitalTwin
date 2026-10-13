@@ -456,6 +456,39 @@
       "title": "Roof",
       "type": "object"
     },
+    "RoofStructure": {
+      "additionalProperties": false,
+      "description": "A structure on the roof (spec v0.7, pattern roof-screen-enclosure, user 2026-10-13): kind \"screen\" - a\nscreen enclosure round roof equipment, its outer outline in plan and its top. npm_min builds it as planes\n(walls on the outline from the roof level to z_top and a top plane, no bottom, no thickness), roof ids; it\nis part of the body's silhouette, not an attachment.",
+      "properties": {
+        "kind": {
+          "const": "screen",
+          "title": "Kind",
+          "type": "string"
+        },
+        "outline": {
+          "items": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array"
+          },
+          "minItems": 3,
+          "title": "Outline",
+          "type": "array"
+        },
+        "z_top_m": {
+          "title": "Z Top M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "kind",
+        "outline",
+        "z_top_m"
+      ],
+      "title": "RoofStructure",
+      "type": "object"
+    },
     "Terrace": {
       "additionalProperties": false,
       "description": "A ledge at a floor step used as a terrace, with a parapet (upstand) along its outer edges\n(spec v0.4, pattern terrace, user decision 2026-10-10). The height is measured from the level.",
@@ -558,6 +591,14 @@
       ],
       "default": null
     },
+    "roof_structures": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RoofStructure"
+      },
+      "title": "Roof Structures",
+      "type": "array"
+    },
     "spec_version": {
       "default": "0.3",
       "enum": [
@@ -566,7 +607,8 @@
         "0.3",
         "0.4",
         "0.5",
-        "0.6"
+        "0.6",
+        "0.7"
       ],
       "title": "Spec Version",
       "type": "string"
