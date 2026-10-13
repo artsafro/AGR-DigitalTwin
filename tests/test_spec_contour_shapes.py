@@ -655,3 +655,78 @@ def test_a_parapet_on_the_slab_edge_inside_the_facade_line_is_found():
     spec, report = extract_spec(panelised(outlines=(SQUARE10, upper), extra=[parapet], slabs_at={2: upper}),
                                 PANEL_OBJECT)
     assert [(t.level, round(t.parapet_h_m, 2)) for t in spec.terraces] == [("L1", 1.1)]
+
+
+def test_a_fin_welded_to_a_facade_panel_is_cut_off_and_the_panel_stays():
+    """#87 (user 2026-10-13): a part is classified segment by segment - a fin 0.85 m out welded to the south
+    panel is an attachment candidate, the panel stays facade (OBJ03 L16-L28 dropped whole facade parts)."""
+    dump = panelised()
+    south = next(m for m in dump["meshes"] if m["name"] == "Panel_0_0")
+    dump["meshes"].remove(south)
+    joined = Mesh("Panel_0_0")
+    walls(joined, [[-0.08, 0], [9.98, 0], [9.98, -0.1], [-0.08, -0.1]], 0.01, 3.29, extra_u={2: [5.88, 5.98]})
+    walls(joined, [[4.0, -0.1], [4.1, -0.1], [4.1, -0.95], [4.0, -0.95]][::-1], 0.01, 3.29)
+    dump["meshes"].append(joined.dump())
+    spec, report = extract_spec(dump, PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L0"]["attachment_pieces_left_out"] == 1
+
+
+def test_a_storey_under_a_terrace_deck_keeps_its_floor_slab_as_reference():
+    """#88 (user 2026-10-13): at a terrace level the slab is the deck (the walkable top); the storey under it
+    takes its own floor slab too, so a narrow deck does not leave its facade out."""
+    levels = (("L0", 0.0), ("L1", 3.3), ("L2", 6.6), ("roof", 9.9))
+    upper = [[0, 0], [8, 0], [8, 10], [0, 10]]
+    deck = [[8, 0], [10, 0], [10, 10], [8, 10]]
+    dump = panelised(outlines=(SQUARE10, SQUARE10, upper), levels=levels, slabs_at={2: deck, 3: upper})
+    spec, report = extract_spec(dump, PANEL_OBJECT)
+    assert close(spec.expanded_floors()[1].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L1"]["attachment_pieces_left_out"] == 0
+
+
+def _fin(mesh, x0, x1, y_out, cross=None, z0=0.01, z1=3.29):
+    """A fin from the panels' outer face (y = -0.1) out to y_out, as quads sharing their corners; `cross`: the y
+    of a crossbar between its sides."""
+    ys = [-0.1] + ([cross] if cross is not None else []) + [y_out]
+    for x in (x0, x1):
+        for ya, yb in zip(ys, ys[1:]):
+            mesh.quad((x, ya, z0), (x, yb, z0), (x, yb, z1), (x, ya, z1))
+    mesh.quad((x0, y_out, z0), (x1, y_out, z0), (x1, y_out, z1), (x0, y_out, z1))
+    if cross is not None:
+        mesh.quad((x0, cross, z0), (x1, cross, z0), (x1, cross, z1), (x0, cross, z1))
+
+
+def test_a_glass_line_ending_at_a_fin_stays_facade():
+    """Review 1 of #89: the south facade is one glass line; a fin welded at its end is cut off, the glass stays."""
+    dump = panelised()
+    dump["meshes"] = [m for m in dump["meshes"] if m["name"] != "Panel_0_0"]
+    glass = Mesh("Glass")
+    glass.quad((-0.1, 0.02, 0.01), (-0.1, -0.1, 0.01), (-0.1, -0.1, 3.29), (-0.1, 0.02, 3.29))   # west corner
+    glass.quad((-0.1, -0.1, 0.01), (10.1, -0.1, 0.01), (10.1, -0.1, 3.29), (-0.1, -0.1, 3.29))
+    _fin(glass, 10.1, 10.1, -0.95)
+    dump["meshes"].append(glass.dump())
+    spec, report = extract_spec(dump, PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+
+
+def test_a_fin_with_a_crossbar_leaves_no_stub():
+    """Review 1 of #89: a fin 1.1 m out with a crossbar 0.4 m out, welded to the south panel, goes."""
+    dump = panelised()
+    south = next(m for m in dump["meshes"] if m["name"] == "Panel_0_0")
+    dump["meshes"].remove(south)
+    joined = Mesh("Panel_0_0")
+    walls(joined, [[-0.08, 0], [9.98, 0], [9.98, -0.1], [-0.08, -0.1]], 0.01, 3.29, extra_u={2: [5.58, 5.98]})
+    _fin(joined, 4.0, 4.4, -1.2, cross=-0.5)
+    dump["meshes"].append(joined.dump())
+    spec, report = extract_spec(dump, PANEL_OBJECT)
+    ys = [p[1] for p in spec.expanded_floors()[0].contour]
+    assert min(ys) >= -0.35                        # the 1.2 m fin and its crossbar are gone; a root up to the facade
+    assert report["floors"]["L0"]["attachment_pieces_left_out"] == 1   # band's depth may stay (issue)
+
+
+def test_slab_data_follow_the_ceiling_not_the_reference():
+    """Review 1 of #89: a 121 m2 floor slab and a 100 m2 ceiling - the share and the offset are the ceiling's."""
+    big = [[-0.5, -0.5], [10.5, -0.5], [10.5, 10.5], [-0.5, 10.5]]
+    spec, report = extract_spec(panelised(slabs_at={1: big, 2: SQUARE10}), PANEL_OBJECT)
+    rep = report["floors"]["L1"]
+    assert rep["slab_inside_facade_share"] == 1.0 and rep["facade_offset_m"] == pytest.approx(0.1, abs=0.011)
