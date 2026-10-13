@@ -25,7 +25,9 @@ Status: draft (user decision 2026-10-13, OBJ03). Spec v0.7 `roof_structures`.
 `roof_structures: [{kind: "screen", outline: [[x, y], …], z_top_m}]` (spec v0.7). The extractor reads the
 outline as the outer line of the screens' plan (their faces projected, joints up to 0.10 m closed,
 Douglas–Peucker 0.10 m) and the top as their highest point. A name not in the source, a screen not above the
-roof or a plan that does not close is a stop.
+roof or a plan that does not close is a stop. A group of screens must enclose exactly one space (a hole of
+its plan not capped by the screens above and below - a thick screen's own inside is capped twice): none is an
+open screen, two or more (enclosures sharing screens) is a stop too - their tops cannot be told apart.
 
 ## Check
 

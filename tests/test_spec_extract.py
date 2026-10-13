@@ -692,6 +692,43 @@ def test_an_open_screen_is_a_stop():
         extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
 
 
+def _boxes(*boxes, z0=6.6, z1=9.0):
+    """Thick screens: closed boxes [x0, y0, x1, y1] with their caps."""
+    m = Mesh("Screens")
+    for x0, y0, x1, y1 in boxes:
+        ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+        for (a, b), (c, d) in zip(ring, ring[1:] + ring[:1]):
+            m.quad((a, b, z0), (c, d, z0), (c, d, z1), (a, b, z1))
+        m.quad(*[(x, y, z1) for x, y in ring])
+        m.quad(*[(x, y, z0) for x, y in ring[::-1]])
+    return m
+
+
+def test_an_open_screen_of_thick_boxes_is_a_stop():
+    """Review 2 of #92: a U of 0.3 m boxes - their own insides are no enclosed space."""
+    dump = box_building()
+    dump["meshes"].append(_boxes((3, 3, 7, 3.3), (6.7, 3.3, 7, 7), (3, 6.7, 6.7, 7)).dump())
+    with pytest.raises(SpecError, match="do not close round an enclosure"):
+        extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+
+
+def test_a_closed_ring_of_thick_boxes_is_read():
+    dump = box_building()
+    dump["meshes"].append(_boxes((3, 3, 7, 3.3), (6.7, 3.3, 7, 7), (3, 6.7, 6.7, 7), (3, 3.3, 3.3, 6.7)).dump())
+    (rs,) = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})[0].roof_structures
+    from shapely.geometry import Polygon, box
+    assert rs.z_top_m == 9.0 and Polygon(rs.outline).symmetric_difference(box(3, 3, 7, 7)).area < 0.02
+
+
+@pytest.mark.parametrize("second", [[(4, 2), (6, 2), (6, 4), (4, 4)], [(4, 4), (6, 4), (6, 6), (4, 6)]])
+def test_enclosures_sharing_screens_are_a_stop(second):
+    """Review 2 of #92: touching enclosures 9 m and 11 m high - one outline and one top would be wrong."""
+    dump = box_building()
+    dump["meshes"].append(_screens(([(2, 2), (4, 2), (4, 4), (2, 4)], 9.0), (second, 11.0)).dump())
+    with pytest.raises(SpecError, match="enclose 2 spaces sharing screens"):
+        extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+
+
 def test_a_screen_on_the_parapet_does_not_hide_its_thickness():
     """Review 1 of #92: a screen [0, 0]-[3, 3] standing on the parapet corner; the parapet still reads 0.2 m."""
     dump = box_building()

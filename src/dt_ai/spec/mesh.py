@@ -1371,6 +1371,9 @@ def _roof_structures(v, tris, owners, names, top_level):
     are screen enclosures on the roof. Their screens' vertical faces, projected to the plan, group by proximity
     (joints up to RELIEF_M): one group is one enclosure, its outline the outer line of a closed ring of screens
     (Douglas-Peucker RELIEF_M), its top the group's highest point; a lid on top does not count for the ring.
+    The space a group encloses is a hole of its plan that the screens do not cap both above and below (a thick
+    screen's own inside is capped twice); a group must enclose exactly one space - none is an open screen, more
+    are enclosures sharing screens whose tops cannot be told apart (review 2 of #92).
     The marking is the human's; a name not in the source, a group not above the roof or screens that do not close
     round their plan are a stop, never a guess (review 1 of #92)."""
     if not names:
@@ -1390,6 +1393,16 @@ def _roof_structures(v, tris, owners, names, top_level):
             zs.append((float(z.min()), float(z.max())))
     if not pieces:
         raise SpecError(f"roof_screens {sorted(names)}: no screen (vertical face) in them")
+    flat = np.ptp(p[:, :, 2], axis=1) <= 1e-9
+    caps = [(Polygon(q), float(z[0])) for q, z in zip(xy[flat], p[flat][:, :, 2]) if Polygon(q).area > 1e-12]
+    cap_tree = shapely.STRtree([c for c, _ in caps])
+
+    def solid(hole):
+        """A screen's own inside: capped by the screens at two heights."""
+        pt = Polygon(hole).representative_point()
+        hz = sorted({round(caps[i][1] / WELD_M) for i in cap_tree.query(pt, predicate="intersects")})
+        return len(hz) >= 2
+
     groups = list(shapely.get_parts(shapely.union_all(pieces).buffer(RELIEF_M / 2)))
     tree = shapely.STRtree(pieces)
     out = []
@@ -1400,10 +1413,15 @@ def _roof_structures(v, tris, owners, names, top_level):
         if top <= top_level["elev_m"] + EVENT_MIN_M:
             raise SpecError(f"roof_screens {sorted(names)}: the screens round ({c.x:.2f}, {c.y:.2f}) do not stand "
                             f"above the roof level {top_level['elev_m']} m")
-        env = _facade_ring([pieces[i] for i in members], RELIEF_M)
-        if env is None:
+        spaces = [h for h in g.interiors if not solid(h)]
+        if not spaces:
             raise SpecError(f"roof_screens {sorted(names)}: the screens round ({c.x:.2f}, {c.y:.2f}) do not close "
                             "round an enclosure with joints up to 0.10 m")
+        if len(spaces) > 1:
+            raise SpecError(f"roof_screens {sorted(names)}: the screens round ({c.x:.2f}, {c.y:.2f}) enclose "
+                            f"{len(spaces)} spaces sharing screens; one outline and one top cannot be read for them")
+        shrunk = Polygon(g.exterior).buffer(-RELIEF_M / 2)
+        env = Polygon(max(shapely.get_parts(shrunk), key=lambda h: h.area).exterior)
         poly = orient(env.simplify(RELIEF_M, preserve_topology=True), sign=1.0)
         out.append({"kind": "screen", "outline": _contour_points(poly), "z_top_m": round(top, 3),
                     "meshes": sorted(names), "area_m2": round(poly.area, 3)})
