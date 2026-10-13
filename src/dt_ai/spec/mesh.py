@@ -1393,14 +1393,17 @@ def _roof_structures(v, tris, owners, names, top_level):
             zs.append((float(z.min()), float(z.max())))
     if not pieces:
         raise SpecError(f"roof_screens {sorted(names)}: no screen (vertical face) in them")
-    flat = np.ptp(p[:, :, 2], axis=1) <= 1e-9
-    caps = [(Polygon(q), float(z[0])) for q, z in zip(xy[flat], p[flat][:, :, 2]) if Polygon(q).area > 1e-12]
-    cap_tree = shapely.STRtree([c for c, _ in caps])
+    caps = [(Polygon(q), t) for q, t in zip(xy[~upright], p[~upright])]   # any face not vertical, sloped too
+    cap_tree = shapely.STRtree([c for c, _ in caps])                       # (review 3 of #92)
 
     def solid(hole):
-        """A screen's own inside: capped by the screens at two heights."""
+        """A screen's own inside: capped by the screens at two heights over one point of it."""
         pt = Polygon(hole).representative_point()
-        hz = sorted({round(caps[i][1] / WELD_M) for i in cap_tree.query(pt, predicate="intersects")})
+        hz = set()
+        for i in cap_tree.query(pt, predicate="intersects"):
+            t = caps[i][1]
+            n_ = np.cross(t[1] - t[0], t[2] - t[0])                         # the cap's plane, z at the point
+            hz.add(round(float(t[0, 2] - (n_[0] * (pt.x - t[0, 0]) + n_[1] * (pt.y - t[0, 1])) / n_[2]) / WELD_M))
         return len(hz) >= 2
 
     groups = list(shapely.get_parts(shapely.union_all(pieces).buffer(RELIEF_M / 2)))

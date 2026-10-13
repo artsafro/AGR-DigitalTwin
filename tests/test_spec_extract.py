@@ -692,14 +692,15 @@ def test_an_open_screen_is_a_stop():
         extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
 
 
-def _boxes(*boxes, z0=6.6, z1=9.0):
-    """Thick screens: closed boxes [x0, y0, x1, y1] with their caps."""
+def _boxes(*boxes, z0=6.6, z1=9.0, slope=0.0):
+    """Thick screens: closed boxes [x0, y0, x1, y1] with their caps; the top rises by `slope` per metre of x."""
     m = Mesh("Screens")
+    top = lambda x: z1 + slope * (x - 3)                                  # noqa: E731
     for x0, y0, x1, y1 in boxes:
         ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
         for (a, b), (c, d) in zip(ring, ring[1:] + ring[:1]):
-            m.quad((a, b, z0), (c, d, z0), (c, d, z1), (a, b, z1))
-        m.quad(*[(x, y, z1) for x, y in ring])
+            m.quad((a, b, z0), (c, d, z0), (c, d, top(c)), (a, b, top(a)))
+        m.quad(*[(x, y, top(x)) for x, y in ring])
         m.quad(*[(x, y, z0) for x, y in ring[::-1]])
     return m
 
@@ -712,12 +713,15 @@ def test_an_open_screen_of_thick_boxes_is_a_stop():
         extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
 
 
-def test_a_closed_ring_of_thick_boxes_is_read():
+@pytest.mark.parametrize("slope, top", [(0.0, 9.0), (0.1, 9.4)])
+def test_a_closed_ring_of_thick_boxes_is_read(slope, top):
+    """Review 3 of #92: sloped caps cap a screen's inside too."""
     dump = box_building()
-    dump["meshes"].append(_boxes((3, 3, 7, 3.3), (6.7, 3.3, 7, 7), (3, 6.7, 6.7, 7), (3, 3.3, 3.3, 6.7)).dump())
+    dump["meshes"].append(_boxes((3, 3, 7, 3.3), (6.7, 3.3, 7, 7), (3, 6.7, 6.7, 7), (3, 3.3, 3.3, 6.7),
+                                 slope=slope).dump())
     (rs,) = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})[0].roof_structures
     from shapely.geometry import Polygon, box
-    assert rs.z_top_m == 9.0 and Polygon(rs.outline).symmetric_difference(box(3, 3, 7, 7)).area < 0.02
+    assert rs.z_top_m == top and Polygon(rs.outline).symmetric_difference(box(3, 3, 7, 7)).area < 0.02
 
 
 @pytest.mark.parametrize("second", [[(4, 2), (6, 2), (6, 4), (4, 4)], [(4, 4), (6, 4), (6, 6), (4, 6)]])
