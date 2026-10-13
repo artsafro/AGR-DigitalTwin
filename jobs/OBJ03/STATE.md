@@ -30,8 +30,16 @@ what the engine lacks (`EG<n>`), and a count of decor elements against the colle
 - 2026-10-13 stops and build errors: never fixed in the run - the element is skipped, marked in the report, the
   rest is built (scratch skips in `C:/x/t-obj03/run/`, local).
 - 2026-10-13 building weld `weld_m` 3 mm inclusive (merged #99) and pointed corners as triangles (merged #100).
-- 2026-10-13 horizontal faces triangulated (CDT), walls stay quads: engine PR in progress (three Codex rounds,
-  regression B01 / B02 / B02t / K01 before / after).
+- 2026-10-13 triangulated horizontal faces - **cancelled** (local WIP branch `harness/tri-faces`, no PR). New build
+  path `from_source` by source modules, beside `from_spec`, both through the same checkers; the spec stays the
+  contract for the checks. Step 1: modules of the source (`modules/modules.json` + renders, local png) - waits for
+  the user's confirmation before any build. Step 2: walls by their own contour, quads; slabs inset, quad fill
+  clipped by the contour (CDT only as a reported fallback); decor one box per element (`facade-decor-inset`, 20 mm
+  inset); glazing = glass, depth 0.4 (OD1); superstructure planes (2a); attachments > 0.8 m skipped (EG2); each
+  module compared with its source module (silhouette, extent, area) before the next. Branch
+  `harness/from-source-modules`, three Codex rounds, old path regression unchanged, merge on command; at most
+  three attempts per failing module, then report with numbers and a picture.
+- 2026-10-13 retro review of #99 / #100: four P1 (#101-#104), one P2 (#105).
 - 2026-10-13 **lamellas** of the east facade slot (0.05 x 0.20 x 3.28 m fins, 0.10 m pitch, 11 per storey): NPM as a
   **texture** on the slot back, no geometry (as at Butovskaya, user 2026-10-07).
 - 2026-10-13 disputed geometry: look first, then classify (`WORKFLOW.md`); questions to the user only with a picture.

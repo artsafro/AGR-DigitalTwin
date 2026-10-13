@@ -1,0 +1,822 @@
+{
+ "object": "OBJ03",
+ "date": "2026-10-13",
+ "source": "data/sources/OBJ03/source-geometry-v001.fbx (read only)",
+ "method": "by structure (objects, Max sub-material slots of RailClone2146), then visual: each group isolated on the grey slabs, SW / NE / top / close-up renders (Blender 5.1 Workbench, headless); not independent (no source-inspector in this session)",
+ "id_ranges": "standards/material_id_ranges.yaml: facade 1-5, reveal 6-10, opening 11-15, metal 16-20, roof 21-25, attachment 26-30",
+ "slot_note": "slot = the dump's material id (Blender slot index + 1); material names are generic (Material #239...), no meaning",
+ "modules": [
+  {
+   "module": "walls",
+   "what": "facade infill panels between the pilasters, two finishes (the wall surface)",
+   "ids": {
+    "RailClone2146__slot81": 1,
+    "RailClone2146__slot82": 2
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot81",
+     "object": "RailClone2146",
+     "slot": 81,
+     "triangles": 1787,
+     "pieces": 893,
+     "area_m2": 5367.6,
+     "min": [
+      57.12,
+      149.46,
+      0.0
+     ],
+     "max": [
+      76.72,
+      179.26,
+      95.35
+     ],
+     "pictures": [
+      "png/RailClone2146__slot81-sw.png",
+      "png/RailClone2146__slot81-ne.png",
+      "png/RailClone2146__slot81-top.png",
+      "png/RailClone2146__slot81-close.png"
+     ]
+    },
+    {
+     "source": "RailClone2146__slot82",
+     "object": "RailClone2146",
+     "slot": 82,
+     "triangles": 1734,
+     "pieces": 866,
+     "area_m2": 5081.1,
+     "min": [
+      57.02,
+      149.36,
+      6.4
+     ],
+     "max": [
+      76.82,
+      179.36,
+      95.35
+     ],
+     "pictures": [
+      "png/RailClone2146__slot82-sw.png",
+      "png/RailClone2146__slot82-ne.png",
+      "png/RailClone2146__slot82-top.png",
+      "png/RailClone2146__slot82-close.png"
+     ]
+    }
+   ],
+   "confidence": "medium",
+   "note": "panelised source: no closed wall; these planes are the face the windows and decor stand on"
+  },
+  {
+   "module": "walls",
+   "what": "back wall of the east slot (behind the lamellas) - takes the lamella texture",
+   "ids": {
+    "Shape211223774": 3
+   },
+   "parts": [
+    {
+     "source": "Shape211223774",
+     "object": "Shape211223774",
+     "slot": null,
+     "triangles": 348,
+     "pieces": 29,
+     "area_m2": 190.2,
+     "min": [
+      76.32,
+      162.66,
+      5.9
+     ],
+     "max": [
+      76.63,
+      166.06,
+      96.55
+     ],
+     "pictures": [
+      "png/Shape211223774-sw.png",
+      "png/Shape211223774-ne.png",
+      "png/Shape211223774-top.png",
+      "png/Shape211223774-close.png"
+     ]
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "module": "walls",
+   "what": "inner mass / core box behind the facade (z 0-95.45), not visible",
+   "ids": {},
+   "parts": [
+    {
+     "source": "Shape211223721",
+     "object": "Shape211223721",
+     "slot": null,
+     "triangles": 83,
+     "pieces": 1,
+     "area_m2": 7955.3,
+     "min": [
+      58.72,
+      151.06,
+      -0.0
+     ],
+     "max": [
+      73.72,
+      177.66,
+      95.45
+     ],
+     "pictures": [
+      "png/Shape211223721-sw.png",
+      "png/Shape211223721-ne.png",
+      "png/Shape211223721-top.png",
+      "png/Shape211223721-close.png"
+     ]
+    }
+   ],
+   "confidence": "low",
+   "build": "not built (interior); to confirm"
+  },
+  {
+   "module": "slabs",
+   "what": "floor slabs every storey 6.2-92.3 and the roof slab at 96.55 (slab edges visible as thin bands)",
+   "ids": {
+    "Shape211223725": 21
+   },
+   "parts": [
+    {
+     "source": "Shape211223725",
+     "object": "Shape211223725",
+     "slot": null,
+     "triangles": 2912,
+     "pieces": 29,
+     "area_m2": 35119.4,
+     "min": [
+      56.72,
+      149.06,
+      6.2
+     ],
+     "max": [
+      77.12,
+      179.66,
+      96.55
+     ],
+     "pictures": [
+      "png/Shape211223725-sw.png",
+      "png/Shape211223725-ne.png",
+      "png/Shape211223725-top.png",
+      "png/Shape211223725-close.png"
+     ]
+    }
+   ],
+   "confidence": "high",
+   "build": "inset plates (roof, walkable); edges as facade band"
+  },
+  {
+   "module": "terraces",
+   "what": "terrace decks (walkable tops) at the stepped corners, L16 / L20 / L24",
+   "ids": {
+    "Shape211223718": 22
+   },
+   "parts": [
+    {
+     "source": "Shape211223718",
+     "object": "Shape211223718",
+     "slot": null,
+     "triangles": 120,
+     "pieces": 10,
+     "area_m2": 232.6,
+     "min": [
+      56.72,
+      166.06,
+      56.0
+     ],
+     "max": [
+      77.12,
+      179.66,
+      82.6
+     ],
+     "pictures": [
+      "png/Shape211223718-sw.png",
+      "png/Shape211223718-ne.png",
+      "png/Shape211223718-top.png",
+      "png/Shape211223718-close.png"
+     ]
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "module": "parapets",
+   "what": "terrace glass railings, their frames and the deck edge trims",
+   "ids": {
+    "Shape211223722__slot5": 12,
+    "Shape211223722__slot8": 16,
+    "Shape211223723": 17
+   },
+   "parts": [
+    {
+     "source": "Shape211223722__slot5",
+     "object": "Shape211223722",
+     "slot": 5,
+     "triangles": 80,
+     "pieces": 8,
+     "area_m2": 150.5,
+     "min": [
+      56.72,
+      166.06,
+      56.2
+     ],
+     "max": [
+      77.12,
+      179.66,
+      83.8
+     ],
+     "pictures": [
+      "png/Shape211223722__slot5-sw.png",
+      "png/Shape211223722__slot5-ne.png",
+      "png/Shape211223722__slot5-top.png",
+      "png/Shape211223722__slot5-close.png"
+     ]
+    },
+    {
+     "source": "Shape211223722__slot8",
+     "object": "Shape211223722",
+     "slot": 8,
+     "triangles": 96,
+     "pieces": 4,
+     "area_m2": 2.7,
+     "min": [
+      56.72,
+      166.06,
+      56.2
+     ],
+     "max": [
+      77.12,
+      179.66,
+      83.8
+     ],
+     "pictures": [
+      "png/Shape211223722__slot8-sw.png",
+      "png/Shape211223722__slot8-ne.png",
+      "png/Shape211223722__slot8-top.png",
+      "png/Shape211223722__slot8-close.png"
+     ]
+    },
+    {
+     "source": "Shape211223723",
+     "object": "Shape211223723",
+     "slot": null,
+     "triangles": 176,
+     "pieces": 4,
+     "area_m2": 50.8,
+     "min": [
+      56.62,
+      166.06,
+      55.9
+     ],
+     "max": [
+      77.22,
+      179.76,
+      82.6
+     ],
+     "pictures": [
+      "png/Shape211223723-sw.png",
+      "png/Shape211223723-ne.png",
+      "png/Shape211223723-top.png",
+      "png/Shape211223723-close.png"
+     ]
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "module": "parapets",
+   "what": "roof edge slat band (horizontal slats 0.04 x 0.02 at 0.10 m, 96.55-97.77) - the roof parapet",
+   "ids": {
+    "Shape211223719": 23
+   },
+   "parts": [
+    {
+     "source": "Shape211223719",
+     "object": "Shape211223719",
+     "slot": null,
+     "triangles": 2392,
+     "pieces": 26,
+     "area_m2": 156.8,
+     "min": [
+      56.85,
+      149.19,
+      96.55
+     ],
+     "max": [
+      76.99,
+      179.53,
+      97.77
+     ],
+     "pictures": [
+      "png/Shape211223719-sw.png",
+      "png/Shape211223719-ne.png",
+      "png/Shape211223719-top.png",
+      "png/Shape211223719-close.png"
+     ]
+    }
+   ],
+   "confidence": "medium",
+   "note": "slats like the lamellas: texture on a plane is the same question"
+  },
+  {
+   "module": "decor",
+   "what": "vertical piers and horizontal belts all round (the facade frame grid)",
+   "ids": {
+    "RailClone2146__slot15": 26
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot15",
+     "object": "RailClone2146",
+     "slot": 15,
+     "triangles": 95504,
+     "pieces": 5603,
+     "area_m2": 5319.4,
+     "min": [
+      56.41,
+      148.76,
+      0.0
+     ],
+     "max": [
+      77.42,
+      179.96,
+      99.8
+     ],
+     "pictures": [
+      "png/RailClone2146__slot15-sw.png",
+      "png/RailClone2146__slot15-ne.png",
+      "png/RailClone2146__slot15-top.png",
+      "png/RailClone2146__slot15-close.png"
+     ]
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "module": "decor",
+   "what": "pilasters with ledges, south / east / west",
+   "ids": {
+    "RailClone2146__slot12": 26
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot12",
+     "object": "RailClone2146",
+     "slot": 12,
+     "triangles": 37279,
+     "pieces": 2555,
+     "area_m2": 8689.3,
+     "min": [
+      55.59,
+      151.86,
+      0.02
+     ],
+     "max": [
+      78.25,
+      180.79,
+      99.8
+     ],
+     "pictures": [
+      "png/RailClone2146__slot12-sw.png",
+      "png/RailClone2146__slot12-ne.png",
+      "png/RailClone2146__slot12-top.png",
+      "png/RailClone2146__slot12-close.png"
+     ]
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "module": "decor",
+   "what": "pilasters, north / west part",
+   "ids": {
+    "RailClone2146__slot13": 26
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot13",
+     "object": "RailClone2146",
+     "slot": 13,
+     "triangles": 23260,
+     "pieces": 1680,
+     "area_m2": 5655.8,
+     "min": [
+      57.82,
+      148.76,
+      0.02
+     ],
+     "max": [
+      77.42,
+      166.26,
+      99.8
+     ],
+     "pictures": [
+      "png/RailClone2146__slot13-sw.png",
+      "png/RailClone2146__slot13-ne.png",
+      "png/RailClone2146__slot13-top.png",
+      "png/RailClone2146__slot13-close.png"
+     ]
+    }
+   ],
+   "confidence": "high"
+  },
+  {
+   "module": "decor",
+   "what": "piers at the south-west stepped (terrace) corner",
+   "ids": {
+    "RailClone2146__slot16": 26
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot16",
+     "object": "RailClone2146",
+     "slot": 16,
+     "triangles": 6392,
+     "pieces": 712,
+     "area_m2": 2768.0,
+     "min": [
+      56.42,
+      165.86,
+      0.02
+     ],
+     "max": [
+      63.72,
+      179.96,
+      99.8
+     ],
+     "pictures": [
+      "png/RailClone2146__slot16-sw.png",
+      "png/RailClone2146__slot16-ne.png",
+      "png/RailClone2146__slot16-top.png",
+      "png/RailClone2146__slot16-close.png"
+     ]
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "module": "decor",
+   "what": "window surround frames (rectangular rings round the spandrels / windows)",
+   "ids": {
+    "RailClone2146__slot9": 27
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot9",
+     "object": "RailClone2146",
+     "slot": 9,
+     "triangles": 31120,
+     "pieces": 3915,
+     "area_m2": 5450.8,
+     "min": [
+      56.42,
+      148.76,
+      1.82
+     ],
+     "max": [
+      77.42,
+      179.96,
+      98.98
+     ],
+     "pictures": [
+      "png/RailClone2146__slot9-sw.png",
+      "png/RailClone2146__slot9-ne.png",
+      "png/RailClone2146__slot9-top.png",
+      "png/RailClone2146__slot9-close.png"
+     ]
+    }
+   ],
+   "confidence": "medium"
+  },
+  {
+   "module": "decor",
+   "what": "flat spandrel panels under the windows (planes)",
+   "ids": {
+    "RailClone2146__slot72": 4
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot72",
+     "object": "RailClone2146",
+     "slot": 72,
+     "triangles": 1366,
+     "pieces": 683,
+     "area_m2": 1318.2,
+     "min": [
+      56.54,
+      148.88,
+      5.32
+     ],
+     "max": [
+      77.3,
+      179.84,
+      96.73
+     ],
+     "pictures": [
+      "png/RailClone2146__slot72-sw.png",
+      "png/RailClone2146__slot72-ne.png",
+      "png/RailClone2146__slot72-top.png",
+      "png/RailClone2146__slot72-close.png"
+     ]
+    }
+   ],
+   "confidence": "low",
+   "note": "a finish plane (facade id) or decor - to confirm"
+  },
+  {
+   "module": "decor",
+   "what": "small flat plates and vertical strips (planes, 2 triangles each)",
+   "ids": {
+    "RailClone2146__slot70": 5
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot70",
+     "object": "RailClone2146",
+     "slot": 70,
+     "triangles": 3194,
+     "pieces": 1597,
+     "area_m2": 1996.6,
+     "min": [
+      56.55,
+      148.89,
+      0.04
+     ],
+     "max": [
+      77.29,
+      179.83,
+      98.96
+     ],
+     "pictures": [
+      "png/RailClone2146__slot70-sw.png",
+      "png/RailClone2146__slot70-ne.png",
+      "png/RailClone2146__slot70-top.png",
+      "png/RailClone2146__slot70-close.png"
+     ]
+    }
+   ],
+   "confidence": "low",
+   "note": "not identified - to confirm on the picture"
+  },
+  {
+   "module": "glazing",
+   "what": "window glass panes",
+   "ids": {
+    "RailClone2146__slot5": 11
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot5",
+     "object": "RailClone2146",
+     "slot": 5,
+     "triangles": 30216,
+     "pieces": 2535,
+     "area_m2": 7973.1,
+     "min": [
+      55.61,
+      149.04,
+      0.05
+     ],
+     "max": [
+      78.23,
+      180.77,
+      95.1
+     ],
+     "pictures": [
+      "png/RailClone2146__slot5-sw.png",
+      "png/RailClone2146__slot5-ne.png",
+      "png/RailClone2146__slot5-top.png",
+      "png/RailClone2146__slot5-close.png"
+     ]
+    }
+   ],
+   "confidence": "high",
+   "build": "opening = glass, depth 0.4 (OD1), plane at the depth"
+  },
+  {
+   "module": "glazing",
+   "what": "window frames, mullions and sashes",
+   "ids": {
+    "RailClone2146__slot8": 16
+   },
+   "parts": [
+    {
+     "source": "RailClone2146__slot8",
+     "object": "RailClone2146",
+     "slot": 8,
+     "triangles": 113279,
+     "pieces": 8442,
+     "area_m2": 6383.1,
+     "min": [
+      55.59,
+      148.78,
+      -0.0
+     ],
+     "max": [
+      78.25,
+      180.79,
+      99.0
+     ],
+     "pictures": [
+      "png/RailClone2146__slot8-sw.png",
+      "png/RailClone2146__slot8-ne.png",
+      "png/RailClone2146__slot8-top.png",
+      "png/RailClone2146__slot8-close.png"
+     ]
+    }
+   ],
+   "confidence": "high",
+   "build": "npm_min: in the opening plane texture"
+  },
+  {
+   "module": "lamellas",
+   "what": "east slot lamellas 0.05 x 0.20 x 3.28 m at 0.10 m (decision: texture)",
+   "ids": {},
+   "parts": [
+    {
+     "source": "Box1678",
+     "object": "Box1678",
+     "slot": null,
+     "triangles": 3960,
+     "pieces": 330,
+     "area_m2": 547.8,
+     "min": [
+      76.62,
+      163.33,
+      -0.4
+     ],
+     "max": [
+      76.82,
+      165.38,
+      98.58
+     ],
+     "pictures": [
+      "png/Box1678-sw.png",
+      "png/Box1678-ne.png",
+      "png/Box1678-top.png",
+      "png/Box1678-close.png"
+     ]
+    }
+   ],
+   "confidence": "high",
+   "build": "texture on Shape211223774, no geometry (user 2026-10-13)"
+  },
+  {
+   "module": "attachments",
+   "what": "logos / signage at the ground floor (z 3.2-5.9)",
+   "ids": {
+    "RC_Logos001__slot1": 26,
+    "RC_Logos001__slot2": 26,
+    "RC_Logos001__slot3": 26
+   },
+   "parts": [
+    {
+     "source": "RC_Logos001__slot1",
+     "object": "RC_Logos001",
+     "slot": 1,
+     "triangles": 6340,
+     "pieces": 35,
+     "area_m2": 3.2,
+     "min": [
+      61.76,
+      148.03,
+      3.21
+     ],
+     "max": [
+      77.31,
+      175.04,
+      5.94
+     ],
+     "pictures": [
+      "png/RC_Logos001__slot1-sw.png",
+      "png/RC_Logos001__slot1-ne.png",
+      "png/RC_Logos001__slot1-top.png",
+      "png/RC_Logos001__slot1-close.png"
+     ]
+    },
+    {
+     "source": "RC_Logos001__slot2",
+     "object": "RC_Logos001",
+     "slot": 2,
+     "triangles": 372,
+     "pieces": 6,
+     "area_m2": 1.7,
+     "min": [
+      61.77,
+      148.04,
+      3.22
+     ],
+     "max": [
+      75.47,
+      148.64,
+      3.82
+     ],
+     "pictures": [
+      "png/RC_Logos001__slot2-sw.png",
+      "png/RC_Logos001__slot2-ne.png",
+      "png/RC_Logos001__slot2-top.png",
+      "png/RC_Logos001__slot2-close.png"
+     ]
+    },
+    {
+     "source": "RC_Logos001__slot3",
+     "object": "RC_Logos001",
+     "slot": 3,
+     "triangles": 1540,
+     "pieces": 29,
+     "area_m2": 0.5,
+     "min": [
+      62.97,
+      148.85,
+      5.66
+     ],
+     "max": [
+      77.31,
+      175.04,
+      5.94
+     ],
+     "pictures": [
+      "png/RC_Logos001__slot3-sw.png",
+      "png/RC_Logos001__slot3-ne.png",
+      "png/RC_Logos001__slot3-top.png",
+      "png/RC_Logos001__slot3-close.png"
+     ]
+    }
+   ],
+   "confidence": "high",
+   "build": "skipped, marked (attachments)"
+  },
+  {
+   "module": "superstructure",
+   "what": "roof screen enclosure (mesh screens 96.55-102.56)",
+   "ids": {
+    "RailClone2142": 24
+   },
+   "parts": [
+    {
+     "source": "RailClone2142",
+     "object": "RailClone2142",
+     "slot": null,
+     "triangles": 53744,
+     "pieces": 2804,
+     "area_m2": 950.3,
+     "min": [
+      62.33,
+      154.7,
+      96.55
+     ],
+     "max": [
+      71.48,
+      174.02,
+      102.56
+     ],
+     "pictures": [
+      "png/RailClone2142-sw.png",
+      "png/RailClone2142-ne.png",
+      "png/RailClone2142-top.png",
+      "png/RailClone2142-close.png"
+     ]
+    }
+   ],
+   "confidence": "high",
+   "build": "planes on the screens' outline (decision 2a)"
+  },
+  {
+   "module": "superstructure",
+   "what": "three boxes on the roof inside the enclosure (exits / plant), 96.55-98.55",
+   "ids": {
+    "Shape211223700": 25
+   },
+   "parts": [
+    {
+     "source": "Shape211223700",
+     "object": "Shape211223700",
+     "slot": null,
+     "triangles": 36,
+     "pieces": 3,
+     "area_m2": 301.6,
+     "min": [
+      63.52,
+      156.61,
+      96.55
+     ],
+     "max": [
+      70.32,
+      172.11,
+      98.55
+     ],
+     "pictures": [
+      "png/Shape211223700-sw.png",
+      "png/Shape211223700-ne.png",
+      "png/Shape211223700-top.png",
+      "png/Shape211223700-close.png"
+     ]
+    }
+   ],
+   "confidence": "medium"
+  }
+ ]
+}
