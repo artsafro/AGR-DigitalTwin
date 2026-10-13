@@ -90,6 +90,9 @@ def job_errors(job, read, require_line):
         errors.append(f"{base}/pipeline/spec.json has no id; not a spec")
     if report is not None and not (isinstance(report.get("questions"), list) and "parts" in report):
         errors.append(f"{base}/pipeline/spec.report.json is no `dt spec extract` report (questions, parts)")
+    if report is not None and report.get("stops"):   # --collect-stops: the extractor stopped (review 1 of #80)
+        errors.append(f"{base}/pipeline/spec.report.json lists {len(report['stops'])} extractor stop(s); "
+                      "a stopped run backs no status above draft")
     if check is not None:
         shape = isinstance(check.get("passed"), bool) and all(isinstance(check.get(k), list)
                                                                for k in ("failed", "not_measured"))

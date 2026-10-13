@@ -1158,9 +1158,41 @@ def _planes(v, tris):
     return out
 
 
-def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
+class SpecStops(SpecError):
+    """`dt spec extract --collect-stops` (rule 5, user 2026-10-12): every stop of one pass, nothing substituted.
+    stops: [{"stage", "level", "message"}]; report: what was read up to the stops (None before the body)."""
+
+    def __init__(self, stops, report):
+        super().__init__("; ".join(f"{s['level'] or s['stage']}: {s['message']}" for s in stops))
+        self.stops, self.report = stops, report
+
+
+def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None, collect_stops=False):
     """Return (Spec, report) for one building. dump: measure_spec_blender output; obj_cfg: object.json;
-    thresholds: the `spec_extract` section of a benchmark's tolerances.json (defaults in openings.py)."""
+    thresholds: the `spec_extract` section of a benchmark's tolerances.json (defaults in openings.py).
+    collect_stops: instead of the first stop, raise SpecStops with every stop one pass finds - each storey's
+    contour is read on its own (a stopped storey is left out, never given a value); the stages after the
+    contours need them all and run only when no storey stopped."""
+    if not collect_stops:
+        return _extract(dump, obj_cfg, profile, thresholds, None)
+    found = {"stops": [], "report": None}
+    try:
+        return _extract(dump, obj_cfg, profile, thresholds, found)
+    except SpecStops:
+        raise
+    except SpecError as exc:
+        stage = found.get("stage") or ("contours" if found["report"] is not None else "levels and body")
+        raise SpecStops([*found["stops"], {"stage": stage, "level": None, "message": str(exc)}],
+                        found["report"]) from exc
+
+
+def _stage(found, name):
+    """--collect-stops: the stage now running, so a stop raised in it is listed with it (review 1 of #80)."""
+    if found is not None:
+        found["stage"] = name
+
+
+def _extract(dump, obj_cfg, profile, thresholds, found):
     m = _matrix(obj_cfg, dump.get("source"))
     # pattern markup-helpers, MH2: a Revit source's level helpers come from its Levels and roof through the
     # object.json table; object.json `levels` (for sources without helpers) must then agree with them
@@ -1204,17 +1236,35 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
               "level_helpers": [{"name": h["name"], "z": round(float(h["location"][2]), 4),
                                  **({"derived": h["derived"]} if "derived" in h else {})}
                                 for h in dump.get("helpers", []) if h["name"].startswith(LEVEL_PREFIX)]}
+    if found is not None:
+        found["report"] = report
     floors, polys, pieces, mouths, doors = [], [], [], [], []
     at_m = obj_cfg.get("contour_at_m", {})
+    prev, stopped_below = None, False                    # the storey right below: its contour, or it stopped
     for lv, nxt in zip(levels, levels[1:]):
-        poly, rep, dev, ms, dr, parapet, raw = _level_contour(v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]),
-                                                below=polys[-1] if polys else None,
-                                                extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
+        try:
+            poly, rep, dev, ms, dr, parapet, raw = _level_contour(
+                v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]), below=prev,
+                extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
+            points = _contour_points(poly)               # its own check too, inside the storey (review 1 of #80)
+        except SpecError as exc:
+            if found is None:
+                raise
+            found["stops"].append({"stage": "contour", "level": lv["name"], "message": str(exc),
+                                   **({"after_stop_below": True} if stopped_below else {})})
+            prev, stopped_below = None, True
+            continue
+        if stopped_below:                                # the storey below stopped: no terrace test against it
+            rep["terrace_not_checked"] = "the storey below stopped"
+        prev, stopped_below = poly, False
+        if found is not None and found["stops"]:         # the stages below need every contour
+            report["floors"][lv["name"]] = {**rep, "area_m2": round(poly.area, 3)}
+            continue
         mouths.append(ms)
         doors.append(dr)
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
-        floors.append({"level": lv["name"], "contour": _contour_points(poly), "openings": []})
+        floors.append({"level": lv["name"], "contour": points, "openings": []})
         if polys:                                  # anything else standing on a ledge (both contours final)
             # neither the final contour (a door recess filled) nor the raw section shape (a relief left out of
             # the contour) is ledge (review 1 of PR #66)
@@ -1226,6 +1276,9 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
                                           "at": [round(float(c[:, 0].mean()), 2), round(float(c[:, 1].mean()), 2)]}
         polys.append(poly)
         pieces.append(dev)
+    if found is not None and found["stops"]:
+        raise SpecStops(found["stops"], report)
+    _stage(found, "openings")
     panes, flat_glass = _glass(dump, m)
     source_skipped, sources = 0, [[] for _ in floors]
     for d in dump.get("openings", []):                   # openings a source gives explicitly (Revit, #29, #36)
@@ -1281,6 +1334,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     report["questions"] = questions
     report["section_relief_parts"] = stats["section_relief_parts"]
     others = [tris[pt] for pt in parts[1:]]
+    _stage(found, "roof")
     roof_parts = _roof_parts(v, others, levels[-1], polys[-1])
     roof_z, top_z, closed, roof_stats = _roof(v, body, levels[-2], levels[-1], polys[-1],
                                               np.vstack(roof_parts) if roof_parts else None,
@@ -1296,6 +1350,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
     # parameters read from the source; plates that disagree by more than PLATE_SAME_M between themselves,
     # or that cannot be read, are a question; none read leaves the defaults (review 1 of PR #64)
     extra = np.vstack(others) if others else None
+    _stage(found, "plates")
     plates, problems = {}, {}
     inset = dump.get("source") != "revit"            # Revit holds the design; the inset is the model's joint
     if inset and roof_stats["parapet"]:
@@ -1320,6 +1375,7 @@ def extract_spec(dump, obj_cfg, profile="npm_min", thresholds=None):
         if max(gaps) - min(gaps) > same or max(overlaps) - min(overlaps) > same:
             asked = sorted(set(asked) | {name for name, ps in plates.items() if ps}, key=names.index)
     # facade decor (pattern facade-decor-inset, spec v0.5): non-body parts on a wall or free-standing columns
+    _stage(found, "decor")
     decor, decor_questions, report["decor"] = dc.extract(
         v, tris, mats, parts[1:], levels, [f["contour"] for f in floors], polys,
         plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("metal") | _group_ids("attachment"))   # decor ids by material

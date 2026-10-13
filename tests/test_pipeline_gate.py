@@ -83,6 +83,14 @@ def test_checked_needs_a_passing_report():
     assert gate.job_errors("J", reader(files), True) == []
 
 
+@pytest.mark.parametrize("status", ["built", "checked", "delivered"])
+def test_a_stopped_extractor_report_backs_no_status(status):
+    """Review 1 of #80: a --collect-stops report (stops listed) beside an older spec and a passing check."""
+    stopped = json.dumps({"parts": 3, "questions": [], "stops": [{"stage": "roof", "level": None, "message": "x"}]})
+    files = job({}, status, spec_json=SPEC, spec_report_json=stopped, check_json=CHECK_PASS)
+    assert any("1 extractor stop(s)" in e for e in gate.job_errors("J", reader(files), True))
+
+
 def test_check_report_shape():
     files = job({}, "built", spec_json=SPEC, spec_report_json=REPORT, check_json=json.dumps({"ok": True}))
     assert any("no checker report" in e for e in gate.job_errors("J", reader(files), True))
