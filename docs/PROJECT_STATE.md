@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-10
+Last updated: 2026-10-13
 
 ## Current goal
 
@@ -175,6 +175,22 @@ draft (`pipeline_gate`). Without the flag nothing changed; B01 / B02 / B02t / K0
   thickness (one per building, user 2026-10-13). Measuring terrace parapets is issue #82.
 - B01 / B02 / B02t read 0.3 and K01 reads 0.555, the same as their build values. Models and checks are
   identical to main; the specs gain only version 0.6 and the thickness.
+#92 merged (3 Codex rounds): spec v0.7 `roof_structures`, pattern `roof-screen-enclosure` (draft, user
+2026-10-13), the second and last exception from the moratorium.
+- A human marks the screen meshes in `object.json` `roof_screens`. The extractor groups their vertical faces by
+  proximity (joints up to 0.10 m). Each group must enclose exactly one space, with its outline and its top;
+  an open screen, two enclosures sharing screens, a group not above the roof or an unknown name is a stop.
+- The roof check keeps only the flat roof under an outline, so steep equipment inside no longer stops the roof.
+  The parapet thickness is measured without the screens.
+- `npm_min` builds outward planes from the roof to the top plus a top plane, roof ids, no bottom, in its own mesh
+  `roof_structures`. `mid` is a `BuildError` (issue #91). The checker allows the walls' bottom loop on the spec
+  outline only.
+- Issue #93: a shaft under a marked enclosure is a false "roof missing" stop.
+- OBJ03 probe with `roof_screens: ["RailClone2142"]`, no L28, parapet default 0.3: one stop left, a roof
+  opening of 0.07 m2 at (57.70, 151.83) on 96.55 m (near issue #84).
+#89 merged (1 Codex round, user decision 1a): #87 protrusions cut by segment (a glass line ending at a fin
+stays, a crossbar inside the fin goes); #88 a terrace storey's reference slab is its own deck (`slabs` of that
+storey). No new spec fields. Issue #90: a protrusion's root up to the facade band's depth may stay.
 #86 merged (3 Codex rounds, procedure of 2026-10-13): five read-only Claude Code subagents in
 `.claude/agents/`: source-inspector, pattern-librarian, bench-runner, independent-checker and mesh-reader. Their
 hooks live in `.claude/hooks/subagents.py`. A start reminder; a stop check that every changed tracked file is
@@ -289,7 +305,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: the OBJ03 run (--collect-stops, stops to the user, then the model); no new harness PRs until the user has seen the OBJ03 model (user 2026-10-13); decor PR 4
+   Claude (a new session with subagents, `docs/HANDOFF.md`): the OBJ03 job edits, rerun --collect-stops, the
+   roof-opening stop to the user, then the model; no new harness PRs until the user has seen the OBJ03 model
+   (user 2026-10-13); decor PR 4
    (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,

@@ -1,152 +1,93 @@
-# Handoff — 2026-10-12
+# Handoff — 2026-10-13
 
-State of the harness at the end of a long Claude session, so a new agent starts exactly here without that
-chat. Facts only, from the repository and the open work. Current detail: `docs/PROJECT_STATE.md`;
-unsolved work: `docs/backlog.md`.
+State of the harness at the end of a long Claude session, so a new session (with the project subagents) starts
+the OBJ03 model exactly here. Facts only. Detail: `docs/PROJECT_STATE.md`; unsolved work: `docs/backlog.md`;
+merged history before 2026-10-12: git log and PROJECT_STATE.
 
-## Where we are (merged on `main`, what the chain can do now)
+## Where we are
 
-- #1, #3, harness naming / plan / review checklist — repo scaffolding, material id ranges
-  (`standards/material_id_ranges.yaml`, ADR 0001), naming (`docs/agents/NAMING.md`), review recipe
-  (`docs/agents/REVIEW_CHECKLIST.md`), HARNESS_PLAN.
-- #5–#9, #16 — spec extractor on a mesh dump: levels from `LEVEL_*` helpers or `object.json`, contours over
-  the full storey, kinks and rounded corners, openings from holes or glass, typical floors written once,
-  roof at the input level, frames per source.
-- #10, #11, #29 — Revit route (TwinPack, walls on location lines) and spec comparison Revit vs mesh.
-- #31, #36, grilles — doors, relief, openings across levels; spec v0.3 (opening = hole with frame, depth
-  only as an exception); vent grilles as openings; extraction thresholds from `tolerances.json`.
-- #4 — window type library (`window_types.json`, user-confirmed types).
-- #14, #47, #48 — benchmark B01 tolerances and geometry checkers; first patterns approved.
-- #50, #12/#13/#51 — engine `src/dt_ai/geometry/from_spec.py` (spec -> model) and the chain
-  `tools/qa/run_benchmark.py` (etalon FBX -> spec -> engine -> Blender FBX -> readback -> checks).
-- #52 — C24: `npm_min` opening plane at the full opening depth, `mid` at half.
-- #53, #58 — B02 etalon (non-90 corner, niche) green end to end; oblique walls.
-- #54, #55 — parapet from `LEVEL_roof`; a contour per floor, ledge and soffit at a floor step.
-- #59, #61 — terraces (spec v0.4): engine parapet on a ledge, extractor reads it; bench B02t.
-- #62 — non-manifold vertices fail the mesh check.
-- #63, #64, #65, #66 — inset slabs everywhere (hole + plate, `plate_gap_m` 5 mm / `plate_overlap_m` 20 mm in
-  the spec), around shafts; ledges between final contours.
-- #67 — KPP1 v007 with the inset roof (not yet accepted by the user).
-- #60, #68, #69 — markup helpers plan; MH1 Blender `LEVEL_*` route; MH2 level helpers from Revit Levels.
-- #70, #71 — intake plan (HARNESS_PLAN §15) and IN1 skeleton (`dt intake check`: sources.json,
-  picture.md, questions.md, spec-draft.json).
-- #72 — K01 (KPP1 as a benchmark): material ids from UDIM tiles, geometry thresholds; first run 5/8.
-- #73 — colleague case `alina-bld` as a lesson (`docs/cases.md`); pattern `facade-decor-inset` (draft);
-  decor benchmark K02 brief (`bench-k02-decor-fragment`, catalogue `decor-catalog.json`); synthetic B03
-  deferred, old B03 attachments -> B04; hook `pipeline_gate` (pre-commit + Claude PreToolUse: a job's
-  `Pipeline status` above draft needs `pipeline/spec.json`, `spec.report.json`, `check.json`; new job
-  scripts name an engine gap `EG<n>`); mixed mode (engine gaps EG1–EG4 in backlog).
-- #74 — spec v0.5 `decor` block and its extractor `src/dt_ai/spec/decor.py` (boxes on walls, columns on a
-  level, split pieces merged up to `plate_gap_m` x 12 = 0.06 m, projection <= 0.10 m texture, > 0.8 m an
-  attachment candidate, one question per type).
-- #75 — engine builds decor in its own mesh `decor` (body never cut, 0.02 m inset, 5 mm off openings,
-  run-in meetings, convex corners: the main element runs on and keeps its back outside the wall, the other
-  higher -> `decor-corner`); `check_decor` reads the model back with the extractor. Post-merge B01 / B02 /
-  B02t 9/9 etalon and model.
-- #76 — OD1: opening depth default 0.4, "depth by default" in the report (never 0; the glass position is
-  never a depth); K01 `decor_tol_m`; `check_decor` on a real building; decor ids by material (metal 16–20
-  or 26–30). Post-merge B01 / B02 / B02t 9/9; K01 31 questions, decor passes, known engine stop.
+`main` = `723097a` (merge of #92). Merged since the last handoff: #77 material slots, #78 unlisted decor judged
+against the body, #79 `pipeline_gate` fails closed, #80 OBJ03 rule 5 (`--collect-stops`), #81 rules 3–4
+(mid-storey section, parapet thickness / default, spec v0.6), #83 rules 1–2 (panelised source, contours by
+panels), #86 five read-only subagents, #89 (#87 protrusions by segment, #88 terrace storey's own slab), #92 spec
+v0.7 `roof_structures` (pattern `roof-screen-enclosure`, draft).
 
-## In work
+Moratorium (user 2026-10-13): no new harness PRs until the user has seen the OBJ03 model. #92 was the second and
+last exception. A rule the run lacks becomes an issue; the job goes on in mixed mode, the model without that
+element.
 
-| What | Branch / PR | Status | Left to do |
-|---|---|---|---|
-| Materials table: 3ds Max slots and glass slots | `harness/source-slot-table`, PR #77, `9b70e92` | open, OD1 merged (#76): **next — 3 Codex rounds** | 3 Codex rounds after #76, merge |
-| Colleague building through the harness | `job/case-alina-bld-pipeline` (on top of #77's branch), `f8ae02d`; `jobs/case-alina-bld/` | `Pipeline status: draft`; run 1 stopped (no body); rules 1–5 below not in code | implement rules 1–5, rerun, compare with the colleague's v001 |
+## OBJ03 — user decisions (2026-10-13)
 
-Local state outside git:
-- Source of `case-alina-bld`: `C:/Users/artsafro/Downloads/alina_bld.max`, layer `Геометрия исходная`
-  (user). Exported read only to `data/sources/case-alina-bld/source-geometry-v001.fbx` and
-  `dumps/source-dump-v001.json` (local, git-ignored). The scene is open in 3ds Max 2024, not saved.
-- Colleague's v001 results (to compare with): worktree `.claude/worktrees/3d-max-floor-modeling-742570`,
-  `jobs/alina-bld/outputs/` (body, openings, decor, balconies; not tracked).
-- The new pre-commit (`tools/git-hooks/pre-commit`: link large files, then `pipeline_gate`) is installed
-  in `.git/hooks/pre-commit`; the old one is in `C:/x/pre-commit.backup-2026-10-12`.
-- `~/.claude/settings.json` got a `permissions` block (backup `~/.claude/settings.backup-2026-10-12.json`).
-- `C:/x/cr-46 … cr-75`: leftovers of Codex review sandboxes (pytest temp dirs with ACLs this user cannot
-  delete); harmless.
+- Object: `OBJ03` (former `case-alina-bld`; no colleague names in the repo), job folder `jobs/OBJ03/`, branch
+  `job/obj03-decor`, object id in `object.json` `obj03-decor`, `source_class: "panelised"`, slabs
+  `Shape211223725`, `Shape211223718`.
+- **1a** — #87 / #88 only, no new spec fields (done in #89).
+- **2a** — 96.55 is the roof; 95.75 is no level; the top storey runs 92.3–96.55. The roof screen enclosure
+  `RailClone2142` (up to 102.56) is built as planes in `npm_min` (pattern `roof-screen-enclosure`, done in #92):
+  `object.json` `roof_screens: ["RailClone2142"]`. Its mid / VPM shell is issue #91.
+- **3a** — OD1 applies (opening depth default 0.4); the C24 record must be updated with the date and a link to
+  OD1 (not done yet).
+- **Parapet** — `parapet_thickness_default_m` 0.3.
+- Terrace level = walkable top + 0.2 (decks 56.2 / 69.4 / 82.6 in `object.json`).
 
-## User decisions not in code yet
+## The OBJ03 run (probe, not committed)
 
-`case-alina-bld` (2026-10-12), verbatim in substance:
-1. Source class "panel facade without a shell" -> recorded in intake (IN2) as the first check: is there a
-   closed body. If not, the path is "contours by slabs + panels as finish / decor"; the extractor is not run
-   on such a source by default. Into case `alina-bld` as the second reason the first run went by scripts.
-2. Contours by slabs: 104–221 vertices follow the slab relief. Simplify by the relief rule: deviations
-   <= 0.10 m from the wall line collapse; check the result against the envelope of the panels' outer faces.
-   Areas 611 / 599 / 582 / 522 into the report as `measured by slabs`.
-3. Contour section rule: a storey's contour is taken at mid storey height (`level + 0.5·h`). A change of
-   section in the band <= 0.3 m under the next level is the slab edge (`floor-step` / belt), not the
-   contour. The `contour_at_m` question stays only when the section changes inside the wall band itself.
-4. Parapet thickness: measured from the source when it gives a closed section (0.3 / 0.4 / 0.6, always
-   from the project). If not readable, take `parapet_thickness_default_m` (the value already in
-   object.json / tolerances, 0.3 or 0.4), mark "parapet thickness by default" in the report, no question;
-   the user adjusts at acceptance.
-5. No provisional values, not even to collect stops: `dt spec extract --collect-stops` — one pass, every
-   stop listed, nothing substituted. Into the harness rules.
+`dt spec extract --collect-stops` on `jobs/OBJ03/outputs/source-dump-materials-v001.json` with the probe object
+`C:/x/t-obj03/object-rs.json` (= `jobs/OBJ03/object.json` without L28 95.75, with `roof_screens` and the 0.3
+default): all storeys are read by panels, the enclosure is read, **one stop**:
 
-Decor ids by material (metal 16–20, plaster / stone / tile 26–30): **in code since #76**. The
-K01 strip with id 17 was identified from `jobs/KPP1/materials.json` as `Metal_RAL5015` (0.074 x 0.30 m,
-0.22 m out, east wall at 3.6 m: a metal bracket); recorded in the pattern; **confirmed by the user 2026-10-12**
-("металлический кронштейн, правило верное").
+> roof at 96.550 m has an opening of 0.07 m2 at (57.70, 151.83) that is not a shaft (walls line 65% of it at
+> 94.43 m): roof missing there?
 
-Corner of decor elements of different heights (back kept outside the wall, the other higher ->
-`decor-corner`): **in code since #75**.
+A sliver, likely the Douglas–Peucker contour vs the roof coverage (issue #84). It goes to the user as a model /
+data question (roof there or not); under the moratorium no harness fix.
 
-## Waiting for the user
+## Local state outside git (preserve)
 
-- K02: `source.max` + `etalon.max` of the fragment (brief `benchmark/bench-k02-decor-fragment/README.md`,
-  cut z 12.52–19.69) and the offset used.
-- KPP1 v007 acceptance.
-- `case-alina-bld`: the real object id `<site>-<code>`; the levels' open points (95.75 vs 96.55, 0.8 m apart;
-  terrace decks 56.2 / 69.4 / 82.6 are 0.2 above the slabs); a finish table for the material slots.
+- `jobs/OBJ03/` is **untracked** in worktree `.claude/worktrees/3d-max-floor-modeling-742570` (STATE.md — old,
+  needs a rewrite; object.json, materials.json, tolerances.json; `outputs/`: source dump with materials, spec
+  report v001, sections-v001 with 3 renders and 6 SVG sections). The same content is in the stash entry
+  `obj03-job-wip` (`64e03c89741fa6fefc524ca22fcbef35e7d7279d`). Branch `job/obj03-decor` exists at `a3cf6a6`
+  with no job commits yet.
+- Source: `data/sources/OBJ03/` (FBX + `dumps/source-dump-v001.json`), git-ignored.
+- Pre-commit hook at the #79 version in `.git/hooks/pre-commit` (backup `C:/x/pre-commit.backup-2026-10-12b`).
+- pytest on this machine: only with a short `--basetemp` (`C:/x/t-*`).
+- The desktop app session did not load the project subagents; `claude -p` in the worktree did.
+- `C:/x/t-obj03/`: probe specs and reports (local).
 
-## Next steps, in order
+## Open issues from this work
 
-1. #77 slots: 3 Codex rounds, merge (OD1 merged as #76).
-2. `case-alina-bld` with rules 1–5 (intake check for a closed body, contours by slabs, mid-storey section,
-   parapet default, `--collect-stops`), then the full chain and the comparison with the colleague's v001.
-3. K02 PR 4 (decor run on the fragment) once the user gives source + etalon.
-4. EG2 balconies / attachments over 0.8 m.
+#82 terrace parapets, #84 DP contour vs roof check, #85 open facade joined to an inner ring, #90 protrusion root
+in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a marked enclosure.
 
-## Harness rules that were broken and must not be again
+## Next steps, in order (new session)
 
-- Building past `dt spec extract` / the engine / the checkers (the colleague case; now `pipeline_gate`).
-- Provisional values, even to collect stops (rule 5; run 1 of `case-alina-bld` did it and was reverted).
-- An etalon made by the engine (an etalon is always hand-made by the user).
-- A lost `.py` with a live `.pyc` (job scripts are committed before they run; `pipeline_gate --job` checks).
+1. On `job/obj03-decor`: commit `jobs/OBJ03/` with the decisions above (drop L28, `roof_screens`,
+   `parapet_thickness_default_m` 0.3), rewrite `STATE.md`, update the C24 record (3a, link OD1). Then drop the
+   stash entry `obj03-job-wip`.
+2. Rerun `dt spec extract --collect-stops`; send the stops to the user in one message with answer options.
+3. The OBJ03 model via spec → engine → checkers (mixed mode for what the engine lacks, `EG<n>`), readback, and
+   show it to the user.
+4. Then K02 PR 4 (once the user gives the fragment), EG2 attachments.
 
-## Links
+## Review procedure (user 2026-10-13)
 
-- Plan: `docs/HARNESS_PLAN.md` §3 (spec contract up to v0.5), §4 (extractor), §5 (benchmark), §7 (patterns,
-  gray zone, one question per type), §8 (pipeline, hooks), §14 (markup helpers), §15 (intake), §16 (lessons
-  of `alina-bld`: OD1, decor, `pipeline_gate`, mixed mode).
-- Backlog: `docs/backlog.md` (EG1–EG4, IN2–IN8, MH1b, MH3, H-items). Cases: `docs/cases.md`.
-- Patterns: `docs/domain/patterns/INDEX.md`, `facade-decor-inset.md`, `opening-plane.md`,
-  `roof-inset-plane.md`, `terrace.md`, `markup-helpers.md`.
-- Benchmarks: `benchmark/README.md`, `bench-b01-box`, `bench-b02-corner-niche`, `bench-b02t-terrace`,
-  `bench-k01-kpp1`, `bench-k02-decor-fragment` (brief + catalogue), `bench-b03-decor` (deferred),
-  `bench-b04-attachments`.
-- Briefs for the modeller (ТЗ): the READMEs of `bench-k02-decor-fragment` and `bench-b03-decor`. A Claude
-  Docs copy of a brief is not referenced anywhere in the repository.
+Rounds by risk: src / hooks / gate / checkers 2 rounds (a 3rd only if round 2 finds a P1); docs / patterns 1
+round; jobs no Codex. P1 = wrong result, silent skip, data loss, hook bypass — fixed in the PR; P2 → issue.
+Review input = diff + affected tests; full suite and benchmarks once before the merge. Ceiling 3 rounds; merge
+on the user's command. Codex: `codex exec ... < /dev/null` (it otherwise waits for stdin) in `C:/x/cr-<N>`.
 
 ## Prompt for the new agent
 
-Paste this as the first message of the new chat:
-
 ```text
-Ты — агент Claude Code в репозитории AGR-DigitalTwin (artsafro/AGR-DigitalTwin): харнесс извлечения spec,
-движок from_spec, чекеры и бенчмарки для моделей NPM/VPM. Роль — по CLAUDE.md.
+Ты — агент Claude Code в репозитории AGR-DigitalTwin (artsafro/AGR-DigitalTwin). Задача сессии — модель OBJ03
+через харнесс (spec -> движок -> чекеры), с проектными субагентами (.claude/agents/).
 
-1. Прочитай по порядку: AGENTS.md, CLAUDE.md, docs/HANDOFF.md, docs/PROJECT_STATE.md, docs/backlog.md.
-2. Проверь фактическое состояние: git status и git log -1 на main; открытые PR (gh pr list) и их статус;
-   ветки harness/source-slot-table (#77), job/case-alina-bld-pipeline.
-3. Сверь это с docs/HANDOFF.md и доложи расхождения (коротко, списком) до начала работы.
-4. Затем продолжи с первого пункта раздела «Next steps» в HANDOFF. Новых направлений без пользователя не
-   начинай.
+1. Прочитай: AGENTS.md, CLAUDE.md, docs/HANDOFF.md, docs/PROJECT_STATE.md, docs/agents/WORKFLOW.md.
+2. Проверь: main = 723097a или новее; ветка job/obj03-decor; jobs/OBJ03 (untracked) и stash obj03-job-wip.
+3. Доложи расхождения с HANDOFF, затем «Next steps» по порядку.
 
-Правила те же: одна задача — одна ветка — один worktree; каждый PR — 3 раунда Codex-ревью (codex exec
-в C:/x/cr-<N>), мерж по команде пользователя, после мержа — PROJECT_STATE на main; вопросы вместо догадок
-и без временных подстановок значений; эталон делает только пользователь; сборка только через
-dt spec extract -> движок -> чекеры. Пользователю отвечай по-русски.
+Мораторий: новых PR в харнесс нет до показа модели OBJ03; нехватка правила — issue и модель без элемента.
+Вопросы пользователю — только про модель и данные объекта; технические решения — сам, строкой «решено: …».
+Мерж по команде пользователя. Пользователю отвечай по-русски.
 ```
