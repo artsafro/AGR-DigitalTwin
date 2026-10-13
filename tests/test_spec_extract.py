@@ -531,3 +531,33 @@ def test_a_roof_value_not_read_is_never_guessed(field):
 def test_the_3_cm_agreement_limit_itself_agrees(roof):
     given = [{"name": "L0", "elev_m": 0.0}, {"name": "L1", "elev_m": 3.3}, {"name": "roof", "elev_m": roof}]
     extract_spec(revit_box(), {**OBJECT, "revit_levels": REVIT_TABLE, "levels": given})
+
+
+# rule 4 (user 2026-10-12): the parapet thickness is read from the source, else the object's default, never asked
+
+def _uneven_parapet():
+    """The north inner line of the parapet 0.4 m in, the others 0.2 m: no one thickness."""
+    dump = box_building()
+    for m in dump["meshes"]:
+        m["vertices"] = [[x, 9.6 if abs(y - 9.8) < 1e-9 else y, z] for x, y, z in m["vertices"]]
+    return dump
+
+
+def test_parapet_thickness_is_measured_from_a_closed_section():
+    spec, report = extract_spec(box_building(), OBJECT)
+    assert spec.spec_version == "0.6" and spec.roof.parapet_thickness_m == 0.2
+    assert report["roof"]["parapet_thickness"] == {"m": 0.2, "by": "measured"}
+
+
+def test_unreadable_parapet_thickness_takes_the_default_and_says_so():
+    spec, report = extract_spec(_uneven_parapet(), {**OBJECT, "parapet_thickness_default_m": 0.3})
+    assert spec.roof.parapet_thickness_m == 0.3
+    got = report["roof"]["parapet_thickness"]
+    assert got["by"] == "parapet thickness by default" and "not one thickness" in got["why"]
+    assert not any(q["kind"].startswith("parapet") for q in report["questions"])     # no question to the user
+
+
+def test_unreadable_parapet_thickness_without_a_default_is_left_to_the_build_input():
+    spec, report = extract_spec(_uneven_parapet(), OBJECT)
+    assert spec.roof.parapet_thickness_m is None and spec.spec_version == "0.3"
+    assert report["roof"]["parapet_thickness"]["by"] == "not read, no default"

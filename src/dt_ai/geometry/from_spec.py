@@ -84,14 +84,16 @@ class BuildInputs:
     @classmethod
     def from_object(cls, obj_cfg: dict) -> "BuildInputs":
         """The `build` block of object.json: {"parapet_thickness_m", "ids": {"facade", "reveal", "roof",
-        "opening"}, "opening_ids_by_type"?}. Missing values are an error, never a default."""
+        "opening"}, "opening_ids_by_type"?}. Missing values are an error, never a default; parapet_thickness_m
+        null = the spec's roof.parapet_thickness_m (spec v0.6, rule 4) decides."""
         b = obj_cfg.get("build")
         if not b:
             raise BuildError(f"object {obj_cfg.get('id', '?')}: object.json has no build block (parapet thickness, IDs)")
         try:
             ids = b["ids"]
             by_type = {int(k): int(v) for k, v in (b.get("opening_ids_by_type") or {}).items()}
-            return cls(float(b["parapet_thickness_m"]), int(ids["facade"]), int(ids["reveal"]), int(ids["roof"]),
+            thick = b["parapet_thickness_m"]
+            return cls(0.0 if thick is None else float(thick), int(ids["facade"]), int(ids["reveal"]), int(ids["roof"]),
                        int(ids["opening"]), by_type or None, int(ids["decor"]) if "decor" in ids else None)
         except (KeyError, TypeError, ValueError) as exc:
             raise BuildError(f"object.json build block: {exc!r}") from exc
@@ -254,7 +256,12 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
     bottom, roof = elev[0], elev[-1]
     parapet = spec.roof.parapet_h_m if spec.roof else 0.0
     top = round(roof + parapet, 9)
-    t = inputs.parapet_thickness_m if parapet > 0 else 0.0
+    # spec v0.6 (rule 4): the thickness read from the source, or its default, wins over the build input
+    measured = spec.roof.parapet_thickness_m if spec.roof else None
+    t = (measured if measured is not None else inputs.parapet_thickness_m) if parapet > 0 else 0.0
+    if parapet > 0 and t <= 0:
+        raise BuildError("a parapet needs a thickness: roof.parapet_thickness_m in the spec or parapet_thickness_m in "
+                         "the build inputs")
     polys = [orient(Polygon(pts), sign=1.0) for pts in contours]
     _check_steps(floors, polys)
     outer = polys[-1]

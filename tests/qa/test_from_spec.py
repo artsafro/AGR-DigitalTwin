@@ -702,7 +702,8 @@ def test_extractor_reads_the_terrace_parapet_back(edit, h):
     from dt_ai.spec import extract_spec
     s = terraced(edit, h)
     spec, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
-    assert spec.spec_version == "0.4" and [t.model_dump() for t in spec.terraces] == [{"level": "L1", "parapet_h_m": h}]
+    assert spec.spec_version == "0.6" and [t.model_dump() for t in spec.terraces] == [{"level": "L1", "parapet_h_m": h}]
+    assert spec.roof.parapet_thickness_m == INPUTS.parapet_thickness_m        # rule 4: read back from the model
     assert [f.contour for f in spec.expanded_floors()] == [f.contour for f in s.expanded_floors()]
     assert report["questions"] == []
     t = report["floors"]["L1"]["terrace"]
@@ -712,7 +713,7 @@ def test_extractor_reads_the_terrace_parapet_back(edit, h):
 def test_extractor_reads_no_terrace_on_a_plain_step():
     from dt_ai.spec import extract_spec
     spec, report = extract_spec(build(edited(west_ledge), INPUTS), SYNTH_OBJECT)
-    assert spec.terraces == [] and spec.spec_version == "0.3" and "terrace" not in report["floors"]["L1"]
+    assert spec.terraces == [] and spec.spec_version == "0.6" and "terrace" not in report["floors"]["L1"]
 
 
 def test_b02_terrace_spec_round_trip():
@@ -721,8 +722,10 @@ def test_b02_terrace_spec_round_trip():
     s = Spec.model_validate(data)
     spec, report = extract_spec(build(s, INPUTS), {**SYNTH_OBJECT, "id": s.id,
                                                    "opening_depth_default_m": s.opening_depth_default_m})  # as object.json
-    keep = lambda x: {k: v for k, v in x.model_dump().items() if k != "frame"}   # noqa: E731
+    keep = lambda x: {k: v for k, v in x.model_dump().items() if k not in ("frame", "spec_version", "roof")}   # noqa: E731
     assert keep(spec) == keep(s) and report["questions"] == []
+    # rule 4 (spec v0.6): the parapet thickness the model was built with is read back
+    assert spec.roof.parapet_h_m == s.roof.parapet_h_m and spec.roof.parapet_thickness_m == INPUTS.parapet_thickness_m
 
 
 def _west_terrace_dump():
@@ -1042,3 +1045,14 @@ def test_the_extractor_reads_a_plate_around_a_shaft(inner, read):
     kinds = [q["kind"] for q in report["questions"]]
     assert (report["plates"]["roof"]["plates"] == [{"gap_m": 0.005, "overlap_m": 0.02}]) == read
     assert (kinds == []) == read and (kinds == ["plate-params"]) != read
+
+
+def test_engine_takes_the_parapet_thickness_from_the_spec():
+    """Rule 4 (spec v0.6): roof.parapet_thickness_m wins over the build input; neither is an error."""
+    from dataclasses import replace
+    from dt_ai.spec import extract_spec
+    s = edited(lambda d: d.update({"spec_version": "0.6", "roof": {**d["roof"], "parapet_thickness_m": 0.45}}))
+    back, _ = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
+    assert back.roof.parapet_thickness_m == 0.45
+    with pytest.raises(BuildError, match="a parapet needs a thickness"):
+        build(spec(), replace(INPUTS, parapet_thickness_m=0.0))

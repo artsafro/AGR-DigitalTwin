@@ -432,3 +432,20 @@ def test_a_relief_over_a_real_ledge_is_no_ledge_structure():
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
     assert report["questions"] == [] and report["floors"]["L1"]["relief_parts"] == 1
+
+
+# --- rule 3 (user 2026-10-12): mid-storey section; a change only in the 0.3 m under the next level is the
+# slab edge, not the contour; contour_at_m only when the section changes in the wall band itself
+
+@pytest.mark.parametrize("z0", [3.0, 3.05])
+def test_slab_edge_under_the_next_level_is_not_the_contour(z0):
+    dump = prism(SQUARE10, boxes=[(0, 0.0, 10.0, z0, 3.3, 0.15)])
+    spec, report = extract_spec(dump, OBJECT)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
+    assert report["floors"]["L0"]["contour_rule"] == f"mid storey, slab edge from {z0:.3f} m"
+
+
+def test_section_change_in_the_wall_band_still_asks():
+    # 0.4 m under the next level reaches into the wall band (> 0.3 m): the user names the height
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(prism(SQUARE10, boxes=[(0, 0.0, 10.0, 2.9, 3.3, 0.15)]), OBJECT)

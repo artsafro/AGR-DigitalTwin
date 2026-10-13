@@ -28,7 +28,7 @@ def decor_of(dump):
 
 def test_belt_embedded_on_the_south_wall():
     spec, report, (belt,) = decor_of(with_meshes(("Belt", (0.0, -0.15, 2.405), (10.0, 0.02, 2.705), 26)))
-    assert spec.spec_version == "0.5"
+    assert spec.spec_version == "0.6"                      # decor (0.5) and the parapet thickness (0.6)
     assert belt["kind"] == "band" and belt["level"] == "L0" and belt["wall"] == 0
     assert (belt["x_m"], belt["w_m"], belt["z_m"], belt["h_m"]) == (0.0, 10.0, 2.405, 0.3)
     assert belt["projection_m"] == 0.15 and belt["texture"] is False and belt["material_id"] == 26
@@ -101,7 +101,7 @@ def test_a_column_off_the_levels_is_a_question():
 
 def test_canopy_and_off_wall_parts_stay_attachments():
     spec, report = extract_spec(box_building(canopy=True), OBJECT)
-    assert spec.decor == [] and spec.spec_version == "0.3" and report["decor"]["not_decor_parts"] == 1
+    assert spec.decor == [] and spec.spec_version == "0.6" and report["decor"]["not_decor_parts"] == 1
 
 
 def test_material_id_outside_the_attachment_group_is_not_taken():
@@ -160,6 +160,8 @@ def test_model_rules(change, message):
 def test_version_0_5_keeps_glass_and_terraces():
     """Found on the real K01 source: a 0.5 spec keeps glass_w / glass_h (0.3) and terraces (0.4)."""
     doc = spec_doc()
+    doc["spec_version"] = "0.5"
+    doc["roof"].pop("parapet_thickness_m", None)
     doc["floors"][0]["openings"][0].update(glass_w=1.0, glass_h=1.0)
     doc["terraces"] = [{"level": "L1", "parapet_h_m": 1.0}]
     assert Spec.model_validate(doc).spec_version == "0.5"
