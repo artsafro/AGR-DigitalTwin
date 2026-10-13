@@ -119,7 +119,7 @@ def inner_outlines_match(hole, plate, overlap, weld):
     return True
 
 
-def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: dict) -> list[dict]:
+def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: dict, structures=()) -> list[dict]:
     """Open edges grouped into loops and classified (pattern roof-inset-plane, user rules 2026-10-10):
     `bottom` - flat, at the model's lowest point. The joint of an inset slab (a roof in a parapet or a
     terrace) is exactly two closed loops per slab: `roof-foot` (contour A, the hole in the body: the
@@ -128,7 +128,9 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
     roof_inset_gap_m above that level, embedded into the faces around the hole: in plan B is A grown
     by one even offset within roof_inset_embed_m, so the outlines never cross). A roof without an inset
     has no loop. Anything else - a third loop, a lone A or B, a loop that is not one simple closed
-    cycle - is `other`."""
+    cycle - is `other`. `roof-structure` (spec v0.7, pattern roof-screen-enclosure): the bottom of a roof
+    structure's walls - a flat closed loop at the top level on one of the spec's outlines; it takes no part in
+    the slab joints. structures: [(outline Polygon, roof level z)]."""
     tri = np.flatnonzero(~skip)
     sides = side_edges[tri]
     open_mask = counts[sides] == 1
@@ -188,6 +190,14 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
                 elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
                     kind, level = "roof-foot", name
         segs = [welded[list(ends[e]), :2] for e in edges]
+        upward = bool(np.all(c_mid > float(z.mean()) + tol["weld_m"])) if (c_mid := corners[tris_][:, :, 2].mean(
+            axis=1)).size else False
+        if flat_loop and closed and structures and roof_faces and upward:   # walls standing on it, roof ids: a
+            ring = list(polygonize(shapely.linestrings(segs)))              # shaft's open top is none (review 1)
+            if len(ring) == 1 and any(abs(float(z.mean()) - zs) <= tol["weld_m"]
+                                      and ring[0].exterior.hausdorff_distance(poly.exterior) <= tol["weld_m"]
+                                      for poly, zs in structures):
+                kind, level = "roof-structure", None
         out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4), "_z": float(z.mean()),
                     "closed": closed, "_segs": segs})
     shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
@@ -273,7 +283,7 @@ def fan_vertices(triangles, ids, side_edges, skip) -> list[int]:
     return sorted(v for v, roots in fans.items() if len(roots) > 1)
 
 
-def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None) -> dict:
+def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, structures=()) -> dict:
     """Edge- and vertex-manifold (one face fan per vertex, issue #57), no n-gons, no overlapping faces, and open edges only where the pattern
     roof-inset-plane allows them (user rule 2026-10-10): the bottom ring and, per roof, the joint of an
     inset roof plane (its outline and the foot of the faces it is inset into). Parts made only of
@@ -286,7 +296,7 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None) -> 
     tri_open = np.array([p in open_ok for p in part], dtype=bool)
     boundary = np.zeros(len(counts), dtype=bool)
     boundary[np.unique(side_edges[~tri_open][counts[side_edges[~tri_open]] == 1])] = True
-    loops = open_loops(model, ids, counts, side_edges, tri_open, tol, ranges)
+    loops = open_loops(model, ids, counts, side_edges, tri_open, tol, ranges, structures)
     # every slab is inset (user rule 2026-10-10). With the spec's slabs known (a list): a slab joint at a
     # level the spec implies no slab at is not allowed, each slab level needs a joint, and no up-facing
     # face of the model may lie flat at a slab level - that is a solid slab beside an inset one
@@ -694,7 +704,8 @@ def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = 
     ranges = ranges or load_ranges()
     checks = [check_bbox(model, etalon, tol), check_levels(model, etalon, spec, tol),
               check_floor_areas(model, etalon, spec, tol), check_silhouettes(model, etalon, tol),
-              check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m)),
+              check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m),
+                         [(shapely.Polygon(rs.outline), spec.levels[-1].elev_m) for rs in spec.roof_structures]),
               check_budget(model, tol),
               check_opening_planes(model, spec, tol, ranges), check_material_ids(model, tol, ranges),
               check_decor(model, spec, tol, ranges)]

@@ -634,3 +634,108 @@ def test_unreadable_parapet_thickness_without_a_default_is_left_to_the_build_inp
     spec, report = extract_spec(_uneven_parapet(), OBJECT)
     assert spec.roof.parapet_thickness_m is None and spec.spec_version == "0.3"
     assert report["roof"]["parapet_thickness"]["by"] == "not read, no default"
+
+
+# spec v0.7 roof_structures (pattern roof-screen-enclosure, user 2026-10-13)
+
+def _with_screened_equipment():
+    """B01-like box; on its roof a screen enclosure 3-7 x 3-7 m to 9.0 m and inside it equipment with a pitched
+    top (steep faces at the roof level that would stop the roof)."""
+    dump = box_building()
+    screens, kit = Mesh("Screens"), Mesh("Kit")
+    ring = [(3, 3), (7, 3), (7, 7), (3, 7)]
+    for (x0, y0), (x1, y1) in zip(ring, ring[1:] + ring[:1]):
+        screens.quad((x0, y0, 6.6), (x1, y1, 6.6), (x1, y1, 9.0), (x0, y0, 9.0))
+    kit.quad((4, 4, 6.6), (6, 4, 6.6), (6, 5, 7.6), (4, 5, 7.6))          # a 45 degree top over 2 x 2 m
+    kit.quad((4, 5, 7.6), (6, 5, 7.6), (6, 6, 6.6), (4, 6, 6.6))
+    dump["meshes"] += [screens.dump(), kit.dump()]
+    return dump
+
+
+def test_a_marked_screen_enclosure_is_read_with_its_outline_and_top():
+    spec, report = extract_spec(_with_screened_equipment(), {**OBJECT, "roof_screens": ["Screens"]})
+    (rs,) = spec.roof_structures
+    assert spec.spec_version == "0.7" and rs.kind == "screen" and rs.z_top_m == 9.0
+    assert close(sorted(rs.outline), sorted([[3, 3], [3, 7], [7, 3], [7, 7]]), tol=0.02)
+    assert report["roof"]["plane_m"] == pytest.approx(6.6, abs=0.01)
+
+
+def test_roof_screens_must_be_in_the_source():
+    with pytest.raises(SpecError, match=r"roof_screens \['Nope'\] are not in the source"):
+        extract_spec(_with_screened_equipment(), {**OBJECT, "roof_screens": ["Nope"]})
+
+
+def _screens(*rings, open_side=False, top=9.0):
+    m = Mesh("Screens")
+    for ring, z1 in rings:
+        edges = list(zip(ring, ring[1:] + ring[:1]))
+        for (x0, y0), (x1, y1) in edges[:-1] if open_side else edges:
+            m.quad((x0, y0, 6.6), (x1, y1, 6.6), (x1, y1, z1), (x0, y0, z1))
+    return m
+
+
+def test_two_screen_enclosures_keep_their_outlines_and_tops():
+    """Review 1 of #92: two enclosures named together - each its own outline and top."""
+    dump = box_building()
+    dump["meshes"].append(_screens(([(2, 2), (4, 2), (4, 4), (2, 4)], 9.0),
+                                   ([(6, 6), (7, 6), (7, 7), (6, 7)], 11.0)).dump())
+    spec, _ = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+    from shapely.geometry import Polygon
+    got = sorted((round(Polygon(rs.outline).area, 2), rs.z_top_m) for rs in spec.roof_structures)
+    assert got == [(1.0, 11.0), (4.0, 9.0)]
+
+
+def test_an_open_screen_is_a_stop():
+    dump = box_building()
+    dump["meshes"].append(_screens(([(3, 3), (7, 3), (7, 7), (3, 7)], 9.0), open_side=True).dump())
+    with pytest.raises(SpecError, match="do not close round an enclosure"):
+        extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+
+
+def _boxes(*boxes, z0=6.6, z1=9.0, slope=0.0):
+    """Thick screens: closed boxes [x0, y0, x1, y1] with their caps; the top rises by `slope` per metre of x."""
+    m = Mesh("Screens")
+    top = lambda x: z1 + slope * (x - 3)                                  # noqa: E731
+    for x0, y0, x1, y1 in boxes:
+        ring = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+        for (a, b), (c, d) in zip(ring, ring[1:] + ring[:1]):
+            m.quad((a, b, z0), (c, d, z0), (c, d, top(c)), (a, b, top(a)))
+        m.quad(*[(x, y, top(x)) for x, y in ring])
+        m.quad(*[(x, y, z0) for x, y in ring[::-1]])
+    return m
+
+
+def test_an_open_screen_of_thick_boxes_is_a_stop():
+    """Review 2 of #92: a U of 0.3 m boxes - their own insides are no enclosed space."""
+    dump = box_building()
+    dump["meshes"].append(_boxes((3, 3, 7, 3.3), (6.7, 3.3, 7, 7), (3, 6.7, 6.7, 7)).dump())
+    with pytest.raises(SpecError, match="do not close round an enclosure"):
+        extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+
+
+@pytest.mark.parametrize("slope, top", [(0.0, 9.0), (0.1, 9.4)])
+def test_a_closed_ring_of_thick_boxes_is_read(slope, top):
+    """Review 3 of #92: sloped caps cap a screen's inside too."""
+    dump = box_building()
+    dump["meshes"].append(_boxes((3, 3, 7, 3.3), (6.7, 3.3, 7, 7), (3, 6.7, 6.7, 7), (3, 3.3, 3.3, 6.7),
+                                 slope=slope).dump())
+    (rs,) = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})[0].roof_structures
+    from shapely.geometry import Polygon, box
+    assert rs.z_top_m == top and Polygon(rs.outline).symmetric_difference(box(3, 3, 7, 7)).area < 0.02
+
+
+@pytest.mark.parametrize("second", [[(4, 2), (6, 2), (6, 4), (4, 4)], [(4, 4), (6, 4), (6, 6), (4, 6)]])
+def test_enclosures_sharing_screens_are_a_stop(second):
+    """Review 2 of #92: touching enclosures 9 m and 11 m high - one outline and one top would be wrong."""
+    dump = box_building()
+    dump["meshes"].append(_screens(([(2, 2), (4, 2), (4, 4), (2, 4)], 9.0), (second, 11.0)).dump())
+    with pytest.raises(SpecError, match="enclose 2 spaces sharing screens"):
+        extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+
+
+def test_a_screen_on_the_parapet_does_not_hide_its_thickness():
+    """Review 1 of #92: a screen [0, 0]-[3, 3] standing on the parapet corner; the parapet still reads 0.2 m."""
+    dump = box_building()
+    dump["meshes"].append(_screens(([(0, 0), (3, 0), (3, 3), (0, 3)], 9.0)).dump())
+    spec, report = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+    assert spec.roof.parapet_thickness_m == 0.2 and report["roof"]["parapet_thickness"]["by"] == "measured"

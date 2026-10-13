@@ -1071,3 +1071,68 @@ def test_terrace_parapet_takes_the_roof_thickness_of_the_spec():
     s = edited(edit)
     back, report = extract_spec(build(s, INPUTS), SYNTH_OBJECT)
     assert back.roof.parapet_thickness_m == 0.2 and [t.level for t in back.terraces] == ["L1"]
+
+
+# --- spec v0.7 roof_structures (pattern roof-screen-enclosure, user 2026-10-13) ----------------------------
+
+SCREEN = {"kind": "screen", "outline": [[3, 3], [7, 3], [7, 7], [3, 7]], "z_top_m": 9.0}
+
+
+def with_screen(profile="npm_min"):
+    return edited(lambda d: d.update({"spec_version": "0.7", "roof_structures": [SCREEN], "profile": profile}))
+
+
+def test_engine_builds_a_screen_enclosure_as_planes_with_roof_ids():
+    dump = build(with_screen(), INPUTS)
+    rs = next(m for m in dump["meshes"] if m["name"] == "roof_structures")
+    v = np.asarray(rs["vertices"])
+    assert set(rs["material_ids"]) == {INPUTS.roof_id}
+    assert v[:, 2].min() == pytest.approx(6.6) and v[:, 2].max() == pytest.approx(9.0)
+    assert rs["polygon_sizes"].count(4) == 4 and rs["polygon_sizes"].count(3) == 2   # four walls, a top, no bottom
+    soup = from_dump(dump)
+    structures = [(__import__("shapely").Polygon(SCREEN["outline"]), 6.6)]
+    loops = checks.check_mesh(soup, TOL, checks.load_ranges(), structures=structures)["details"]["open_loops"]
+    assert all(lp["allowed"] for lp in loops) and [lp["kind"] for lp in loops].count("roof-structure") == 1
+    plain = checks.check_mesh(soup, TOL, checks.load_ranges())["details"]["open_loops"]
+    assert not all(lp["allowed"] for lp in plain)          # without the spec's structure its bottom is an open loop
+
+
+def test_engine_builds_no_screen_shell_for_mid_yet():
+    with pytest.raises(BuildError, match="issue #91"):
+        build(with_screen("mid"), INPUTS)
+
+
+def test_the_extractor_reads_a_marked_screen_enclosure_back():
+    from dt_ai.spec import extract_spec
+    dump = build(with_screen(), INPUTS)
+    for m in dump["meshes"]:
+        if m["name"] == "roof_structures":
+            m["name"] = "Screens"
+    spec_back, report = extract_spec(dump, {**SYNTH_OBJECT, "roof_screens": ["Screens"]})
+    (rs,) = spec_back.roof_structures
+    assert spec_back.spec_version == "0.7" and rs.z_top_m == 9.0
+    assert np.allclose(sorted(map(tuple, rs.outline)), sorted(map(tuple, SCREEN["outline"])), atol=0.01)
+    assert report["roof_structures"][0]["meshes"] == ["Screens"]
+
+
+def test_a_degenerate_screen_outline_is_rejected():
+    with pytest.raises(ValueError, match="simple polygon with an area"):
+        edited(lambda d: d.update({"spec_version": "0.7", "roof_structures": [
+            {"kind": "screen", "outline": [[3, 3], [3, 3], [3, 3]], "z_top_m": 9.0}]}))
+
+
+def test_a_shaft_top_on_a_screen_outline_is_no_screen_bottom():
+    """Review 1 of #92: an open-topped shaft (facade ids, walls below the loop) on the outline stays an open loop."""
+    import shapely
+    from test_spec_extract import Mesh
+    dump = build(spec(), INPUTS)
+    shaft = Mesh("Shaft")
+    ring = [(3, 3), (7, 3), (7, 7), (3, 7)]
+    for (x0, y0), (x1, y1) in zip(ring, ring[1:] + ring[:1]):
+        shaft.quad((x0, y0, 5.6), (x1, y1, 5.6), (x1, y1, 6.6), (x0, y0, 6.6))
+    sd = shaft.dump()
+    sd["material_ids"] = [FACADE] * len(sd["triangles"])
+    dump["meshes"].append(sd)
+    loops = checks.check_mesh(from_dump(dump), TOL, checks.load_ranges(),
+                              structures=[(shapely.Polygon(ring), 6.6)])["details"]["open_loops"]
+    assert not any(lp["kind"] == "roof-structure" for lp in loops) and not all(lp["allowed"] for lp in loops)

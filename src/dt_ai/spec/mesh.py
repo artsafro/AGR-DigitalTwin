@@ -1366,6 +1366,88 @@ def _sizes(g):
     return a, b
 
 
+def _roof_structures(v, tris, owners, names, top_level):
+    """Pattern roof-screen-enclosure (spec v0.7, user 2026-10-13): the meshes object.json names as roof_screens
+    are screen enclosures on the roof. Their screens' vertical faces, projected to the plan, group by proximity
+    (joints up to RELIEF_M): one group is one enclosure, its outline the outer line of a closed ring of screens
+    (Douglas-Peucker RELIEF_M), its top the group's highest point; a lid on top does not count for the ring.
+    The space a group encloses is a hole of its plan that the screens do not cap both above and below (a thick
+    screen's own inside is capped twice); a group must enclose exactly one space - none is an open screen, more
+    are enclosures sharing screens whose tops cannot be told apart (review 2 of #92).
+    The marking is the human's; a name not in the source, a group not above the roof or screens that do not close
+    round their plan are a stop, never a guess (review 1 of #92)."""
+    if not names:
+        return []
+    missing = sorted(set(names) - set(owners.tolist()))
+    if missing:
+        raise SpecError(f"roof_screens {missing} are not in the source (object.json names the screen meshes)")
+    p = v[tris[np.isin(owners, list(names))]]
+    xy = p[..., :2]
+    e1, e2 = xy[:, 1] - xy[:, 0], xy[:, 2] - xy[:, 0]
+    upright = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) <= 1e-12
+    pieces, zs = [], []
+    for q, z in zip(xy[upright], p[upright][:, :, 2]):   # a screen's vertical face is a segment in the plan
+        a_, b_ = max(((0, 1), (1, 2), (2, 0)), key=lambda ij: float(np.linalg.norm(q[ij[0]] - q[ij[1]])))
+        if np.linalg.norm(q[a_] - q[b_]) > 1e-12:
+            pieces.append(LineString(q[[a_, b_]]).buffer(WELD_M))
+            zs.append((float(z.min()), float(z.max())))
+    if not pieces:
+        raise SpecError(f"roof_screens {sorted(names)}: no screen (vertical face) in them")
+    caps = [(Polygon(q), t) for q, t in zip(xy[~upright], p[~upright])]   # any face not vertical, sloped too
+    cap_tree = shapely.STRtree([c for c, _ in caps])                       # (review 3 of #92)
+
+    def solid(hole):
+        """A screen's own inside: capped by the screens at two heights over one point of it."""
+        pt = Polygon(hole).representative_point()
+        hz = set()
+        for i in cap_tree.query(pt, predicate="intersects"):
+            t = caps[i][1]
+            n_ = np.cross(t[1] - t[0], t[2] - t[0])                         # the cap's plane, z at the point
+            hz.add(round(float(t[0, 2] - (n_[0] * (pt.x - t[0, 0]) + n_[1] * (pt.y - t[0, 1])) / n_[2]) / WELD_M))
+        return len(hz) >= 2
+
+    groups = list(shapely.get_parts(shapely.union_all(pieces).buffer(RELIEF_M / 2)))
+    tree = shapely.STRtree(pieces)
+    out = []
+    for g in sorted(groups, key=lambda g: (g.centroid.x, g.centroid.y)):
+        members = [int(i) for i in tree.query(g, predicate="intersects")]
+        top = max(zs[i][1] for i in members)
+        c = g.centroid
+        if top <= top_level["elev_m"] + EVENT_MIN_M:
+            raise SpecError(f"roof_screens {sorted(names)}: the screens round ({c.x:.2f}, {c.y:.2f}) do not stand "
+                            f"above the roof level {top_level['elev_m']} m")
+        spaces = [h for h in g.interiors if not solid(h)]
+        if not spaces:
+            raise SpecError(f"roof_screens {sorted(names)}: the screens round ({c.x:.2f}, {c.y:.2f}) do not close "
+                            "round an enclosure with joints up to 0.10 m")
+        if len(spaces) > 1:
+            raise SpecError(f"roof_screens {sorted(names)}: the screens round ({c.x:.2f}, {c.y:.2f}) enclose "
+                            f"{len(spaces)} spaces sharing screens; one outline and one top cannot be read for them")
+        shrunk = Polygon(g.exterior).buffer(-RELIEF_M / 2)
+        env = Polygon(max(shapely.get_parts(shrunk), key=lambda h: h.area).exterior)
+        poly = orient(env.simplify(RELIEF_M, preserve_topology=True), sign=1.0)
+        out.append({"kind": "screen", "outline": _contour_points(poly), "z_top_m": round(top, 3),
+                    "meshes": sorted(names), "area_m2": round(poly.area, 3)})
+    return out
+
+
+def _off_structures(v, tris, under, level):
+    """Triangles of `tris` outside every enclosure outline, plus the flat roof at the level under them - what is
+    inside (the equipment, the screens, their steep parts) is no roof question."""
+    if not len(tris):
+        return tris
+    p = v[tris]
+    centres = shapely.points(p[:, :, :2].mean(axis=1))
+    inside = np.zeros(len(tris), bool)
+    for poly in under:
+        inside |= shapely.covered_by(centres, poly.buffer(RELIEF_M))
+    n = np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0])
+    length = np.linalg.norm(n, axis=1)
+    flat_roof = (length > 0) & (n[:, 2] > np.cos(np.radians(ROOF_SLOPE_MAX_DEG)) * np.maximum(length, 1e-12)) \
+        & (np.abs(p[:, :, 2].mean(axis=1) - level) <= ROOF_LEVEL_TOL_M)
+    return tris[~inside | flat_roof]
+
+
 def _parapet_thickness(v, tris, roof_z, top_z, top_contour):
     """Rule 4 (user 2026-10-12): the parapet's thickness from the source - its section at mid parapet height
     is a closed ring on the top floor's outer line whose inner line keeps one distance from it (within
@@ -1681,17 +1763,24 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     if panelised:                                    # the roof, its parapet and shafts are panels as much as
         body, others = tris, []                      # slabs (review 1 of #83): measured on every part
     _stage(found, "roof")
+    structures = _roof_structures(v, tris, owners, obj_cfg.get("roof_screens") or [], levels[-1])
+    if structures:                                   # under a screen enclosure: only the flat roof stays a roof
+        under = [Polygon(rs["outline"]) for rs in structures]   # question (pattern roof-screen-enclosure)
+        body = _off_structures(v, body, under, levels[-1]["elev_m"])
+        others = [kept for kept in (_off_structures(v, o, under, levels[-1]["elev_m"]) for o in others) if len(kept)]
     roof_parts = _roof_parts(v, others, levels[-1], polys[-1])
     roof_z, top_z, closed, roof_stats = _roof(v, body, levels[-2], levels[-1], polys[-1],
                                               np.vstack(roof_parts) if roof_parts else None,
                                               np.vstack(others) if others else None)
+    report["roof_structures"] = structures
     report["roof"] = {"plane_m": round(roof_z, 3), "parapet_top_m": round(top_z, 3), "closed_share": closed,
                       "separate_roof_parts": len(roof_parts), **roof_stats,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],
                       "plane_vs_top_level_m": round(roof_z - levels[-1]["elev_m"], 3)}
     thickness = None
     if roof_stats["parapet"]:                        # rule 4: measured, else the object's default, never asked
-        thickness, why = _parapet_thickness(v, tris, roof_z, top_z, polys[-1])
+        no_screens = tris[~np.isin(owners, obj_cfg.get("roof_screens") or [])]   # a screen on the parapet
+        thickness, why = _parapet_thickness(v, no_screens, roof_z, top_z, polys[-1])   # is no parapet line
         by = "measured"
         if thickness is None:
             thickness = obj_cfg.get("parapet_thickness_default_m")
@@ -1730,8 +1819,12 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
             asked = sorted(set(asked) | {name for name, ps in plates.items() if ps}, key=names.index)
     # facade decor (pattern facade-decor-inset, spec v0.5): non-body parts on a wall or free-standing columns
     _stage(found, "decor")
+    on_roof = [Polygon(rs["outline"]).buffer(RELIEF_M) for rs in structures]
+    facade_parts = [pt for pt in parts[1:] if not on_roof or not (                 # the enclosure and what stands
+        v[tris[pt]][:, :, 2].min() >= levels[-1]["elev_m"] - ROOF_LEVEL_TOL_M        # in it are no facade decor
+        and any(g.covers(shapely.Point(v[tris[pt]][:, :, :2].reshape(-1, 2).mean(axis=0))) for g in on_roof))]
     decor, decor_questions, report["decor"] = dc.extract(
-        v, tris, mats, parts[1:], levels, [f["contour"] for f in floors], polys,
+        v, tris, mats, facade_parts, levels, [f["contour"] for f in floors], polys,
         plate.get("plate_gap_m", Spec.model_fields["plate_gap_m"].default), _group_ids("metal") | _group_ids("attachment"))   # decor ids by material
     questions += decor_questions
     if decor_questions and not asked:
@@ -1754,7 +1847,10 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
                       **({"parapet_thickness_m": thickness} if thickness is not None else {})},
                 # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
                 **({"terraces": terraces} if terraces else {}), **({"decor": decor} if decor else {}),
-                **({"spec_version": "0.6"} if thickness is not None else {"spec_version": "0.5"} if decor
+                **({"roof_structures": [{k: rs[k] for k in ("kind", "outline", "z_top_m")} for rs in structures]}
+                   if structures else {}),
+                **({"spec_version": "0.7"} if structures else {"spec_version": "0.6"} if thickness is not None
+                   else {"spec_version": "0.5"} if decor
                    else {"spec_version": "0.4"} if terraces else {}),
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", OPENING_DEPTH_DEFAULT_M), **plate)
     return spec, report
