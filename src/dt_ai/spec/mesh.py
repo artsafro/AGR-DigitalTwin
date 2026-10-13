@@ -766,8 +766,9 @@ def _panel_hint(v, tris, parts, owners, levels):
 
 def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
     """Rule 2 (user 2026-10-13): on a panel facade the storey's contour is the envelope of the panels' outer faces
-    at mid storey - the section of every part but the slabs, pieces further than ATTACHMENT_FROM_M off the
-    ceiling slab left out part by part (attachment candidates, EG2), joints within RELIEF_M closed, the outer line,
+    at mid storey - the section of every part but the slabs, a protrusion further than ATTACHMENT_FROM_M off the
+    storey's own slabs (floor and ceiling; the deck at a terrace level) cut off whole, root included, segment by
+    segment (attachment candidates, EG2; #87, #88), joints within RELIEF_M closed, the outer line,
     deviations within RELIEF_M collapsed (Douglas-Peucker). The ceiling slab (the next level) is the check:
     the panels stand outside it by facade_offset_m (data, no question). Over a ledge to the storey below, the
     walkable part is the slab there and a parapet is the parts standing on the ledge's outer edge: a terrace
@@ -782,19 +783,28 @@ def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
         and len(slab_tris) else Polygon()
     outline = Polygon(max(shapely.get_parts(own), key=lambda g: g.area).exterior) if not own.is_empty else None
     reach = outline.buffer(dc.ATTACHMENT_FROM_M) if outline is not None else None
-    pieces, left_out = [], 0
+    ceiling = Polygon(max(shapely.get_parts(slab), key=lambda g: g.area).exterior) if slab is not None else None
+    sections = []
     for part in rest_parts:                              # segment by segment (user 2026-10-13, #87): the facade
-        if not len(part):                                # part of a part stays facade, what stands further than
-            continue                                     # the attachment reach off the slabs is a candidate
+        if not len(part):                                # part of a part stays facade, a protrusion further than
+            continue                                     # the attachment reach off the slabs is a candidate whole
         z = v[part][:, :, 2]
         if z.min() >= zmid or z.max() <= zmid:
             continue
         segs = [LineString(sg) for sg in _section(v, part, zmid)]
+        if segs:
+            sections.append(segs)
+    band = None
+    if outline is not None and sections:                 # the facade band: where most of the section stands off
+        mids = [sg.interpolate(0.5, normalized=True) for segs in sections for sg in segs]           # the slab
+        band = float(np.median(shapely.distance(mids, outline.exterior))) + RELIEF_M
+    pieces, left_out = [], 0
+    for segs in sections:
         if reach is not None:
             kept = [sg for sg in segs if sg.within(reach)]
             if len(kept) < len(segs):
                 left_out += 1
-                kept = _prune_spurs(kept, [sg for sg in segs if not sg.within(reach)])
+                kept = _prune_spurs(kept, [sg for sg in segs if not sg.within(reach)], outline, band)
             segs = kept
         if not segs:
             continue
@@ -820,10 +830,10 @@ def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
         rep["slab"] = f"no ceiling slab at {nxt['elev_m']} m"
         return poly, rep
     rep["slab_area_m2"] = round(slab.area, 3)          # measured surface: shafts and holes are not slab
-    rep["slab_inside_facade_share"] = round(env.intersection(outline).area / outline.area, 3)   # data
+    rep["slab_inside_facade_share"] = round(env.intersection(ceiling).area / ceiling.area, 3)   # data, the ceiling
     ring = env.exterior
     pts = shapely.points([ring.interpolate(d).coords[0] for d in np.arange(0.0, ring.length, OFFSET_STEP_M)])
-    off = shapely.distance(pts, outline.exterior) * np.where(shapely.covered_by(pts, outline), -1.0, 1.0)
+    off = shapely.distance(pts, ceiling.exterior) * np.where(shapely.covered_by(pts, ceiling), -1.0, 1.0)
     rep["facade_offset_m"] = round(float(np.median(off)), 3)     # panels outside the slab (+), inside (-): data
     rep["facade_offset_range_m"] = [round(float(off.min()), 3), round(float(off.max()), 3)]
     return poly, rep
@@ -853,11 +863,12 @@ def _facade_ring(pieces, joint):
     return Polygon(max(shapely.get_parts(shrunk), key=lambda g: g.area).exterior) if not shrunk.is_empty else None
 
 
-def _prune_spurs(kept, dropped):
-    """A protrusion cut at the attachment reach leaves its root as dangling chains on the facade: walk from every
-    cut point along chains of degree 2 and remove them up to the junction with the facade (degree 3 or more).
-    Closed panel outlines and lone lines not tied to a cut stay (#87, user 2026-10-13: the protrusion as a whole
-    is the candidate)."""
+def _prune_spurs(kept, dropped, outline, band):
+    """A protrusion cut at the attachment reach leaves its root on the facade. From every cut point walk through the
+    connected segments and remove those that belong to the protrusion - running across the facade (closer to the
+    outline's normal than to its tangent) or standing beyond the facade band - and stop at facade segments (along
+    the facade, inside the band), which stay with everything behind them: a glass line ending at a fin stays, a
+    crossbar inside the fin goes (#87, user 2026-10-13; review 1 of #89)."""
     if not kept:
         return kept
     noded = [LineString(c) for g in shapely.get_parts(shapely.union_all(kept)) for c in
@@ -865,18 +876,24 @@ def _prune_spurs(kept, dropped):
     key = lambda p: (round(p[0], 4), round(p[1], 4))                      # noqa: E731
     adj = defaultdict(set)
     for i, sg in enumerate(noded):
-        a, b = key(sg.coords[0]), key(sg.coords[-1])
-        adj[a].add(i)
-        adj[b].add(i)
-    cut = {key(c) for sg in dropped for c in (sg.coords[0], sg.coords[-1])}
-    gone = set()
-    for start in [n for n in adj if n in cut]:
-        node = start
-        while len(adj[node] - gone) == 1:                                 # a dangling end: follow it inward
-            i = next(iter(adj[node] - gone))
+        adj[key(sg.coords[0])].add(i)
+        adj[key(sg.coords[-1])].add(i)
+    ring = outline.exterior
+
+    def protrudes(sg):                               # beyond the facade band: a root up to the band's depth may
+        return ring.distance(sg.interpolate(0.5, normalized=True)) > band    # stay (#90); far-end tests cut real
+    todo = [n for n in adj if n in {key(c) for sg in dropped for c in (sg.coords[0], sg.coords[-1])}]
+    gone, seen = set(), set(todo)
+    while todo:
+        node = todo.pop()
+        for i in adj[node] - gone:
+            if not protrudes(noded[i]):
+                continue
             gone.add(i)
-            a, b = key(noded[i].coords[0]), key(noded[i].coords[-1])
-            node = b if a == node else a
+            for end in (key(noded[i].coords[0]), key(noded[i].coords[-1])):
+                if end not in seen:
+                    seen.add(end)
+                    todo.append(end)
     return [sg for i, sg in enumerate(noded) if i not in gone]
 
 
