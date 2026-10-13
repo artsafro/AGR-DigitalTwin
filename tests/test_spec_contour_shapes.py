@@ -655,3 +655,30 @@ def test_a_parapet_on_the_slab_edge_inside_the_facade_line_is_found():
     spec, report = extract_spec(panelised(outlines=(SQUARE10, upper), extra=[parapet], slabs_at={2: upper}),
                                 PANEL_OBJECT)
     assert [(t.level, round(t.parapet_h_m, 2)) for t in spec.terraces] == [("L1", 1.1)]
+
+
+def test_a_fin_welded_to_a_facade_panel_is_cut_off_and_the_panel_stays():
+    """#87 (user 2026-10-13): a part is classified segment by segment - a fin 0.85 m out welded to the south
+    panel is an attachment candidate, the panel stays facade (OBJ03 L16-L28 dropped whole facade parts)."""
+    dump = panelised()
+    south = next(m for m in dump["meshes"] if m["name"] == "Panel_0_0")
+    dump["meshes"].remove(south)
+    joined = Mesh("Panel_0_0")
+    walls(joined, [[-0.08, 0], [9.98, 0], [9.98, -0.1], [-0.08, -0.1]], 0.01, 3.29, extra_u={2: [5.88, 5.98]})
+    walls(joined, [[4.0, -0.1], [4.1, -0.1], [4.1, -0.95], [4.0, -0.95]][::-1], 0.01, 3.29)
+    dump["meshes"].append(joined.dump())
+    spec, report = extract_spec(dump, PANEL_OBJECT)
+    assert close(spec.expanded_floors()[0].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L0"]["attachment_pieces_left_out"] == 1
+
+
+def test_a_storey_under_a_terrace_deck_keeps_its_floor_slab_as_reference():
+    """#88 (user 2026-10-13): at a terrace level the slab is the deck (the walkable top); the storey under it
+    takes its own floor slab too, so a narrow deck does not leave its facade out."""
+    levels = (("L0", 0.0), ("L1", 3.3), ("L2", 6.6), ("roof", 9.9))
+    upper = [[0, 0], [8, 0], [8, 10], [0, 10]]
+    deck = [[8, 0], [10, 0], [10, 10], [8, 10]]
+    dump = panelised(outlines=(SQUARE10, SQUARE10, upper), levels=levels, slabs_at={2: deck, 3: upper})
+    spec, report = extract_spec(dump, PANEL_OBJECT)
+    assert close(spec.expanded_floors()[1].contour, OUTER10, tol=0.03)
+    assert report["floors"]["L1"]["attachment_pieces_left_out"] == 0

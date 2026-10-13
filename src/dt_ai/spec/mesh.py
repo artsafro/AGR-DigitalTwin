@@ -775,24 +775,31 @@ def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
     zmid = (lv["elev_m"] + nxt["elev_m"]) / 2
     faces = _up_faces_at(v, slab_tris, nxt["elev_m"])
     slab = shapely.union_all(faces).buffer(0) if faces else None
-    outline = Polygon(max(shapely.get_parts(slab), key=lambda g: g.area).exterior) if slab else None
+    # the reference is the storey's own slabs: its floor at its level and its ceiling at the next one. On a terrace
+    # level that slab is the deck (the walkable top); the structural slab below it does not count (user
+    # 2026-10-13, #88) - with the floor taken too a storey under a terrace keeps a full reference
+    own = shapely.union_all(faces + _up_faces_at(v, slab_tris, lv["elev_m"])).buffer(0) if slab_tris is not None \
+        and len(slab_tris) else Polygon()
+    outline = Polygon(max(shapely.get_parts(own), key=lambda g: g.area).exterior) if not own.is_empty else None
     reach = outline.buffer(dc.ATTACHMENT_FROM_M) if outline is not None else None
     pieces, left_out = [], 0
-    for part in rest_parts:                              # part by part: a balcony is left out whole, the
-        if not len(part):                                # panel it stands on stays
-            continue
+    for part in rest_parts:                              # segment by segment (user 2026-10-13, #87): the facade
+        if not len(part):                                # part of a part stays facade, what stands further than
+            continue                                     # the attachment reach off the slabs is a candidate
         z = v[part][:, :, 2]
         if z.min() >= zmid or z.max() <= zmid:
             continue
-        segs = _section(v, part, zmid)
+        segs = [LineString(sg) for sg in _section(v, part, zmid)]
+        if reach is not None:
+            kept = [sg for sg in segs if sg.within(reach)]
+            if len(kept) < len(segs):
+                left_out += 1
+                kept = _prune_spurs(kept, [sg for sg in segs if not sg.within(reach)])
+            segs = kept
         if not segs:
             continue
-        lines = shapely.union_all([LineString(sg) for sg in segs])
-        shape = shapely.union_all([*polygonize(getattr(lines, "geoms", [lines])), lines.buffer(WELD_M)])
-        if reach is not None and not shape.within(reach):
-            left_out += 1
-            continue
-        pieces.append(shape)
+        lines = shapely.union_all(segs)
+        pieces.append(shapely.union_all([*polygonize(getattr(lines, "geoms", [lines])), lines.buffer(WELD_M)]))
     if not pieces:
         raise SpecError(f"level {lv['name']}: no facade part is cut at mid storey ({zmid:.3f} m); contours by "
                         "panels need them (rule 2)")
@@ -803,8 +810,8 @@ def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
     if env is None:
         raise SpecError(f"level {lv['name']}: the facade parts at {zmid:.3f} m do not close round the building "
                         f"with joints up to 0.10 m; the contour is not invented (rule 2). "
-                        f"{_open_facade_facts(pieces, outline)}; {left_out} part(s) left out as standing further "
-                        f"than {dc.ATTACHMENT_FROM_M} m off the slab")
+                        f"{_open_facade_facts(pieces, outline)}; {left_out} part(s) with pieces left out as standing "
+                        f"further than {dc.ATTACHMENT_FROM_M} m off the slabs")
     poly = orient(env.simplify(RELIEF_M, preserve_topology=True), sign=1.0)
     rep = {"contour_rule": f"panels at {zmid:.3f} m (rule 2)", "measured_by": "panels",
            "envelope_vertices": len(env.exterior.coords) - 1, "contour_vertices": len(poly.exterior.coords) - 1,
@@ -844,6 +851,33 @@ def _facade_ring(pieces, joint):
         return None
     shrunk = outer.buffer(-r)
     return Polygon(max(shapely.get_parts(shrunk), key=lambda g: g.area).exterior) if not shrunk.is_empty else None
+
+
+def _prune_spurs(kept, dropped):
+    """A protrusion cut at the attachment reach leaves its root as dangling chains on the facade: walk from every
+    cut point along chains of degree 2 and remove them up to the junction with the facade (degree 3 or more).
+    Closed panel outlines and lone lines not tied to a cut stay (#87, user 2026-10-13: the protrusion as a whole
+    is the candidate)."""
+    if not kept:
+        return kept
+    noded = [LineString(c) for g in shapely.get_parts(shapely.union_all(kept)) for c in
+             zip(g.coords[:-1], g.coords[1:])]
+    key = lambda p: (round(p[0], 4), round(p[1], 4))                      # noqa: E731
+    adj = defaultdict(set)
+    for i, sg in enumerate(noded):
+        a, b = key(sg.coords[0]), key(sg.coords[-1])
+        adj[a].add(i)
+        adj[b].add(i)
+    cut = {key(c) for sg in dropped for c in (sg.coords[0], sg.coords[-1])}
+    gone = set()
+    for start in [n for n in adj if n in cut]:
+        node = start
+        while len(adj[node] - gone) == 1:                                 # a dangling end: follow it inward
+            i = next(iter(adj[node] - gone))
+            gone.add(i)
+            a, b = key(noded[i].coords[0]), key(noded[i].coords[-1])
+            node = b if a == node else a
+    return [sg for i, sg in enumerate(noded) if i not in gone]
 
 
 def _open_facade_facts(pieces, outline):
