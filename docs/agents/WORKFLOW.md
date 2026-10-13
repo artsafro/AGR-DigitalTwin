@@ -47,6 +47,8 @@ Rules:
 - After every engine run the main agent calls `independent-checker` before it reports "done".
 - A subagent's result is data, not a decision. The main agent weighs it, and it asks the user only about the
   model or the object (`questions-only` rule).
+- Disputed geometry: look first, then classify (user 2026-10-13) - every group of a classifier's verdict, every
+  question and every stop is shown isolated on the body (renders, three views, sizes) before a rule or a question.
 
 ## Reports
 

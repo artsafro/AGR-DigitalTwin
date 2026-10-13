@@ -350,7 +350,10 @@ def _drop_small_kinks(points):
     return keep if len(keep) >= 3 else list(points)
 
 
-def _contour_points(poly):
+WELD_DEFAULT_M = 0.003    # the building's weld (spec weld_m, user 2026-10-13): contour points this close are one
+
+
+def _contour_points(poly, weld=WELD_DEFAULT_M):
     if poly.is_empty or poly.geom_type != "Polygon" or len(poly.exterior.coords) < 4:
         raise SpecError("a level contour vanished (its parts are all relief, <= 0.10 m): the source is too small - "
                         "check its units (pattern markup-helpers: scene Unit Scale 1.0, metres)")
@@ -358,6 +361,15 @@ def _contour_points(poly):
     pts = _drop_small_kinks(_rounded_corners(np.array(poly.exterior.coords)[:-1]))
     out = [[round(float(x), 3) + 0.0, round(float(y), 3) + 0.0] + ([{"r": round(r, 3)}] if r else [])
            for (x, y), r in pts]
+    welded = []                                  # points within the weld (inclusive) of the last kept one are one
+    for p in out:
+        if not welded or np.hypot(p[0] - welded[-1][0], p[1] - welded[-1][1]) > weld + 1e-9:
+            welded.append(p)
+    while len(welded) > 3 and np.hypot(welded[-1][0] - welded[0][0], welded[-1][1] - welded[0][1]) <= weld + 1e-9:
+        welded.pop()
+    if len(welded) < 3 or not Polygon([p[:2] for p in welded]).is_valid:
+        raise SpecError(f"a level contour is no simple polygon once its points are welded at {weld} m (weld_m)")
+    out = welded
     start = min(range(len(out)), key=lambda i: (out[i][1], out[i][0]))
     return out[start:] + out[:start]
 
@@ -1666,7 +1678,8 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
                 poly, rep, dev, ms, dr, parapet, raw = _level_contour(
                     v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]), below=prev,
                     extra=np.vstack([tris[pt] for pt in parts[1:]]) if len(parts) > 1 else None)
-            points = _contour_points(poly)               # its own check too, inside the storey (review 1 of #80)
+            points = _contour_points(poly, obj_cfg.get("weld_m", WELD_DEFAULT_M))   # its own check too, inside
+                                                         # the storey (review 1 of #80)
         except SpecError as exc:
             if found is None:
                 raise
@@ -1852,5 +1865,6 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
                 **({"spec_version": "0.7"} if structures else {"spec_version": "0.6"} if thickness is not None
                    else {"spec_version": "0.5"} if decor
                    else {"spec_version": "0.4"} if terraces else {}),
-                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", OPENING_DEPTH_DEFAULT_M), **plate)
+                opening_depth_default_m=obj_cfg.get("opening_depth_default_m", OPENING_DEPTH_DEFAULT_M),
+                weld_m=obj_cfg.get("weld_m", WELD_DEFAULT_M), **plate)
     return spec, report

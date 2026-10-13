@@ -97,6 +97,9 @@ def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
     return result("silhouettes", worst >= tol["silhouette_iou_min"], worst, tol["silhouette_iou_min"], {"iou": ious})
 
 
+GAP_NOISE_M = 1e-6   # a readback gap measured within this of the pattern range is in it
+
+
 def inner_outlines_match(hole, plate, overlap, weld):
     """Every inner outline of the hole (a shaft) shrunk by the overlap is one outline, and the plate's inner
     outlines are exactly these, one to one (reviews 1-2 of PR #65: a shaft that vanishes or splits never
@@ -185,7 +188,9 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
         elif flat_loop and closed:
             for name, lz in model.levels.items():
                 dz = float(z.mean()) - lz
-                if roof_faces and np.all(nz > 0.99) and gap_lo - tol["weld_m"] <= dz <= gap_hi + tol["weld_m"]:
+                # an inset gap is never welded (user 2026-10-13): past weld_m, within the pattern's range
+                if (roof_faces and np.all(nz > 0.99) and dz > tol["weld_m"]
+                        and gap_lo - GAP_NOISE_M <= dz <= gap_hi + GAP_NOISE_M):
                     kind, level = "roof-plane", name
                 elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
                     kind, level = "roof-foot", name
@@ -700,8 +705,10 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
 
 
 def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None) -> dict:
-    """All §5 checks; tol is the `geometry` block of tolerances.json."""
+    """All §5 checks; tol is the `geometry` block of tolerances.json. The weld is the building's (spec weld_m,
+    user 2026-10-13): open edges, T-junctions and non-manifold are counted after welding the readback by it."""
     ranges = ranges or load_ranges()
+    tol = {**tol, "weld_m": spec.weld_m}
     checks = [check_bbox(model, etalon, tol), check_levels(model, etalon, spec, tol),
               check_floor_areas(model, etalon, spec, tol), check_silhouettes(model, etalon, tol),
               check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m),

@@ -45,7 +45,6 @@
       "y",
       "top"
     ],
-    "weld_m": 0.0001,
     "decor_tol_m": 0.01,
     "non_manifold_edges_max": 0,
     "roof_inset_gap_m": [

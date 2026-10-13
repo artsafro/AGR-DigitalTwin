@@ -730,3 +730,12 @@ def test_slab_data_follow_the_ceiling_not_the_reference():
     spec, report = extract_spec(panelised(slabs_at={1: big, 2: SQUARE10}), PANEL_OBJECT)
     rep = report["floors"]["L1"]
     assert rep["slab_inside_facade_share"] == 1.0 and rep["facade_offset_m"] == pytest.approx(0.1, abs=0.011)
+
+
+def test_contour_points_within_the_weld_are_one():
+    """User 2026-10-13: contour points closer than weld_m (3 mm, inclusive) are one point."""
+    from dt_ai.spec.mesh import _contour_points
+    poly = Polygon([[0, 0], [5, 0], [5, 0.002], [10, 0.002], [10, 10], [0, 10]])   # a 2 mm step
+    pts = _contour_points(poly, 0.003)
+    assert len(pts) == len(_contour_points(poly, 0.0001)) - 1
+    assert all(np.hypot(a[0] - b[0], a[1] - b[1]) > 0.003 for a, b in zip(pts, pts[1:] + pts[:1]))

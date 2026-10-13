@@ -21,7 +21,8 @@ from twinqa.geometry.mesh import from_dump
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = Spec.model_validate(json.loads((ROOT / "tests/fixtures/spec-b01-v0.3.json").read_text(encoding="utf-8")))
 TOLERANCES = ROOT / "benchmark/bench-b01-box/tolerances.json"
-TOL = json.loads(TOLERANCES.read_text(encoding="utf-8"))["geometry"]
+# the weld is the spec's (weld_m, user 2026-10-13); checks.run puts it into the tolerances
+TOL = {**json.loads(TOLERANCES.read_text(encoding="utf-8"))["geometry"], "weld_m": Spec.model_fields["weld_m"].default}
 WINDOWS = [(0, 2.0, 3.5, 0.9, 2.4), (0, 2.0, 3.5, 4.2, 5.7)]
 FACADE, REVEAL, PLANE, ROOF = 1, 6, 11, 21
 
@@ -293,8 +294,8 @@ def test_a_solid_roof_in_a_parapet_fails():
     assert mesh["details"]["open_loops"] == [] and mesh["value"]["open_loops_not_allowed"] == 0
 
 
-@pytest.mark.parametrize("gap, ok", [(0.001, False), (0.002, True), (0.010, True), (0.012, False), (0.05, False)])
-def test_inset_gap_is_2_to_10_mm(gap, ok):
+@pytest.mark.parametrize("gap, ok", [(0.004, True), (0.010, True), (0.012, False), (0.05, False)])
+def test_inset_gap_is_past_the_weld_to_10_mm(gap, ok):
     report = run(box_dump(roof_inset=gap), box_dump(roof_inset=gap), spec=plates(gap=gap))
     assert (by_id(report)["mesh"]["status"] == "pass") == ok
 
@@ -409,13 +410,14 @@ def test_acute_corner_keeps_its_full_mitre():
     assert sorted(lp["kind"] for lp in loops) == ["bottom", "roof-foot", "roof-plane"], loops
 
 
-def test_evenness_tolerance_is_the_weld_tolerance():
-    # Codex review 2 of PR #54: one side embedded 0.9 mm more is uneven
+@pytest.mark.parametrize("shift, ok", [(0.0009, True), (0.0045, False)])
+def test_evenness_tolerance_is_the_weld_tolerance(shift, ok):
+    # Codex review 2 of PR #54: one side embedded more than the weld (3 mm, user 2026-10-13) is uneven
     dump = box_dump(roof_inset=0.005)
     for v in dump["meshes"][0]["vertices"]:
         if abs(v[2] - 6.605) < 1e-6 and v[0] > 9:
-            v[0] += 0.0009
-    assert by_id(run(dump, box_dump()))["mesh"]["status"] == "fail"
+            v[0] += shift
+    assert (by_id(run(dump, box_dump()))["mesh"]["status"] == "pass") == ok
 
 
 # issue #57: a vertex where two face fans meet (no shared edge through it) is non-manifold

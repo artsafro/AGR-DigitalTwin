@@ -185,10 +185,17 @@ class Spec(SpecPart):
     # that overlaps its hole by plate_overlap_m; building parameters, the etalons' 5 mm / 20 mm by default
     plate_gap_m: Positive = 0.005
     plate_overlap_m: Positive = 0.02
+    # the building's weld (user 2026-10-13): vertices and cut lines closer than this (inclusive) are one - in the
+    # engine's grid, the checkers' readback and the extractor's contour points; how the user welds by hand
+    weld_m: Positive = 0.003
 
     @model_validator(mode="after")
     def consistent(self):
         names = [lv.name for lv in self.levels]
+        # a gap is never welded: every gap of the spec (the inset plate's, the decor seams' plate_gap_m x 12)
+        # lies beyond weld_m (user 2026-10-13)
+        if self.plate_gap_m <= self.weld_m:
+            raise ValueError(f"plate_gap_m {self.plate_gap_m} m must be larger than weld_m {self.weld_m} m")
         if self.terraces and self.spec_version not in ("0.4", "0.5", "0.6", "0.7"):
             raise ValueError("terraces need spec_version 0.4")
         if self.decor and self.spec_version not in ("0.5", "0.6", "0.7"):
