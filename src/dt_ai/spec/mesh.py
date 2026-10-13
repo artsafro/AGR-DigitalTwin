@@ -1333,8 +1333,16 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
     # body: left out and listed (pattern roof-inset-plane, user 2026-10-13; OBJ03's 0.04 m2 at 96.55 m)
     small = [h for h in holes if _sizes(h)[1] < DOOR_W_M[0]]
     holes = [h for h in holes if _sizes(h)[1] >= DOOR_W_M[0]]
+    # the contour is simplified within RELIEF_M (Douglas-Peucker, rule 2): a strip that lies wholly within RELIEF_M
+    # of the contour's line is that line standing off the measured roof, no opening - left out and listed (#84;
+    # OBJ03, user 2026-10-13: the corner niche lies outside the contour, a 0.05 m strip at 96.55 m stopped)
+    band = top_contour.boundary.buffer(RELIEF_M + WELD_M)
+    sliver = [h for h in holes if h.within(band)]
+    holes = [h for h in holes if not h.within(band)]
     ignored = [{"area_m2": round(h.area, 3), "at": [round(h.centroid.x, 2), round(h.centroid.y, 2)],
-                "sizes_m": [round(x, 3) for x in _sizes(h)]} for h in small]
+                "sizes_m": [round(x, 3) for x in _sizes(h)],
+                **({"why": "within the contour simplification (#84)"} if k >= len(small) else {})}
+               for k, h in enumerate(small + sliver)]
     if holes:
         # lined at mid storey and in the storey's upper part: walls that stop well below the roof
         # line nothing (PR #35 review 2, P1)

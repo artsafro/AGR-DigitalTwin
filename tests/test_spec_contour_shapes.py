@@ -613,6 +613,22 @@ def test_a_small_roof_hole_is_no_opening_and_is_listed():
         extract_spec(roofed([[5, 5], [5.2, 5], [5.2, 5.8], [5, 5.8]]), OBJECT)    # 0.2 x 0.8 m: an opening
 
 
+def test_a_roof_strip_within_the_contour_simplification_is_no_opening():
+    """#84 (OBJ03, user 2026-10-13): a 2 m long strip at the facade line, uncovered within the contour's 0.10 m
+    simplification, is left out and listed; a 0.15 m deep one stays an opening that asks."""
+    def notched(depth):
+        b = Mesh("Body")
+        walls(b, SQUARE10, 0.0, 6.6)
+        flat(b, Polygon([[0, 0], [3, 0], [3, depth], [5, depth], [5, 0], [10, 0], [10, 10], [0, 10]]), 6.6, up=True)
+        flat(b, Polygon(SQUARE10), 0.0, up=False)
+        return dump_of(b)
+    spec, report = extract_spec(notched(0.05), OBJECT)
+    assert report["roof"]["holes_ignored"] == [{"area_m2": 0.1, "at": [4.0, 0.03], "sizes_m": [0.05, 2.0],
+                                                "why": "within the contour simplification (#84)"}]
+    with pytest.raises(SpecError, match="that is not a shaft"):
+        extract_spec(notched(0.15), OBJECT)
+
+
 def test_the_id_ranges_cache_follows_the_file(tmp_path, monkeypatch):
     """User 2026-10-13: the cache of standards/material_id_ranges.yaml follows the file - another path, or the
     same path rewritten, is read again (review 2 of #83: the test must fail on a per-group cache)."""
