@@ -176,14 +176,20 @@ def _weld(v):
     return rep
 
 
-@functools.lru_cache(maxsize=None)
 def _group_ids(group):
-    """Material ids of one group of standards/material_id_ranges.yaml (ADR 0001); read once per process (the file
-    is locked, standards/README.md) - parsed per call it cost OBJ03 42 of 48 minutes in _plane_suspects."""
-    import yaml
+    """Material ids of one group of standards/material_id_ranges.yaml (ADR 0001)."""
     from dt_ai.core.io import repo_root
-    g = yaml.safe_load((repo_root() / "standards/material_id_ranges.yaml").read_text(encoding="utf-8"))
-    return frozenset(range(g["groups"][group]["first"], g["groups"][group]["last"] + 1))
+    path = repo_root() / "standards/material_id_ranges.yaml"
+    g = _ranges(str(path), path.stat().st_mtime_ns)["groups"][group]
+    return frozenset(range(g["first"], g["last"] + 1))
+
+
+@functools.lru_cache(maxsize=8)
+def _ranges(path, mtime_ns):
+    """The parsed ranges file, once per path and version (user 2026-10-13: the cache follows the file; parsed
+    per call it cost OBJ03 42 of 48 minutes in _plane_suspects)."""
+    import yaml
+    return yaml.safe_load(open(path, encoding="utf-8").read())
 
 
 def _opening_ids():
@@ -702,6 +708,9 @@ def _slab_band_from(z0, z1):
     return z1 - min(SLAB_EDGE_BAND_M, 0.5 * (z1 - z0))
 
 
+FACADE_VOID_SHARE = 0.25  # a closed facade ring encloses at least this share of its outline as void (an inner mass
+                          # joined to it included); an open C or a lone mass encloses none
+OFFSET_STEP_M = 0.02      # facade_offset_m sampled along the envelope this often (reported data, +-0.01 m)
 PANELISED = "panelised"   # object.json source_class of a panel facade without a shell (rule 1, user 2026-10-13)
 PANEL_HINT_SHARE = 0.5    # the hint to set source_class: other parts' area outside the body's plan above this share
                           # (user 2026-10-13: the trigger of a hint, not a geometry rule)
@@ -748,41 +757,122 @@ def _panel_hint(v, tris, parts, owners, levels):
         return
     centres = shapely.points(v[tris[rest]][:, :, :2].mean(axis=1))
     outside = float(area[~shapely.covered_by(centres, plan)].sum()) if not plan.is_empty else float(area.sum())
-    if outside / total > PANEL_HINT_SHARE:
+    candidates = _slab_candidates(v, tris, owners, levels) if outside / total > PANEL_HINT_SHARE else []
+    if candidates and candidates != "none found":    # no slabs at the levels: a big canopy, no panel facade
         raise SpecError(f"{outside / total:.0%} of all surface is other parts outside the body's plan: this looks "
                         f"like a panel facade without a shell. Set object.json source_class: \"{PANELISED}\" and "
-                        f"slabs: [mesh names] (contours by slabs, rule 1); slab candidates: "
-                        f"{_slab_candidates(v, tris, owners, levels)}")
+                        f"slabs: [mesh names] (contours by panels, rules 1-2); slab candidates: {candidates}")
 
 
-def _slab_contour(v, slab_tris, rest, lv, nxt):
-    """Rule 2 (user 2026-10-13): a storey's contour is the outline of the slab at the next level (its ceiling),
-    deviations within RELIEF_M of the wall line collapsed (Douglas-Peucker); checked at mid storey against the
-    other parts' section (the panels): none further than RELIEF_M outside the contour and the contour nowhere
-    further than RELIEF_M from them - a larger gap is a 'slab-envelope' question, the contour stands."""
-    faces = _up_faces_at(v, slab_tris, nxt["elev_m"])
-    if not faces:
-        raise SpecError(f"level {lv['name']}: no slab top at {nxt['elev_m']} m (the ceiling of the storey) in the "
-                        "named slabs; contours by slabs need one (rule 2)")
-    raw = max(shapely.get_parts(shapely.union_all(faces).buffer(0)), key=lambda g: g.area)
-    raw = Polygon(raw.exterior)
-    poly = orient(raw.simplify(RELIEF_M, preserve_topology=True), sign=1.0)
-    rep = {"contour_rule": f"slab at {nxt['elev_m']} m (rule 2)", "measured_by": "slabs",
-           "slab_area_m2": round(raw.area, 3), "slab_vertices": len(raw.exterior.coords) - 1,
-           "contour_vertices": len(poly.exterior.coords) - 1}
+def _panel_contour(v, slab_tris, rest_parts, lv, nxt):
+    """Rule 2 (user 2026-10-13): on a panel facade the storey's contour is the envelope of the panels' outer faces
+    at mid storey - the section of every part but the slabs, pieces further than ATTACHMENT_FROM_M off the
+    ceiling slab left out part by part (attachment candidates, EG2), joints within RELIEF_M closed, the outer line,
+    deviations within RELIEF_M collapsed (Douglas-Peucker). The ceiling slab (the next level) is the check:
+    the panels stand outside it by facade_offset_m (data, no question). Over a ledge to the storey below, the
+    walkable part is the slab there and a parapet is the parts standing on the ledge's outer edge: a terrace
+    (the level is the walkable top, user 2026-10-13)."""
     zmid = (lv["elev_m"] + nxt["elev_m"]) / 2
-    segs = _section(v, rest, zmid) if len(rest) else []
-    if not segs:
-        rep["envelope"] = {"at_m": round(zmid, 3), "gap_m": None, "why": "no other part cut at mid storey"}
+    faces = _up_faces_at(v, slab_tris, nxt["elev_m"])
+    slab = shapely.union_all(faces).buffer(0) if faces else None
+    outline = Polygon(max(shapely.get_parts(slab), key=lambda g: g.area).exterior) if slab else None
+    reach = outline.buffer(dc.ATTACHMENT_FROM_M) if outline is not None else None
+    pieces, left_out = [], 0
+    for part in rest_parts:                              # part by part: a balcony is left out whole, the
+        if not len(part):                                # panel it stands on stays
+            continue
+        z = v[part][:, :, 2]
+        if z.min() >= zmid or z.max() <= zmid:
+            continue
+        segs = _section(v, part, zmid)
+        if not segs:
+            continue
+        lines = shapely.union_all([LineString(sg) for sg in segs])
+        shape = shapely.union_all([*polygonize(getattr(lines, "geoms", [lines])), lines.buffer(WELD_M)])
+        if reach is not None and not shape.within(reach):
+            left_out += 1
+            continue
+        pieces.append(shape)
+    if not pieces:
+        raise SpecError(f"level {lv['name']}: no facade part is cut at mid storey ({zmid:.3f} m); contours by "
+                        "panels need them (rule 2)")
+    env = _facade_ring(pieces, RELIEF_M)
+    # the facade must close round the building as a ring (joints up to 0.10 m); open, it is a stop - never the
+    # slab's line instead. How much of the ceiling slab lies inside it is data (a cantilever or a terrace slab
+    # above the storey overhangs the facade)
+    if env is None:
+        raise SpecError(f"level {lv['name']}: the facade parts at {zmid:.3f} m do not close round the building "
+                        f"with joints up to 0.10 m; the contour is not invented (rule 2). "
+                        f"{_open_facade_facts(pieces, outline)}; {left_out} part(s) left out as standing further "
+                        f"than {dc.ATTACHMENT_FROM_M} m off the slab")
+    poly = orient(env.simplify(RELIEF_M, preserve_topology=True), sign=1.0)
+    rep = {"contour_rule": f"panels at {zmid:.3f} m (rule 2)", "measured_by": "panels",
+           "envelope_vertices": len(env.exterior.coords) - 1, "contour_vertices": len(poly.exterior.coords) - 1,
+           "attachment_pieces_left_out": left_out}
+    if slab is None:
+        rep["slab"] = f"no ceiling slab at {nxt['elev_m']} m"
         return poly, rep
-    lines = shapely.union_all([shapely.LineString(sg) for sg in segs])
-    out = lines.difference(poly)
-    gap_out = out.hausdorff_distance(poly.exterior) if not out.is_empty else 0.0
-    ring = poly.exterior
-    probes = shapely.points([ring.interpolate(d).coords[0] for d in np.arange(0.0, ring.length, PARAPET_SAMPLE_M)])
-    gap_in = float(shapely.distance(probes, lines).max())
-    rep["envelope"] = {"at_m": round(zmid, 3), "outside_m": round(float(gap_out), 3), "uncovered_m": round(gap_in, 3)}
+    rep["slab_area_m2"] = round(slab.area, 3)          # measured surface: shafts and holes are not slab
+    rep["slab_inside_facade_share"] = round(env.intersection(outline).area / outline.area, 3)   # data
+    ring = env.exterior
+    pts = shapely.points([ring.interpolate(d).coords[0] for d in np.arange(0.0, ring.length, OFFSET_STEP_M)])
+    off = shapely.distance(pts, outline.exterior) * np.where(shapely.covered_by(pts, outline), -1.0, 1.0)
+    rep["facade_offset_m"] = round(float(np.median(off)), 3)     # panels outside the slab (+), inside (-): data
+    rep["facade_offset_range_m"] = [round(float(off.min()), 3), round(float(off.max()), 3)]
     return poly, rep
+
+
+def _facade_ring(pieces, joint):
+    """The facade's outer line when its pieces close round the building with joints up to `joint`: grown by half
+    the joint, the largest piece must enclose a void of at least FACADE_VOID_SHARE of its outline (else it is a C
+    or a lone mass); its outline filled and shrunk back (a joint at a corner cannot open again, convex corners come back
+    exactly). None when open."""
+    r = joint / 2
+    grown = shapely.union_all(pieces).buffer(r)
+    if grown.is_empty:
+        return None
+    ring = max(shapely.get_parts(grown), key=lambda g: g.area)
+    outer = Polygon(ring.exterior)
+    if outer.area - ring.area < FACADE_VOID_SHARE * outer.area:    # inner walls and masses may join the ring
+        return None
+    shrunk = outer.buffer(-r)
+    return Polygon(max(shapely.get_parts(shrunk), key=lambda g: g.area).exterior) if not shrunk.is_empty else None
+
+
+def _open_facade_facts(pieces, outline):
+    """What the user needs to answer an open facade (facts only, nothing is taken from them): the joint at which
+    it would close, and the slab it should enclose."""
+    joint = next((j for j in (0.2, 0.3, 0.5, 0.8) if _facade_ring(pieces, j) is not None), None)
+    out = [f"it would close with joints up to {joint} m" if joint else "it does not close even with joints up to 0.8 m"]
+    if outline is not None:
+        c = outline.representative_point()
+        out.append(f"the ceiling slab: {outline.area:.1f} m2 round ({c.x:.2f}, {c.y:.2f})")
+    return "; ".join(out)
+
+
+def _panel_terrace(v, slab_tris, rest, lv, nxt, poly, below):
+    """A ledge between this storey's and the lower storey's panel contours: its walkable part is the slab at this
+    level; a terrace when parts stand on the ledge's outer edge above the level (the parapet), else a plain floor
+    step. Returns the report's terrace entry or None."""
+    ledge = below.difference(poly).buffer(-RELIEF_M / 2).buffer(RELIEF_M / 2)   # a strip up to 0.10 m is relief
+    if ledge.area < HOLE_MIN_M2:
+        return None
+    walk = shapely.union_all(_up_faces_at(v, slab_tris, lv["elev_m"]) or [Polygon()]).intersection(ledge)
+    edge = below.exterior.difference(poly.buffer(PARAPET_EDGE_M))
+    if walk.area < HOLE_MIN_M2 or edge.is_empty:
+        return None
+    p = v[rest]
+    z0, z1 = lv["elev_m"], nxt["elev_m"]
+    hits = p[(p[:, :, 2].max(axis=1) > z0 + EVENT_MIN_M) & (p[:, :, 2].min(axis=1) < z1)]
+    pts = hits.reshape(-1, 3)
+    pts = pts[(pts[:, 2] > z0 + EVENT_MIN_M) & (pts[:, 2] < z1)]
+    xy = shapely.points(pts[:, :2]) if len(pts) else None    # on the ledge's outer edge, off this storey's facade
+    on = ((shapely.distance(xy, edge) <= PARAPET_EDGE_M) & (shapely.distance(xy, poly.exterior) > PARAPET_EDGE_M)
+          if len(pts) else np.zeros(0, bool))
+    if not on.any():
+        return None
+    return {"parapet_h_m": round(float(pts[on, 2].max() - z0), 3), "ledge_m2": round(ledge.area, 3),
+            "walkable_m2": round(walk.area, 3), "rule": "panels on the ledge edge (rule 2)"}
 
 
 def _mid_storey_shape(groups, closed, z0, z1):
@@ -1177,6 +1267,12 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
         raise SpecError(f"roof at {roof_z:.3f} m and the surfaces above it close only {closed:.0%} of the top "
                         f"floor (< {ROOF_CLOSED:.0%}): roof missing or open; ask the user")
     holes = [h for h in shapely.get_parts(top_contour.difference(cover)) if h.area >= HOLE_MIN_M2]
+    # an opening of the slab with both sizes under the narrowest opening (DOOR_W_M[0]) is no opening of the
+    # body: left out and listed (pattern roof-inset-plane, user 2026-10-13; OBJ03's 0.04 m2 at 96.55 m)
+    small = [h for h in holes if _sizes(h)[1] < DOOR_W_M[0]]
+    holes = [h for h in holes if _sizes(h)[1] >= DOOR_W_M[0]]
+    ignored = [{"area_m2": round(h.area, 3), "at": [round(h.centroid.x, 2), round(h.centroid.y, 2)],
+                "sizes_m": [round(x, 3) for x in _sizes(h)]} for h in small]
     if holes:
         # lined at mid storey and in the storey's upper part: walls that stop well below the roof
         # line nothing (PR #35 review 2, P1)
@@ -1194,11 +1290,18 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
     # a parapet is structure, not a height difference (Codex review 2 of PR #54): there is none when the
     # roof surface itself runs out to the outer wall line and reaches the wall top there
     parapet = _has_parapet(edge, pts, p[idx])
-    stats = {"parapet": parapet,
+    stats = {"parapet": parapet, **({"holes_ignored": ignored} if ignored else {}),
              "surface_z_min_m": round(float(p[idx][:, :, 2].min()), 3), "surface_z_max_m": round(float(p[idx][:, :, 2].max()), 3),
              "slope_max_deg": round(float(slope[idx].max()), 2),
              "slope_mean_deg": round(float((slope[idx] * areas).sum() / areas.sum()), 2)}
     return roof_z, parapet_top if on_edge else roof_z, round(closed, 3), stats
+
+
+def _sizes(g):
+    """The two sides of a shape's minimum rotated rectangle, shorter first."""
+    box = np.asarray(g.minimum_rotated_rectangle.exterior.coords)[:3]
+    a, b = sorted(float(np.linalg.norm(box[i + 1] - box[i])) for i in range(2))
+    return a, b
 
 
 def _parapet_thickness(v, tris, roof_z, top_z, top_contour):
@@ -1410,8 +1513,11 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     for lv, nxt in zip(levels, levels[1:]):
         try:
             if panelised:
-                poly, rep = _slab_contour(v, body, tris[np.flatnonzero(~mine)], lv, nxt)
+                rest = tris[np.flatnonzero(~mine)]
+                poly, rep = _panel_contour(v, body, [tris[pt] for pt in parts[1:]] + [plane_tris[:, :3]], lv, nxt)
                 dev, ms, dr, parapet, raw = [], [], [], (), poly
+                if prev is not None and (t := _panel_terrace(v, body, rest, lv, nxt, poly, prev)) is not None:
+                    rep["terrace"] = t
             else:
                 poly, rep, dev, ms, dr, parapet, raw = _level_contour(
                     v, body, lv["elev_m"], nxt["elev_m"], lv["name"], at_m.get(lv["name"]), below=prev,
@@ -1435,7 +1541,8 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
         rep["area_m2"] = round(poly.area, 3)
         report["floors"][lv["name"]] = rep
         floors.append({"level": lv["name"], "contour": points, "openings": []})
-        if polys:                                  # anything else standing on a ledge (both contours final)
+        if polys and not panelised:                # anything else standing on a ledge (both contours final;
+                                                   # on panels the ledge is read by _panel_terrace)
             # neither the final contour (a door recess filled) nor the raw section shape (a relief left out of
             # the contour) is ledge (review 1 of PR #66)
             on = _ledge_faces(v, body, polys[-1].difference(poly.union(raw)), lv["elev_m"], nxt["elev_m"], *parapet)
@@ -1492,12 +1599,6 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     questions = (_questions(levels, floors, polys, pieces, stats) + op.break_questions(breaks, levels) + suspects
                  + _source_questions(dump, levels))
     for name, rep in report["floors"].items():        # structure on a ledge that is no terrace (review 1 of PR #61)
-        env = rep.get("envelope", {})                 # rule 2: a slab contour off the panels is asked, it stands
-        gap = max(env.get("outside_m") or 0.0, env.get("uncovered_m") or 0.0)
-        if gap > RELIEF_M + 1e-9:
-            questions.append({"priority": "high", "kind": "slab-envelope", "levels": [name], "wall": None,
-                              "depth_m": round(gap, 3), "length_m": None, "facade_share": None,
-                              "heights_m": [env["at_m"], env["at_m"]], "at": None})
         if rep.get("slab_edge", {}).get("open_m"):    # rule 3: the contour stands, the open slab edge is asked
             opened = rep["slab_edge"]["open_m"]        # (review 2 of #81)
             questions.append({"priority": "high", "kind": "slab-edge-open", "levels": [name], "wall": None,
@@ -1515,6 +1616,8 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     report["questions"] = questions
     report["section_relief_parts"] = stats["section_relief_parts"]
     others = [tris[pt] for pt in parts[1:]]
+    if panelised:                                    # the roof, its parapet and shafts are panels as much as
+        body, others = tris, []                      # slabs (review 1 of #83): measured on every part
     _stage(found, "roof")
     roof_parts = _roof_parts(v, others, levels[-1], polys[-1])
     roof_z, top_z, closed, roof_stats = _roof(v, body, levels[-2], levels[-1], polys[-1],

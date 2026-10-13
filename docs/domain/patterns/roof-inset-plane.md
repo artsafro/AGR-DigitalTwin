@@ -30,6 +30,10 @@ etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `t
 4. Required, not only allowed: the roof with a parapet and every terrace must carry the joint; a solid
    slab fails. Any other open loop except the bottom ring is an error. A roof without a parapet has
    nothing to inset into and stays solid.
+5. Small openings in a slab (user, 2026-10-13): an opening that is no shaft and whose both sizes are under
+   the narrowest opening width (0.7 m, `DOOR_W_M`) is no opening of the body. The extractor leaves it out
+   of the roof and lists it in the report (`roof.holes_ignored`: area, position, sizes). No new number. Case:
+   OBJ03, 0.04 m2 at 96.55 m.
 
 ## How to build
 
