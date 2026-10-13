@@ -175,6 +175,12 @@ draft (`pipeline_gate`). Without the flag nothing changed; B01 / B02 / B02t / K0
   thickness (one per building, user 2026-10-13). Measuring terrace parapets is issue #82.
 - B01 / B02 / B02t read 0.3 and K01 reads 0.555, the same as their build values. Models and checks are
   identical to main; the specs gain only version 0.6 and the thickness.
+#86 merged (3 Codex rounds, procedure of 2026-10-13): five read-only Claude Code subagents in
+`.claude/agents/`: source-inspector, pattern-librarian, bench-runner, independent-checker and mesh-reader. Their
+hooks live in `.claude/hooks/subagents.py`. A start reminder; a stop check that every changed tracked file is
+named and that independent-checker returns a pass/fail table; a Bash write guard; and independent-checker never
+reads `src/dt_ai/geometry/`. The rules are in `docs/agents/WORKFLOW.md`, and the review procedure (rounds by risk,
+P1 in the PR, P2 to issues) in `REVIEW_CHECKLIST.md`. Four of the five were verified by test calls on B01.
 #83 merged (3 Codex rounds): rules 1 and 2 for OBJ03 (user 2026-10-13), a panel facade without a shell.
 - `object.json` `source_class: "panelised"` and `slabs` switch the path on. Without them, the extractor stops
   with a hint and slab candidates when more than 50 % of the surface lies outside the body.
@@ -283,7 +289,7 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude: subagents PR (harness/subagents, review procedure of 2026-10-13), then the OBJ03 run (--collect-stops, stops to the user, then the model); no new harness PRs until the user has seen the OBJ03 model (user 2026-10-13); decor PR 4
+   Claude: the OBJ03 run (--collect-stops, stops to the user, then the model); no new harness PRs until the user has seen the OBJ03 model (user 2026-10-13); decor PR 4
    (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
