@@ -663,3 +663,38 @@ def test_a_marked_screen_enclosure_is_read_with_its_outline_and_top():
 def test_roof_screens_must_be_in_the_source():
     with pytest.raises(SpecError, match=r"roof_screens \['Nope'\] are not in the source"):
         extract_spec(_with_screened_equipment(), {**OBJECT, "roof_screens": ["Nope"]})
+
+
+def _screens(*rings, open_side=False, top=9.0):
+    m = Mesh("Screens")
+    for ring, z1 in rings:
+        edges = list(zip(ring, ring[1:] + ring[:1]))
+        for (x0, y0), (x1, y1) in edges[:-1] if open_side else edges:
+            m.quad((x0, y0, 6.6), (x1, y1, 6.6), (x1, y1, z1), (x0, y0, z1))
+    return m
+
+
+def test_two_screen_enclosures_keep_their_outlines_and_tops():
+    """Review 1 of #92: two enclosures named together - each its own outline and top."""
+    dump = box_building()
+    dump["meshes"].append(_screens(([(2, 2), (4, 2), (4, 4), (2, 4)], 9.0),
+                                   ([(6, 6), (7, 6), (7, 7), (6, 7)], 11.0)).dump())
+    spec, _ = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+    from shapely.geometry import Polygon
+    got = sorted((round(Polygon(rs.outline).area, 2), rs.z_top_m) for rs in spec.roof_structures)
+    assert got == [(1.0, 11.0), (4.0, 9.0)]
+
+
+def test_an_open_screen_is_a_stop():
+    dump = box_building()
+    dump["meshes"].append(_screens(([(3, 3), (7, 3), (7, 7), (3, 7)], 9.0), open_side=True).dump())
+    with pytest.raises(SpecError, match="do not close round an enclosure"):
+        extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+
+
+def test_a_screen_on_the_parapet_does_not_hide_its_thickness():
+    """Review 1 of #92: a screen [0, 0]-[3, 3] standing on the parapet corner; the parapet still reads 0.2 m."""
+    dump = box_building()
+    dump["meshes"].append(_screens(([(0, 0), (3, 0), (3, 3), (0, 3)], 9.0)).dump())
+    spec, report = extract_spec(dump, {**OBJECT, "roof_screens": ["Screens"]})
+    assert spec.roof.parapet_thickness_m == 0.2 and report["roof"]["parapet_thickness"]["by"] == "measured"

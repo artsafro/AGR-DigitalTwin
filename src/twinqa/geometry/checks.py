@@ -190,8 +190,10 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
                 elif np.all(np.abs(nz) < 0.01) and abs(dz) <= tol["weld_m"]:
                     kind, level = "roof-foot", name
         segs = [welded[list(ends[e]), :2] for e in edges]
-        if flat_loop and closed and structures:
-            ring = list(polygonize(shapely.linestrings(segs)))
+        upward = bool(np.all(c_mid > float(z.mean()) + tol["weld_m"])) if (c_mid := corners[tris_][:, :, 2].mean(
+            axis=1)).size else False
+        if flat_loop and closed and structures and roof_faces and upward:   # walls standing on it, roof ids: a
+            ring = list(polygonize(shapely.linestrings(segs)))              # shaft's open top is none (review 1)
             if len(ring) == 1 and any(abs(float(z.mean()) - zs) <= tol["weld_m"]
                                       and ring[0].exterior.hausdorff_distance(poly.exterior) <= tol["weld_m"]
                                       for poly, zs in structures):

@@ -104,6 +104,10 @@ class RoofStructure(SpecPart):
     def plan(self):
         if any(len(p) != 2 for p in self.outline):
             raise ValueError("roof structure outline: [x, y] points")
+        import shapely
+        poly = shapely.Polygon(self.outline)
+        if not poly.is_valid or poly.area <= 0:
+            raise ValueError("roof structure outline: a simple polygon with an area (review 1 of #92)")
         return self
 
 
