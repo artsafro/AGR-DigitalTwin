@@ -739,3 +739,10 @@ def test_contour_points_within_the_weld_are_one():
     pts = _contour_points(poly, 0.003)
     assert len(pts) == len(_contour_points(poly, 0.0001)) - 1
     assert all(np.hypot(a[0] - b[0], a[1] - b[1]) > 0.003 for a, b in zip(pts, pts[1:] + pts[:1]))
+
+
+def test_a_self_crossing_contour_stops_and_is_never_written():
+    """#97 (OBJ03): a contour whose line crosses itself is a stop, not an invalid ring in the spec."""
+    from dt_ai.spec.mesh import _contour_points
+    with pytest.raises(SpecError, match="crosses itself"):
+        _contour_points(Polygon([[0, 0], [10, 0], [10, 10], [4, 10], [4, -3], [3, -3], [3, 10], [0, 10]]))

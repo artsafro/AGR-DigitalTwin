@@ -147,8 +147,8 @@ def _cuts(values, lo, hi):
 
 class _Weld:
     """The building's weld along one plan axis (spec weld_m, user 2026-10-13: how the user welds by hand): a
-    value within the weld (inclusive) of a fixed value is that value; the other values closer than the weld
-    (chained) are one, at the smallest; a value off every group stays where it is. Fixed values (an earlier
+    value within the weld (inclusive) of a fixed value is that value; the other values within the weld of a
+    group's smallest join that group, at the smallest; a value off every group stays where it is. Fixed values (an earlier
     weld's results) never move."""
 
     def __init__(self, values, w, fixed=()):
@@ -156,7 +156,8 @@ class _Weld:
         free = sorted({_r(v) for v in values if self._near_fixed(v) is None})
         self.groups = []                                  # (lo, hi): the group's range, its value is lo
         for v in free:
-            if self.groups and v - self.groups[-1][1] <= w + FEATURE_TOL:
+            if self.groups and v - self.groups[-1][0] <= w + FEATURE_TOL:   # from the group's first: never
+                                                                               # moved further than the weld
                 self.groups[-1][1] = v
             else:
                 self.groups.append([v, v])

@@ -361,6 +361,9 @@ def _contour_points(poly, weld=WELD_DEFAULT_M):
     pts = _drop_small_kinks(_rounded_corners(np.array(poly.exterior.coords)[:-1]))
     out = [[round(float(x), 3) + 0.0, round(float(y), 3) + 0.0] + ([{"r": round(r, 3)}] if r else [])
            for (x, y), r in pts]
+    if not Polygon([p[:2] for p in out]).is_valid:
+        c = shapely.get_coordinates(shapely.make_valid(Polygon([p[:2] for p in out])).boundary)
+        raise SpecError(f"a level contour crosses itself near ({c[0][0]:.2f}, {c[0][1]:.2f}); not read (#97)")
     welded = []                                  # points within the weld (inclusive) of the last kept one are one
     for p in out:
         if not welded or np.hypot(p[0] - welded[-1][0], p[1] - welded[-1][1]) > weld + 1e-9:
