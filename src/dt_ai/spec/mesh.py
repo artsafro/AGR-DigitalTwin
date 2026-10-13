@@ -7,6 +7,7 @@ decide nothing, and a storey with no closed section is an error, not a guess. An
 the full height becomes a question. Levels are input (LEVEL_<name> helpers or the object's levels from Revit), never guessed;
 the roof plane must lie at the top input level. Decisions: docs/HARNESS_PLAN.md §3-§4 (2026-10-08).
 """
+import functools
 import re
 from collections import defaultdict
 from itertools import product
@@ -175,8 +176,10 @@ def _weld(v):
     return rep
 
 
+@functools.lru_cache(maxsize=None)
 def _group_ids(group):
-    """Material ids of one group of standards/material_id_ranges.yaml (ADR 0001)."""
+    """Material ids of one group of standards/material_id_ranges.yaml (ADR 0001); read once per process (the file
+    is locked, standards/README.md) - parsed per call it cost OBJ03 42 of 48 minutes in _plane_suspects."""
     import yaml
     from dt_ai.core.io import repo_root
     g = yaml.safe_load((repo_root() / "standards/material_id_ranges.yaml").read_text(encoding="utf-8"))
