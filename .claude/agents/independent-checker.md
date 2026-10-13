@@ -9,6 +9,11 @@ skills:
 memory: project
 hooks:
   PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: py -3 "$CLAUDE_PROJECT_DIR/.claude/hooks/subagents.py" guard
+          timeout: 10
     - matcher: "Read|Grep|Glob|Bash"
       hooks:
         - type: command

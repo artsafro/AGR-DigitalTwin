@@ -80,7 +80,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "independent-checker",
+        "matcher": "^(source-inspector|pattern-librarian|bench-runner|independent-checker|mesh-reader)$",
         "hooks": [
           {
             "type": "command",

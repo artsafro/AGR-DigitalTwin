@@ -120,13 +120,15 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
   50 MB are committed as entries in `docs/sources/linked-files.json`. Toggle: Ctrl+B Shift+K.
 
 ### Subagents — `.claude/agents/` (Claude Code, read only; `docs/agents/WORKFLOW.md`)
-Hooks: `.claude/hooks/subagents.py` (SubagentStart reminder for all five; SubagentStop table check for
-`independent-checker`; its PreToolUse denies `src/dt_ai/geometry/`). Tests: `tests/test_subagents.py`.
-- `source-inspector` — CONFIGURED (PR #86); verified only after its test call on the B01 etalon.
-- `pattern-librarian` — CONFIGURED (PR #86); verified only after its test call.
-- `bench-runner` — CONFIGURED (PR #86); verified only after its test call on B01.
-- `independent-checker` — CONFIGURED (PR #86); verified only after its test call on the B01 model.
-- `mesh-reader` — CONFIGURED (PR #86); verified only after its test call.
+Hooks: `.claude/hooks/subagents.py` (SubagentStart reminder and a `git status` snapshot for all five;
+SubagentStop blocks until changed tracked files are named, and for `independent-checker` without a verdict table;
+PreToolUse `guard` denies plain Bash writes in all five, `deny-geometry` denies `src/dt_ai/geometry/` to the
+checker). Note: the desktop app did not load project subagents from this worktree; `claude -p` in it did. Tests: `tests/test_subagents.py`.
+- `source-inspector` — VERIFIED (2026-10-13, PR #86): B01 `etalon.max` inventory, 4 objects (B01_ETALON + 3 LEVEL_), read from the file header without opening it over another scene.
+- `pattern-librarian` — VERIFIED (2026-10-13, PR #86): "plane flush with the facade" -> C24 / `opening-plane` (and OD1); tools Read, Grep, Glob only.
+- `bench-runner` — VERIFIED (2026-10-13, PR #86): B01 9/9 etalon self and model, a per-check table, the spec diff.
+- `independent-checker` — VERIFIED (2026-10-13, PR #86): B01 model, a check / expected / measured / pass-fail table; reading `src/dt_ai/geometry/` denied by its hook.
+- `mesh-reader` — CONFIGURED (PR #86); not yet test-called.
 
 ### Pipeline gate
 - Status: WORKING (2026-10-13): installed in `.git/hooks/pre-commit` on this machine (#79 version); a commit

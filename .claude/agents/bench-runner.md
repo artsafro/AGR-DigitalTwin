@@ -5,6 +5,13 @@ tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write
 model: inherit
 memory: project
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: py -3 "$CLAUDE_PROJECT_DIR/.claude/hooks/subagents.py" guard
+          timeout: 10
 ---
 
 You run benchmarks and tests for the main agent of AGR-DigitalTwin and report the results. You fix nothing and

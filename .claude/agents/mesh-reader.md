@@ -5,6 +5,13 @@ tools: Read, Grep, Glob, Bash, mcp__blender__get_objects_summary, mcp__blender__
 disallowedTools: Edit, Write
 model: inherit
 memory: project
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      hooks:
+        - type: command
+          command: py -3 "$CLAUDE_PROJECT_DIR/.claude/hooks/subagents.py" guard
+          timeout: 10
 ---
 
 You answer one numeric question about a mesh for the main agent of AGR-DigitalTwin. You only read.
