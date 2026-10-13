@@ -699,7 +699,8 @@ def _mid_storey_shape(groups, closed, z0, z1):
     when one shape holds the whole wall band below that band - from the storey bottom, through mid storey,
     with no other closed shape in it; otherwise (None) the section changes in the wall band itself and the
     user names the height (contour_at_m). Returns (group, rule) or None."""
-    wall_top = z1 - SLAB_EDGE_BAND_M
+    wall_top = z1 - min(SLAB_EDGE_BAND_M, 0.5 * (z1 - z0))   # a storey up to 0.6 m: the band ends at mid storey
+                                                              # (review 1 of #81)
     wall = [(a, b) for a, b, _ in closed if a < wall_top - EVENT_MIN_M]
     if not wall or wall[0][0] - z0 >= EVENT_MIN_M:
         return None
@@ -1114,12 +1115,18 @@ def _parapet_thickness(v, tris, roof_z, top_z, top_contour):
         if not face.interiors:
             continue
         line = _relief(shapely.Polygon(face.exterior))[0]   # facade relief on the ring is no line (K01)
-        if line.hausdorff_distance(outer) >= SAME_CONTOUR_M:
+        if line.hausdorff_distance(outer) >= SAME_CONTOUR_M or len(face.interiors) != 1:
             continue
-        d = [outer.exterior.distance(shapely.Point(c)) for ring in face.interiors for c in ring.coords]
-        if max(d) - min(d) > SAME_CONTOUR_M:
-            return None, f"the inner line is {min(d):.3f}-{max(d):.3f} m off the outer one, not one thickness"
-        return round(float(np.median(d)), 3), None
+        inner = shapely.Polygon(face.interiors[0])
+        # one thickness = the inner line is the outer one set in by it (mitred, as the engine builds it); measured
+        # at the inner edges' midpoints, never at corners, where a mitre is a diagonal (review 1 of #81)
+        ring = np.asarray(face.interiors[0].coords)
+        t = float(np.median([outer.exterior.distance(shapely.Point(p)) for p in (ring[:-1] + ring[1:]) / 2]))
+        inset = outer.buffer(-t, join_style="mitre")
+        off = inset.hausdorff_distance(inner) if not inset.is_empty else float("inf")
+        if off > SAME_CONTOUR_M:
+            return None, f"the inner line is up to {off:.3f} m off the outer one set in by {t:.3f} m, not one thickness"
+        return round(t, 3), None
     return None, "the section at mid parapet height is no closed ring on the outer line"
 
 
