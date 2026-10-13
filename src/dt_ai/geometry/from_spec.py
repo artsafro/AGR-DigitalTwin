@@ -776,8 +776,19 @@ def _meet(walls, columns, gap):
 
 
 def _quads(mesh, traps, face_ys, w):
-    """Quads of the trapezoids, split at the cuts on their vertical sides (paired left to right)."""
+    """Quads of the trapezoids, split at the cuts on their vertical sides (paired left to right); a triangle
+    (one side a point) is a fan from that point to every cut of the other side, so no T-junction is left."""
     for tr in traps:
+        x0, x1, z, up = tr["x0"], tr["x1"], tr["z"], tr["up"]
+        point = 0 if tr["b"] - tr["a"] <= SNAP_M else 1 if tr["d"] - tr["c"] <= SNAP_M else None
+        if point is not None:
+            xp, yp, xo, lo, hi = (x0, tr["a"], x1, tr["c"], tr["d"]) if point == 0 else (x1, tr["c"], x0, tr["a"], tr["b"])
+            side = [lo] + sorted(y for y in face_ys[(z, xo)] if lo + SNAP_M < y < hi - SNAP_M) + [hi]
+            if any(q - p < w - FEATURE_TOL for p, q in zip(side, side[1:])):
+                raise BuildError(f"cuts at {z} m on x {xo} closer than the {w} m weld; not built")
+            for k in range(len(side) - 1):
+                mesh.tri([[xp, yp, z], [xo, side[k], z], [xo, side[k + 1], z]], tr["mid"], [0, 0, up])
+            continue
         left = [tr["a"]] + sorted(y for y in face_ys[(tr["z"], tr["x0"])] if tr["a"] + SNAP_M < y < tr["b"] - SNAP_M) + [tr["b"]]
         right = [tr["c"]] + sorted(y for y in face_ys[(tr["z"], tr["x1"])] if tr["c"] + SNAP_M < y < tr["d"] - SNAP_M) + [tr["d"]]
         if len(left) != len(right):
@@ -802,10 +813,10 @@ def _hold(mesh, joints, w):
     uses = {}
     for ids, _ in mesh.faces:
         c = [int(cell[i]) for i in ids]
-        if len(set(c)) != 4:
-            raise BuildError(f"a quad collapses under the {w} m weld (weld_m); the input is at the limit, not built")
-        for i in range(4):
-            e = tuple(sorted((c[i], c[(i + 1) % 4])))
+        if len(set(c)) != len(c):
+            raise BuildError(f"a face collapses under the {w} m weld (weld_m); the input is at the limit, not built")
+        for i in range(len(c)):
+            e = tuple(sorted((c[i], c[(i + 1) % len(c)])))
             uses[e] = uses.get(e, 0) + 1
     zc = {}
     for i, c in enumerate(cell):
@@ -891,8 +902,9 @@ def _snap_add(target, values):
 
 def _trapezoids(faces, xs):
     """Every horizontal face cut into trapezoids by the vertical strips between consecutive xs: two
-    vertical sides (x0: a..b, x1: c..d) and two straight edges. A piece that is no such trapezoid (a
-    triangle where two edges meet inside the strip's side) is a BuildError."""
+    vertical sides (x0: a..b, x1: c..d) and two straight edges. One side may be a point (a == b or c == d):
+    a triangle, where two edges meet on the strip line (a pointed corner, user 2026-10-13). Any other piece
+    is a BuildError."""
     out = []
     for poly, z, mid, up in faces:
         minx, miny, maxx, maxy = poly.bounds
@@ -906,9 +918,9 @@ def _trapezoids(faces, xs):
                 pts = np.asarray(part.exterior.coords)[:-1]
                 lefts = sorted({_r(y) for x, y in pts if abs(x - x0) <= 1e-7})
                 rights = sorted({_r(y) for x, y in pts if abs(x - x1) <= 1e-7})
-                if len(lefts) < 2 or len(rights) < 2:
-                    raise BuildError(f"the face at {z} m between x {x0} and {x1} narrows to a point; "
-                                     "a triangle is not built yet")
+                if not lefts or not rights or (len(lefts) < 2 and len(rights) < 2):
+                    raise BuildError(f"the face at {z} m between x {x0} and {x1} has no side on a strip line; "
+                                     "not built")
                 a, b, c, d = lefts[0], lefts[-1], rights[0], rights[-1]
                 if abs(part.area - ((b - a) + (d - c)) / 2 * (x1 - x0)) > 1e-6:
                     raise BuildError(f"the face at {z} m between x {x0} and {x1} is no trapezoid; not built yet")

@@ -10,6 +10,8 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import shapely
+from shapely.geometry import Polygon
 
 from dt_ai.geometry.from_spec import BuildError, BuildInputs, build
 from dt_ai.spec.model import Spec
@@ -119,7 +121,6 @@ def test_grille_gets_no_hole():
 
 @pytest.mark.parametrize("change, message", [
     ({"contour": [[0, 0], [10, 0], [10, 10, {"r": 1.0}], [0, 10]]}, "rounded corners"),
-    ({"contour": [[0, 0], [10, 0], [12, 10], [0, 10]]}, "triangle is not built yet"),   # an x-extreme sharp corner
 ])
 def test_what_this_step_cannot_build_is_an_error_not_a_guess(change, message):
     data = json.loads(json.dumps(FIXTURE))
@@ -1172,3 +1173,24 @@ def test_a_near_axis_wall_is_welded_straight():
     dump = build(edited(edit), INPUTS)
     assert topology_ok(dump)
     assert {round(v[0], 6) for m in dump["meshes"] for v in m["vertices"]} <= {0.0, 10.0}
+
+
+@pytest.mark.parametrize("contour", [
+    [[0, 0], [10, 0], [12, 10], [0, 10]],                              # an x-extreme sharp corner (was refused)
+    [[0, 0], [10, 0], [10, 10], [0, 10], [0, 6], [-0.5, 5], [0, 4]],   # a pointed tip (OBJ03 panel facade)
+    [[0, 0], [10, 0], [10, 4], [10.4, 5], [10, 6], [10, 10], [0, 10]],
+])
+def test_pointed_corners_build_as_triangle_fans(contour):
+    """User 2026-10-13: a face piece with one side a point on a strip line is a triangle (a fan to the other
+    side's cuts); the model stays closed, welded, without T-junctions."""
+    def edit(d):
+        d["floors"][0]["contour"] = contour
+        d["floors"][0]["openings"] = []
+    dump = build(edited(edit), INPUTS)
+    assert topology_ok(dump)
+    assert 3 in dump["meshes"][0]["polygon_sizes"]
+    soup = from_dump(dump)                         # the roof in plan covers the whole contour, tip included
+    c = soup.corners()
+    n = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+    top = shapely.union_all([Polygon(t[:, :2]) for t, nz in zip(c, n[:, 2]) if nz > 1e-9])
+    assert top.area == pytest.approx(Polygon([p[:2] for p in contour]).area, abs=1e-6)
