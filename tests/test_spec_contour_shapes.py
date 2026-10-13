@@ -432,3 +432,62 @@ def test_a_relief_over_a_real_ledge_is_no_ledge_structure():
     flat(b, Polygon(SQUARE10), 0.0, up=False)
     spec, report = extract_spec(dump_of(b), OBJECT)
     assert report["questions"] == [] and report["floors"]["L1"]["relief_parts"] == 1
+
+
+# --- rule 3 (user 2026-10-12): mid-storey section; a change only in the 0.3 m under the next level is the
+# slab edge, not the contour; contour_at_m only when the section changes in the wall band itself
+
+@pytest.mark.parametrize("z0", [3.0, 3.05])
+def test_slab_edge_under_the_next_level_is_not_the_contour(z0):
+    dump = prism(SQUARE10, boxes=[(0, 0.0, 10.0, z0, 3.3, 0.15)])
+    spec, report = extract_spec(dump, OBJECT)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
+    assert report["floors"]["L0"]["contour_rule"] == f"mid storey, slab edge from {z0:.3f} m"
+
+
+def test_section_change_in_the_wall_band_still_asks():
+    # 0.4 m under the next level reaches into the wall band (> 0.3 m): the user names the height
+    with pytest.raises(SpecError, match="no section shape is both at the two storey ends"):
+        extract_spec(prism(SQUARE10, boxes=[(0, 0.0, 10.0, 2.9, 3.3, 0.15)]), OBJECT)
+
+
+def test_concave_parapet_of_one_thickness_is_measured():
+    """Review 1 of #81: an L-shaped parapet 0.2 m thick; at the concave corner the mitre is a 0.283 m diagonal,
+    still one thickness."""
+    outline = [[0, 0], [10, 0], [10, 5], [5, 5], [5, 10], [0, 10]]
+    inner = Polygon(outline).buffer(-0.2, join_style="mitre")
+    b = Mesh("Body")
+    walls(b, outline, 0.0, 7.2)
+    walls(b, [list(p) for p in list(inner.exterior.coords)[:-1]][::-1], 6.6, 7.2)    # inner face, inward
+    flat(b, Polygon(outline).difference(inner), 7.2, up=True)                        # cap
+    flat(b, inner, 6.6, up=True)                                                     # roof
+    flat(b, Polygon(outline), 0.0, up=False)
+    spec, report = extract_spec(dump_of(b), OBJECT)
+    assert spec.roof.parapet_thickness_m == 0.2
+    assert report["roof"]["parapet_thickness"]["by"] == "measured"
+
+
+@pytest.mark.parametrize("h", [0.3, 0.6])
+def test_short_storey_with_a_slab_edge_on_top_keeps_the_mid_storey_rule(h):
+    """Review 1 of #81: a storey up to 0.6 m high - the slab edge band ends at mid storey."""
+    levels = (("L0", 0.0), ("L1", h), ("roof", h + 3.3))
+    b = Mesh("Body")
+    walls(b, SQUARE10, 0.0, h + 3.3, boxes=[(0, 0.0, 10.0, h - 0.1, h, 0.15)])
+    flat(b, Polygon(SQUARE10), h + 3.3, up=True)
+    flat(b, Polygon(SQUARE10), 0.0, up=False)
+    dump = {**dump_of(b), "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]} for n, z in levels]}
+    spec, report = extract_spec(dump, OBJECT)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
+    assert report["floors"]["L0"]["contour_rule"].startswith("mid storey, slab edge")
+
+
+def test_open_slab_edge_keeps_the_contour_and_is_asked():
+    """Review 2 of #81: the south face missing only at 3.0-3.3 m (an open slab edge band) - the mid-storey
+    contour stands, the open band is in the report and a question, never filled silently."""
+    dump = prism(SQUARE10, boxes=[(0, 0.0, 10.0, 3.0, 3.3, 0.0)])
+    spec, report = extract_spec(dump, OBJECT)
+    assert close(spec.expanded_floors()[0].contour, SQUARE10)
+    edge = report["floors"]["L0"]["slab_edge"]
+    assert edge["open_m"] == [[3.0, 3.3]] and edge["closed_shapes"] == 0
+    q = [q for q in report["questions"] if q["kind"] == "slab-edge-open"]
+    assert [(x["levels"], x["heights_m"]) for x in q] == [(["L0"], [3.0, 3.3])]

@@ -42,6 +42,8 @@ ARC_FIT_M = 0.005         # arc points and both walls must fit one circle within
 ARC_FIT_SHARE = 0.005
 EVENT_MIN_M = 0.001       # vertex heights closer than this share one interval
 BIN_M = 0.05              # height bins of storey triangles, so each cut reads only nearby triangles
+SLAB_EDGE_BAND_M = 0.3    # a section change only this far under the next level is the slab edge (rule 3, user
+                          # 2026-10-12)
 SHARE_TOL_M = 0.005       # a piece shares a wall when its boundary lies within 5 mm of it
 PRIORITY_SHARE = 0.10     # question priority high: >= 2 levels or > 10 % of the facade length
 ROOF_LEVEL_TOL_M = 0.10   # roof surfaces lie within this of the top input level (user decision 2026-10-08, #9)
@@ -691,6 +693,37 @@ def _terrace(v, tris, groups, closed, z0, z1, below, extra=None):
                       "inner_face_m2": round(face, 3)}
 
 
+def _slab_band_from(z0, z1):
+    """Bottom of the slab edge band under the next level; in a storey up to 0.6 m it ends at mid storey
+    (review 1 of #81)."""
+    return z1 - min(SLAB_EDGE_BAND_M, 0.5 * (z1 - z0))
+
+
+def _mid_storey_shape(groups, closed, z0, z1):
+    """Rule 3 (user 2026-10-12): the contour is the section at mid storey; a section that changes only in the
+    band SLAB_EDGE_BAND_M under the next level is the slab edge (floor-step / belt), not the contour. Taken
+    when one shape holds the whole wall band below that band - from the storey bottom, through mid storey,
+    with no other closed shape in it; otherwise (None) the section changes in the wall band itself and the
+    user names the height (contour_at_m). Returns (group, rule) or None."""
+    wall_top = _slab_band_from(z0, z1)
+    wall = [(a, b) for a, b, _ in closed if a < wall_top - EVENT_MIN_M]
+    if not wall or wall[0][0] - z0 >= EVENT_MIN_M:
+        return None
+    base = next(g for g in groups if wall[0] in g["spans"])
+    mid = z0 + 0.5 * (z1 - z0)
+    covered = sorted(s for s in base["spans"] if s[0] < wall_top - EVENT_MIN_M)
+    reach = z0
+    for a, b in covered:                                 # the shape runs unbroken from the bottom past the band
+        if a - reach >= EVENT_MIN_M:
+            return None
+        reach = max(reach, b)
+    if (any(s not in base["spans"] for s in wall) or reach < wall_top - EVENT_MIN_M
+            or not any(a <= mid <= b for a, b in base["spans"])):
+        return None
+    edge = min(a for g in groups if g is not base for a, _ in g["spans"]) if len(groups) > 1 else None
+    return base, ("mid storey" if edge is None else f"mid storey, slab edge from {edge:.3f} m")
+
+
 def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
     """Level contour = walls over the full storey height (user decisions 2026-10-08). Accepted only
     when one section shape is at both storey ends and is also the tallest; otherwise the exterior
@@ -738,6 +771,8 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
         rule = f"user height {at_m} m"
     elif at_ends and bottom is top and bottom["height"] >= tallest - 1e-9:
         base, rule = bottom, "single shape" if len(groups) == 1 else "both storey ends, tallest"
+    elif (mid := _mid_storey_shape(groups, closed, z0, z1)) is not None:
+        base, rule = mid
     else:
         shapes = "; ".join(f"shape {i + 1}: {g['poly'].area:.2f} m2 at {_span_text(g['spans'])} m "
                            f"({g['height'] / (z1 - z0):.0%})" for i, g in enumerate(groups))
@@ -748,6 +783,13 @@ def _level_contour(v, tris, z0, z1, name, at_m=None, below=None, extra=None):
                         "object.json to a height of the wall shape (HARNESS_PLAN §4)")
     report = {"sections": len(spans), "closed_sections": len(closed), "contour_rule": rule,
               "contour_height_share": round(base["height"] / (z1 - z0), 3), "other_contours": len(groups) - 1}
+    if rule.startswith("mid storey"):                # the slab edge stays in the report, closed or not, with its
+        band = _slab_band_from(z0, z1)               # heights (review 2 of #81: an open band vanished)
+        done = {(a, b) for a, b, _ in closed}
+        report["slab_edge"] = {
+            "band_m": [round(band, 3), round(z1, 3)],
+            "closed_shapes": len(groups) - 1,
+            "open_m": [[round(a, 3), round(b, 3)] for a, b, _ in spans if b > band + EVENT_MIN_M and (a, b) not in done]}
     others = [g for g in groups if g is not base]
     if terrace is not None:                    # the parapet shape is the terrace, not a question
         report["terrace"] = {"parapet_h_m": round(zt - z0, 3), **areas}
@@ -1073,6 +1115,33 @@ def _roof(v, tris, below_level, top_level, top_contour, extra=None, above=None):
     return roof_z, parapet_top if on_edge else roof_z, round(closed, 3), stats
 
 
+def _parapet_thickness(v, tris, roof_z, top_z, top_contour):
+    """Rule 4 (user 2026-10-12): the parapet's thickness from the source - its section at mid parapet height
+    is a closed ring on the top floor's outer line whose inner line keeps one distance from it (within
+    SAME_CONTOUR_M). Returns (thickness, None) or (None, why it is not readable)."""
+    if top_z - roof_z <= 2 * EVENT_MIN_M:
+        return None, "no parapet height to cut"
+    lines = shapely.union_all([shapely.LineString(s) for s in _section(v, tris, (roof_z + top_z) / 2)])
+    outer = shapely.Polygon(top_contour.exterior)
+    for face in polygonize(getattr(lines, "geoms", [lines])):
+        if not face.interiors:
+            continue
+        line = _relief(shapely.Polygon(face.exterior))[0]   # facade relief on the ring is no line (K01)
+        if line.hausdorff_distance(outer) >= SAME_CONTOUR_M or len(face.interiors) != 1:
+            continue
+        inner = shapely.Polygon(face.interiors[0])
+        # one thickness = the inner line is the outer one set in by it (mitred, as the engine builds it); measured
+        # at the inner edges' midpoints, never at corners, where a mitre is a diagonal (review 1 of #81)
+        ring = np.asarray(face.interiors[0].coords)
+        t = float(np.median([outer.exterior.distance(shapely.Point(p)) for p in (ring[:-1] + ring[1:]) / 2]))
+        inset = outer.buffer(-t, join_style="mitre")
+        off = inset.hausdorff_distance(inner) if not inset.is_empty else float("inf")
+        if off > SAME_CONTOUR_M:
+            return None, f"the inner line is up to {off:.3f} m off the outer one set in by {t:.3f} m, not one thickness"
+        return round(t, 3), None
+    return None, "the section at mid parapet height is no closed ring on the outer line"
+
+
 def _roof_parts(v, parts, top_level, top_contour):
     """Separate parts that are roof (#9, option (a)): their near-flat up-facing faces lie, on area
     average, within ROOF_LEVEL_TOL_M of the top level and at least half of them inside the top
@@ -1322,6 +1391,11 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
     questions = (_questions(levels, floors, polys, pieces, stats) + op.break_questions(breaks, levels) + suspects
                  + _source_questions(dump, levels))
     for name, rep in report["floors"].items():        # structure on a ledge that is no terrace (review 1 of PR #61)
+        if rep.get("slab_edge", {}).get("open_m"):    # rule 3: the contour stands, the open slab edge is asked
+            opened = rep["slab_edge"]["open_m"]        # (review 2 of #81)
+            questions.append({"priority": "high", "kind": "slab-edge-open", "levels": [name], "wall": None,
+                              "depth_m": None, "length_m": None, "facade_share": None,
+                              "heights_m": [opened[0][0], opened[-1][1]], "at": None})
         if "ledge_structure" in rep:
             q = rep["ledge_structure"]
             questions.append({"priority": "high", "kind": "ledge-structure", "levels": [name], "wall": None,
@@ -1343,6 +1417,14 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
                       "separate_roof_parts": len(roof_parts), **roof_stats,
                       "top_level": levels[-1]["name"], "top_level_m": levels[-1]["elev_m"],
                       "plane_vs_top_level_m": round(roof_z - levels[-1]["elev_m"], 3)}
+    thickness = None
+    if roof_stats["parapet"]:                        # rule 4: measured, else the object's default, never asked
+        thickness, why = _parapet_thickness(v, tris, roof_z, top_z, polys[-1])
+        by = "measured"
+        if thickness is None:
+            thickness = obj_cfg.get("parapet_thickness_default_m")
+            by = "parapet thickness by default" if thickness is not None else "not read, no default"
+        report["roof"]["parapet_thickness"] = {"m": thickness, "by": by, **({"why": why} if why else {})}
     written, report["floor_classes"] = fl.collapse(levels, floors)
     terraces = [{"level": n, "parapet_h_m": rep["terrace"]["parapet_h_m"]}
                 for n, rep in report["floors"].items() if "terrace" in rep]
@@ -1396,9 +1478,11 @@ def _extract(dump, obj_cfg, profile, thresholds, found):
                 # roof plane (pattern roof-inset-plane, user rule 2026-10-10) sets no height; a roof whose
                 # surface reaches the wall top at the outer wall line has no parapet (reviews of PR #54)
                 levels=levels, floors=written,
-                roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0},
+                roof={"parapet_h_m": round(max(top_z - levels[-1]["elev_m"], 0.0), 3) if roof_stats["parapet"] else 0.0,
+                      **({"parapet_thickness_m": thickness} if thickness is not None else {})},
                 # pattern terrace (user plan 2026-10-10): a terrace parapet read from the storey's sections
                 **({"terraces": terraces} if terraces else {}), **({"decor": decor} if decor else {}),
-                **({"spec_version": "0.5"} if decor else {"spec_version": "0.4"} if terraces else {}),
+                **({"spec_version": "0.6"} if thickness is not None else {"spec_version": "0.5"} if decor
+                   else {"spec_version": "0.4"} if terraces else {}),
                 opening_depth_default_m=obj_cfg.get("opening_depth_default_m", OPENING_DEPTH_DEFAULT_M), **plate)
     return spec, report
