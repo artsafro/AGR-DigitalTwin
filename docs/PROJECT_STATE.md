@@ -164,6 +164,17 @@ pass and substitutes nothing. Each storey's contour is read on its own, and a st
 stop goes to `<spec>.report.json` → `stops` with its stage (levels and body / contour / openings / roof /
 plates / decor). No spec is written and the exit code is 3. A report with stops backs no job status above
 draft (`pipeline_gate`). Without the flag nothing changed; B01 / B02 / B02t / K01 are identical.
+#81 merged (3 Codex rounds): rules 3 and 4 for OBJ03 (user 2026-10-12).
+- Rule 3: a storey's contour is its mid-storey section. A change only in the 0.3 m under the next level is the
+  slab edge, not the contour; in a storey up to 0.6 m that band ends at mid storey. The report keeps
+  `slab_edge`, and an open band is a `slab-edge-open` question. A change inside the wall band still asks for
+  `contour_at_m`.
+- Rule 4, spec v0.6: `roof.parapet_thickness_m` is measured as a mitred inset of the top contour at mid parapet
+  height (facade relief left out). When it cannot be read, `parapet_thickness_default_m` applies and the report
+  marks it; nothing is asked. The engine takes the spec thickness first, and a terrace parapet takes the same
+  thickness (one per building, user 2026-10-13). Measuring terrace parapets is issue #82.
+- B01 / B02 / B02t read 0.3 and K01 reads 0.555, the same as their build values. Models and checks are
+  identical to main; the specs gain only version 0.6 and the thickness.
 #64 merged (3 Codex rounds): `plate_gap_m` / `plate_overlap_m` are building parameters in the spec (defaults
 0.005 / 0.02); the engine builds from them, the extractor reads every plate (flat, even overlap over one
 hole; disagreement > 0.5 mm or an unreadable plate is a `plate-params` question), the checker compares each
