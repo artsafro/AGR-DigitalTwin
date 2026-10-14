@@ -328,9 +328,10 @@ def split_flat(v, t, thin=1e-3):
     flat, solid = [], []
     for pc in _pieces(v, t):
         q = v[t[pc]]
-        n = np.cross(q[:, 1] - q[:, 0], q[:, 2] - q[:, 0]).sum(axis=0)
-        ln = np.linalg.norm(n)
-        thick = float(np.ptp(q.reshape(-1, 3) @ (n / ln))) if ln > 1e-12 else 0.0
+        n = np.cross(q[:, 1] - q[:, 0], q[:, 2] - q[:, 0])
+        big = n[np.linalg.norm(n, axis=1).argmax()]              # the plane of its largest triangle (a closed
+        ln = np.linalg.norm(big)                                  # solid's normals sum to zero: never that)
+        thick = float(np.ptp(q.reshape(-1, 3) @ (big / ln))) if ln > 1e-12 else 0.0
         (flat if thick < thin else solid).append(t[pc])
     cat = lambda xs: np.vstack(xs) if xs else np.zeros((0, 3), int)                    # noqa: E731
     return cat(flat), cat(solid)
@@ -578,10 +579,11 @@ def compare(src_v, src_t, mesh_v, mesh_t, views=("top", "x", "y")):
 
 # ---------------------------------------------------------------------------------------------- measure + spec
 
-def storeys(parts, slabs, levels, inputs: Inputs):
+def _storeys(glass_part, slabs, levels, inputs: Inputs):
     """Per storey (level name): its z range (top of the slab below to the underside of the slab above), its wall
-    contour (the outline of the slab above - the storey's footprint) and its openings from the glass module."""
-    gv, gt = next((v, t) for k, (v, t, m) in parts.items() if m["module"] == "glazing" and m["ids"].get(k) == inputs.opening_id)
+    contour (the outline of the slab above - the storey's footprint, set WALL_SEAT_M in) and its openings from the
+    glass module."""
+    gv, gt = glass_part[:2]
     gpieces = []
     for pc in _pieces(gv, gt):
         q = gv[np.unique(gt[pc])]
@@ -658,6 +660,156 @@ def drop_shared_faces(mesh: _Mesh) -> int:
     gone = {k for ks in seen.values() if len(ks) > 1 for k in ks}
     mesh.faces = [f for k, f in enumerate(mesh.faces) if k not in gone]
     return len(gone)
+
+
+# ---------------------------------------------------------------------------------------------- the build
+
+BUILD_AS = ("slab_boxes", "deck_boxes", "walls", "openings_glass", "boxes", "boxes_seated", "planes_enclosure",
+            "roof_band", "railings", "skip")
+LIFT_M = RAILING_LIFT_M   # a part standing on another (a roof box, a band, a railing) stands this far off it
+BAND_T_M = 0.04          # a textured band's thickness (the roof slat band, user 2026-10-13)
+
+
+def _group(parts, keys):
+    vs, ts, base = [], [], 0
+    for k in keys:
+        v, t, _ = parts[k]
+        used, inv = np.unique(t, return_inverse=True)
+        vs.append(v[used])
+        ts.append(inv.reshape(-1, 3) + base)
+        base += len(used)
+    return (np.vstack(vs), np.vstack(ts)) if vs else (np.zeros((0, 3)), np.zeros((0, 3), int))
+
+
+def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs):
+    """The building rebuilt by its source modules (see the module docstring), each module by its `build_as`.
+    Returns (mesh dump, spec, report): the spec is measured by the same modules (user 2026-10-13) and is the
+    contract the checkers use."""
+    parts = module_tris(dump, modules)
+    how = {}
+    for mod in modules["modules"]:
+        b = mod.get("build_as")
+        if b not in BUILD_AS:
+            raise BuildError(f"module {mod['module']} ({[p['source'] for p in mod['parts']]}): build_as {b!r} "
+                             f"not in {BUILD_AS}")
+        for p in mod["parts"]:
+            how[p["source"]] = b
+
+    def keys(b):
+        return [k for k in parts if how[k] == b]
+
+    def pid(k, default):
+        return parts[k][2]["ids"].get(k, default)
+
+    levels, elev = inputs.levels, dict(inputs.levels)
+    rep, meshes = {}, {}
+
+    def done(name, mesh, src_keys):
+        removed = drop_shared_faces(mesh)
+        d = mesh.mesh(name)
+        if not d["triangles"]:
+            return
+        meshes[name] = d
+        sv, st = _group(parts, src_keys)
+        rep[name] = {**rep.get(name, {}),
+                     "compare": compare(sv, st, d["vertices"], d["triangles"]) if len(st) else None,
+                     "triangles": len(d["triangles"]), "quads": sum(1 for x in d["polygon_sizes"] if x == 4),
+                     "tris": sum(1 for x in d["polygon_sizes"] if x == 3), "shared_faces_removed": removed}
+
+    if len(keys("slab_boxes")) != 1:
+        raise BuildError(f"one slab module is needed (build_as slab_boxes), got {keys('slab_boxes')}")
+    sk = keys("slab_boxes")[0]
+    slabs = slabs_of(*parts[sk][:2], levels)
+    m, fb = _Mesh(), 0
+    for _, top, under, outline in slabs:
+        fb += slab_box(m, outline, top, under, pid(sk, 21), pid(sk, 21), pid(sk, 21))
+    rep["slabs"] = {"slabs": [x[0] for x in slabs], "cdt_cells": fb}
+    done("slabs", m, [sk])
+
+    decks = []
+    m, fb = _Mesh(), 0
+    for k in keys("deck_boxes"):
+        for name, top, under, outline in slabs_of(*parts[k][:2], levels):
+            decks.append((name, top, outline))      # off the slab by plate_gap_m: a part of its own
+            fb += slab_box(m, outline, top, (under if under is not None else top - 0.2) + 0.005,
+                           pid(k, 22), pid(k, 22), pid(k, 22))
+    rep["terraces"] = {"decks": [x[0] for x in decks], "cdt_cells": fb}
+    done("terraces", m, keys("deck_boxes"))
+
+    glass = keys("openings_glass")
+    if len(glass) != 1:
+        raise BuildError(f"one glass module is needed (build_as openings_glass), got {glass}")
+    stor = _storeys(parts[glass[0]], slabs, levels, inputs)
+    m, srep = _Mesh(), {}
+    for name, st in stor.items():
+        storey_walls(m, st["poly"], st["openings"], *st["z"], inputs)
+        srep[name] = {"z": [round(z, 3) for z in st["z"]], "walls": len(st["poly"].exterior.coords) - 1,
+                      "openings": sum(len(x) for x in st["openings"].values()), "area_m2": round(st["poly"].area, 1)}
+    rep["walls"] = {"storeys": srep}
+    done("walls", m, keys("walls") + glass)
+
+    m, n_el = _Mesh(), {}
+    centre = np.asarray(max(shapely.get_parts(slabs[0][3]), key=lambda g: g.area).centroid.coords[0])
+    for k in keys("boxes"):
+        v, t, _ = parts[k]
+        mid = pid(k, 26)
+        flat_t, t = split_flat(v, t)               # zero-thickness pieces are planes, not boxes
+        kept = face_planes(m, v, flat_t, mid) if len(flat_t) else 0
+        odd = []
+        els = decor_elements(v, t, odd=odd) if len(t) else []
+        if odd:
+            kept += face_planes(m, v, np.vstack(odd), mid)
+        n_el[k] = {"boxes": len(els), "flat_pieces": len(_pieces(v, flat_t)) if len(flat_t) else 0,
+                   "off_axis_pieces": len(odd), "kept_as_triangles": kept}
+        for (o, u, nn), lo, hi in els:
+            s0, d0, z0 = lo
+            s1, d1, z1 = hi
+            outward = float((u * (s0 + s1) / 2 + nn * (d0 + d1) / 2 - centre) @ nn) > 0
+            lo2, hi2 = (((s0, d0 - DECOR_INSET_M, z0), (s1, d1, z1)) if outward
+                        else ((s0, d0, z0), (s1, d1 + DECOR_INSET_M, z1)))
+            _box(m, (o, u, nn), lo2, hi2, mid)
+    rep["decor"] = {"elements": n_el, "boxes_total": sum(x["boxes"] for x in n_el.values())}
+    done("decor", m, keys("boxes"))
+
+    m, enclosure = _Mesh(), None
+    for k in keys("planes_enclosure"):
+        ev, et = parts[k][:2]
+        q = ev[np.unique(et)]
+        ring = footprint_ring(ev, et)
+        planes_along(m, ring, float(q[:, 2].min()), float(q[:, 2].max()), pid(k, 24), top=True)
+        enclosure = (ring, float(q[:, 2].max()))
+    for k in keys("boxes_seated"):
+        for (o, u, nn), lo, hi in decor_elements(*parts[k][:2]):
+            _box(m, (o, u, nn), (lo[0], lo[1], lo[2] + LIFT_M), hi, pid(k, 25))
+    done("superstructure", m, keys("planes_enclosure") + keys("boxes_seated"))
+
+    m = _Mesh()
+    roof = next((o for n, _, _, o in slabs if n == levels[-1][0]), None)
+    for k in keys("roof_band"):
+        pv, pt = parts[k][:2]
+        q = pv[np.unique(pt)]
+        if roof is not None:                        # the band runs along the roof edge
+            ring = orient(Polygon(max(shapely.get_parts(roof), key=lambda g: g.area).exterior).simplify(0.01), 1.0)
+            band_box(m, ring, float(q[:, 2].min()) + LIFT_M, float(q[:, 2].max()), BAND_T_M, pid(k, 23))
+    railing_h, plates = None, 0
+    for k in keys("railings"):
+        rv, rt = parts[k][:2]
+        heights = [float(rv[np.unique(rt[pc])][:, 2].max()) - elev[n] for n, _, _ in decks for pc in _pieces(rv, rt)
+                   if abs(float(rv[np.unique(rt[pc])][:, 2].min()) - elev[n]) <= 0.05]   # standing on a deck
+        railing_h = float(np.median(heights)) if heights else None
+        for n, top, deck in decks:
+            if railing_h and n in stor:
+                plates += terrace_railings(m, deck, stor[n]["poly"], top, railing_h, pid(k, 12))
+    rep["parapets"] = {"railing_h_m": round(railing_h, 3) if railing_h else None, "railing_plates": plates}
+    done("parapets", m, keys("roof_band") + keys("railings"))
+
+    rep["skipped"] = {k: parts[k][2].get("build", "") for k in keys("skip")}
+    spec = spec_of(object_id, levels, stor, [x[0] for x in decks] if railing_h else [], railing_h or 0.0,
+                   enclosure, inputs)
+    out = {"source": "from_source", "units": "m", "meshes": list(meshes.values()),
+           "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]} for n, z in levels]}
+    rep["triangles"] = sum(len(d["triangles"]) for d in meshes.values())
+    return out, spec, rep
 
 
 def load_modules(path) -> dict:

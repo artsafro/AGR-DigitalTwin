@@ -245,6 +245,16 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
 - `uv run python tools/qa/run_benchmark.py --etalon <fbx> --object <object.json> --tolerances <t.json> --output <new folder>`;
   exit 0 both pass / 1 a check fails / 2 a step stops or a check is not measured.
 
+### Build by source modules — `src/dt_ai/geometry/from_source.py`, `tools/qa/run_from_source.py`
+- Status: WORKING on a synthetic source and OBJ03 (2026-10-14, `tests/qa/test_from_source.py`): the model rebuilt
+  module by module from the source (`jobs/<OBJ>/modules/modules.json`, `build_as` per group) - walls per storey
+  (quads), slab and deck boxes (quad fill clipped by the outline, CDT fallback counted), decor one box per
+  element, planes for the roof enclosure, glass railings per ledge side - and its spec measured by the same
+  modules; the same checkers as the spec path. Beside `from_spec`, not instead of it.
+- `uv run dt from-source --dump <source dump> --modules <modules.json> --object <object.json> --output <new folder>`
+  (model dump, spec, report); `uv run python tools/qa/run_from_source.py ... --tolerances <t.json> --output <new folder>`
+  adds the FBX export, readback and checks (etalon = the source without `skip` modules).
+
 ### Benchmark geometry checks — `tools/qa/check_geometry.py`
 - Status: WORKING on synthetic boxes only (2026-10-09, `tests/qa/test_geometry_checks.py`); no
   real etalon yet (B01, issue #12). Logic in `src/twinqa/geometry/`.

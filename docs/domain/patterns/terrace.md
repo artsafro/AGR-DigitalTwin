@@ -18,6 +18,14 @@ etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 - Cap: the band at the top (roof ID); walkable terrace: the ledge minus the band (roof ID).
 - The floor-above wall cells behind the parapet's ends are hidden and not built.
 
+## Glass railings (user 2026-10-14)
+
+- A terrace edged by a glass railing (no solid parapet): one closed plate 20 mm thick per side of the ledge
+  that does not run along the walls of the floor above, its outer face on the ledge's edge, from the walkable
+  top (4 mm off it, past the weld) to the railing height read from the source glass. Two plates meeting at a
+  corner: the second is trimmed by the thickness plus 4 mm (no shared face). Frames, posts and edge trims are
+  texture, not geometry. Built by `src/dt_ai/geometry/from_source.py` (`terrace_railings`).
+
 ## How the extractor reads it (`src/dt_ai/spec/mesh.py`, `_terrace`)
 
 - A storey with exactly two section shapes: the lower one from the level up to the parapet top equals
