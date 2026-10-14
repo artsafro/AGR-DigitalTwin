@@ -1,12 +1,17 @@
 # Project state
 
-Last updated: 2026-10-14 (after #106, #114, #116)
+Last updated: 2026-10-15 (after #135)
 
 ## Current goal
 
 NPM and VPM deliveries (later IFC) and an Unreal experience. Two real objects are in
 production: KPP1 (models v005 accepted as reviewed) and PSU275 (delivery-v003 accepted as reviewed).
 Next: close their delivery gates (`docs/pipeline.md`, `docs/backlog.md`).
+
+Agent-ready harness (2026-10-14, #135 merged): spec `docs/prd/agent-ready-harness.md` = issue #118 after a
+grilling of 23 questions; sources `docs/research/agent-harness-sources-2026-10-14.md`; tickets #119-#134 (sub-issues of
+#118, blocked-by links, board Ready). Wave 1 first: #119 PROJECT_STATE as a state file (rewrites this file, <= 80 lines),
+#120 decision log, #121 transcripts at handover. Labels `harness`, `evals`.
 
 Harness rebuild (2026-10-08): `docs/HARNESS_PLAN.md` rev 3 (grilled §11/§12) — every modelling
 run starts from an extracted `spec.json`, checked against hand-made etalons (`benchmark/`).
