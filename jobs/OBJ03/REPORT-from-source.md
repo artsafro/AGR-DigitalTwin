@@ -13,7 +13,18 @@ Date 2026-10-14. Branches: `harness/from-source-modules` (PR #106, code), `job/o
 | v006 | 129 867 | 10/10 pass | review 2: one mesh per run, piers into bands, dark inserts as inset boxes |
 | v007 | 297 452 | 9/10: triangle_budget fails | review 3: bands main and continuous, collars round deeper piers, corner bands meet, inserts per plane |
 | v008 | 133 926 | 10/10 pass | joints: main = further projecting, no collars (superseded the same day) |
-| **v009** | **95 803** | **11/11 pass incl. `complexity`** | pattern `primitive-first`: storey bands as frames, piers through, plates as ids, two deliveries |
+| v009 | 95 803 | 11/11 pass incl. `complexity` | pattern `primitive-first`: storey bands as frames, piers through, plates as ids, two deliveries |
+
+| **v010** | **101 756** | **11/11 pass** | Codex review 1 of #106: source decor no longer dropped (kept as source faces) |
+
+### v010 (after Codex review 1 of #106, 2026-10-14)
+
+v009 dropped 1 442 source decor pieces (6 172 triangles) with no count: flat pieces and pieces no section is taken
+of. User decision: keep them as the source's own faces, group `decor_as_source` (budget 8 000), listed here; nothing
+of the source is dropped. Where (`outputs/from-source-v010/review/decor_as_source-only-persp.png`): strips along the
+piers, short dashes at the storey lines, the roof edge; in the assembled model they are almost entirely hidden.
+769 degenerate source triangles (no area) are counted and not built. Other changes: deck with no underside = its
+plane, enclosure top only from the source, storey band id from its source.
 
 ### v009 (pattern primitive-first, 2026-10-14)
 

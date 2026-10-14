@@ -87,3 +87,7 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
   6k, terraces / superstructure 1k; total 150k) - wait for the user. Markers 08 / 10 re-rendered for confirmation.
 - 2026-10-14 user on v009: markers 08 / 10 look right (confirmed); per-group budgets accepted as rough - the total
   150 000 is what holds; silhouette threshold 0.07 m; 12 section points per decor element.
+- 2026-10-14 Codex review 1 of #106 found that v009 dropped 1 442 source decor pieces (6 172 triangles: flat pieces
+  and pieces with no section - strips along piers, dashes at storey lines, the roof edge) without a count. User:
+  keep them as source faces (group `decor_as_source`) and list them in the report; nothing is dropped. v010
+  (`outputs/from-source-v010`, local): 101 756 triangles, 11/11 checks (not independent).

@@ -87,7 +87,8 @@
    "balconies": 8000,
    "dark_inserts": 22000,
    "parapets": 6000,
-   "superstructure": 1000
+   "superstructure": 1000,
+   "decor_as_source": 8000
   },
   "decor_groups": [
    "piers",
@@ -98,6 +99,6 @@
   ],
   "decor_section_points_max": 12,
   "silhouette_dev_min_m": 0.07,
-  "note": "OBJ03 budget proposal 2026-10-14 (agent), reserve 46 000 unassigned"
+  "note": "OBJ03 budgets per group rough, the total 150 000 holds (user 2026-10-14)"
  }
 }
