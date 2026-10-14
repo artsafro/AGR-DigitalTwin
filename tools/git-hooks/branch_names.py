@@ -8,8 +8,9 @@ Used by tools/git-hooks/pipeline_gate.py (blocks the commit) and tools/hooks/ses
 import re
 
 AUTO_BRANCH = re.compile(r"^(?:claude/|codex/)?[a-z0-9]+(?:-[a-z0-9]+)*-[0-9a-f]{6}$")
-RENAME_HINT = ("`<type>/<area>-<what>` (feature/, fix/, experiment/, research/, harness/) or "
-               "`job/<object-id>-<stage>`")
+TYPES = ("feature", "fix", "experiment", "research", "harness", "job")
+RENAME_HINT = ("`<type>/<area>-<what>` where <type> is exactly one of feature, fix, experiment, research, harness "
+               "(no other prefix: docs and harness changes are harness/), or `job/<object-id>-<stage>`")
 
 
 def is_auto(branch):
