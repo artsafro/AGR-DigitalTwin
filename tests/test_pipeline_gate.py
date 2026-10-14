@@ -403,7 +403,7 @@ def test_pre_commit_gate_sees_the_index_after_linking(repo):
     hooks = repo / ".git/hooks"
     shutil.copy(ROOT / "tools/git-hooks/pre-commit", hooks / "pre-commit")
     (repo / "tools/git-hooks").mkdir(parents=True)
-    for name in ("pipeline_gate.py", "link_large_files.py"):
+    for name in ("pipeline_gate.py", "branch_names.py", "link_large_files.py"):
         shutil.copy(ROOT / "tools/git-hooks" / name, repo / "tools/git-hooks" / name)
     git(repo, "add", "tools")
     git(repo, "commit", "-qm", "hooks", "--no-verify")

@@ -52,6 +52,10 @@ the engine covers it.
   decor extractor already lists them as `decor.attachment_candidates` (user 2026-10-12).
 - **EG3** `mid` window sashes / detailed windows from the opening plane.
 - **EG4** UV, atlas and delivery package = **H10**.
+- **EG5** Pattern primitive-first, `from_source` (2026-10-14): (a) instances by translation only - a copy turned
+  90/180 degrees is a type of its own (OBJ03 v009: 1 328 piers -> 798 types); add rotation to the type key and the
+  modules export; (b) regenerate `npm/` from an edited `modules/modules.blend` (now both come from one build).
+  Owner Codex.
 
 ## Markup helpers (after the terrace; owner Claude, code parts Codex)
 
@@ -102,6 +106,12 @@ Plan: `docs/HARNESS_PLAN.md` §15 (user decision 2026-10-11). One PR each, exten
 - **U1** Unreal import rules (UE 5.5/5.7): scale, pivots, materials, collisions, LODs.
 - **U2** Interactive experience project in `Unreal/`.
 - **U3** IFC export route.
+
+## Reuse proposals (rule of three, `docs/agents/WORKFLOW.md`; proposals only, nothing created)
+
+Added by `/handover` (procedures repeated in a session) and `/reuse-scan` (repeats across jobs). Line:
+`- **R<n>** proposal <date>, <branch> - <CLI command | skill | pattern | src/ module>: <what>; seen <N> times;
+effort <S/M/L>`. The user or the owner turns one into a task or drops it.
 
 ## Harness and organization (default owner Codex)
 

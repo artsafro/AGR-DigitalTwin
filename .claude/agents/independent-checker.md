@@ -1,6 +1,6 @@
 ---
 name: independent-checker
-description: Use when the engine has built a model - after every engine run, before the main agent reports it done. Takes the exported FBX, the spec.json, the tolerances and optionally the etalon, reads the model back, runs the geometry checks and compares with the patterns. Returns a table check / expected / measured / pass-fail, without fix proposals. It never reads how the model was built.
+description: 'Use when the engine has built a model - after every engine run, before the main agent reports it done. Takes the exported FBX, the spec.json, the tolerances and optionally the etalon, reads the model back, runs the geometry checks and compares with the patterns. Returns a table check / expected / measured / pass-fail, without fix proposals. It never reads how the model was built. Use when: «модель собрана, проверь», «сверь FBX со спекой», «проверь независимо перед показом».'
 tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write
 model: inherit

@@ -12,6 +12,8 @@ Rules (user decisions 2026-10-11, case alina-bld):
   and no unmeasured check.
 - A new job script (`jobs/<JOB>/scripts/*`) names the engine gap it fills in its first lines,
   `Engine gap: EG<n>`, and that gap is listed in `docs/backlog.md`; anything else is asked, not scripted.
+- A commit on an auto-generated worktree branch (`claude/<words>-<hex6>`, tools/git-hooks/branch_names.py) is
+  blocked until the branch is renamed by docs/agents/NAMING.md (user 2026-10-14).
 - Delivery (--job) also needs a committed `.py` for every `.pyc` under `scripts/` (a lost source with a
   live `.pyc` must not happen again).
 Exit 0 pass, 1 blocked (reasons on stderr), 2 wrong input.
@@ -23,6 +25,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from branch_names import RENAME_HINT, is_auto  # noqa: E402
 
 LEVELS = ("draft", "built", "checked", "delivered")
 # Every line that mentions the pipeline status, once Markdown marks are dropped, counts, however it is
@@ -145,8 +150,23 @@ def _git_ok(root, *args):
     return result
 
 
+def auto_branch_error(root):
+    """A commit on an auto-generated worktree branch is blocked until it is renamed (user 2026-10-14)."""
+    # the full ref, not --short: a tag of the same name makes --short answer `heads/<name>` (review 3 of #107)
+    head = _git(root, "symbolic-ref", "-q", "HEAD")
+    ref = head.stdout.decode("utf-8", "replace").strip() if head.returncode == 0 else ""   # detached: no branch
+    branch = ref[len("refs/heads/"):] if ref.startswith("refs/heads/") else ""
+    if is_auto(branch):
+        return (f"branch '{branch}' has an auto-generated worktree name; rename it by docs/agents/NAMING.md "
+                f"({RENAME_HINT}) before the first commit: propose the name to the user, then git branch -m <name>")
+    return None
+
+
 def staged(root):
     """Errors of the commit being made, read from the index."""
+    branch_error = auto_branch_error(root)
+    if branch_error:
+        return [branch_error]
     out = _git_ok(root, "diff", "--cached", "--name-status", "--no-renames", "-z").stdout.decode("utf-8").split("\0")
     changes = list(zip(out[0::2], out[1::2]))
     blobs, unmerged = {}, set()                      # path -> its blob in the index (stage 0)

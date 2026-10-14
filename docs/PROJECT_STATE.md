@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ## Current goal
 
@@ -258,6 +258,12 @@ Fallback since 2026-10-07: while Codex is out of limits, Claude also owns git/Gi
 (branches, push, PRs, merges to `main`, this file).
 Claude has the `mattpocock-skills` plugin (user scope, 2026-10-08); its repo configuration
 (issue tracker, triage labels, glossary = `GLOSSARY.md`) is in `AGENTS.md` → `## Agent skills`.
+Context rotation and triggers (PR #107, 2026-10-14; `docs/agents/WORKFLOW.md`, user cheat sheet
+`docs/agents/COMMANDS.md`): `/handover` → `/clear` → «продолжай» or `/takeover`; `/reuse-scan` weekly.
+Hooks: SessionStart / PreCompact context, a 45 / 65 % context reminder, DCC MCP calls denied until the
+skill is loaded, `logs/agent-usage.jsonl` (local). Auto-named worktree branches are renamed before the
+first commit (pre-commit gate). Verified in `claude -p`; desktop and interactive CLI: issue #110.
+Follow-ups #109, #111, #112. Vibe Kanban trial: PR #113 (not merged; the user moved it to another session).
 
 ## Available applications
 

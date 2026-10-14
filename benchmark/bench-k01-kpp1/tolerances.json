@@ -61,7 +61,6 @@
       "metal"
     ],
     "ngons_max": 0,
-    "overlap_m": 0.005,
     "overlap_pairs_max": 0,
     "triangles_max": 150000,
     "opening_plane_kinds": [

@@ -50,6 +50,9 @@ def parser():
     spec.add_argument("--a", type=Path, help="compare: first spec.json (its <spec>.report.json beside it)")
     spec.add_argument("--b", type=Path, help="compare: second spec.json (its <spec>.report.json beside it)")
     spec.add_argument("--tolerances", type=Path, help="compare / extract: benchmark tolerances.json (extract: its spec_extract thresholds)")
+    fsrc = sub.add_parser("from-source", help="Build a model by source modules (modules.json) and its spec by modules")
+    for a in ("--dump", "--modules", "--object", "--output"):
+        fsrc.add_argument(a, type=Path, required=True)
     intake = sub.add_parser("intake", help="Check an intake folder ('study the sources', HARNESS_PLAN §15)")
     intake.add_argument("action", choices=["check"])
     intake.add_argument("--dir", type=Path, required=True, help="jobs/<JOB>/intake")
@@ -85,6 +88,22 @@ def main(argv=None):
         elif args.command == "index-pdf":
             result = index_pdf(args.source, args.output)
             print(f"Indexed {len(result['pages'])} pages: {args.output / 'index.json'}")
+        elif args.command == "from-source":
+            from dt_ai.geometry import from_source
+            if args.output.exists():
+                raise ValueError(f"{args.output} exists; write a new versioned run")
+            obj = read_json(args.object.read_bytes())
+            inputs = from_source.Inputs(levels=[(lv["name"], float(lv["elev_m"])) for lv in obj["levels"]],
+                                        opening_depth_m=obj.get("opening_depth_default_m", 0.4),
+                                        weld_m=obj.get("weld_m", 0.003))
+            model, spec_doc, report, scene = from_source.build_from_modules(
+                read_json(args.dump.read_bytes()), read_json(args.modules.read_bytes()), obj["id"], inputs)
+            args.output.mkdir(parents=True)
+            write_json(args.output / "model-dump.json", model)
+            write_json(args.output / "spec.json", spec_doc)
+            write_json(args.output / "modules-report.json", report)
+            write_json(args.output / "modules-scene.json", scene)
+            print(f"from-source: {args.output}; {report['triangles']} triangles; spec {len(spec_doc['floors'])} floors")
         elif args.command == "intake":
             from dt_ai.intake.check import check as intake_check
             result = intake_check(args.dir)

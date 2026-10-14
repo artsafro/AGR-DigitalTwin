@@ -1,6 +1,6 @@
 ---
 name: validate-delivery
-description: Final check of a deliverable (NPM/VPM package, exported model, Unreal level, packaged build) against project priorities and delivery rules before it is reported done or handed over. Use before declaring a delivery complete or sending it to a client.
+description: 'Final check of a deliverable (NPM/VPM package, exported model, Unreal level, packaged build) against project priorities and delivery rules before it is reported done or handed over. Use before declaring a delivery complete or sending it to a client. Use when: «готово, можно отдавать?», «проверь пакет NPM перед отправкой», «финальная проверка модели».'
 ---
 
 # Validate delivery

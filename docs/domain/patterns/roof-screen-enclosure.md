@@ -14,6 +14,8 @@ Status: draft (user decision 2026-10-13, OBJ03). Spec v0.7 `roof_structures`.
 1. The enclosure is part of the body's silhouette (an exit to the roof), not an attachment.
 2. `npm_min`: planes on the screens' outer outline, from the roof level up to their top, facing out, and a top
    plane at the top - a box with no bottom and no thickness. The equipment blocks inside are not modelled.
+   A build by source modules follows the source: screens with no top get no top plane (OBJ03, user 2026-10-14);
+   the checker allows the open ring on the outline at the top then.
    Ids: the roof group (21-25).
 3. `mid` / VPM: the same planes as a shell (the screen's thickness); the blocks inside are decided later
    (issue #91; until then the engine raises a `BuildError`).

@@ -94,7 +94,7 @@ def run(etalon, obj_path, tol_path, out, blender):
         produced(out / "model-readback.json")
         readback = read_json((out / "model-readback.json").read_bytes())
         steps["readback"] = "done"
-        model_check = checks.run(from_dump(readback), etalon_soup, spec, geometry)
+        model_check = checks.run(from_dump(readback), etalon_soup, spec, geometry, source_class=obj.get("source_class"))
     except (SpecError, BuildError, RuntimeError, subprocess.TimeoutExpired, OSError, ValueError, KeyError,
             TypeError) as exc:
         summary["stopped"] = f"{type(exc).__name__}: {exc}"

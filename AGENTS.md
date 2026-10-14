@@ -54,6 +54,9 @@ Checks: `uv run pytest -q`, `uv run dt profiles check`, `uv run dt schemas --che
 - One task = one branch = one worktree = one writing agent. Branch names, prefixes and tags:
   `docs/agents/NAMING.md`. `main` stays clean; work reaches it by reviewed merge.
   A second agent in someone else's worktree only reads, researches or reviews.
+- A worktree branch with an auto-generated name (`claude/<words>-<hex6>`, e.g. `claude/laughing-hawking-e62961`)
+  is renamed by `NAMING.md` before the first commit: the agent proposes one name in one line, the user
+  confirms, then `git branch -m`. The pre-commit gate blocks commits on such a branch.
 - One owner per DCC scene, MCP port and export folder at a time; worktrees do not isolate them.
 - Before any DCC call confirm the application, document, units and version; start read-only.
   Saves and exports go to a new versioned path. Never overwrite sources or approved versions.

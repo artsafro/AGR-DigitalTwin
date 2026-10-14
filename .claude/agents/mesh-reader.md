@@ -1,6 +1,6 @@
 ---
 name: mesh-reader
-description: Use when a concrete numeric question about an FBX or a mesh dump needs answering - open edges with coordinates, material ids per face, heights, section areas at a height, non-manifold edges, parts and their extents. Answers with numbers and lists only, so the main agent never loads the dump.
+description: 'Use when a concrete numeric question about an FBX or a mesh dump needs answering - open edges with coordinates, material ids per face, heights, section areas at a height, non-manifold edges, parts and their extents. Answers with numbers and lists only, so the main agent never loads the dump. Use when: «сколько открытых рёбер в этом FBX?», «какие material id на фасаде?», «площадь сечения на отметке 92.3».'
 tools: Read, Grep, Glob, Bash, mcp__blender__get_objects_summary, mcp__blender__get_object_detail_summary
 disallowedTools: Edit, Write
 model: inherit
