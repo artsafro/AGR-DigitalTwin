@@ -3,7 +3,7 @@ description: Reconcile docs/HANDOFF.md with git and GitHub after a rotation, lis
 disable-model-invocation: true
 ---
 
-Resume after a context rotation (docs/agents/WORKFLOW.md, "Context rotation"). Current state:
+Take over after a context rotation (docs/agents/WORKFLOW.md, "Context rotation"). Current state:
 
 !`py -3 tools/hooks/session_context.py report`
 

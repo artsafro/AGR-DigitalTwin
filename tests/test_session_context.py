@@ -85,12 +85,12 @@ def test_stale_foreign_and_old_handoffs_are_flagged(repo):
 
 
 def test_compact_with_a_stale_handoff_asks_for_a_checkpoint(repo):
-    assert "checkpoint procedure" not in start(repo, "compact")
+    assert "handover procedure" not in start(repo, "compact")
     (repo / "x.txt").write_text("x", encoding="utf-8")
     git(repo, "add", ".")
     git(repo, "commit", "-q", "-m", "work")
-    assert "run the /checkpoint procedure" in start(repo, "compact")
-    assert "checkpoint procedure" not in start(repo, "startup")
+    assert "run the /handover procedure" in start(repo, "compact")
+    assert "handover procedure" not in start(repo, "startup")
 
 
 def test_long_handoff_is_cut_under_the_hook_cap(repo):
@@ -106,7 +106,7 @@ def test_precompact(repo):
     git(repo, "add", ".")
     git(repo, "commit", "-q", "-m", "work")
     out = json.loads(run("precompact", {"trigger": "manual", "custom_instructions": None}, repo))
-    assert out["decision"] == "block" and "/checkpoint" in out["reason"]
+    assert out["decision"] == "block" and "/handover" in out["reason"]
     assert run("precompact", {"trigger": "manual", "custom_instructions": "force"}, repo) == ""
     assert run("precompact", {"trigger": "auto", "custom_instructions": None}, repo) == ""   # never blocks auto
     lines = [json.loads(x) for x in log.read_text(encoding="utf-8").splitlines()]
@@ -127,13 +127,55 @@ def test_template_has_every_section_and_a_parsable_branch_line():
     assert [s for s in SECTIONS if f"\n## {s}\n" not in text] == []
 
 
-@pytest.mark.parametrize("name", ["checkpoint", "resume"])
+@pytest.mark.parametrize("name", ["handover", "takeover"])
 def test_commands(name):
     text = (ROOT / f".claude/commands/{name}.md").read_text(encoding="utf-8")
     meta = yaml.safe_load(text.split("---\n")[1])
     assert meta["disable-model-invocation"] is True and meta["description"]
     assert "!`py -3 tools/hooks/session_context.py report`" in text
-    if name == "checkpoint":
+    if name == "handover":
         assert "HANDOFF.template.md" in text and "Чекпоинт готов, можно /clear" in text
     else:
         assert "Wait for the user's «да»" in text
+
+
+# Review 1 of #107: each test failed before the fix.
+
+@pytest.mark.parametrize("instructions, blocked", [
+    ("force", False), ("Force keep the API notes", False),
+    ("reinforce the API constraints", True), ("do not force; preserve recent decisions", True)])
+def test_force_is_the_first_word_only(repo, instructions, blocked):
+    (repo / "x.txt").write_text("x", encoding="utf-8")
+    git(repo, "add", ".")
+    git(repo, "commit", "-q", "-m", "work")
+    out = run("precompact", {"trigger": "manual", "custom_instructions": instructions}, repo)
+    assert (out != "") is blocked
+
+
+def test_failed_git_is_not_reported_clean(repo, tmp_path):
+    env = {**os.environ, "CLAUDE_PROJECT_DIR": str(repo), "PATH": str(tmp_path)}          # no git at all
+    r = subprocess.run([sys.executable, str(HOOK), "start"], input="{}", capture_output=True, text=True, env=env)
+    ctx = json.loads(r.stdout)["hookSpecificOutput"]["additionalContext"]
+    assert "FAILED" in ctx and "clean" not in ctx and "Handoff: current" not in ctx and "not verified" in ctx
+    r = subprocess.run([sys.executable, str(HOOK), "precompact"], input=json.dumps({"trigger": "manual"}),
+                       capture_output=True, text=True, env=env)
+    assert json.loads(r.stdout)["decision"] == "block"
+
+
+def test_work_after_the_handover_makes_it_stale(repo):
+    (repo / "docs/task.py").write_text("x = 1\n", encoding="utf-8")
+    assert "1 uncommitted path(s)" in start(repo, "compact") and "run the /handover procedure" in start(repo, "compact")
+    assert json.loads(run("precompact", {"trigger": "manual"}, repo))["decision"] == "block"
+
+
+def test_a_huge_commit_subject_does_not_break_the_cap(repo):
+    git(repo, "commit", "--allow-empty", "-q", "-m", "generated summary " + "x" * 10_500)
+    ctx = start(repo, "startup")
+    assert len(ctx) < 10_000 and "--- docs/HANDOFF.md ---" in ctx and "Do X." in ctx
+
+
+def test_an_unreadable_handoff_still_gives_context(repo):
+    (repo / "docs/HANDOFF.md").write_bytes(b"# Handoff\n\nBranch: `task/a`\n\xff\xfe broken\n")
+    ctx = start(repo, "startup")
+    assert "broken" in ctx and "uncommitted changes" in ctx
+    assert run("precompact", {"trigger": "auto"}, repo) == ""

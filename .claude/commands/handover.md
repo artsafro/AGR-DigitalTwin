@@ -3,7 +3,7 @@ description: Save the session for a context rotation - commit, PR at a task boun
 disable-model-invocation: true
 ---
 
-Checkpoint before a context rotation (docs/agents/WORKFLOW.md, "Context rotation"). Current state:
+Handover before a context rotation (docs/agents/WORKFLOW.md, "Context rotation"). Current state:
 
 !`py -3 tools/hooks/session_context.py report`
 

@@ -55,19 +55,22 @@ Rules:
 A long session loses detail when it is compacted. Rotate instead, in the same worktree:
 
 1. **When:** at a task boundary (PR opened, stage accepted), or when the context reaches about 40-50 % (the
-   status line shows `ctx N%`), whichever comes first. Do not wait for auto-compaction.
-2. **`/checkpoint`** (`.claude/commands/checkpoint.md`): commit, a PR only at a task boundary (merge on the
+   status line shows `ctx N%`), whichever comes first. Do not wait for auto-compaction. The UserPromptSubmit
+   hook `tools/hooks/context_watch.py` measures it (the last response's `usage` in the transcript) and tells the
+   agent once per session at 45 % to suggest `/handover` in one sentence, and at 65 % to urge it.
+2. **`/handover`** (`.claude/commands/handover.md`): commit, a PR only at a task boundary (merge on the
    user's command), `docs/HANDOFF.md` from `docs/HANDOFF.template.md`, `jobs/<ID>/STATE.md` for a job;
    `PROJECT_STATE.md` only on `main` after a merge. It ends with «Чекпоинт готов, можно /clear».
 3. **`/clear`** in the same worktree. The SessionStart hook (`tools/hooks/session_context.py`) puts the branch,
    `git status --short`, the last 5 commits, open PRs and the handoff into the new context, with a warning when
    the handoff is behind HEAD, belongs to another branch or has the old format.
-4. **«продолжай»** - the agent names the branch, commit and next step, then does it. **`/resume`**
-   (`.claude/commands/resume.md`) - the full reconciliation of handoff, git and GitHub, a list of open items and
-   a proposal; it waits for «да». The built-in session picker `/resume` stays available as `/continue`.
+4. **«продолжай»** - the agent names the branch, commit and next step, then does it. **`/takeover`**
+   (`.claude/commands/takeover.md`) - the full reconciliation of handoff, git and GitHub, a list of open items and
+   a proposal; it waits for «да». The names avoid the built-ins `/checkpoint` (alias of `/rewind`) and
+   `/resume` (session picker), and the `handoff` skills.
 
 Compaction: a manual `/compact` with a stale handoff is blocked (`/compact force` passes). An automatic one is
-never blocked (that can fail the request); after it the hook tells the agent to run the checkpoint procedure
+never blocked (that can fail the request); after it the hook tells the agent to run the handover procedure
 first. Each compaction is logged to `<git dir>/agr-compactions.log`.
 
 Worktrees and chats: a new worktree only for a new task, from fresh `main`. A second chat in the same repo only

@@ -1,11 +1,11 @@
-"""Session context for a context rotation (/checkpoint -> /clear -> "продолжай" or /resume; docs/agents/WORKFLOW.md).
+"""Session context for a context rotation (/handover -> /clear -> "продолжай" or /takeover; docs/agents/WORKFLOW.md).
 
   py -3 tools/hooks/session_context.py start       SessionStart (startup / clear / compact): the git state, open PRs
                                                    and docs/HANDOFF.md as additionalContext
   py -3 tools/hooks/session_context.py precompact  PreCompact: a manual /compact with a stale HANDOFF is blocked
                                                    (`/compact force` passes); an auto compaction is logged, never
                                                    blocked - the agent is told after it (SessionStart compact)
-  py -3 tools/hooks/session_context.py report      the same text as `start`, plain, for /resume
+  py -3 tools/hooks/session_context.py report      the same text as `start`, plain, for /takeover
 
 A hook cannot write the handoff itself: only the agent knows decisions and the next step. It can tell whether
 docs/HANDOFF.md is behind HEAD, belongs to another branch or has an old format, and it says so.
@@ -23,6 +23,7 @@ from pathlib import Path
 
 HANDOFF = "docs/HANDOFF.md"
 LIMIT = 9500                                         # under the 10 000-character hook cap
+LINE = 300                                           # one commit subject, PR title or status line
 BRANCH_LINE = re.compile(r"^Branch:\s*`([^`]+)`", re.M)
 COMMIT_LINE = re.compile(r"Commit:\s*`([0-9a-f]{7,40})`")
 
@@ -59,11 +60,16 @@ def open_prs():
 
 
 def handoff_state():
-    """(text, warnings) of docs/HANDOFF.md against the current branch and HEAD."""
+    """(text, warnings) of docs/HANDOFF.md against the current branch, HEAD and the working tree."""
     path = _root() / HANDOFF
     if not path.exists():
-        return "", [f"{HANDOFF} does not exist: no checkpoint was made"]
-    text = path.read_text(encoding="utf-8")
+        return "", [f"{HANDOFF} does not exist: no handover was made"]
+    try:
+        text = path.read_bytes().decode("utf-8", errors="replace")
+    except OSError as e:
+        return "", [f"{HANDOFF} cannot be read ({e}): read it yourself and check every fact against git"]
+    if _git("rev-parse", "HEAD") is None:            # no git: nothing below can be verified (review 1 of #107)
+        return text, ["git failed in this worktree: the handoff's freshness is not verified"]
     warnings = []
     branch = _git("branch", "--show-current") or "(detached)"
     m = BRANCH_LINE.search(text)
@@ -77,36 +83,45 @@ def handoff_state():
     behind = _git("rev-list", "--count", f"{last}..HEAD") if last else None
     if behind and behind != "0":
         warnings.append(f"{behind} commit(s) after the last commit of {HANDOFF}: the handoff is behind HEAD")
-    if _git("status", "--porcelain", "--", HANDOFF):
+    dirty = (_git("status", "--porcelain") or "").splitlines()
+    if any(line[3:].strip() == HANDOFF for line in dirty):
         warnings.append(f"{HANDOFF} has uncommitted changes")
+    others = [line for line in dirty if line[3:].strip() != HANDOFF]
+    if others:                                       # work after the handover (review 1 of #107)
+        warnings.append(f"{len(others)} uncommitted path(s) in the working tree: the handoff does not cover them")
     return text, warnings
+
+
+def _line(text):
+    return text if len(text) <= LINE else text[:LINE] + " [...]"
 
 
 def context(source):
     branch = _git("branch", "--show-current") or "(detached)"
-    status = _git("status", "--short") or ""
-    lines = status.splitlines()
+    status = _git("status", "--short")
+    lines = (status or "").splitlines()
     head = [f"# Session context ({source}; tools/hooks/session_context.py)",
             f"Branch: {branch}  Worktree: {_root()}",
-            "Last 5 commits:", *(("  " + c) for c in (_git("log", "-5", "--oneline") or "").splitlines()),
-            "git status --short: " + ("clean" if not lines else f"{len(lines)} path(s)"),
+            "Last 5 commits:", *(("  " + c) for c in (_git("log", "-5", "--oneline") or "(git log failed)").splitlines()),
+            "git status --short: " + ("FAILED (git unavailable here)" if status is None
+                                      else "clean" if not lines else f"{len(lines)} path(s)"),
             *(("  " + s) for s in lines[:25]), *(["  ..."] if len(lines) > 25 else []),
             "Open PRs (gh):", *(("  " + p) for p in open_prs())]
     text, warnings = handoff_state()
     if source == "compact" and warnings:
         warnings.insert(0, "the context was just compacted and the handoff is not current: before any other work "
-                           "run the /checkpoint procedure (.claude/commands/checkpoint.md) while the summary is "
+                           "run the /handover procedure (.claude/commands/handover.md) while the summary is "
                            "fresh, or tell the user why you cannot")
     head += ["Handoff warnings:", *(("  - " + w) for w in warnings)] if warnings else ["Handoff: current"]
     if source in ("startup", "clear", "compact"):
         head += ["If the user says «продолжай»: first name the branch, the HEAD commit and the next step from the "
-                 "handoff (and any warning above), then do that step. /resume is the full reconciliation."]
-    body = "\n".join(head)
+                 "handoff (and any warning above), then do that step. /takeover is the full reconciliation."]
+    body = "\n".join(_line(h) for h in head)[:LIMIT - 1000]   # metadata never crowds the handoff out (review 1)
     room = LIMIT - len(body) - 200
     if text:
         cut = text if len(text) <= room else text[:max(room, 0)] + f"\n[... cut at {room} characters: read {HANDOFF}]"
         body += f"\n\n--- {HANDOFF} ---\n{cut}"
-    return body
+    return body[:LIMIT]
 
 
 def _log_compaction(payload):
@@ -128,13 +143,13 @@ def precompact(payload):
     _log_compaction(payload)
     if payload.get("trigger") != "manual":           # blocking an auto compaction can fail the request
         return {}
-    if "force" in str(payload.get("custom_instructions") or "").lower():
+    if str(payload.get("custom_instructions") or "").strip().lower().split()[:1] == ["force"]:   # the word, first
         return {}
     _, warnings = handoff_state()
     if not warnings:
         return {}
     return {"decision": "block", "reason": "docs/HANDOFF.md is not current (" + "; ".join(warnings) + "). Run "
-            "/checkpoint first (then /clear rather than /compact), or `/compact force` to compact anyway."}
+            "/handover first (then /clear rather than /compact), or `/compact force` to compact anyway."}
 
 
 def main(mode):
@@ -147,11 +162,16 @@ def main(mode):
     if not isinstance(payload, dict):
         payload = {}
     if mode == "start":
-        out = {"hookSpecificOutput": {"hookEventName": "SessionStart",
-                                      "additionalContext": context(payload.get("source") or "startup")}}
-        print(json.dumps(out))                       # ASCII JSON: no console code page can break it
+        try:
+            text = context(payload.get("source") or "startup")
+        except Exception as e:                       # the session still learns that it has no context
+            text = f"# Session context FAILED ({type(e).__name__}: {e}): read {HANDOFF} and check git yourself"
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": text}}))
     elif mode == "precompact":
-        out = precompact(payload)
+        try:
+            out = precompact(payload)
+        except Exception:                            # a broken gate never blocks compaction
+            out = {}
         if out:
             print(json.dumps(out))
     elif mode == "report":
