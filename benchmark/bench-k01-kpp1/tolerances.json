@@ -45,7 +45,6 @@
       "y",
       "top"
     ],
-    "weld_m": 0.0001,
     "decor_tol_m": 0.01,
     "non_manifold_edges_max": 0,
     "roof_inset_gap_m": [
@@ -62,7 +61,6 @@
       "metal"
     ],
     "ngons_max": 0,
-    "overlap_m": 0.005,
     "overlap_pairs_max": 0,
     "triangles_max": 150000,
     "opening_plane_kinds": [

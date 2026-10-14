@@ -49,6 +49,7 @@ vertices, triangles, material ids, polygon sizes, plus LEVEL_<name> helpers), so
 checkers read the built model exactly as they read an etalon; `polygons` (the quads) let
 tools/export/export_mesh_blender.py write it as a Blender scene and FBX.
 """
+import bisect
 from dataclasses import dataclass
 
 import numpy as np
@@ -59,7 +60,7 @@ from shapely.geometry.polygon import orient
 from dt_ai.spec.model import Spec
 
 KEY_M = 1e-6          # vertices on one 1 µm grid are one vertex
-MIN_FEATURE_M = 1e-4  # no edge or cut gap shorter than 0.1 mm (measured along the wall / side) is built
+MIN_FEATURE_M = 1e-4  # no decor edge shorter than 0.1 mm is built
 FEATURE_TOL = 1e-9    # exactly 0.1 mm passes despite floating-point arithmetic (review 2 of PR #58)
 BUILT_KINDS = ("window", "door", None)
 SLAB_GAP_M = (0.002, 0.010)    # inset slab plate above its level (pattern roof-inset-plane, checker roof_inset_gap_m)
@@ -144,8 +145,55 @@ def _cuts(values, lo, hi):
     return sorted({round(v, 9) for v in [*values, lo, hi] if lo - KEY_M <= v <= hi + KEY_M})
 
 
+class _Weld:
+    """The building's weld along one plan axis (spec weld_m, user 2026-10-13: how the user welds by hand): a
+    value within the weld (inclusive) of a fixed value is that value; the other values within the weld of a
+    group's smallest join that group, at the smallest; a value off every group stays where it is. Fixed values (an earlier
+    weld's results) never move."""
+
+    def __init__(self, values, w, fixed=()):
+        self.w, self.fixed = w, sorted({_r(v) for v in fixed})
+        free = sorted({_r(v) for v in values if self._near_fixed(v) is None})
+        self.groups = []                                  # (lo, hi): the group's range, its value is lo
+        for v in free:
+            if self.groups and v - self.groups[-1][0] <= w + FEATURE_TOL:   # from the group's first: never
+                                                                               # moved further than the weld
+                self.groups[-1][1] = v
+            else:
+                self.groups.append([v, v])
+
+    def _near_fixed(self, v):
+        i = bisect.bisect_left(self.fixed, v)
+        near = [f for f in self.fixed[max(i - 1, 0):i + 1] if abs(f - v) <= self.w + FEATURE_TOL]
+        return min(near, key=lambda f: abs(f - v)) if near else None
+
+    def __call__(self, v):
+        v = _r(v)
+        f = self._near_fixed(v)
+        if f is not None:
+            return f
+        i = bisect.bisect_right([g[0] for g in self.groups], v) - 1
+        if i >= 0 and v <= self.groups[i][1] + FEATURE_TOL:
+            return self.groups[i][0]
+        return v
+
+    def values(self):
+        return [*self.fixed, *(g[0] for g in self.groups)]
+
+
+def _welded(g, wx, wy):
+    """A plan geometry with every coordinate welded; polygons only, empty pieces dropped."""
+    out = shapely.transform(g, lambda c: np.column_stack([[wx(x) for x in c[:, 0]], [wy(y) for y in c[:, 1]]]))
+    out = shapely.make_valid(out)
+    return shapely.union_all([p for p in shapely.get_parts(out) if p.geom_type == "Polygon" and p.area > KEY_M]
+                             or [Polygon()])
+
+
 def _contours(spec: Spec):
-    """Floors in level order and their contours (pattern floor-step: a contour per floor)."""
+    """Floors in level order and their contours (pattern floor-step: a contour per floor), welded (spec weld_m)
+    with the opening ends before any cut: coordinates closer than the weld are one; a wall that collapses
+    there is refused. Also the two welds (x, y)."""
+    w = spec.weld_m
     names = [lv.name for lv in spec.levels]
     floors = sorted(spec.expanded_floors(), key=lambda f: names.index(f.level))   # records may come in any order
     if any(len(p) == 3 for f in floors for p in f.contour):
@@ -159,27 +207,37 @@ def _contours(spec: Spec):
         if f.level in templates and any(o.level_to is not None for o in f.openings):
             raise BuildError(f"floor {f.level} repeats an opening across levels: ask the user before copying it "
                              "up the run (typical-floor-repeat, user decision 2026-10-09)")
-    contours = []
-    for f in floors:
-        pts = np.asarray(f.contour, float)
+    raw = [np.asarray(f.contour, float) for f in floors]
+    for f, pts in zip(floors, raw):
         if Polygon(pts).exterior.is_ccw is False:
             raise BuildError(f"floor {f.level}: contour must be counter-clockwise (spec contract)")
+    ends = []                                         # opening ends in plan, welded with the contours
+    for f, pts in zip(floors, raw):
+        for o in f.openings:
+            if 0 <= o.wall < len(pts):
+                a, b = pts[o.wall], pts[(o.wall + 1) % len(pts)]
+                u = (b - a) / max(float(np.linalg.norm(b - a)), KEY_M)
+                ends += [a + u * o.x_m, a + u * (o.x_m + o.w_m)]
+    every = np.vstack(raw + ([np.asarray(ends)] if ends else []))
+    wx, wy = _Weld(every[:, 0], w), _Weld(every[:, 1], w)
+    contours = []
+    for f, pts in zip(floors, raw):
+        pts = np.asarray([[wx(x), wy(y)] for x, y in pts], float)
         for i in range(len(pts)):
-            d = pts[(i + 1) % len(pts)] - pts[i]
-            if (np.linalg.norm(d) < MIN_FEATURE_M - FEATURE_TOL
-                    or any(KEY_M < abs(c) < MIN_FEATURE_M - FEATURE_TOL for c in d)):
-                raise BuildError(f"floor {f.level} wall {i} is shorter than 0.1 mm or off an axis by less than "
-                                 "0.1 mm; not built (Codex review 1 of PR #58)")
+            if np.linalg.norm(pts[(i + 1) % len(pts)] - pts[i]) <= KEY_M:
+                raise BuildError(f"floor {f.level} wall {i} collapses under the {w} m weld (weld_m); not built")
+        if not Polygon(pts).is_valid:
+            raise BuildError(f"floor {f.level}: the contour is no simple polygon once welded at {w} m; not built")
         contours.append(pts)
-    return floors, contours
+    return floors, contours, raw, (wx, wy)
 
 
-def _openings(spec, floors, contours, inputs):
+def _openings(spec, floors, contours, inputs, raw, welds):
     """Openings with their wall line in plan (start point, direction, length), so a hole is cut in
     every wall on that line it crosses: the wall of its own floor and, across a level, the next."""
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     out = []
-    for f, pts in zip(floors, contours):
+    for k, (f, pts) in enumerate(zip(floors, contours)):
         for o in f.openings:
             if o.kind not in BUILT_KINDS:
                 continue
@@ -197,8 +255,13 @@ def _openings(spec, floors, contours, inputs):
                 raise BuildError(f"floor {f.level} wall {o.wall} x {o.x_m}: depth 0 has no reveal to build")
             a, b = pts[o.wall], pts[(o.wall + 1) % len(pts)]
             length = float(np.linalg.norm(b - a))
-            out.append({"wall": o.wall, "level": f.level, "a": a, "u": (b - a) / length, "length": length,
-                        "s0": o.x_m, "s1": o.x_m + o.w_m, "z0": z0, "z1": z0 + o.h_m, "id": mid,
+            u = (b - a) / length
+            ra, rb = raw[k][o.wall], raw[k][(o.wall + 1) % len(pts)]
+            ru = (rb - ra) / float(np.linalg.norm(rb - ra))
+            s0, s1 = (round(float((np.array([welds[0](q[0]), welds[1](q[1])]) - a) @ u), 9)
+                      for q in (ra + ru * o.x_m, ra + ru * (o.x_m + o.w_m)))   # its ends welded as the contour
+            out.append({"wall": o.wall, "level": f.level, "a": a, "u": u, "length": length,
+                        "s0": s0, "s1": s1, "z0": z0, "z1": z0 + o.h_m, "id": mid,
                         "depth": depth, "where": f"floor {f.level} wall {o.wall} x {o.x_m}"})
     for i, a in enumerate(out):
         for b in out[i + 1:]:
@@ -258,8 +321,9 @@ def _check_openings_on_walls(openings, contours, elev, top):
 
 def build(spec: Spec, inputs: BuildInputs) -> dict:
     """Mesh dump of the spec's exterior (see module docstring)."""
-    floors, contours = _contours(spec)
-    openings = _openings(spec, floors, contours, inputs)
+    weld = spec.weld_m
+    floors, contours, raw, (wx0, wy0) = _contours(spec)
+    openings = _openings(spec, floors, contours, inputs, raw, (wx0, wy0))
     elev = [lv.elev_m for lv in spec.levels]
     bottom, roof = elev[0], elev[-1]
     parapet = spec.roof.parapet_h_m if spec.roof else 0.0
@@ -313,8 +377,21 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         faces.append((polys[k + 1].difference(polys[k]), elev[k + 1], inputs.facade_id, -1))
     if set(terraces) - set(range(1, len(polys))):
         raise BuildError("a terrace lies at a level with no floor step under it")
-    faces = [(g, z, mid, up) for poly, z, mid, up in faces for g in shapely.get_parts(poly)
+    # the weld again over what the contours made (an oblique parapet inset, a terrace band): their new
+    # coordinates within the weld of a contour line take it, the rest weld among themselves
+    made = [c for poly, *_ in faces for g in shapely.get_parts(poly) for c in shapely.get_coordinates(g)]
+    made += [c for band, *_ in tp_solids for c in shapely.get_coordinates(band)]
+    made += [p for _, a, b, *_ in tp_walls for p in (a, b)] + list(in_pts)
+    made = np.asarray(made, float).reshape(-1, 2)
+    wx = _Weld(made[:, 0], weld, fixed=wx0.values())
+    wy = _Weld(made[:, 1], weld, fixed=wy0.values())
+    faces = [(g, z, mid, up) for poly, z, mid, up in faces for g in shapely.get_parts(_welded(poly, wx, wy))
              if g.geom_type == "Polygon" and g.area > KEY_M]
+    in_pts = np.asarray([[wx(x), wy(y)] for x, y in in_pts], float)
+    tp_walls = [(kind, np.array([wx(a[0]), wy(a[1])]), np.array([wx(b[0]), wy(b[1])]), *rest)
+                for kind, a, b, *rest in tp_walls]
+    tp_solids = [(_welded(band, wx, wy), z0, z1) for band, z0, z1 in tp_solids]
+    slabs = [(_welded(hole, wx, wy), z, where, enclosure) for hole, z, where, enclosure in slabs]
 
     # walls: (start, direction, length, z range, ID); the outer walls of every floor and the parapet's inner walls
     walls = []
@@ -346,8 +423,8 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         for s_ in (o["s0"], o["s1"]):
             if s_ <= KEY_M or s_ >= o["length"] - KEY_M:
                 raise BuildError(f"{o['where']}: the opening reaches the wall end; corner openings are not built yet")
-            if s_ < MIN_FEATURE_M - FEATURE_TOL or s_ > o["length"] - MIN_FEATURE_M + FEATURE_TOL:
-                raise BuildError(f"{o['where']}: the opening is closer than 0.1 mm to the wall end; not built")
+            if s_ < weld - FEATURE_TOL or s_ > o["length"] - weld + FEATURE_TOL:
+                raise BuildError(f"{o['where']}: the opening is within the {weld} m weld of the wall end; not built")
             x, y = o["a"] + o["u"] * s_
             if abs(o["u"][0]) * o["length"] > KEY_M:    # the same test as the walls: not along y
                 xs.add(float(x))
@@ -356,11 +433,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
         if o["z1"] >= roof - KEY_M or o["z0"] < bottom - KEY_M:
             raise BuildError(f"{o['where']}: the opening must lie between the bottom level and below the roof level")
     _check_openings_on_walls(openings, contours, elev, top)
-    xs = sorted({_r(v) for v in xs})
-    if any(x1 - x0 < MIN_FEATURE_M - FEATURE_TOL for x0, x1 in zip(xs, xs[1:])):
-        # strip lines put vertices on every wall and face they cross; closer than the checkers' 0.1 mm weld
-        # they would merge (an oblique wall maps a 1 mm clearance to 0.03 mm in x): not built yet
-        raise BuildError("two strip lines closer than 0.1 mm in x (vertices would weld); not built yet")
+    xs = sorted({wx(v) for v in xs})        # strip lines welded: two closer than weld_m are one
     traps = _trapezoids(faces, xs)
     face_ys = _propagate(traps, walls, wall_ys)
     zs_all = _cuts(elev + [top] + tp_tops + [z for o in openings for z in (o["z0"], o["z1"])], bottom, top)
@@ -373,7 +446,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
                     if min(a[1], b[1]) - KEY_M <= y <= max(a[1], b[1]) + KEY_M]
         else:                                           # any other direction: where the strips cross it
             cuts = [(x - a[0]) / u[0] for x in xs if min(a[0], b[0]) - KEY_M <= x <= max(a[0], b[0]) + KEY_M]
-        return _settle(cuts, length, f"wall ({a[0]:.3f}, {a[1]:.3f}) -> ({b[0]:.3f}, {b[1]:.3f})"), u, length
+        return _settle(cuts, length, f"wall ({a[0]:.3f}, {a[1]:.3f}) -> ({b[0]:.3f}, {b[1]:.3f})", weld), u, length
 
     mesh = _Mesh()
     for kind, a, b, z_lo, z_hi in walls:
@@ -415,7 +488,7 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
                         continue
                     mesh.quad([P(sa, za), P(sb, zb), Q(sb, zb), Q(sa, za)], inputs.reveal_id, face)
 
-    _quads(mesh, traps, face_ys)
+    _quads(mesh, traps, face_ys, weld)
     joints = [bottom]
     if slabs:
         gap, embed = spec.plate_gap_m, spec.plate_overlap_m      # building parameters (user 2026-10-10)
@@ -423,20 +496,21 @@ def build(spec: Spec, inputs: BuildInputs) -> dict:
             raise BuildError(f"inset slab gap {gap} m / embed {embed} m outside the pattern's {SLAB_GAP_M} / "
                              f"{SLAB_EMBED_M} m (roof-inset-plane); not built (Codex review 1 of PR #63)")
     for hole, z, where, enclosure in slabs:             # pattern roof-inset-plane: a separate plate, not welded
-        plate = orient(hole.buffer(embed, join_style="mitre", mitre_limit=1e6), sign=1.0)
-        if not enclosure.buffer(-MIN_FEATURE_M).contains(plate):
+        plate = hole.buffer(embed, join_style="mitre", mitre_limit=1e6)
+        pc = shapely.get_coordinates(plate)
+        px, py = _Weld(pc[:, 0], weld), _Weld(pc[:, 1], weld)
+        plate = orient(_welded(plate, px, py), sign=1.0)
+        if not enclosure.buffer(-weld).contains(plate):
             raise BuildError(f"{where}: the inset plate ({embed} m beyond the hole) reaches out of the building "
                              "outline: the faces around it are thinner than the embed; not built (review 3 of PR #63)")
-        if plate.geom_type != "Polygon" or not plate.buffer(-MIN_FEATURE_M).contains(hole):
+        if plate.geom_type != "Polygon" or not plate.buffer(-weld).contains(hole):
             raise BuildError(f"{where}: the inset plate is no single polygon around its hole; not built")
         zp = round(z + gap, 9)
         pxs = sorted({_r(x) for x, _ in plate.exterior.coords})
-        if any(x1 - x0 < MIN_FEATURE_M - FEATURE_TOL for x0, x1 in zip(pxs, pxs[1:])):
-            raise BuildError(f"{where}: inset plate corners closer than 0.1 mm in x; not built")
         ptraps = _trapezoids([(plate, zp, inputs.roof_id, 1)], pxs)
-        _quads(mesh, ptraps, _propagate(ptraps, [], {}))   # cuts carried across, no T-junction in the plate
+        _quads(mesh, ptraps, _propagate(ptraps, [], {}), weld)   # cuts carried across, no T-junction in the plate
         joints += [z, zp]
-    _hold(mesh, joints)
+    _hold(mesh, joints, weld)
     decor = _decor(spec, floors, contours, openings, inputs, elev, polys, top)
     return mesh.dump(spec.levels, [("decor", decor), ("roof_structures", _roof_structures(spec, inputs, roof))])
 
@@ -701,40 +775,48 @@ def _meet(walls, columns, gap):
                 raise BuildError(f"{wa} and {wb} touch: a column meets no other element; not built")
 
 
-CHECK_WELD_M = 1e-4   # the benchmark checkers' weld (tolerances weld_m): the built mesh must hold under it
-
-
-def _quads(mesh, traps, face_ys):
-    """Quads of the trapezoids, split at the cuts on their vertical sides (paired left to right)."""
+def _quads(mesh, traps, face_ys, w):
+    """Quads of the trapezoids, split at the cuts on their vertical sides (paired left to right); a triangle
+    (one side a point) is a fan from that point to every cut of the other side, so no T-junction is left."""
     for tr in traps:
+        x0, x1, z, up = tr["x0"], tr["x1"], tr["z"], tr["up"]
+        point = 0 if tr["b"] - tr["a"] <= SNAP_M else 1 if tr["d"] - tr["c"] <= SNAP_M else None
+        if point is not None:
+            xp, yp, xo, lo, hi = (x0, tr["a"], x1, tr["c"], tr["d"]) if point == 0 else (x1, tr["c"], x0, tr["a"], tr["b"])
+            side = [lo] + sorted(y for y in face_ys[(z, xo)] if lo + SNAP_M < y < hi - SNAP_M) + [hi]
+            if any(q - p < w - FEATURE_TOL for p, q in zip(side, side[1:])):
+                raise BuildError(f"cuts at {z} m on x {xo} closer than the {w} m weld; not built")
+            for k in range(len(side) - 1):
+                mesh.tri([[xp, yp, z], [xo, side[k], z], [xo, side[k + 1], z]], tr["mid"], [0, 0, up])
+            continue
         left = [tr["a"]] + sorted(y for y in face_ys[(tr["z"], tr["x0"])] if tr["a"] + SNAP_M < y < tr["b"] - SNAP_M) + [tr["b"]]
         right = [tr["c"]] + sorted(y for y in face_ys[(tr["z"], tr["x1"])] if tr["c"] + SNAP_M < y < tr["d"] - SNAP_M) + [tr["d"]]
         if len(left) != len(right):
             raise BuildError(f"cuts at {tr['z']} m between x {tr['x0']} and {tr['x1']} do not pair up; not built yet")
-        if any(q - p < MIN_FEATURE_M - FEATURE_TOL for side in (left, right) for p, q in zip(side, side[1:])):
-            raise BuildError(f"cuts at {tr['z']} m between x {tr['x0']} and {tr['x1']} closer than 0.1 mm; not built")
+        if any(q - p < w - FEATURE_TOL for side in (left, right) for p, q in zip(side, side[1:])):
+            raise BuildError(f"cuts at {tr['z']} m between x {tr['x0']} and {tr['x1']} within the {w} m weld; not built")
         x0, x1, z = tr["x0"], tr["x1"], tr["z"]
         for k in range(len(left) - 1):
             mesh.quad([[x0, left[k], z], [x1, right[k], z], [x1, right[k + 1], z], [x0, left[k + 1], z]],
                       tr["mid"], [0, 0, tr["up"]])
 
 
-def _hold(mesh, joints):
-    """The built mesh, welded as the checkers weld it, must still be the model (reviews of PR #58): no
-    quad collapses, no edge of more than two faces, no open edge but the bottom ring and the inset slab
-    joints (flat at a joint height). Else BuildError: an input at the 0.1 mm limit is refused rather
+def _hold(mesh, joints, w):
+    """The built mesh, welded as the checkers weld it (spec weld_m), must still be the model (reviews of PR
+    #58): no quad collapses, no edge of more than two faces, no open edge but the bottom ring and the inset
+    slab joints (flat at a joint height). Else BuildError: an input at the weld limit is refused rather
     than returned broken."""
     v = np.asarray(mesh.vertices)
-    keys = np.round(v / CHECK_WELD_M).astype(np.int64)
+    keys = np.round(v / w).astype(np.int64)
     _, cell = np.unique(keys, axis=0, return_inverse=True)
     cell = cell.reshape(-1)
     uses = {}
     for ids, _ in mesh.faces:
         c = [int(cell[i]) for i in ids]
-        if len(set(c)) != 4:
-            raise BuildError("a quad collapses under the checkers' 0.1 mm weld; the input is at the limit, not built")
-        for i in range(4):
-            e = tuple(sorted((c[i], c[(i + 1) % 4])))
+        if len(set(c)) != len(c):
+            raise BuildError(f"a face collapses under the {w} m weld (weld_m); the input is at the limit, not built")
+        for i in range(len(c)):
+            e = tuple(sorted((c[i], c[(i + 1) % len(c)])))
             uses[e] = uses.get(e, 0) + 1
     zc = {}
     for i, c in enumerate(cell):
@@ -742,8 +824,8 @@ def _hold(mesh, joints):
     for (a, b), n in uses.items():
         if n > 2:
             raise BuildError("an edge of more than two faces under the checkers' weld; not built")
-        if n == 1 and not any(abs(zc[a] - j) <= CHECK_WELD_M and abs(zc[b] - j) <= CHECK_WELD_M for j in joints):
-            raise BuildError(f"an open edge at {zc[a]:.4f} m: a face piece below the 0.1 mm limit was lost; not built")
+        if n == 1 and not any(abs(zc[a] - j) <= w and abs(zc[b] - j) <= w for j in joints):
+            raise BuildError(f"an open edge at {zc[a]:.4f} m: a face piece below the {w} m weld was lost; not built")
 
 
 def _r(v):
@@ -790,16 +872,16 @@ def _inside_solid(pt, zm, solids):
     return any(z0 < zm < z1 and band.buffer(KEY_M).contains(p) for band, z0, z1 in solids)
 
 
-def _settle(cuts, length, where):
-    """Cuts along a wall: ends included, a cut within 0.1 mm of an end taken as the end, and no two cuts
-    closer than 0.1 mm (they would weld into a collapsed quad, Codex review 1 of PR #58)."""
-    inner = sorted(round(v, 9) for v in cuts if MIN_FEATURE_M - FEATURE_TOL <= v <= length - MIN_FEATURE_M + FEATURE_TOL)
+def _settle(cuts, length, where, w):
+    """Cuts along a wall: ends included, a cut within the weld w of an end taken as the end, and no two cuts
+    closer than w (they would weld into a collapsed quad, Codex review 1 of PR #58)."""
+    inner = sorted(round(v, 9) for v in cuts if w - FEATURE_TOL <= v <= length - w + FEATURE_TOL)
     out = [0.0]
     for v in inner + [round(length, 9)]:
         if v - out[-1] < SNAP_M:
             continue
-        if v - out[-1] < MIN_FEATURE_M - FEATURE_TOL:
-            raise BuildError(f"{where}: cuts closer than 0.1 mm; not built")
+        if v - out[-1] < w - FEATURE_TOL:
+            raise BuildError(f"{where}: cuts closer than the {w} m weld; not built")
         out.append(v)
     return out
 
@@ -820,8 +902,9 @@ def _snap_add(target, values):
 
 def _trapezoids(faces, xs):
     """Every horizontal face cut into trapezoids by the vertical strips between consecutive xs: two
-    vertical sides (x0: a..b, x1: c..d) and two straight edges. A piece that is no such trapezoid (a
-    triangle where two edges meet inside the strip's side) is a BuildError."""
+    vertical sides (x0: a..b, x1: c..d) and two straight edges. One side may be a point (a == b or c == d):
+    a triangle, where two edges meet on the strip line (a pointed corner, user 2026-10-13). Any other piece
+    is a BuildError."""
     out = []
     for poly, z, mid, up in faces:
         minx, miny, maxx, maxy = poly.bounds
@@ -835,9 +918,9 @@ def _trapezoids(faces, xs):
                 pts = np.asarray(part.exterior.coords)[:-1]
                 lefts = sorted({_r(y) for x, y in pts if abs(x - x0) <= 1e-7})
                 rights = sorted({_r(y) for x, y in pts if abs(x - x1) <= 1e-7})
-                if len(lefts) < 2 or len(rights) < 2:
-                    raise BuildError(f"the face at {z} m between x {x0} and {x1} narrows to a point; "
-                                     "a triangle is not built yet")
+                if not lefts or not rights or (len(lefts) < 2 and len(rights) < 2):
+                    raise BuildError(f"the face at {z} m between x {x0} and {x1} has no side on a strip line; "
+                                     "not built")
                 a, b, c, d = lefts[0], lefts[-1], rights[0], rights[-1]
                 if abs(part.area - ((b - a) + (d - c)) / 2 * (x1 - x0)) > 1e-6:
                     raise BuildError(f"the face at {z} m between x {x0} and {x1} is no trapezoid; not built yet")

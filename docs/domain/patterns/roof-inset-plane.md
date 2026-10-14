@@ -20,7 +20,7 @@ etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `t
 2. The plate is `plate_gap_m` above the level and overlaps the hole by `plate_overlap_m` all round: it
    runs under the parapet / terrace wall by that much (mitred at corners), so the outlines never cross.
    Both are building parameters of the spec (user 2026-10-10), default 5 mm / 20 mm as in the etalons;
-   the pattern allows a gap of 2-10 mm (`roof_inset_gap_m`) and an overlap of 10-50 mm
+   the pattern allows a gap past the building's weld `weld_m` (3 mm, user 2026-10-13) up to 10 mm (`roof_inset_gap_m`) and an overlap of 10-50 mm
    (`roof_inset_embed_m`). A level may hold several slabs (a ledge in parts): each A pairs with exactly
    one B overlapping it. A shaft through a slab stands in the hole as a part of its own: its foot is an
    inner outline of A, and the plate's hole around it an inner outline of B, shrunk by the same overlap
@@ -53,9 +53,9 @@ etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `t
 - `mesh` (`twinqa.geometry.checks`): the slabs the spec implies (`slabs(spec)`: the roof level when
   the parapet is > 0, every terrace level) each need a paired A + B (`slabs_not_inset` lists the
   missing); a lone A or B, a third loop, a loop that is not one simple cycle, an uneven embed or a gap
-  outside 2-10 mm fails; each plate's gap and overlap equal the spec's `plate_gap_m` / `plate_overlap_m`
+  within the weld or over 10 mm fails; each plate's gap and overlap equal the spec's `plate_gap_m` / `plate_overlap_m`
   within `plate_tol_m` (0.5 mm), else `plates_off_spec` fails.
-- Extractor: a terrace's walkable part is read from the body at the level or from a plate 2-10 mm above
+- Extractor: a terrace's walkable part is read from the body at the level or from a plate 2-10 mm above (a plate within `weld_m` stops: the spec refuses `plate_gap_m <= weld_m`)
   it (`_inset_plate`), where no cap covers it.
 
 ## Traps

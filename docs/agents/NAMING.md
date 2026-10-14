@@ -68,8 +68,10 @@ never reused.
 
 `<type>/<area>-<what>`, lowercase, hyphens. Types: `feature/`, `fix/`, `experiment/`,
 `research/`, `harness/` for shared code and the harness; `job/<object-id>-<stage>` for work on
-one object (`job/tec26-psu275-delivery`). Rename an auto-generated agent branch
-(`claude/<random>`) before its first push or merge.
+one object (`job/tec26-psu275-delivery`). Rename an auto-generated worktree branch
+(`claude/<words>-<hex6>`, `codex/…`, bare `<words>-<hex6>`; `tools/git-hooks/branch_names.py`) before its
+first commit: the agent proposes the name, the user confirms. The pre-commit gate blocks a commit on it, and
+the SessionStart hook asks the agent for the proposal (user 2026-10-14).
 
 ## Tags
 
