@@ -42,6 +42,11 @@ what the engine lacks (`EG<n>`), and a count of decor elements against the colle
 - 2026-10-13 retro review of #99 / #100: four P1 (#101-#104), one P2 (#105).
 - 2026-10-13 modules confirmed (`modules/modules.json`): the inner core Shape211223721 is not built; slot 72
   (spandrel planes) and slot 70 are wall finishes (ids 4, 5); the roof slat band Shape211223719 is a texture.
+- 2026-10-13 slot 9 = window reveals (built by the openings' reveals); checker: seated loops (1), decor mesh
+  left out of the topology checks (2a); spec rebuilt by modules (3).
+- 2026-10-14 terrace glass railings: one closed 20 mm plate per ledge side, frames and trims texture (pattern
+  terrace); the deck's 5 mm gap is the rule; overlap = crossing deeper than weld_m (3 mm); floor areas of a
+  panelised source against the spec contours ("spec-based").
 - 2026-10-13 **lamellas** of the east facade slot (0.05 x 0.20 x 3.28 m fins, 0.10 m pitch, 11 per storey): NPM as a
   **texture** on the slot back, no geometry (as at Butovskaya, user 2026-10-07).
 - 2026-10-13 disputed geometry: look first, then classify (`WORKFLOW.md`); questions to the user only with a picture.

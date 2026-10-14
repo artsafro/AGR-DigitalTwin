@@ -478,11 +478,9 @@
    "build_as": "boxes"
   },
   {
-   "module": "decor",
-   "what": "window surround frames (rectangular rings round the spandrels / windows)",
-   "ids": {
-    "RailClone2146__slot9": 27
-   },
+   "module": "walls",
+   "what": "window reveal planes (heads / sills)",
+   "ids": {},
    "parts": [
     {
      "source": "RailClone2146__slot9",
@@ -510,7 +508,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build_as": "boxes"
+   "build_as": "skip",
+   "build": "not built: the openings' reveals (user 2026-10-13)"
   },
   {
    "module": "walls",
