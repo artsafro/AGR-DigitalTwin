@@ -91,3 +91,5 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
   and pieces with no section - strips along piers, dashes at storey lines, the roof edge) without a count. User:
   keep them as source faces (group `decor_as_source`) and list them in the report; nothing is dropped. v010
   (`outputs/from-source-v010`, local): 101 756 triangles, 11/11 checks (not independent).
+- 2026-10-14 v011 (`outputs/from-source-v011`, local) after Codex review 2 of #106: 99 782 triangles, 11/11 checks
+  (not independent); decor_as_source 4 198 triangles (1 974 source faces lying on built elements not doubled).

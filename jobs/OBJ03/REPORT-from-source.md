@@ -15,7 +15,8 @@ Date 2026-10-14. Branches: `harness/from-source-modules` (PR #106, code), `job/o
 | v008 | 133 926 | 10/10 pass | joints: main = further projecting, no collars (superseded the same day) |
 | v009 | 95 803 | 11/11 pass incl. `complexity` | pattern `primitive-first`: storey bands as frames, piers through, plates as ids, two deliveries |
 
-| **v010** | **101 756** | **11/11 pass** | Codex review 1 of #106: source decor no longer dropped (kept as source faces) |
+| v010 | 101 756 | 11/11 pass | Codex review 1 of #106: source decor no longer dropped (kept as source faces) |
+| **v011** | **99 782** | **11/11 pass** | Codex review 2 of #106: kept source faces on built elements not doubled (1 974 dropped as covered), band ids per piece, slat tops are no screen top |
 
 ### v010 (after Codex review 1 of #106, 2026-10-14)
 
