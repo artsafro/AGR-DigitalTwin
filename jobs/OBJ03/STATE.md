@@ -68,3 +68,6 @@ what the engine lacks (`EG<n>`), and a count of decor elements against the colle
 #82 terrace parapets, #84 DP contour vs roof check, #85 open facade joined to an inner ring, #90 protrusion
 root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a marked enclosure.
 #95 #84 fix P1, #96 decor widths / panelised decor, #97 self-crossing contour, #98 terraces not built.
+- 2026-10-14 user review of v003 (markers ISSUE_01-07): piers need their real section per storey; small balconies
+  are sloped profiles; the screen enclosure has no top; the dark horizontal inserts (slots 70/72) were missing.
+  v005 (`outputs/from-source-v005`, local): fixed - 140 013 triangles, all 10 checks pass (not independent).

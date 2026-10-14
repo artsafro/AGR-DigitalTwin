@@ -544,8 +544,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "wall finish, facade id 4 (user 2026-10-13)",
-   "build_as": "walls"
+   "build": "planes where the source has them (dark inserts, user review 2026-10-14)",
+   "build_as": "planes"
   },
   {
    "module": "walls",
@@ -580,8 +580,8 @@
     }
    ],
    "confidence": "confirmed as listed",
-   "build": "wall finish, facade id 5 (user 2026-10-13: the rest ok)",
-   "build_as": "walls"
+   "build": "planes where the source has them (dark inserts, user review 2026-10-14)",
+   "build_as": "planes"
   },
   {
    "module": "glazing",
@@ -848,5 +848,5 @@
   }
  ],
  "confirmed": "user 2026-10-13: 721 not built, slot 72 a finish, 719 as texture, the rest ok",
- "build_as": "how from_source builds a module: slab_boxes, deck_boxes, walls (the storey's wall line), openings_glass (the glass that makes the openings), boxes (decor: one box per element), boxes_seated, planes_enclosure (2a), roof_band (a textured closed band on the roof edge), railings (pattern terrace), skip"
+ "build_as": "how from_source builds a module: slab_boxes, deck_boxes, walls (the storey's wall line), openings_glass (the glass that makes the openings), boxes (decor: each piece by its real section), boxes_seated, planes_enclosure (2a), roof_band (a textured closed band on the roof edge), railings (pattern terrace), skip, planes (finishes standing off the wall)"
 }
