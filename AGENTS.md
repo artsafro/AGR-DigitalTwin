@@ -67,7 +67,8 @@ Checks: `uv run pytest -q`, `uv run dt profiles check`, `uv run dt schemas --che
 - Mark synthetic data as synthetic. Never present it as data of a real object.
 - Never push, rewrite history, delete source/production assets or change machine
   settings without the user's explicit approval (the guard hook asks).
-- Update `docs/PROJECT_STATE.md` only on `main` after a merge; in task branches report
+- Update `docs/PROJECT_STATE.md` only on `main` after a merge, by replacing a section (≤ 80 lines, fixed
+  sections; `docs/agents/WORKFLOW.md`); in task branches report
   state changes in the final summary.
 - A new tool counts as shared only after it is listed in `docs/agents/CAPABILITIES.md` on `main`.
 

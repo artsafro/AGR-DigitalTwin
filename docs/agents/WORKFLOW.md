@@ -114,6 +114,14 @@ Worktrees and chats: a new worktree only for a new task, from fresh `main`. A se
 reads, or writes files that do not overlap with the first one's. `docs/HANDOFF.md` describes its own branch: at
 a merge to `main` keep `main`'s handoff unless the merged branch's handoff is the one the next session needs.
 
+## Project state (#119)
+
+`docs/PROJECT_STATE.md` is state, not history: at most 80 lines, exactly the sections Goal, In production
+(object -> version -> status -> open gates), Harness (what is green), Next step, Links
+(`tests/test_project_state.py`). Edit it only on `main` after a merge, by replacing the sections the merge
+changed; never append. The only history it keeps is the last PR number and the date on the `Last updated`
+line; `git log --merges` and the PRs hold the rest. In a task branch state changes go into the handoff.
+
 ## Reports
 
 Keep full arrays, scenes and logs in files. In a report give counts, statuses, up to five

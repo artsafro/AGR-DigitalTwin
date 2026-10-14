@@ -148,3 +148,15 @@ effort <S/M/L>`. The user or the owner turns one into a task or drops it.
   raise the budget, move binaries to another store, or drop LFS patterns. Heavy data: legacy job outputs and Revit sources live in `jobs/*/outputs` and
   `data/` (local only). Decide backup (external disk / NAS / LFS) before deleting the old
   folders' last copies.
+- **H11** Former projects, moved here on 2026-10-06: DigitalTwinProject (Claude,
+  `C:\Users\artsafro\DigitalTwinProject`, archive `data/archive/DigitalTwinProject-Claude-all.bundle`) and
+  AGR_Project (Codex, `C:\Users\artsafro\.AGR_Project`, archives `AGR_Project-all.bundle`,
+  `AGR_Project-uncommitted-2026-10-06.zip`). The user plans to delete both folders; before that check the
+  user-level configs that still point at them (H2, H3) and re-create the bundles if work continued there
+  after 2026-10-06 23:24. Dropped on purpose: AGR process history, the Cursor verifier, the KPP1-VPM task,
+  Codex `agent_monitor` (kept in the uncommitted-files archive).
+- **H12** Branches not merged on purpose (user, 2026-10-07): `claude/npm-models-school-kpp-ec9ced`
+  (BUTOVSKAYA-NPM, work in progress), `claude/modest-ptolemy-684fb7` and `feature/kpp1-ground` (TEC26
+  ground, adds `ezdxf`). Owner: user decides when to resume.
+- **H13** (Claude) Rerun the merged `fix/export-safety` scripts on real data: KPP1 full `run_all.sh` on a new
+  version, PSU275 v003/v004 re-assembly with `assemble_body_roof.py`; so far only synthetic tests pass.

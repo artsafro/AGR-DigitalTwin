@@ -48,7 +48,8 @@ Run in priority order from `CLAUDE.md`. Each check ends as `pass`, `fail`,
 
 Write `docs/deliveries/<deliverable>-<YYYY-MM-DD>.md`: file paths with SHA-256, each
 check with result and evidence (numbers, screenshots, commands), and the verdict.
-Update the `Deliverables` table in `docs/PROJECT_STATE.md`.
+Report the verdict for the `In production` section of `docs/PROJECT_STATE.md`: in the handoff from a task
+branch, in the section itself only on `main` after the merge (`docs/agents/WORKFLOW.md`, "Project state").
 
 ## Completion
 

@@ -17,6 +17,19 @@ Status:
 4. Ask for review and merge (`ROLES.md`: Codex integrates `main`; DCC tools are confirmed by Claude on real data).
 5. Other worktrees pick it up with `git merge main` at the start of their next task.
 
+## Machine and repository
+
+- Local: `C:\Users\artsafro\AGR-DigitalTwin` (branch `main`); GitHub `artsafro/AGR-DigitalTwin`
+  (private, `origin`). Task worktrees: the agent's own worktree folder or
+  `C:\Users\artsafro\HerdrWorktrees\AGR-DigitalTwin\<name>` (Herdr).
+- Applications: Blender 4.4 and 5.1.2, Unreal Engine 5.5 and 5.7, 3ds Max 2024 and 2026, Revit 2025,
+  AutoCAD 2025, SketchUp 2026, SpeedTree Modeler 10.0.1, RizomUV 2024.1, Python 3.13 (`py -3`), uv,
+  Node/npx, Git LFS, GitHub CLI, poppler. DCC executables are not on PATH.
+- Drive C is ~99 % full (about 20 GB free); heavy data has no backup outside this machine (backlog H9).
+- `.gitattributes` routes production binaries to Git LFS, but the LFS budget is exhausted (push
+  rejected 2026-10-06): commit no LFS files until H9 is decided. Files over 50 MB go as links (below).
+- CI on GitHub does not start (account locked for billing, 2026-10-14): checks are the local suite only.
+
 ## DCC / MCP
 
 Rules for every DCC: confirm the MCP tools are present **and** the intended application and
@@ -157,6 +170,7 @@ checker). Note: the desktop app did not load project subagents from this worktre
   scripts name an engine gap `EG<n>`; delivery needs a committed `.py` for every `.pyc`
   (`docs/HARNESS_PLAN.md` §16). Claude Code also blocks such writes at PreToolUse
   (`.claude/hooks/pipeline_gate.py`, permission "deny").
+- Limit (user 2026-10-12, #79): a compromised environment is not covered, for example a fake `py` on PATH.
 
 ## Pipeline core (src/dt_ai, technical_library, tools)
 
