@@ -1,20 +1,21 @@
 """Keep the session transcript at /handover (#121; docs/agents/WORKFLOW.md, "Context rotation").
 
-  py -3 tools/hooks/save_transcript.py [--transcript PATH] [--pr N]
+  py -3 tools/hooks/save_transcript.py --nonce <fresh random token> [--pr N]
+  py -3 tools/hooks/save_transcript.py --transcript PATH [--pr N]
 
 Copies this session's Claude Code transcript (.jsonl) to `<main checkout>/logs/transcripts/
 <branch>-pr<N|none>-<session id>.jsonl` and prints that path for the handoff's `Transcript:` line, so a grader
 can later read the task's session from a file tied to its branch and PR. The folder is local and git-ignored
 (`/logs/`), next to `logs/agent-usage.jsonl`; every worktree writes into the main checkout.
+Pattern: new-case (a harness tool; no domain pattern applies).
 
-Which transcript - from the hook input, never guessed (review 1 of #140): `--transcript`, else
-`$CLAUDE_SESSION_ID`, else the last `/handover` of this branch in `logs/agent-usage.jsonl`, which the
-UserPromptSubmit hook (`usage_log.py prompt`) writes with the session id and transcript path it was given. A
-session id is looked up as `<id>.jsonl` in the worktree's project folder `<config dir>/projects/<path, every
-non-alphanumeric character as '-'>`. Nothing found: exit 2, no copy.
+Which transcript - proven, never guessed (reviews 1-2 of #140): `--transcript`, else `$CLAUDE_SESSION_ID`, else
+`--nonce`. The agent's Bash call is written to its own transcript before the command runs, so the one transcript
+in the worktree's project folder `<config dir>/projects/<path, every non-alphanumeric character as '-'>` that
+contains the nonce is the calling session's. None (after a short wait) or more than one: exit 2.
 
 The copy goes to a temporary file first and is published with a hard link, which never replaces a file.
-Exit 0 copied, 1 a copy of this session exists already (kept), 2 any other failure (no transcript, git, I/O).
+Exit 0 copied, 1 a copy of this session exists already (kept), 2 any other failure (nothing written).
 """
 import argparse
 import json
@@ -23,10 +24,10 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-import usage_log  # noqa: E402
+NONCE = re.compile(r"^[A-Za-z0-9_-]{12,}$")
 
 
 def _root():
@@ -45,39 +46,47 @@ def _git(*args):
 def project_folders():
     """Claude Code's folders for this worktree: `C:\\a\\b.c` -> `<config>/projects/C--a-b-c`."""
     config = Path(os.environ.get("CLAUDE_CONFIG_DIR") or Path.home() / ".claude")
-    paths = dict.fromkeys(p for p in (str(_root()), _git("rev-parse", "--show-toplevel")) if p)
-    return [config / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(Path(p))) for p in paths]
+    paths = [p for p in (str(_root()), _git("rev-parse", "--show-toplevel")) if p]
+    # One worktree may come as C:\a and C:/a: the same folder, listed once.
+    return list(dict.fromkeys(config / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(Path(p))) for p in paths))
 
 
-def by_session(session):
+def holding(nonce):
+    found = {}
     for folder in project_folders():
-        if (folder / f"{session}.jsonl").is_file():
-            return folder / f"{session}.jsonl"
-    return None
+        for f in sorted(folder.glob("*.jsonl")) if folder.is_dir() else []:
+            try:
+                if nonce.encode() in f.read_bytes():
+                    found[os.path.normcase(os.path.realpath(f))] = f
+            except OSError:
+                continue
+    return list(found.values())
 
 
-def last_handover(branch):
-    """(session id, transcript path) of the last /handover of this branch in the usage log, or (None, None)."""
-    rows = [r for r in usage_log.read() if r.get("kind") == "command" and r.get("name") == "handover"
-            and r.get("branch") == branch and r.get("session_id")]
-    return (rows[-1]["session_id"], rows[-1].get("transcript")) if rows else (None, None)
-
-
-def find_transcript(explicit, branch):
+def find_transcript(explicit, nonce):
     """(path or None, how it was found or why not)."""
     if explicit:
         return (Path(explicit), "--transcript") if Path(explicit).is_file() else (None, f"{explicit} is no file")
     session = os.environ.get("CLAUDE_SESSION_ID")
     if session:
-        found = by_session(session)
-        return (found, "$CLAUDE_SESSION_ID") if found else (None, f"no {session}.jsonl in {project_folders()}")
-    session, path = last_handover(branch)
-    if not session:
-        return None, f"no /handover of branch {branch} in {usage_log.log_path()}"
-    if path and Path(path).is_file() and Path(path).stem == session:
-        return Path(path), "usage log"
-    found = by_session(session)
-    return (found, "usage log") if found else (None, f"session {session}: no {session}.jsonl in {project_folders()}")
+        for folder in project_folders():
+            if (folder / f"{session}.jsonl").is_file():
+                return folder / f"{session}.jsonl", "$CLAUDE_SESSION_ID"
+        return None, f"no {session}.jsonl in {project_folders()}"
+    if not nonce:
+        return None, "pass --nonce <fresh random token> (or --transcript)"
+    if not NONCE.match(nonce):
+        return None, "the nonce must be 12 or more letters, digits, '-' or '_'"
+    deadline = time.monotonic() + float(os.environ.get("AGR_TRANSCRIPT_WAIT_S", "5"))
+    while True:
+        found = holding(nonce)
+        if len(found) == 1:
+            return found[0], "--nonce"
+        if len(found) > 1:
+            return None, f"the nonce is in {len(found)} transcripts: {[f.name for f in found]}; use a fresh one"
+        if time.monotonic() >= deadline:
+            return None, f"no transcript in {project_folders()} contains the nonce"
+        time.sleep(0.5)
 
 
 def pr_number():
@@ -126,15 +135,16 @@ def main(argv):
         sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--transcript")
+    parser.add_argument("--nonce")
     parser.add_argument("--pr", type=int)
     args = parser.parse_args(argv)
     branch = _git("branch", "--show-current")
     if branch is None:
         print("git failed: the branch and the main checkout are unknown", file=sys.stderr)
         return 2
-    source, how = find_transcript(args.transcript, branch or "detached")
+    source, how = find_transcript(args.transcript, args.nonce)
     if source is None:
-        print(f"no transcript: {how}; pass --transcript <path to this session's .jsonl>", file=sys.stderr)
+        print(f"no transcript: {how}", file=sys.stderr)
         return 2
     dest = destination(branch or "detached", args.pr or pr_number(), source.stem)
     if dest is None:
@@ -149,4 +159,8 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    try:
+        sys.exit(main(sys.argv[1:]))
+    except Exception as e:                           # an unexpected error is a failure (2), never "copy exists" (1)
+        print(f"save_transcript failed: {type(e).__name__}: {e}", file=sys.stderr)
+        sys.exit(2)

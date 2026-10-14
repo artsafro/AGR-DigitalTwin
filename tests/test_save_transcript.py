@@ -1,6 +1,5 @@
 """tools/hooks/save_transcript.py: the session transcript kept at /handover, by branch and PR (#121)."""
 import importlib.util
-import json
 import os
 import re
 import shutil
@@ -13,7 +12,6 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 HOOK = ROOT / "tools/hooks/save_transcript.py"
 CONTEXT = ROOT / "tools/hooks/session_context.py"
-USAGE = ROOT / "tools/hooks/usage_log.py"
 BRANCH = "harness/task-x"
 
 
@@ -39,101 +37,83 @@ def folder_for(config, path):
     return config / "projects" / "".join(c if c.isascii() and c.isalnum() else "-" for c in str(path))
 
 
+NONCE = "n0nce-abcdef123456"
+
+
 @pytest.fixture
 def config(tmp_path, repo):
-    """A Claude Code config dir with two sessions in the repo's project folder; `other` is the newest."""
+    """A Claude Code config dir with two sessions; `other` is written last (newest), `s-123` holds the nonce."""
     config = tmp_path / "claude"
     folder = folder_for(config, repo)
     folder.mkdir(parents=True)
-    (folder / "s-123.jsonl").write_text('{"session": "s-123"}\n', encoding="utf-8")
+    (folder / "s-123.jsonl").write_text(f'{{"command": "save_transcript.py --nonce {NONCE}"}}\n', encoding="utf-8")
     (folder / "other.jsonl").write_text('{"session": "other"}\n', encoding="utf-8")
     return config
 
 
-def env_for(repo, config, usage):
+def run(script, repo, config, *args, env_extra=None, cwd=None):
     env = {**os.environ, "CLAUDE_PROJECT_DIR": str(repo), "CLAUDE_CONFIG_DIR": str(config),
-           "AGR_USAGE_LOG": str(usage), "PATH": os.path.dirname(shutil.which("git"))}   # no gh: offline
+           "AGR_TRANSCRIPT_WAIT_S": "0", "PATH": os.path.dirname(shutil.which("git"))}   # no gh: offline
     env.pop("CLAUDE_SESSION_ID", None)
-    return env
-
-
-def run(script, repo, config, usage, *args, env_extra=None, cwd=None):
-    env = {**env_for(repo, config, usage), **(env_extra or {})}
+    env.update(env_extra or {})
     return subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True, encoding="utf-8",
                           env=env, cwd=cwd or repo)
 
 
-def handover_prompt(repo, config, usage, session, transcript=None, branch_repo=None):
-    """The UserPromptSubmit hook as Claude Code calls it on `/handover`."""
-    payload = {"hook_event_name": "UserPromptSubmit", "prompt": "/handover", "session_id": session,
-               "transcript_path": str(transcript) if transcript else None}
-    r = subprocess.run([sys.executable, str(USAGE), "prompt"], input=json.dumps(payload), text=True,
-                       encoding="utf-8", capture_output=True, env=env_for(branch_repo or repo, config, usage))
-    assert r.returncode == 0, r.stderr
-
-
-@pytest.fixture
-def usage(tmp_path):
-    return tmp_path / "usage.jsonl"
-
-
-def test_the_handover_session_not_the_newest_file(repo, config, usage):
-    handover_prompt(repo, config, usage, "s-123")
-    first = run(HOOK, repo, config, usage, "--pr", "140")
+def test_the_session_holding_the_nonce_not_the_newest_file(repo, config):
+    first = run(HOOK, repo, config, "--nonce", NONCE, "--pr", "140")
     assert first.returncode == 0, first.stderr
     dest = Path(first.stdout.strip())
     assert dest == repo / "logs/transcripts/harness-task-x-pr140-s-123.jsonl"
-    assert dest.read_text(encoding="utf-8") == '{"session": "s-123"}\n'
+    assert NONCE in dest.read_text(encoding="utf-8")
     assert [p.name for p in dest.parent.iterdir()] == [dest.name]          # no temporary file left
 
 
-def test_never_overwritten(repo, config, usage):
-    handover_prompt(repo, config, usage, "s-123")
-    dest = Path(run(HOOK, repo, config, usage, "--pr", "140").stdout.strip())
+def test_never_overwritten(repo, config):
+    dest = Path(run(HOOK, repo, config, "--nonce", NONCE, "--pr", "140").stdout.strip())
     dest.write_text("kept", encoding="utf-8")
-    second = run(HOOK, repo, config, usage, "--pr", "140")
+    second = run(HOOK, repo, config, "--nonce", NONCE, "--pr", "140")
     assert second.returncode == 1 and "not overwritten" in second.stderr
     assert dest.read_text(encoding="utf-8") == "kept"
 
 
-def test_transcript_path_from_the_hook_wins(repo, config, usage, tmp_path):
-    elsewhere = tmp_path / "elsewhere" / "s-777.jsonl"
-    elsewhere.parent.mkdir()
-    elsewhere.write_text("{}\n", encoding="utf-8")
-    handover_prompt(repo, config, usage, "s-777", transcript=elsewhere)
-    r = run(HOOK, repo, config, usage)
-    assert r.returncode == 0, r.stderr
-    assert Path(r.stdout.strip()).name == "harness-task-x-prnone-s-777.jsonl"
-
-
-def test_no_session_is_an_error_not_a_guess(repo, config, usage):
-    r = run(HOOK, repo, config, usage)                                      # two transcripts, no /handover
-    assert r.returncode == 2 and "no /handover" in r.stderr
-    assert not (repo / "logs").exists()
-    r = run(HOOK, repo, config, usage, env_extra={"CLAUDE_SESSION_ID": "missing"})
+def test_no_proof_is_an_error_not_a_guess(repo, config):
+    for args, message in [((), "--nonce"), (("--nonce", "short"), "12 or more"),
+                          (("--nonce", "absent-token-0000"), "contains the nonce")]:
+        r = run(HOOK, repo, config, *args)
+        assert r.returncode == 2 and message in r.stderr, (args, r.stderr)
+    r = run(HOOK, repo, config, env_extra={"CLAUDE_SESSION_ID": "missing"})
     assert r.returncode == 2 and "no missing.jsonl" in r.stderr
+    assert not (repo / "logs").exists()
 
 
-def test_another_branch_handover_does_not_count(repo, config, usage):
-    handover_prompt(repo, config, usage, "s-123")
-    git(repo, "checkout", "-q", "-b", "harness/other")
-    r = run(HOOK, repo, config, usage)
-    assert r.returncode == 2 and "harness/other" in r.stderr
+def test_a_nonce_in_two_sessions_is_refused(repo, config):
+    (folder_for(config, repo) / "other.jsonl").write_text(NONCE, encoding="utf-8")
+    r = run(HOOK, repo, config, "--nonce", NONCE)
+    assert r.returncode == 2 and "2 transcripts" in r.stderr
 
 
-def test_a_linked_worktree_writes_into_the_main_checkout(repo, config, usage, tmp_path):
+def test_session_id_and_explicit_path(repo, config, tmp_path):
+    r = run(HOOK, repo, config, env_extra={"CLAUDE_SESSION_ID": "other"})
+    assert r.returncode == 0 and Path(r.stdout.strip()).name == "harness-task-x-prnone-other.jsonl", r.stderr
+    elsewhere = tmp_path / "s-777.jsonl"
+    elsewhere.write_text("{}\n", encoding="utf-8")
+    r = run(HOOK, repo, config, "--transcript", str(elsewhere))
+    assert r.returncode == 0 and Path(r.stdout.strip()).name == "harness-task-x-prnone-s-777.jsonl", r.stderr
+
+
+def test_a_linked_worktree_writes_into_the_main_checkout(repo, config, tmp_path):
     tree = tmp_path / "wt"
     git(repo, "worktree", "add", "-q", "-b", "harness/wt", str(tree))
     folder = folder_for(config, tree)
     folder.mkdir(parents=True)
-    (folder / "s-9.jsonl").write_text("{}\n", encoding="utf-8")
-    handover_prompt(tree, config, usage, "s-9")
-    r = run(HOOK, tree, config, usage, "--pr", "3", cwd=tree)
+    (folder / "s-9.jsonl").write_text(NONCE, encoding="utf-8")
+    r = run(HOOK, tree, config, "--nonce", NONCE, "--pr", "3", cwd=tree)
     assert r.returncode == 0, r.stderr
     assert Path(r.stdout.strip()) == repo / "logs/transcripts/harness-wt-pr3-s-9.jsonl"
 
 
-def test_a_failed_copy_leaves_nothing_and_a_retry_works(repo, config, monkeypatch, capsys):
+def test_a_failed_copy_leaves_nothing_and_a_retry_works(repo, config, monkeypatch):
     spec = importlib.util.spec_from_file_location("save_transcript", HOOK)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -147,7 +127,7 @@ def test_a_failed_copy_leaves_nothing_and_a_retry_works(repo, config, monkeypatc
     assert module.publish(source, dest) == 2 and not dest.exists()
     assert list(dest.parent.iterdir()) == []
     monkeypatch.undo()
-    assert module.publish(source, dest) == 0 and dest.read_text(encoding="utf-8") == '{"session": "s-123"}\n'
+    assert module.publish(source, dest) == 0 and NONCE in dest.read_text(encoding="utf-8")
 
 
 def test_the_folder_is_git_ignored():
@@ -155,25 +135,24 @@ def test_the_folder_is_git_ignored():
     assert r.returncode == 0
 
 
-def report_head(repo, config, usage):
+def report_head(repo, config):
     """The report without the handoff body (which repeats its own `Transcript:` line)."""
-    r = run(CONTEXT, repo, config, usage, "report")
+    r = run(CONTEXT, repo, config, "report")
     assert r.returncode == 0 and "# Session context" in r.stdout, r.stderr
     return r.stdout.split("--- docs/HANDOFF.md ---")[0]
 
 
-def test_report_prints_the_handoff_transcript(repo, config, usage):
-    handover_prompt(repo, config, usage, "s-123")
-    saved = Path(run(HOOK, repo, config, usage, "--pr", "7").stdout.strip())
+def test_report_prints_the_handoff_transcript(repo, config):
+    saved = Path(run(HOOK, repo, config, "--nonce", NONCE, "--pr", "7").stdout.strip())
     handoff = repo / "docs/HANDOFF.md"
     base = handoff.read_text(encoding="utf-8")
     handoff.write_text(base + f"Transcript: `{saved}`\n", encoding="utf-8")
-    assert f"Transcript: {saved}\n" in report_head(repo, config, usage)
+    assert f"Transcript: {saved}\n" in report_head(repo, config)
     handoff.write_text(base + f"Transcript: `{saved}.gone`\n", encoding="utf-8")
-    assert "(missing on this machine)" in report_head(repo, config, usage)
+    assert "(missing on this machine)" in report_head(repo, config)
     for line in ["Transcript: `-`", "Transcript: `bad\x00path`"]:
         handoff.write_text(base + line + "\n", encoding="utf-8")
-        head = report_head(repo, config, usage)
+        head = report_head(repo, config)
         assert ("Transcript:" not in head) if line.endswith("`-`") else ("(missing on this machine)" in head)
 
 
@@ -182,16 +161,15 @@ def test_template_and_handover_carry_the_step():
     assert "tools/hooks/save_transcript.py" in (ROOT / ".claude/commands/handover.md").read_text(encoding="utf-8")
 
 
-def test_a_non_ascii_main_checkout(tmp_path, usage):
+def test_a_non_ascii_checkout_and_branch(tmp_path):
     repo = tmp_path / "проект"
     repo.mkdir()
-    git(repo, "init", "-q", "-b", BRANCH)
+    git(repo, "init", "-q", "-b", "harness/задача")
     git(repo, "commit", "-q", "--allow-empty", "-m", "init")
     config = tmp_path / "claude"
     folder_for(config, repo).mkdir(parents=True)
-    (folder_for(config, repo) / "s-1.jsonl").write_text("{}\n", encoding="utf-8")
-    handover_prompt(repo, config, usage, "s-1")
-    r = run(HOOK, repo, config, usage)
+    (folder_for(config, repo) / "s-1.jsonl").write_text(NONCE, encoding="utf-8")
+    r = run(HOOK, repo, config, "--nonce", NONCE)
     assert r.returncode == 0, r.stderr
-    assert Path(r.stdout.strip()) == repo / "logs/transcripts/harness-task-x-prnone-s-1.jsonl"
-    assert (repo / "logs/transcripts/harness-task-x-prnone-s-1.jsonl").is_file()
+    dest = repo / "logs/transcripts/harness--------prnone-s-1.jsonl"
+    assert Path(r.stdout.strip()) == dest and dest.is_file()

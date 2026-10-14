@@ -17,12 +17,13 @@ Do these steps in order. Talk to the user in Russian; files stay in English.
    push the branch and open a PR by the project rules (`docs/agents/NAMING.md`, `REVIEW_CHECKLIST.md`; evidence
    in the body). The guard asks before the push. Never merge: merging waits for the user's command. Mid-task:
    no push, no PR.
-3. **Transcript.** Run `py -3 tools/hooks/save_transcript.py` (after step 2, so the PR number is known). It
-   copies this session's transcript to `logs/transcripts/` of the main checkout and prints the path; that path
-   goes into the handoff's `Transcript:` line. It takes the session from this `/handover`'s hook entry in
-   `logs/agent-usage.jsonl`, never a guess. Exit 1: this session's copy for this branch and PR exists and is kept -
-   name it in `Transcript:`. Exit 2 (no transcript, git or I/O failure; nothing is written): `Transcript: -` and the
-   message under "Rules broken".
+3. **Transcript.** Make up a fresh random token of 16 letters and digits and run
+   `py -3 tools/hooks/save_transcript.py --nonce <token>` (after step 2, so the PR number is known). Your Bash call
+   lands in your own transcript before it runs, so the token proves which session is yours. It copies the transcript
+   to `logs/transcripts/` of the main checkout and prints the path for the handoff's `Transcript:` line. Exit 1: this
+   session's copy for this branch and PR exists and is kept - name it in `Transcript:`. Exit 2 (no or several
+   transcripts hold the token, git or I/O failure; nothing is written): `Transcript: -` and the message under
+   "Rules broken".
 4. **Handoff.** Rewrite `docs/HANDOFF.md` from `docs/HANDOFF.template.md`: every section, facts only, under 7000
    characters. `Commit:` is HEAD after step 1. Put in it what the next session cannot get from git: user
    decisions not yet in code (with dates), questions waiting for the user, rules broken this session, local
