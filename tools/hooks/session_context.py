@@ -21,6 +21,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "git-hooks"))
+from branch_names import RENAME_HINT, is_auto  # noqa: E402
+
 HANDOFF = "docs/HANDOFF.md"
 LIMIT = 9500                                         # under the 10 000-character hook cap
 LINE = 300                                           # one commit subject, PR title or status line
@@ -99,12 +102,22 @@ def _line(text):
     return text if len(text) <= LINE else text[:LINE] + " [...]"
 
 
+def _rename_prompt(branch):
+    """Lines (each under LINE) telling the agent to get the auto-generated branch renamed (user 2026-10-14)."""
+    return [f"BRANCH NAME: `{branch}` is an auto-generated worktree name (docs/agents/NAMING.md).",
+            "In your first reply, in one line, propose a branch name for this task by NAMING.md: " + RENAME_HINT
+            + ".",
+            "Wait for the user's confirmation, then run `git branch -m <name>` before the first commit "
+            "(tools/git-hooks/pipeline_gate.py blocks commits on such a branch)."]
+
+
 def context(source):
     branch = _git("branch", "--show-current") or "(detached)"
     status = _git("status", "--short")
     lines = (status or "").splitlines()
     head = [f"# Session context ({source}; tools/hooks/session_context.py)",
             f"Branch: {branch}  Worktree: {_root()}",
+            *(_rename_prompt(branch) if is_auto(branch) else []),
             "Last 5 commits:", *(("  " + c) for c in (_git("log", "-5", "--oneline") or "(git log failed)").splitlines()),
             "git status --short: " + ("FAILED (git unavailable here)" if status is None
                                       else "clean" if not lines else f"{len(lines)} path(s)"),

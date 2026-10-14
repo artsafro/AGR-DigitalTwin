@@ -9,6 +9,9 @@ merges to `main`, `docs/PROJECT_STATE.md` and `docs/backlog.md`.
 - User-level process skills `codex-work-route|loop|engineering|review`
   (`~/.agents/skills/`) apply on top of `docs/agents/WORKFLOW.md`; the project workflow wins
   where they differ.
+- A new worktree with a random branch (`codex/<words>-<hex6>` or `<word>-<word>-<hex6>`): propose a name by
+  `docs/agents/NAMING.md` in your first reply, rename after the user confirms, before the first commit
+  (`tools/git-hooks/pipeline_gate.py --staged` blocks the commit otherwise; `AGENTS.md`).
 - Environment: `uv sync`, then `uv run pytest -q`, `uv run dt profiles check`,
   `uv run dt schemas --check`. DCC tests need `DT_BLENDER` or an installed Blender.
 - Before turning a job script into an adapter, read its accepted case and keep its checks
