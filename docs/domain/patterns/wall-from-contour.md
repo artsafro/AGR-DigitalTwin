@@ -35,14 +35,14 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; terms Level contou
   breaks into many short walls. Pick a band without openings.
 - A door from the floor or any wall break up to 8 m is an opening, not an open storey end.
 - A door recess (not a through hole) cut by the contour height is not a notch of the contour
-  (user decisions 2026-10-08, #31): a recess open from the storey floor (within 5 cm), at least
+  (user decisions 2026-10-08 [D025], #31): a recess open from the storey floor (within 5 cm), at least
   1.9 m high and 0.7-3 m wide at its mouth, is an opening and the contour runs straight over it;
   depth is no criterion. Its mouth must be one straight segment with the facade continuing beyond
   both ends; anything else (a block in an inner corner, an outward band) stays a question.
-- Size (spec v0.3, user decision 2026-10-08): an opening is the hole in the wall with its frame;
+- Size (spec v0.3, user decision 2026-10-08 [D026]): an opening is the hole in the wall with its frame;
   the glass is `glass_w` / `glass_h` and `panes`; depth is `opening_depth_default_m` with
   exceptions. How the extractor reads it (rules of #36 / PR #39; the 0.20 m frame and the 0.10 m
-  depth threshold were kept by the user 2026-10-09 and live in `spec_extract` of the benchmark's
+  depth threshold were kept by the user 2026-10-09 [D034] and live in `spec_extract` of the benchmark's
   `tolerances.json`):
   the reveal around the glass when all glass on that wall covers the reveal's rectangle jointly,
   each pane grown by a frame of 0.20 m (glass of the next storey counts, so a frame through a
@@ -54,7 +54,7 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7; terms Level contou
   a frame member) is a `window`, from the floor or not; a `door` has no glass or glass over part
   of its height.
 - Relief is not a kink: a bump or notch with both sizes <= 10 cm (frame profiles, e.g. 7.5 x 9 cm)
-  is taken off the contour. The same holds in section (user decision 2026-10-09): a projection or
+  is taken off the contour. The same holds in section (user decision 2026-10-09 [D032]): a projection or
   groove not over the full storey height whose depth and height are both <= 10 cm (a frame rail)
   is relief, counted as `section_relief_parts` in the report, not a question.
 - Panes of one frame — side by side or a transom above, gap <= 0.15 m, aligned, and covering the

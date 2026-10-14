@@ -1,6 +1,6 @@
 # Terrace (`terrace`)
 
-Status: proven on benchmark `bench-b02t-terrace` (user 2026-10-10). Source: user decisions 2026-10-10; benchmark `bench-b02t-terrace` (a terrace = a floor-step ledge with a parapet
+Status: proven on benchmark `bench-b02t-terrace` (user 2026-10-10 [D042]). Source: user decisions 2026-10-10 [D041]; benchmark `bench-b02t-terrace` (a terrace = a floor-step ledge with a parapet
 from the spec; thickness = the build input `parapet_thickness_m`; PR A engine, PR B extractor +
 etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 
@@ -18,7 +18,7 @@ etalon B02t); patterns `floor-step`, `parapet`, `roof-inset-plane`.
 - Cap: the band at the top (roof ID); walkable terrace: the ledge minus the band (roof ID).
 - The floor-above wall cells behind the parapet's ends are hidden and not built.
 
-## Glass railings (user 2026-10-14)
+## Glass railings (user 2026-10-14 [D087])
 
 - A terrace edged by a glass railing (no solid parapet): one closed plate 20 mm thick per side of the ledge
   that does not run along the walls of the floor above, its outer face on the ledge's edge, from the walkable

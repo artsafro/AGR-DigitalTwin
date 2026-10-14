@@ -1,6 +1,6 @@
 # Niche in the contour (`contour-niche`)
 
-Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user decisions 2026-10-08
+Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user decisions 2026-10-08 [D023, D025]
 (#6, #31); `GLOSSARY.md` (Level contour). Benchmark: B02.
 
 ## Signs in the spec
@@ -12,7 +12,7 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user d
   - a door recess (from the floor, >= 1.9 m high, 0.7-3 m wide at one straight mouth) is an
     opening: `door`, or `window` when glass fills its height (`wall-from-contour`);
   - a bump or notch with both plan sizes <= 0.10 m is relief, and so is a band or groove with
-    depth and height both <= 0.10 m (user decision 2026-10-09).
+    depth and height both <= 0.10 m (user decision 2026-10-09 [D032]).
 
 ## How to build
 
@@ -37,4 +37,4 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4, §7 (grey zone); user d
   module without it, ask with numbers (depth, length, floors) in `jobs/<object>/questions.md`,
   continue.
 - An opening on a niche wall refers to that wall's index, not the main facade's.
-- If the inward shell offset self-intersects in the niche, stop and ask (user decision 2026-10-09).
+- If the inward shell offset self-intersects in the niche, stop and ask (user decision 2026-10-09 [D033]).

@@ -6,7 +6,7 @@ the upper block's wall X = 6, which is removed between 3.3 and 3.9 m. Nothing el
 
 Patterns: terrace (plus the B02 patterns).
 
-Etalon: hand-made in 3ds Max by the user (2026-10-10); never produced by the engine — the engine is
+Etalon: hand-made in 3ds Max by the user (2026-10-10 [D040]); never produced by the engine — the engine is
 checked only against a hand-made etalon (HARNESS_PLAN §5). Every horizontal slab is inset (user rule
 2026-10-10): the roof as in B02, and since etalon v2 the walkable terrace too — a hole in the body at
 `LEVEL_L1` 3.300 and a separate plate at 3.305.

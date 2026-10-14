@@ -1,15 +1,15 @@
 # bench-b03-decor
 
-**Deferred** (user decision 2026-10-11): the first decor benchmark is the real fragment
+**Deferred** (user decision 2026-10-11 [D052]): the first decor benchmark is the real fragment
 `bench-k02-decor-fragment`; this synthetic box stays as a later regression (`docs/backlog.md` EG1), mainly for
 the free-standing column, which the fragment does not have.
 
-Facade decor by the user's technology (pattern `facade-decor-inset`, draft; user decisions 2026-10-11): one
+Facade decor by the user's technology (pattern `facade-decor-inset`, draft; user decisions 2026-10-11 [D051]): one
 simple solid per element, embedded into the body, the body mesh untouched, decor ids of the attachment
 group 26-30, relief of 0.10 m or less as texture. Both files are made by hand by the user in 3ds Max; the
 engine never makes an etalon (HARNESS_PLAN §5).
 
-Two files, because the etalon is the correct result, not the source (user decision 2026-10-11):
+Two files, because the etalon is the correct result, not the source (user decision 2026-10-11 [D052]):
 
 | File | What it is | Who reads it |
 |---|---|---|
@@ -25,7 +25,7 @@ checks against `etalon`. The etalon is also checked against itself.
 - Parapet 0.6 m high, 0.3 m thick; roof inset: a hole at 6.600, a plate at 6.605 overlapping the hole by
   20 mm under the parapet (pattern `roof-inset-plane`).
 - One window 1.5 x 1.5 m per storey on the south wall (y = 0), x 2.0-3.5, sills 0.9 and 4.2, heads 2.4
-  and 5.7; opening depth 0.4 m (the new default, user 2026-10-11): reveals 0.4 m deep, plane at their back
+  and 5.7; opening depth 0.4 m (the new default, user 2026-10-11 [D048]): reveals 0.4 m deep, plane at their back
   (npm_min, C24).
 - IDs: facade 1, reveal 6, opening plane 11, roof 21. Quads only, welded; open edges only the bottom ring
   and the roof inset joint.

@@ -170,7 +170,7 @@ checker). Note: the desktop app did not load project subagents from this worktre
   scripts name an engine gap `EG<n>`; delivery needs a committed `.py` for every `.pyc`
   (`docs/HARNESS_PLAN.md` §16). Claude Code also blocks such writes at PreToolUse
   (`.claude/hooks/pipeline_gate.py`, permission "deny").
-- Limit (user 2026-10-12, #79): a compromised environment is not covered, for example a fake `py` on PATH.
+- Limit (user 2026-10-12 [D064], #79): a compromised environment is not covered, for example a fake `py` on PATH.
 
 ## Pipeline core (src/dt_ai, technical_library, tools)
 
@@ -204,7 +204,7 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   `twin-data.json` (with the document's Levels and Roofs since MH2: `list_levels`, `list_elements` OST_Roofs,
   `get_element_info`; object.json `revit_levels` turns them into LEVEL_ helpers, `src/dt_ai/spec/markup.py`); `dt spec extract --dump <twin-data.json>` reads it (`dt_ai.spec.revit_twin`): walls as
   prisms on their location lines (any angle; curved walls from their real geometry), glass by material
-  transparency, doors from records, attachments by the main-walls hull rule (user decision 2026-10-08). The
+  transparency, doors from records, attachments by the main-walls hull rule (user decision 2026-10-08 [D027]). The
   document is not modified (flag checked before and after); files go only to the new folder.
   KPP1: contours equal to the mesh path (0.0 mm), `jobs/KPP1/spec-compare-v002.md`.
 - Intake check (Claude, 2026-10-11, IN1, HARNESS_PLAN §15): `dt intake check --dir jobs/<JOB>/intake` validates
@@ -261,7 +261,7 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   spec builds a model that passes all benchmark checks against the synthetic box; no real etalon yet.
 - `build(spec, BuildInputs)` -> mesh dump (format of `measure_spec_blender.py`): walls by contour,
   holes with reveals and planes, roof, parapet; quads, welded, no T-junctions, no Shell (C23);
-  plane seat by profile (C24 final, user 2026-10-10: `npm_min` full opening depth, `mid` half).
+  plane seat by profile (C24 final, user 2026-10-10 [D037]: `npm_min` full opening depth, `mid` half).
   Build inputs not in the spec (parapet thickness, material IDs) are required arguments.
 - Floor steps (pattern floor-step, 2026-10-10): a contour per floor, ledge (roof ID) / soffit (facade ID).
 - Oblique walls (pattern non-90-corner, 2026-10-10): trapezoid strips for horizontal faces; B02 green end to end.
@@ -279,7 +279,7 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   exit 0 both pass / 1 a check fails / 2 a step stops or a check is not measured.
 
 ### Build by source modules — `src/dt_ai/geometry/from_source.py`, `tools/qa/run_from_source.py`
-- Status: EXPERIMENTAL (user, 2026-10-14): on OBJ03 it did not give an acceptable model - open polygons,
+- Status: EXPERIMENTAL (user, 2026-10-14 [D079]): on OBJ03 it did not give an acceptable model - open polygons,
   flipped normals, excess mesh, while the own checks passed (blind spots: normals, decor topology; issue #117).
   Tests pass on synthetic sources (`tests/qa/test_from_source.py`). What it does: the model rebuilt
   module by module from the source (`jobs/<OBJ>/modules/modules.json`, `build_as` per group) - walls per storey

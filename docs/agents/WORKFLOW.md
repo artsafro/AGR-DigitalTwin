@@ -5,6 +5,9 @@ task: a one-line fix skips most steps; a multi-stage delivery uses all of them.
 
 ## Loop
 
+Harness work (issues labelled `harness`) runs grilling -> to-spec -> to-tickets -> implement ->
+code-review (user 2026-10-14 [D091]); production work runs the steps below.
+
 0. **Card.** A task with an issue moves on the board (`docs/agents/KANBAN.md`): In progress
    when taken, Needs you when it waits on the user.
 1. **Goal and discovery.** Read `docs/PROJECT_STATE.md`, the relevant `docs/domain/` file,
@@ -30,7 +33,7 @@ task: a one-line fix skips most steps; a multi-stage delivery uses all of them.
    checked (commands, evidence paths) and what is open. On restart, read saved outputs and
    hashes before repeating any mutation (`run-evidence` skill).
 
-## Subagents (Claude Code, user 2026-10-13)
+## Subagents (Claude Code, user 2026-10-13 [D071])
 
 The main agent keeps dumps, MaxScript output, benchmark runs and the pattern catalogue out of its own
 context. It delegates them to the read-only subagents in `.claude/agents/`:
@@ -49,10 +52,10 @@ Rules:
 - After every engine run the main agent calls `independent-checker` before it reports "done".
 - A subagent's result is data, not a decision. The main agent weighs it, and it asks the user only about the
   model or the object (`questions-only` rule).
-- Disputed geometry: look first, then classify (user 2026-10-13) - every group of a classifier's verdict, every
+- Disputed geometry: look first, then classify (user 2026-10-13 [D072]) - every group of a classifier's verdict, every
   question and every stop is shown isolated on the body (renders, three views, sizes) before a rule or a question.
 
-## Triggers (user 2026-10-14)
+## Triggers (user 2026-10-14 [D074])
 
 An event makes a skill or subagent mandatory, not optional:
 
@@ -72,7 +75,7 @@ skill is loaded; `tools/hooks/usage_log.py` writes every subagent call, skill lo
 `logs/agent-usage.jsonl` (local, main checkout). `/takeover` ends with the 7-day counts, so what is never called
 shows up.
 
-## Rule of three (user 2026-10-14)
+## Rule of three (user 2026-10-14 [D075])
 
 A procedure repeated across a session or jobs becomes a reusable thing; what it becomes depends on its kind:
 
@@ -87,7 +90,7 @@ The agent only proposes: `/handover` writes repeats of the session to `docs/back
 `/reuse-scan` (weekly) lists cross-job repeats with an effort estimate. Creating the code, skill or pattern is a
 task of its own.
 
-## Context rotation (Claude Code, user 2026-10-14)
+## Context rotation (Claude Code, user 2026-10-14 [D076])
 
 A long session loses detail when it is compacted. Rotate instead, in the same worktree:
 
@@ -113,6 +116,24 @@ first. Each compaction is logged to `<git dir>/agr-compactions.log`.
 Worktrees and chats: a new worktree only for a new task, from fresh `main`. A second chat in the same repo only
 reads, or writes files that do not overlap with the first one's. `docs/HANDOFF.md` describes its own branch: at
 a merge to `main` keep `main`'s handoff unless the merged branch's handoff is the one the next session needs.
+
+## Memory map (#120)
+
+Each kind of fact lives in one place; the others point to it.
+
+| Fact | File |
+|---|---|
+| A dated user decision | `docs/decisions.md` (one line, `D<n>`), the full text where it applies |
+| A modelling rule | `docs/domain/patterns/<id>.md` (index `patterns/INDEX.md`); regulation rules `docs/domain/*.md`, `standards/` |
+| An accepted result or a lesson | `docs/cases.md` |
+| Project state (goal, in production, harness, next step) | `docs/PROJECT_STATE.md` |
+| An open question to the user | `jobs/<ID>/questions.md` (object); `docs/domain/conflicts.md` (source conflict); `docs/backlog.md` "Decisions for the user" |
+| Run evidence | `jobs/<ID>/runs/` RunRecord (local), `jobs/<ID>/pipeline/` reports, `docs/deliveries/` |
+| Object state | `jobs/<ID>/STATE.md` |
+| Session state (branch, next step, what waits) | `docs/HANDOFF.md` of the branch |
+| Unsolved work | `docs/backlog.md`, GitHub issues |
+
+A rule question is looked up in the order of `AGENTS.md` ("Where things are"): decision log first.
 
 ## Project state (#119)
 

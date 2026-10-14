@@ -12,7 +12,7 @@ confidence. Source: `docs/HARNESS_PLAN.md` §8. Post the answer as a PR comment:
 3. **Evidence.** Did the checker or the tests pass **with numbers**, run by the reviewer?
    Every regression test must fail on the commit before the fix and pass after it.
 
-## Procedure (user 2026-10-13)
+## Procedure (user 2026-10-13 [D073])
 
 1. **Rounds by risk.**
    - `src/`, hooks, `pipeline_gate`, checkers: 2 rounds; a round 3 only if round 2 found a P1.
@@ -45,7 +45,7 @@ Lessons of PR #15 (2026-10-08). The Codex sandbox runs as a separate Windows use
   --basetemp=../tN`; git as `git -c safe.directory=* ...`.
 - Keep `--basetemp` short (`../tN`, `C:/x/t-<name>`), for authors too: a long one passes MAX_PATH (git
   "Filename too long", the Win32 working-directory limit of 258) - PR #79. On the user's machine the default
-  `%TEMP%\pytest-of-artsafro` is inaccessible (left as is, user 2026-10-12): plain `uv run pytest` errors there.
+  `%TEMP%\pytest-of-artsafro` is inaccessible (left as is, user 2026-10-12 [D063]): plain `uv run pytest` errors there.
 - Known sandbox-only failure: `tests/test_run_record.py::test_timeout_preserves_partial_stdout_and_stderr`
   (`taskkill` access denied). It is not a finding.
 - `codex review --base` does not take custom instructions; use `codex exec` for this checklist.

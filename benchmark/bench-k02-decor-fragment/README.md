@@ -1,6 +1,6 @@
 # bench-k02-decor-fragment
 
-The decor benchmark (pattern `facade-decor-inset`; user decision 2026-10-11): a **fragment** of the facade of
+The decor benchmark (pattern `facade-decor-inset`; user decision 2026-10-11 [D052]): a **fragment** of the facade of
 a real building — one bay, two storeys — not a building. No building context is needed or checked; the only
 goal is the decor pattern. It replaces the synthetic B03 as the first decor benchmark (B03 stays a later
 regression, `docs/backlog.md` EG1).

@@ -37,4 +37,4 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §4, §7; issue #8 (PR #25); `src/
   stay unique until a cycle rule exists.
 - Floors stop below the top input level (the roof plane); the top occupied floor may be in a run.
 - An opening across levels (`level_to`) in a template: ask before copying it up a run (user
-  decision 2026-10-09).
+  decision 2026-10-09 [D036]).

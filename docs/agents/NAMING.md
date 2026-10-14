@@ -1,6 +1,6 @@
 # Naming
 
-Decided by the user on 2026-10-07. A name says **what the thing does**; the object it was
+Decided by the user on 2026-10-07 [D005]. A name says **what the thing does**; the object it was
 first made for lives only in data (`jobs/<object-id>/`, its config and its outputs). Shared
 scripts, tools, skills, branches and shared tags carry no object code.
 
@@ -71,7 +71,7 @@ never reused.
 one object (`job/tec26-psu275-delivery`). Rename an auto-generated worktree branch
 (`claude/<words>-<hex6>`, `codex/…`, bare `<words>-<hex6>`; `tools/git-hooks/branch_names.py`) before its
 first commit: the agent proposes the name, the user confirms. The pre-commit gate blocks a commit on it, and
-the SessionStart hook asks the agent for the proposal (user 2026-10-14).
+the SessionStart hook asks the agent for the proposal (user 2026-10-14 [D078]).
 
 ## Tags
 
