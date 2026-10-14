@@ -24,6 +24,7 @@ from dt_ai.geometry import from_source as fs  # noqa: E402
 from dt_ai.spec.model import Spec  # noqa: E402
 from run_benchmark import EXPORT, MEASURE, blender_run, produced, write  # noqa: E402
 from twinqa.geometry import checks  # noqa: E402
+from twinqa.geometry.complexity import check_complexity  # noqa: E402
 from twinqa.geometry.mesh import from_dump  # noqa: E402
 from twinqa.io import read_json  # noqa: E402
 from twinqa.scene import find_blender  # noqa: E402
@@ -55,15 +56,23 @@ def run(dump_p: Path, modules_p: Path, obj_p: Path, tol_p: Path, out: Path, blen
     obj, tol = read_json(obj_p.read_bytes()), read_json(tol_p.read_bytes())
     inputs = fs.Inputs(levels=[(lv["name"], float(lv["elev_m"])) for lv in obj["levels"]],
                        opening_depth_m=obj.get("opening_depth_default_m", 0.4), weld_m=obj.get("weld_m", 0.003))
-    model, spec_doc, report = fs.build_from_modules(dump, modules, obj["id"], inputs)
+    model, spec_doc, report, scene = fs.build_from_modules(dump, modules, obj["id"], inputs)
     spec = Spec.model_validate(spec_doc)
     out.mkdir(parents=True)
+    (out / "modules").mkdir()
+    (out / "npm").mkdir()
     write(out / "model-dump.json", model)
     write(out / "spec.json", spec_doc)
     write(out / "modules-report.json", report)
-    blender_run(blender, EXPORT, out / "model-dump.json", out / "model.blend", out / "model.fbx", timeout=3600)
-    produced(out / "model.blend", out / "model.fbx")
-    blender_run(blender, MEASURE, out / "model.fbx", out / "model-readback.json", timeout=3600)
+    write(out / "modules" / "modules-scene.json", scene)
+    # two deliveries (pattern primitive-first): modules/ - parts apart, instances live; npm/ - attached, checked
+    blender_run(blender, ROOT / "tools/export/export_modules_blender.py", out / "modules" / "modules-scene.json",
+                out / "modules" / "modules.blend", timeout=3600)
+    produced(out / "modules" / "modules.blend")
+    blender_run(blender, EXPORT, out / "model-dump.json", out / "npm" / "model.blend", out / "npm" / "model.fbx",
+                timeout=3600)
+    produced(out / "npm" / "model.blend", out / "npm" / "model.fbx")
+    blender_run(blender, MEASURE, out / "npm" / "model.fbx", out / "model-readback.json", timeout=3600)
     produced(out / "model-readback.json")
     etalon = from_dump(etalon_of(dump, modules))
     etalon.levels = {lv.name: lv.elev_m for lv in spec.levels}
@@ -71,6 +80,12 @@ def run(dump_p: Path, modules_p: Path, obj_p: Path, tol_p: Path, out: Path, blen
     if not readback.levels:
         readback.levels = etalon.levels
     check = checks.run(readback, etalon, spec, tol["geometry"], source_class=obj.get("source_class"))
+    if "complexity" in tol:                         # pattern primitive-first: blocking
+        cx = check_complexity(scene, tol["complexity"])
+        check["checks"].append(cx)
+        if cx["status"] != "pass":
+            check["passed"] = False
+            check["failed"].append("complexity")
     write(out / "check.json", check)
     summary = {"triangles": report["triangles"], "passed": check["passed"], "failed": check["failed"],
                "not_measured": check["not_measured"]}

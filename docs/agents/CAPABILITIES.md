@@ -254,6 +254,9 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
 - `uv run dt from-source --dump <source dump> --modules <modules.json> --object <object.json> --output <new folder>`
   (model dump, spec, report); `uv run python tools/qa/run_from_source.py ... --tolerances <t.json> --output <new folder>`
   adds the FBX export, readback and checks (etalon = the source without `skip` modules).
+- Pattern primitive-first (2026-10-14): two deliveries in the output folder - `modules/` (`modules-scene.json`,
+  `modules.blend`: collections per group, instances share a type mesh) and `npm/` (`model.blend`, `model.fbx`); the
+  blocking `complexity` check (`src/twinqa/geometry/complexity.py`) when the tolerances have a `complexity` block.
 
 ### Benchmark geometry checks — `tools/qa/check_geometry.py`
 - Status: WORKING on synthetic boxes only (2026-10-09, `tests/qa/test_geometry_checks.py`); no

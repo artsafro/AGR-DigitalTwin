@@ -96,12 +96,13 @@ def main(argv=None):
             inputs = from_source.Inputs(levels=[(lv["name"], float(lv["elev_m"])) for lv in obj["levels"]],
                                         opening_depth_m=obj.get("opening_depth_default_m", 0.4),
                                         weld_m=obj.get("weld_m", 0.003))
-            model, spec_doc, report = from_source.build_from_modules(
+            model, spec_doc, report, scene = from_source.build_from_modules(
                 read_json(args.dump.read_bytes()), read_json(args.modules.read_bytes()), obj["id"], inputs)
             args.output.mkdir(parents=True)
             write_json(args.output / "model-dump.json", model)
             write_json(args.output / "spec.json", spec_doc)
             write_json(args.output / "modules-report.json", report)
+            write_json(args.output / "modules-scene.json", scene)
             print(f"from-source: {args.output}; {report['triangles']} triangles; spec {len(spec_doc['floors'])} floors")
         elif args.command == "intake":
             from dt_ai.intake.check import check as intake_check

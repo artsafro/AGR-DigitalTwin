@@ -1,7 +1,6 @@
 """Build path by source modules (dt_ai.geometry.from_source, user 2026-10-13/14) and the checker rules it needs:
 seated loops, the decor mesh left out of the topology checks, slab boxes, overlaps past the weld, spec-based storey
 areas for a panelised source."""
-import json
 
 import numpy as np
 import pytest
@@ -165,10 +164,12 @@ def _source():
 
 def test_a_synthetic_building_by_modules_passes_its_spec_checks():
     dump, modules = _source()
-    model, spec_doc, report = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    model, spec_doc, report, scene = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
     spec = Spec.model_validate(spec_doc)
     assert [len(f.openings) for f in spec.floors] == [1, 1]                  # two panes 5 cm apart: one opening
-    assert report["decor"]["elements_total"] == 1
+    assert report["decor"]["elements"] == 1 and report["decor"]["piers"] == 1
+    groups = {ob["group"] for ob in scene["objects"]}
+    assert {"walls", "slabs", "piers"} <= groups                              # the modules delivery: parts apart
     soup = from_dump(model)
     res = {c["id"]: c for c in checks.run(soup, soup, spec, TOL, source_class="panelised")["checks"]}
     for cid in ("levels", "mesh", "opening_planes", "triangle_budget", "floor_areas"):
@@ -321,7 +322,7 @@ def test_glass_off_the_wall_is_a_balcony_railing_of_closed_plates():
         g["triangles"] += [[b, b + 1, b + 2], [b, b + 2, b + 3]]
     g["material_ids"] = [0] * len(g["triangles"])
     g["polygon_sizes"] = [3] * len(g["triangles"])
-    model, spec_doc, report = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    model, spec_doc, report, scene = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
     assert report["parapets"]["balcony_glass_plates"] == 3
     assert [len(f["openings"]) for f in spec_doc["floors"]] == [1, 1]
     soup = from_dump(model)
@@ -338,57 +339,6 @@ def test_a_pier_runs_through_storeys_as_one_element():
     assert len(els) == 1 and els[0][4] == pytest.approx(0.0) and els[0][5] == pytest.approx(6.0)
 
 
-U, N = np.array([1.0, 0.0]), np.array([0.0, -1.0])         # a south wall: out is -y (n), the centre north
-
-
-def _pier(front):
-    sec = shapely.geometry.polygon.orient(Polygon([[0.0, 0.0], [0.4, 0.0], [0.4, front], [0.0, front]]), 1.0)
-    return ("z", U, N, sec, 0.0, 6.0, [], 26)
-
-
-def _band(s0, s1, front, z0=2.8, z1=3.2):
-    sec = shapely.geometry.polygon.orient(Polygon([[0.0, z0], [front, z0], [front, z1], [0.0, z1]]), 1.0)
-    return ("s", U, N, sec, s0, s1, [], 26)
-
-
-CENTRE = np.array([0.2, 5.0])
-
-
-def test_at_an_equal_projection_the_band_is_main_and_the_pier_stops_inside_it():
-    """User 2026-10-14: the main element projects further; equal - the band. The pier runs DECOR_INSET_M into the
-    band with no cap there; no collar."""
-    resolved, joints = fs.resolve_joints([_pier(0.3), _band(-1.0, 2.0, 0.3)], CENTRE)
-    assert joints == 1
-    zs = sorted((round(e[4], 3), round(e[5], 3), c) for e, c in resolved if e[0] == "z")
-    assert zs == [(0.0, 2.82, (True, False)), (3.18, 6.0, (False, True))]
-    assert [(e[4], e[5], c) for e, c in resolved if e[0] == "s"] == [(-1.0, 2.0, (True, True))]
-
-
-def test_a_pier_deeper_than_the_band_runs_through_and_the_band_stops_at_it():
-    resolved, _ = fs.resolve_joints([_pier(0.5), _band(-1.0, 2.0, 0.3)], CENTRE)
-    assert [(e[4], e[5], c) for e, c in resolved if e[0] == "z"] == [(0.0, 6.0, (True, True))]   # uncut
-    bands = sorted((round(e[4], 3), round(e[5], 3), c) for e, c in resolved if e[0] == "s")
-    assert bands == [(-1.0, 0.02, (True, False)), (0.38, 2.0, (False, True))]
-
-
-def test_a_main_band_runs_on_through_a_shallower_pier_and_round_a_corner():
-    """User 2026-10-14: a band is one mesh where it is the main element - its pieces on both sides of a shallower
-    pier join through it; a band piece hidden inside a pier is not built; two bands of a corner meet."""
-    left, right = _band(-1.0, 0.0, 0.3), _band(0.4, 2.0, 0.3)
-    stub = _band(0.1, 0.3, 0.2, 4.0, 4.2)
-    resolved, _ = fs.resolve_joints([left, right, _pier(0.2), stub], CENTRE)
-    bands = [e for e, c in resolved if e[0] == "s"]
-    assert len(bands) == 1 and (bands[0][4], bands[0][5]) == (-1.0, 2.0)
-    resolved, _ = fs.resolve_joints([left, right, _pier(0.5)], CENTRE)        # a deeper pier: no bridge
-    assert len([e for e, c in resolved if e[0] == "s"]) == 2
-    side = ("s", np.array([0.0, 1.0]), np.array([1.0, 0.0]),
-            shapely.geometry.polygon.orient(Polygon([[2.0, 2.8], [2.3, 2.8], [2.3, 3.2], [2.0, 3.2]]), 1.0),
-            -0.25, 4.0, [], 26)
-    resolved, _ = fs.resolve_joints([_band(-1.0, 2.0, 0.3), side], CENTRE)
-    a = next(e for e, c in resolved if e[0] == "s" and e[1][0] == 1.0)
-    assert a[5] == pytest.approx(2.3)                        # runs on over the corner band's depth
-
-
 def test_a_dark_insert_is_a_box_set_into_the_wall_with_no_back_and_off_the_opening():
     m = _Mesh()
     poly = Polygon([[0, 0], [10, 0], [10, 10], [0, 10]])
@@ -403,3 +353,68 @@ def test_a_dark_insert_is_a_box_set_into_the_wall_with_no_back_and_off_the_openi
     assert len(d["polygon_sizes"]) == 5                                       # no back face
     assert p[:, 1].min() == pytest.approx(-0.21) and p[:, 1].max() == pytest.approx(fs.DECOR_INSET_M)
     assert p[:, 2].min() == pytest.approx(2.405)                              # 5 mm off the opening's head
+
+
+# ------------------------------------------------------------------------------------------- primitive-first
+
+def test_a_section_loses_its_small_steps_and_keeps_a_big_one():
+    """Pattern primitive-first: steps under PF_STEP_M go, a 0.10 m step stays (user 2026-10-14: 7-10 cm kept)."""
+    small = Polygon([[0, 0], [0.4, 0], [0.4, 0.3], [0.37, 0.3], [0.37, 0.33], [0, 0.33]])     # a 3 cm step
+    c = fs.clean_section(small)
+    assert len(c.exterior.coords) - 1 == 4
+    big = Polygon([[0, 0], [0.4, 0], [0.4, 0.3], [0.3, 0.3], [0.3, 0.4], [0, 0.4]])          # a 10 cm step
+    assert len(fs.clean_section(big).exterior.coords) - 1 == 6
+
+
+def test_a_storey_band_frame_is_cut_where_the_source_has_none():
+    m = _Mesh()
+    poly = Polygon([[0, 0], [10, 0], [10, 10], [0, 10]])
+    keep = lambda p, n: p[1] < 0                     # noqa: E731 - the source band only on the south side
+    pieces, length = fs.band_frame(m, poly, 3.0, 3.3, 0.1, keep, 26)
+    assert pieces == 1 and 9.5 < length < 11.0
+    whole = _Mesh()
+    assert fs.band_frame(whole, poly, 3.0, 3.3, 0.1, lambda p, n: True, 26) == (1, pytest.approx(40.0))
+    assert len(whole.faces) == 3 * 4                  # front, top, bottom per side; closed, no caps
+
+
+def test_the_scene_makes_copies_instances_of_one_type():
+    sc = fs.Scene()
+    for x in (0.0, 5.0):
+        one = _Mesh()
+        fs._box(one, (np.zeros(2), np.array([1.0, 0.0]), np.array([0.0, 1.0])), [x, 0, 0], [x + 0.4, 0.3, 3.0], 26)
+        sc.instance("piers", one)
+    d = sc.dump()
+    assert len(d["meshes"]) == 1 and [o["location"] for o in d["objects"]] == [[0.0, 0.0, 0.0], [5.0, 0.0, 0.0]]
+
+
+def _scene(meshes, objects):
+    return {"meshes": meshes, "objects": objects}
+
+
+def _m(verts, n_tri=2, mids=None, meta=None):
+    return {"vertices": verts, "triangles": [[0, 1, 2]] * n_tri, "material_ids": mids or [26] * n_tri,
+            "meta": meta or {}}
+
+
+CX = {"budget": {"piers": 4, "walls": 10}, "total_max": 10, "decor_groups": ["piers"],
+      "decor_section_points_max": 12, "silhouette_dev_min_m": 0.07}
+
+
+def test_complexity_fails_over_budget_copies_and_profiles_without_silhouette():
+    from twinqa.geometry.complexity import check_complexity
+    sq = [[0, 0, 0], [1, 0, 0], [1, 1, 0]]
+    ok = _scene({"a": _m(sq, meta={"section_points": 4})},
+                [{"name": "a.1", "group": "piers", "mesh": "a"}, {"name": "a.2", "group": "piers", "mesh": "a"}])
+    assert check_complexity(ok, CX)["status"] == "pass"
+    over = _scene(ok["meshes"], ok["objects"] + [{"name": "a.3", "group": "piers", "mesh": "a"}])
+    assert check_complexity(over, CX)["details"]["over_budget"] == {"piers": [6, 4]}
+    twins = _scene({"a": _m(sq), "b": _m([[5 + x, y, z] for x, y, z in sq])},
+                   [{"name": "a", "group": "piers", "mesh": "a"}, {"name": "b", "group": "piers", "mesh": "b"}])
+    r = check_complexity(twins, CX)
+    assert r["status"] == "fail" and r["details"]["copies_not_instanced"] == [["a", "b"]]
+    flat = _scene({"a": _m(sq, meta={"section_points": 8, "silhouette_dev_m": 0.03})},
+                  [{"name": "a", "group": "piers", "mesh": "a"}])
+    assert check_complexity(flat, CX)["details"]["profile_without_silhouette"] == [["a", 0.03]]
+    many = _scene({"a": _m(sq, meta={"section_points": 14, "silhouette_dev_m": 0.2})},
+                  [{"name": "a", "group": "piers", "mesh": "a"}])
+    assert check_complexity(many, CX)["details"]["section_points_over"] == [["a", 14]]

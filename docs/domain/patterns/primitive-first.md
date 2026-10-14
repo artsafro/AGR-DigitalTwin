@@ -56,11 +56,22 @@ No densification except where openings and joints cut in.
 - `npm/`: final - attached by the rules, welded at 3 mm, inset, exported to FBX, checked. Made from the first
   automatically; the user may edit the first and regenerate the second.
 
+In the harness (`from_source`, 2026-10-14): `modules/modules-scene.json` -> `tools/export/export_modules_blender.py`
+-> `modules/modules.blend` (a collection per group, one mesh per type, objects sharing it); `npm/model.fbx` from the
+same build. A type is its geometry (`twinqa.geometry.complexity.geometry_key`: vertex set to the mm from the bbox low
+corner, triangle ids) and instances are placed by translation only - a turned copy is a type of its own.
+Regenerating `npm/` from an edited `modules.blend` is not built yet (`docs/backlog.md`).
+
 ## 7. Checker `complexity` (blocking)
 
 Triangles per module against the budget (150 000 per NPM FBX, split per module in the job); at most 12 vertices
 per decor element (storey-contour frames: the contour's vertices); elements against types - copies not made
 instances fail; profiled elements built more complex than their primitive without passing the silhouette test fail.
+
+In the harness: `src/twinqa/geometry/complexity.py`, run on the modules scene by `tools/qa/run_from_source.py` when
+the job's tolerances have a `complexity` block (`budget` per group, `total_max`, `decor_groups`,
+`decor_section_points_max`, `silhouette_dev_min_m`). "12 vertices" is read as 12 points of the element's section
+(an extrusion has twice that many vertices).
 
 ## Traps
 

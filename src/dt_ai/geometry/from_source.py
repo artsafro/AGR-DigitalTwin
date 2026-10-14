@@ -33,6 +33,7 @@ from shapely.geometry import LineString, Polygon, box
 from shapely.geometry.polygon import orient
 
 from dt_ai.geometry.from_spec import BuildError, _Mesh
+from twinqa.geometry.complexity import geometry_key
 
 WALL_CLOSE_M = 0.7       # gaps of the wall line behind a pier up to twice this are closed (OBJ03 piers 1.2 m)
 PANE_GAP_M = 0.15        # glass panes closer than this along a wall are one opening (frames between them)
@@ -262,7 +263,7 @@ def wall_openings(poly, glass_segs, glass_z, z_lo, z_hi, w, depth=0.4):
 WALL_SEAT_M = 0.02       # the walls stand this far inside the slab edges they sit on (no shared vertex)
 
 
-def storey_walls(mesh: _Mesh, poly, openings, z_lo, z_hi, inputs: Inputs):
+def storey_walls(mesh: _Mesh, poly, openings, z_lo, z_hi, inputs: Inputs, plates=()):
     """The walls of one storey: quads per wall (columns its own, rows the storey's), holes with planes and reveals."""
     pts = np.asarray(poly.exterior.coords)[:-1]
     # the storey's rows: sills and heads within ROW_SNAP_M of each other are one row (panes of one band differ by
@@ -292,6 +293,14 @@ def storey_walls(mesh: _Mesh, poly, openings, z_lo, z_hi, inputs: Inputs):
 
         def hole(s, z):
             return next((o for o in ops if o[0] < s < o[1] and o[2] < z < o[3]), None)
+
+        def plate_id(o, z_face):                        # a thin sill / head at this face of the opening: its id
+            span = shapely.LineString([a + u * o[0], a + u * o[1]]).buffer(0.5)
+            for pl, pz0, pz1 in plates:
+                if abs(z_face - pz1) <= 0.15 or abs(z_face - pz0) <= 0.15:
+                    if pl.intersects(span):
+                        return SILL_ID if z_face == o[2] else HEAD_ID
+            return inputs.reveal_id
         for s0, s1 in zip(ss, ss[1:]):
             for z0, z1 in zip(zs, zs[1:]):
                 sm, zm = (s0 + s1) / 2, (z0 + z1) / 2
@@ -305,7 +314,8 @@ def storey_walls(mesh: _Mesh, poly, openings, z_lo, z_hi, inputs: Inputs):
                         ((s0, z0), (s0, z1), (s0 - eps, zm), [u[0], u[1], 0]), ((s1, z0), (s1, z1), (s1 + eps, zm), [-u[0], -u[1], 0])):
                     if hole(*outside) is o:
                         continue
-                    mesh.quad([P(sa, za), P(sb, zb), Q(sb, zb), Q(sa, za)], inputs.reveal_id, face)
+                    rid = plate_id(o, za) if face[2] != 0 and plates else inputs.reveal_id
+                    mesh.quad([P(sa, za), P(sb, zb), Q(sb, zb), Q(sa, za)], rid, face)
 
 
 # ---------------------------------------------------------------------------------------------- decor
@@ -531,7 +541,8 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
             if area < min_area:
                 continue
             ax = np.array([0.0, 0.0, 1.0]) if abs(nn[2]) < 0.9 else np.array([1.0, 0.0, 0.0])
-            e1 = np.cross(ax, nn); e1 /= np.linalg.norm(e1)
+            e1 = np.cross(ax, nn)
+            e1 /= np.linalg.norm(e1)
             e2 = np.cross(nn, e1)
             pts = q.reshape(-1, 3)
             a1, a2 = pts @ e1, pts @ e2
@@ -678,144 +689,7 @@ def _plan(e):
     return Polygon([u * a0 + n * x0, u * a1 + n * x0, u * a1 + n * x1, u * a0 + n * x1]), (z0, z1)
 
 
-BAND_BRIDGE_M = 1.6        # a band runs on through a pier up to this wide (the gap must be the pier's)
-CORNER_MEET_M = 0.15       # two bands of a corner closer than this meet
-
-
-def _band_strip(b):
-    """A band's plan as (s0, s1, d0, d1) in its own frame."""
-    x0, _, x1, _ = b[3].bounds
-    return b[4], b[5], x0, x1
-
-
-JOINT_EQUAL_M = 0.003      # two fronts within the weld project equally (then the band is the main element)
-
-
-def _front(plan, n_out):
-    """How far a plan reaches along the outward normal."""
-    return max(float(np.dot(q, n_out)) for q in np.asarray(plan.exterior.coords))
-
-
-def resolve_joints(elements, centre=None):
-    """Piers and bands where they meet (user 2026-10-14): the main element is the one that projects further; at
-    an equal projection (within the weld) the band. The other runs DECOR_INSET_M into the main one and its hidden
-    end is not built. A pier deeper than the band runs on through, uncut, and the band stops at it on both sides;
-    a band deeper than the pier runs on through (its pieces of one section joined across the pier) and the pier
-    is cut there. Two bands of a building corner meet; a band piece hidden inside a pier is not built. No collars.
-    Returns [(element, caps_at)] and the joint count."""
-    piers = [list(e) for e in elements if e[0] == "z"]
-    bands = [list(e) for e in elements if e[0] == "s"]
-    pplans = [_plan(p) for p in piers]
-    c0 = np.zeros(2) if centre is None else np.asarray(centre, float)
-
-    def n_out(b, plan):                                  # a band's normal turned out of the building
-        n = b[2]
-        return n if float(np.dot(np.asarray(plan.centroid.coords[0]) - c0, n)) >= 0 else -n
-
-    def piers_at(poly, z0, z1):
-        return [k for k, (pp, (a, b)) in enumerate(pplans) if a < z1 and b > z0 and pp.intersects(poly)
-                and pp.intersection(poly).area >= 1e-4]
-
-    keep = []                                            # a band piece hidden inside a pier: not built
-    for b in bands:
-        bp, (bz0, bz1) = _plan(b)
-        if any(pplans[k][0].buffer(DECOR_INSET_M).covers(bp) for k in piers_at(bp, bz0, bz1)):
-            continue
-        keep.append(b)
-    bands = keep
-
-    def band_main(b, bp, k):                             # the band projects at least as far as the pier
-        no = n_out(b, bp)
-        return _front(bp, no) >= _front(pplans[k][0], no) - JOINT_EQUAL_M
-
-    # a main band runs on through a pier: pieces of one section joined across a gap that is a shallower pier's
-    bands.sort(key=lambda b: (round(float(np.arctan2(b[1][1], b[1][0])), 3), round(b[3].bounds[1], 2), b[4]))
-    run = []
-    for b in bands:
-        m = run[-1] if run else None
-        same = m is not None and np.allclose(m[1], b[1]) and m[3].hausdorff_distance(b[3]) <= PROFILE_SAME_M
-        if same and b[4] - m[5] <= DECOR_SEAM_M:
-            m[5] = max(m[5], b[5])
-            continue
-        if same and 0 < b[4] - m[5] <= BAND_BRIDGE_M:
-            u, n = m[1], m[2]
-            x0, z0, x1, z1 = m[3].bounds
-            gap = Polygon([u * m[5] + n * x0, u * b[4] + n * x0, u * b[4] + n * x1, u * m[5] + n * x1])
-            ks = piers_at(gap, z0, z1)
-            spans = [(min(float(np.dot(q, u)) for q in np.asarray(pplans[k][0].exterior.coords)),
-                      max(float(np.dot(q, u)) for q in np.asarray(pplans[k][0].exterior.coords))) for k in ks]
-            covered = shapely.union_all([shapely.LineString([(a_, 0), (b_, 0)]) for a_, b_ in spans] or
-                                        [shapely.LineString()]).intersection(shapely.LineString([(m[5], 0), (b[4], 0)]))
-            mp, _ = _plan(m)
-            if (covered.length >= 0.8 * (b[4] - m[5])                 # the gap along the band is the piers'
-                    and all(band_main(m, mp, k) for k in ks)):
-                m[5] = b[5]
-                continue
-        run.append(b)
-    bands = run
-    for a in bands:                                      # bands of a building corner meet
-        for b in bands:
-            if a is b or abs(float(np.dot(a[1], b[1]))) > 0.1:
-                continue
-            ap, (az0, az1) = _plan(a)
-            bp, (bz0, bz1) = _plan(b)
-            if az1 <= bz0 or az0 >= bz1 or ap.distance(bp) > CORNER_MEET_M:
-                continue
-            s_b = [float(np.dot(q, a[1])) for q in np.asarray(bp.exterior.coords)]
-            lo, hi = min(s_b), max(s_b)
-            if abs(a[5] - lo) <= CORNER_MEET_M or (a[4] < lo <= a[5] + CORNER_MEET_M and a[5] < hi):
-                a[5] = max(a[5], hi)
-            if abs(a[4] - hi) <= CORNER_MEET_M or (lo - CORNER_MEET_M <= a[4] < hi and a[4] > lo):
-                a[4] = min(a[4], lo)
-    # the joints
-    joints, out = 0, []
-    pier_cuts = [[] for _ in piers]
-    for b in bands:
-        bp, (bz0, bz1) = _plan(b)
-        segs = [[b[4], b[5], True, True]]
-        for k in piers_at(bp, bz0, bz1):
-            joints += 1
-            if band_main(b, bp, k):                       # the pier is cut by the band
-                pier_cuts[k].append((bz0, bz1))
-                continue
-            s_p = [float(np.dot(q, b[1])) for q in np.asarray(pplans[k][0].exterior.coords)]
-            lo, hi = min(s_p), max(s_p)                   # the band stops in the pier on both sides
-            nxt = []
-            for a0, a1, ca, cb in segs:
-                if hi <= a0 or lo >= a1:
-                    nxt.append([a0, a1, ca, cb])
-                    continue
-                if lo - a0 > 0.02:
-                    nxt.append([a0, min(a1, lo + DECOR_INSET_M), ca, False])
-                if a1 - hi > 0.02:
-                    nxt.append([max(a0, hi - DECOR_INSET_M), a1, False, cb])
-            segs = nxt
-        for a0, a1, ca, cb in segs:
-            q = list(b)
-            q[4], q[5] = a0, a1
-            out.append((tuple(q), (ca, cb)))
-    for k, p in enumerate(piers):
-        pz0, pz1 = p[4], p[5]
-        segs = [[pz0, pz1, True, True]]
-        for bz0, bz1 in sorted(pier_cuts[k]):
-            nxt = []
-            for z0, z1, c0_, c1_ in segs:
-                if bz1 <= z0 or bz0 >= z1:
-                    nxt.append([z0, z1, c0_, c1_])
-                    continue
-                if bz0 - z0 > 0.02:
-                    nxt.append([z0, bz0 + DECOR_INSET_M, c0_, False])
-                if z1 - bz1 > 0.02:
-                    nxt.append([bz1 - DECOR_INSET_M, z1, False, c1_])
-            segs = nxt
-        for z0, z1, c0_, c1_ in segs:
-            q = list(p)
-            q[4], q[5] = z0, z1
-            out.append((tuple(q), (c0_, c1_)))
-    return out, joints
-
-
-def inset_panels(mesh: _Mesh, v, t, stor, mid, gap=0.005):
+def inset_panels(mesh: _Mesh, v, t, stor, mid, gap=0.005, scene=None):
     """Dark inserts (user 2026-10-14): flat panels in front of the wall, nearer than 2 cm to each other one panel,
     built as a box - its front at the outermost plane, its back WALL inset past the storey's wall line, no back
     face; its top and bottom kept `gap` off an opening's sill or head on that storey. Returns the panel count."""
@@ -877,11 +751,14 @@ def inset_panels(mesh: _Mesh, v, t, stor, mid, gap=0.005):
         f = [P(a0, d_out, z0), P(a1, d_out, z0), P(a1, d_out, z1), P(a0, d_out, z1)]
         b = [P(a0, d_wall, z0), P(a1, d_wall, z0), P(a1, d_wall, z1), P(a0, d_wall, z1)]
         n3, u3 = [*nvec, 0.0], [*u, 0.0]
-        mesh.quad(f, mid, n3)                                # front
-        mesh.quad([b[0], b[1], f[1], f[0]], mid, [0, 0, -1])  # bottom
-        mesh.quad([f[3], f[2], b[2], b[3]], mid, [0, 0, 1])   # top
-        mesh.quad([b[0], f[0], f[3], b[3]], mid, [-x for x in u3])
-        mesh.quad([f[1], b[1], b[2], f[2]], mid, u3)         # no back face: it lies in the wall
+        for target in [mesh] + ([_Mesh()] if scene is not None else []):
+            target.quad(f, mid, n3)                              # front
+            target.quad([b[0], b[1], f[1], f[0]], mid, [0, 0, -1])  # bottom
+            target.quad([f[3], f[2], b[2], b[3]], mid, [0, 0, 1])   # top
+            target.quad([b[0], f[0], f[3], b[3]], mid, [-x for x in u3])
+            target.quad([f[1], b[1], b[2], f[2]], mid, u3)       # no back face: it lies in the wall
+            if target is not mesh:
+                scene.instance("dark_inserts", target)
         n_out += 1
     return n_out
 
@@ -916,6 +793,351 @@ def extrude(mesh: _Mesh, element, mid, caps_at=(True, True)):
             e = b - a
             mesh.quad([P(*a, a0).tolist(), P(*b, a0).tolist(), P(*b, a1).tolist(), P(*a, a1).tolist()], mid,
                       P(e[1], -e[0], 0.0))
+
+
+# ---------------------------------------------------------------------------------------------- the modules scene
+
+class Scene:
+    """The modules delivery (pattern primitive-first): logical groups of parts, one mesh per type, objects that
+    place it (instances share the mesh), ids set, nothing attached."""
+
+    def __init__(self):
+        self.meshes, self.objects, self._types = {}, [], {}
+        self._count, self._n = {}, {}
+
+    def unique(self, group, name, mesh: _Mesh):
+        d = mesh.mesh(name)
+        if d["triangles"]:
+            self.meshes[name] = d
+            self.objects.append({"name": name, "group": group, "mesh": name, "location": [0.0, 0.0, 0.0]})
+
+    def instance(self, group, mesh: _Mesh, meta=None):
+        """An element of a type. The type is its geometry (twinqa `geometry_key`: vertices to the mm from its bbox
+        low corner, triangle ids): the first element's mesh, moved to that corner, is the type's mesh; every element
+        is an object placing it at its own corner. Copies are instances by construction (translation only)."""
+        d = mesh.mesh("")
+        v = np.asarray(d["vertices"], float)
+        o = v.min(axis=0)
+        key = (group, geometry_key(v - o, d["material_ids"]))     # the key of what is stored
+        if key not in self._types:
+            self._count[group] = self._count.get(group, 0) + 1
+            name = f"{group}_type{self._count[group]:03d}"
+            d["name"] = name
+            d["vertices"] = (v - o).tolist()
+            d["meta"] = meta or {}
+            self.meshes[name] = d
+            self._types[key] = name
+            self._n[name] = 0
+        name = self._types[key]
+        self._n[name] += 1
+        self.objects.append({"name": f"{name}.{self._n[name]:04d}", "group": group, "mesh": name,
+                             "location": [float(x) for x in o]})
+
+    def catalogue(self):
+        count = defaultdict(int)
+        for ob in self.objects:
+            count[ob["mesh"]] += 1
+        return sorted(([m, c, next(ob["group"] for ob in self.objects if ob["mesh"] == m)] for m, c in count.items()),
+                      key=lambda x: -x[1])
+
+    def dump(self):
+        return {"meshes": self.meshes, "objects": self.objects}
+
+
+def _origin(e):
+    """An extruded element's placing point (world): its section's low corner at its start."""
+    axis, u, n, sec, a0, a1 = e[:6]
+    x0, y0, _, _ = sec.bounds
+    if axis == "z":
+        p = np.asarray(u) * x0 + np.asarray(n) * y0
+        return (float(p[0]), float(p[1]), float(a0))
+    p = np.asarray(u) * a0 + np.asarray(n) * x0
+    return (float(p[0]), float(p[1]), float(y0))
+
+
+# ---------------------------------------------------------------------------------------------- primitive first
+
+PF_STEP_M = 0.07            # pattern primitive-first: profile steps under this collapse
+PF_MAX_VERTS = 12           # a decor element's section keeps at most this many points
+BELT_SHARE = 0.6            # bands at one height running over this share of the storey perimeter are a storey band
+BELT_MATCH_M = 0.06
+BELT_SAMPLE_M = 0.1         # a storey band frame is tested every this along the contour
+SILL_ID, HEAD_ID = 7, 8     # thin sills / heads (2 cm plates) are no geometry: the opening's face takes their id
+PF_SILHOUETTE_M = 0.07      # silhouette test: a section within this of its box is built as the box (pattern 0.10 m;
+                            # 0.07-0.10 m steps kept as a profile, user 2026-10-14)
+
+
+def _collapse_steps(poly, step=PF_STEP_M):
+    """A section's edges under `step` go, shortest first: a jog (its neighbours parallel) by moving one neighbour
+    edge over it - the one that keeps the larger area, so the silhouette holds; a corner cut (neighbours not
+    parallel) by meeting the neighbours' lines. Stops at 4 points."""
+    p = np.asarray(orient(poly, 1.0).exterior.coords)[:-1]
+    for _ in range(4 * len(p)):
+        n = len(p)
+        if n <= 4:
+            break
+        L = np.linalg.norm(np.roll(p, -1, axis=0) - p, axis=1)
+        i = int(np.argmin(L))
+        if L[i] >= step:
+            break
+        j, h, k = (i + 1) % n, (i - 1) % n, (i + 2) % n
+        d0, d1 = p[i] - p[h], p[k] - p[j]
+        cross = d0[0] * d1[1] - d0[1] * d1[0]
+        cands, meet = [], None
+        if abs(cross) > 1e-9 * np.linalg.norm(d0) * np.linalg.norm(d1):
+            t = ((p[j] - p[h])[0] * d1[1] - (p[j] - p[h])[1] * d1[0]) / cross
+            meet = p[h] + d0 * t
+        if meet is not None and np.linalg.norm(meet - (p[i] + p[j]) / 2) <= step:    # a corner cut: meet the
+            q = p.copy()                                                            # neighbours' lines
+            q[i] = meet
+            cands.append(np.delete(q, j, axis=0))
+        else:                                       # a jog (or neighbours meeting far off): move one neighbour over
+            e = p[j] - p[i]
+            qa = p.copy()
+            qa[h], qa[i] = p[h] + e, p[i] + e
+            qb = p.copy()
+            qb[j], qb[k] = p[j] - e, p[k] - e
+            cands += [np.delete(qa, i, axis=0), np.delete(qb, j, axis=0)]
+        ok = [c for c in cands if Polygon(c).is_valid and Polygon(c).area > 1e-6]
+        if not ok:
+            break
+        p = max(ok, key=lambda c: Polygon(c).area)
+    out = Polygon(p).simplify(1e-6)                     # points left on a straight line go
+    return out if out.is_valid and out.area > 1e-6 else poly
+
+
+def clean_section(sec):
+    """A section reduced by pattern primitive-first: notches and fins under PF_STEP_M closed and opened away, steps
+    under it collapsed, at most PF_MAX_VERTS points; None when nothing is left."""
+    r = PF_STEP_M / 2
+    g = sec.buffer(r, join_style="mitre").buffer(-r, join_style="mitre")        # notches under the step close
+    g = g.buffer(-r, join_style="mitre").buffer(r, join_style="mitre")         # fins under the step go
+    if g.is_empty:
+        g = sec
+    g = _collapse_steps(max(shapely.get_parts(g), key=lambda x: x.area))
+    tol = 0.005
+    out = Polygon(g.exterior).simplify(tol, preserve_topology=True)
+    while len(out.exterior.coords) - 1 > PF_MAX_VERTS and tol < 0.2:
+        tol *= 1.6
+        out = Polygon(g.exterior).simplify(tol, preserve_topology=True)
+    return orient(out, 1.0) if out.area > 1e-5 else None
+
+
+def storey_bands(bands, stor, levels):
+    """Storey bands of pattern primitive-first: band elements at one height (z range within BELT_MATCH_M) whose
+    length runs over BELT_SHARE of the storey contour. Returns [(z0, z1, projection, [band plans], storey name)]
+    and the ids of the band elements they take."""
+    groups = defaultdict(list)
+    for i, b in enumerate(bands):
+        _, z0, _, z1 = b[3].bounds
+        groups[(round(z0 / BELT_MATCH_M), round(z1 / BELT_MATCH_M))].append(i)
+    out, taken = [], set()
+    for _, ids in groups.items():
+        z0 = float(np.median([bands[i][3].bounds[1] for i in ids]))
+        z1 = float(np.median([bands[i][3].bounds[3] for i in ids]))
+        zm = (z0 + z1) / 2
+        name = min(stor, key=lambda n: 0 if stor[n]["z"][0] <= zm <= stor[n]["z"][1] + 0.4 else
+                   min(abs(stor[n]["z"][0] - zm), abs(stor[n]["z"][1] - zm)))
+        poly = stor[name]["poly"]
+        length = sum(bands[i][5] - bands[i][4] for i in ids)
+        if length < BELT_SHARE * poly.exterior.length:
+            continue
+        plans = [_plan(bands[i])[0] for i in ids]
+        proj = float(np.median([max(poly.exterior.distance(shapely.Point(q)) for q in np.asarray(pl.exterior.coords)
+                                    if not poly.contains(shapely.Point(q))) if not poly.contains(pl) else 0.0
+                                for pl in plans]))
+        if proj <= 0.01:
+            continue
+        out.append((z0, z1, proj, plans, name))
+        taken |= set(ids)
+    return out, taken
+
+
+def band_frame(mesh: _Mesh, poly, z0, z1, proj, keep_at, mid):
+    """Pattern primitive-first, a storey band: a frame on the storey contour - its front `proj` out of the wall,
+    its back DECOR_INSET_M into the body (no back face), top and bottom - kept where keep_at(point on the front,
+    outward normal) holds, sampled every BELT_SAMPLE_M; a cut ends with a cap. Returns (pieces, length kept)."""
+    ring = np.asarray(orient(poly, 1.0).exterior.coords)[:-1]
+    front = _inset_ring(ring, -proj)                        # outward (a negative inset)
+    back = _inset_ring(ring, DECOR_INSET_M)
+    n = len(ring)
+    edges = [(i, float(np.linalg.norm(ring[(i + 1) % n] - ring[i]))) for i in range(n)]
+    total = sum(L for _, L in edges)
+
+    def at(t):                                          # (edge, fraction) of the contour parameter t
+        t = t % total
+        for i, L in edges:
+            if t <= L or i == n - 1:
+                return i, (t / L if L > 0 else 0.0)
+            t -= L
+    samples = np.arange(0.0, total, BELT_SAMPLE_M)
+    keep = []
+    for t in samples:
+        i, f = at(t)
+        a, b = front[i], front[(i + 1) % n]
+        p = a + (b - a) * f
+        e = ring[(i + 1) % n] - ring[i]
+        nrm = np.array([e[1], -e[0]]) / max(np.linalg.norm(e), 1e-9)
+        keep.append(bool(keep_at(p, nrm)))
+    if not any(keep):
+        return 0, 0.0
+    runs = []                                           # kept intervals of t
+    k0 = None
+    for j, kp in enumerate(keep + [False]):
+        if kp and k0 is None:
+            k0 = j
+        if not kp and k0 is not None:
+            runs.append([samples[k0], samples[j - 1] + BELT_SAMPLE_M])
+            k0 = None
+    closed = all(keep)
+    if len(runs) > 1 and runs[0][0] == 0.0 and abs(runs[-1][1] - total) < BELT_SAMPLE_M * 1.01:
+        runs[0][0] = runs[-1][0] - total                # the run across t = 0 is one
+        runs.pop()
+
+    def point(rng, t):
+        i, f = at(t)
+        return rng[i] + (rng[(i + 1) % n] - rng[i]) * f
+
+    pieces, kept_len = 0, 0.0
+    for t0, t1 in ([[0.0, total]] if closed else runs):
+        ts = [t0]
+        acc = 0.0
+        for i, L in edges:                              # the contour's vertices inside the run
+            for shift in (0.0, total, -total):
+                tv = acc + shift
+                if t0 < tv < t1:
+                    ts.append(tv)
+            acc += L
+        ts = sorted(set(ts + [t1]))
+        if closed:
+            ts = ts[:-1]
+        F = [point(front, t) for t in ts]
+        B = [point(back, t) for t in ts]
+        m = len(ts)
+        pairs = [(j, j + 1) for j in range(m - 1)] + ([(m - 1, 0)] if closed else [])
+        for a, b in pairs:
+            e = F[b] - F[a]
+            mesh.quad([[*F[a], z0], [*F[b], z0], [*F[b], z1], [*F[a], z1]], mid, [e[1], -e[0], 0])     # front
+            mesh.quad([[*F[a], z1], [*F[b], z1], [*B[b], z1], [*B[a], z1]], mid, [0, 0, 1])             # top
+            mesh.quad([[*F[a], z0], [*B[a], z0], [*B[b], z0], [*F[b], z0]], mid, [0, 0, -1])            # bottom
+        if not closed:                                  # caps at the cut ends
+            for j, sgn in ((0, -1), (m - 1, 1)):
+                d = (F[min(j + 1, m - 1)] - F[max(j - 1, 0)]) * sgn
+                mesh.quad([[*B[j], z0], [*F[j], z0], [*F[j], z1], [*B[j], z1]], mid, [d[0], d[1], 0])
+        pieces += 1
+        kept_len += (t1 - t0)
+    return pieces, kept_len
+
+
+def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=None):
+    """The decor of pattern primitive-first (user 2026-10-14): storey bands as frames on the storey contour (cut
+    where the source has none and they show), piers through with a cleaned section (steps under 7 cm gone, at most
+    12 points), other bands and balconies by their cleaned section, stopping DECOR_INSET_M inside a pier with no
+    end there, thin plates (2 cm) not built (their id goes to the openings). Returns the report and the plate
+    plans (for the openings' ids)."""
+    els, plates, odd_n = [], [], 0
+    sil = {"boxed": 0, "profile": 0}
+    for k in keys:
+        v, t, mod = parts[k]
+        mid = mod["ids"].get(k, 26)
+        _, t = split_flat(v, t)
+        odd = []
+        for e in profile_elements(v, t, centre, odd=odd):
+            axis, u, n, sec, a0, a1 = e[:6]
+            x0, y0, x1, y1 = sec.bounds
+            if axis == "s" and (y1 - y0) < PF_STEP_M:   # a thin plate: texture on the opening (its id)
+                plates.append((_plan(e)[0], y0, y1))
+                continue
+            c = clean_section(sec)
+            if c is None:
+                continue
+            bx = shapely.box(*c.bounds)
+            if len(c.exterior.coords) - 1 > 4 and c.hausdorff_distance(bx) <= PF_SILHOUETTE_M:
+                c = orient(bx, 1.0)                     # the silhouette test: its box holds the silhouette
+                sil["boxed"] += 1
+            elif len(c.exterior.coords) - 1 > 4:
+                sil["profile"] += 1
+            els.append([axis, u, n, c, a0, a1, [], mid])
+        odd_n += len(odd)
+    piers = [e for e in els if e[0] == "z"]
+    bands = [e for e in els if e[0] == "s"]
+    belts, taken = storey_bands(bands, stor, levels)
+    pier_plans = [(_plan(p)[0], p[4], p[5]) for p in piers]
+    frames, frame_len = 0, 0.0
+    for z0, z1, proj, plans, name in belts:
+        src = shapely.union_all(plans).buffer(0.05)
+        deep = shapely.union_all([pp for pp, a, b in pier_plans if a < z1 and b > z0] or [Polygon()])
+
+        def keep_at(p, nrm, src=src, deep=deep):
+            pt = shapely.Point(*p)
+            return src.covers(pt) or deep.covers(pt)
+        mid = 26
+        pcs, L = band_frame(mesh, stor[name]["poly"], z0, z1, proj, keep_at, mid)
+        if scene is not None:
+            one = _Mesh()
+            band_frame(one, stor[name]["poly"], z0, z1, proj, keep_at, mid)
+            scene.unique("storey_bands", f"storey_band_{name}_{z0:.2f}", one)
+        frames += pcs
+        frame_len += L
+    others = [b for i, b in enumerate(bands) if i not in taken]
+    elements = []
+
+    def _record(e, caps, kind):                         # an element and its type (section, length, direction)
+        axis, u, n, sec, a0, a1 = e[:6]
+        x0, y0, _, _ = sec.bounds
+        shape = tuple(np.round(np.asarray(sec.exterior.coords)[:-1] - [x0, y0], 3).ravel().tolist())
+        key = (axis, tuple(np.round(u, 3).tolist()), shape, round(a1 - a0, 3), tuple(caps))
+        el = tuple(e[:6]) + ([],) + (e[7] if len(e) > 7 else 26,)
+        origin = _origin(el)
+        elements.append((kind, key, origin, el, caps))
+        if scene is not None:
+            one = _Mesh()
+            extrude(one, el, el[7], caps)
+            sec = el[3]
+            meta = {"section_points": len(sec.exterior.coords) - 1,
+                    "silhouette_dev_m": round(float(sec.hausdorff_distance(shapely.box(*sec.bounds))), 4)}
+            scene.instance(kind + "s" if not kind.endswith("y") else kind[:-1] + "ies", one, meta)
+    for p in piers:                                     # piers run through: never cut
+        extrude(mesh, p, p[7])
+        _record(p, (True, True), "pier")
+    stops = 0
+    for b in others:                                    # other bands stop inside a pier
+        bp, (bz0, bz1) = _plan(b)
+        segs = [[b[4], b[5], True, True]]
+        for pp, a, c in pier_plans:
+            if a >= bz1 or c <= bz0 or not pp.intersects(bp) or pp.intersection(bp).area < 1e-4:
+                continue
+            if pp.buffer(DECOR_INSET_M).covers(bp):
+                segs = []
+                break
+            s_p = [float(np.dot(q, b[1])) for q in np.asarray(pp.exterior.coords)]
+            lo, hi = min(s_p), max(s_p)
+            nxt = []
+            for a0, a1, ca, cb in segs:
+                if hi <= a0 or lo >= a1:
+                    nxt.append([a0, a1, ca, cb])
+                    continue
+                stops += 1
+                if lo - a0 > 0.02:
+                    nxt.append([a0, min(a1, lo + DECOR_INSET_M), ca, False])
+                if a1 - hi > 0.02:
+                    nxt.append([max(a0, hi - DECOR_INSET_M), a1, False, cb])
+            segs = nxt
+        for a0, a1, ca, cb in segs:
+            q = list(b)
+            q[4], q[5] = a0, a1
+            extrude(mesh, tuple(q), b[7], (ca, cb))
+            _record(q, (ca, cb), "balcony" if (b[3].bounds[2] - b[3].bounds[0]) > 0.6 and (a1 - a0) < 3.0 else "band")
+    types = defaultdict(list)
+    for kind, key, origin, e, caps in elements:
+        types[(kind, key)].append((origin, e, caps))
+    rep = {"storey_band_frames": frames, "storey_bands": len(belts), "frame_length_m": round(frame_len, 1),
+           "piers": len(piers), "other_bands": len(others), "band_stops_in_piers": stops,
+           "thin_plates_as_ids": len(plates), "no_section": odd_n,
+           "section_points_max": max([len(e[3].exterior.coords) - 1 for e in els] or [0]),
+           "silhouette_test": sil, "elements": len(elements), "types": len(types),
+           "type_catalogue": sorted(([k[0], len(v)] for k, v in types.items()), key=lambda x: -x[1])[:40]}
+    return rep, plates, types
 
 
 # ---------------------------------------------------------------------------------------------- compare
@@ -1067,6 +1289,7 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
 
     levels, elev = inputs.levels, dict(inputs.levels)
     rep, meshes = {}, {}
+    scene = Scene()
 
     def done(name, mesh, src_keys):
         removed = drop_shared_faces(mesh)
@@ -1085,8 +1308,11 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
     sk = keys("slab_boxes")[0]
     slabs = slabs_of(*parts[sk][:2], levels)
     m, fb = _Mesh(), 0
-    for _, top, under, outline in slabs:
+    for sname, top, under, outline in slabs:
         fb += slab_box(m, outline, top, under, pid(sk, 21), pid(sk, 21), pid(sk, 21))
+        one = _Mesh()
+        slab_box(one, outline, top, under, pid(sk, 21), pid(sk, 21), pid(sk, 21))
+        scene.unique("slabs", f"slab_{sname}", one)
     rep["slabs"] = {"slabs": [x[0] for x in slabs], "cdt_cells": fb}
     done("slabs", m, [sk])
 
@@ -1104,40 +1330,30 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
     if len(glass) != 1:
         raise BuildError(f"one glass module is needed (build_as openings_glass), got {glass}")
     stor = _storeys(parts[glass[0]], slabs, levels, inputs)
+    centre = np.asarray(max(shapely.get_parts(slabs[0][3]), key=lambda g: g.area).centroid.coords[0])
+
+    # decor first (pattern primitive-first): its thin plates give the openings their sill / head ids
+    m = _Mesh()
+    drep, plates, types = decor_primitive_first(m, parts, keys("boxes"), stor, levels, centre, scene)
+    panels = 0
+    for k in keys("planes"):                         # dark inserts: boxes set into the wall (user 2026-10-14)
+        v, t, _ = parts[k]
+        panels += inset_panels(m, v, t, stor, pid(k, 5), scene=scene)
+    rep["decor"] = {**drep, "inset_panels": panels}
+    done("decor", m, keys("boxes") + keys("planes"))
+
     m, srep = _Mesh(), {}
     for name, st in stor.items():
-        storey_walls(m, st["poly"], st["openings"], *st["z"], inputs)
+        z0, z1 = st["z"]
+        mine = [x for x in plates if z0 - 0.3 <= x[1] <= z1 + 0.3]
+        storey_walls(m, st["poly"], st["openings"], z0, z1, inputs, mine)
+        one = _Mesh()
+        storey_walls(one, st["poly"], st["openings"], z0, z1, inputs, mine)
+        scene.unique("walls", f"walls_{name}", one)
         srep[name] = {"z": [round(z, 3) for z in st["z"]], "walls": len(st["poly"].exterior.coords) - 1,
                       "openings": sum(len(x) for x in st["openings"].values()), "area_m2": round(st["poly"].area, 1)}
     rep["walls"] = {"storeys": srep}
     done("walls", m, keys("walls") + glass)
-
-    m, n_el, all_els = _Mesh(), {}, []
-    centre = np.asarray(max(shapely.get_parts(slabs[0][3]), key=lambda g: g.area).centroid.coords[0])
-    for k in keys("boxes"):
-        v, t, _ = parts[k]
-        mid = pid(k, 26)
-        flat_t, t = split_flat(v, t)               # zero-thickness pieces are planes, not boxes
-        kept = face_planes(m, v, flat_t, mid) if len(flat_t) else 0
-        odd = []
-        els = profile_elements(v, t, centre, odd=odd) if len(t) else []
-        if odd:
-            kept += face_planes(m, v, np.vstack(odd), mid)
-        all_els += [tuple(e[:7]) + (mid,) for e in els]
-        n_el[k] = {"elements": len(els), "flat_pieces": len(_pieces(v, flat_t)) if len(flat_t) else 0,
-                   "off_axis_or_no_section": len(odd), "kept_as_triangles": kept}
-    resolved, joints = resolve_joints(all_els, centre)   # the further-projecting element is the main one
-    for e, caps in resolved:
-        extrude(m, e, e[7], caps)
-    rep.setdefault("decor", {})["joints"] = joints
-    panels = 0
-    for k in keys("planes"):                         # dark inserts: boxes set into the wall (user 2026-10-14)
-        v, t, _ = parts[k]
-        panels += inset_panels(m, v, t, stor, pid(k, 5))
-    n_el["inset_panels"] = panels
-    rep["decor"] = {**rep.get("decor", {}), "elements": n_el,
-                    "elements_total": sum(x.get("elements", 0) for x in n_el.values() if isinstance(x, dict))}
-    done("decor", m, keys("boxes") + keys("planes"))
 
     m, enclosure = _Mesh(), None
     for k in keys("planes_enclosure"):
@@ -1209,7 +1425,13 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
     out = {"source": "from_source", "units": "m", "meshes": list(meshes.values()),
            "helpers": [{"name": f"LEVEL_{n}", "location": [0.0, 0.0, z]} for n, z in levels]}
     rep["triangles"] = sum(len(d["triangles"]) for d in meshes.values())
-    return out, spec, rep
+    for name in ("terraces", "superstructure", "parapets"):        # the rest: one object per module
+        if name in meshes:
+            scene.meshes[name] = meshes[name]
+            scene.objects.append({"name": name, "group": name, "mesh": name, "location": [0.0, 0.0, 0.0]})
+    rep["type_catalogue"] = scene.catalogue()[:60]
+    rep["objects"], rep["meshes_in_scene"] = len(scene.objects), len(scene.meshes)
+    return out, spec, rep, scene.dump()
 
 
 def load_modules(path) -> dict:

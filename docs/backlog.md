@@ -52,6 +52,10 @@ the engine covers it.
   decor extractor already lists them as `decor.attachment_candidates` (user 2026-10-12).
 - **EG3** `mid` window sashes / detailed windows from the opening plane.
 - **EG4** UV, atlas and delivery package = **H10**.
+- **EG5** Pattern primitive-first, `from_source` (2026-10-14): (a) instances by translation only - a copy turned
+  90/180 degrees is a type of its own (OBJ03 v009: 1 328 piers -> 798 types); add rotation to the type key and the
+  modules export; (b) regenerate `npm/` from an edited `modules/modules.blend` (now both come from one build).
+  Owner Codex.
 
 ## Markup helpers (after the terrace; owner Claude, code parts Codex)
 
