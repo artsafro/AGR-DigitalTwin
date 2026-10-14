@@ -17,21 +17,28 @@ Do these steps in order. Talk to the user in Russian; files stay in English.
    push the branch and open a PR by the project rules (`docs/agents/NAMING.md`, `REVIEW_CHECKLIST.md`; evidence
    in the body). The guard asks before the push. Never merge: merging waits for the user's command. Mid-task:
    no push, no PR.
-3. **Handoff.** Rewrite `docs/HANDOFF.md` from `docs/HANDOFF.template.md`: every section, facts only, under 7000
+3. **Transcript.** Make up a fresh random token of 16 letters and digits and run
+   `py -3 tools/hooks/save_transcript.py --nonce <token>` (after step 2, so the PR number is known). Your Bash call
+   lands in your own transcript before it runs, so the token proves which session is yours. It copies the transcript
+   to `logs/transcripts/` of the main checkout and prints the path for the handoff's `Transcript:` line. Exit 1: this
+   session's copy for this branch and PR exists and is kept - name it in `Transcript:`. Exit 2 (no or several
+   transcripts hold the token, git or I/O failure; nothing is written): `Transcript: -` and the message under
+   "Rules broken".
+4. **Handoff.** Rewrite `docs/HANDOFF.md` from `docs/HANDOFF.template.md`: every section, facts only, under 7000
    characters. `Commit:` is HEAD after step 1. Put in it what the next session cannot get from git: user
    decisions not yet in code (with dates), questions waiting for the user, rules broken this session, local
    state outside git, the next step in one line. Do not copy history; point to commits and PRs.
-4. **Job.** If the task is a job (`jobs/<ID>/`), update `jobs/<ID>/STATE.md` (status, next step, evidence paths).
-5. **Repeats.** List the procedures done two or more times in this session (the same command chain, the same
+5. **Job.** If the task is a job (`jobs/<ID>/`), update `jobs/<ID>/STATE.md` (status, next step, evidence paths).
+6. **Repeats.** List the procedures done two or more times in this session (the same command chain, the same
    manual check, the same chain of judgement, the same question resolved). For each, add one line to
    `docs/backlog.md`, section "Reuse proposals", by the rule of three (`docs/agents/WORKFLOW.md`): kind
    (CLI command / skill / pattern), what it is, how many times, this branch, marked `proposal`. Do not create
    the command, skill or pattern. None: skip the step.
-6. **Project state.** `docs/PROJECT_STATE.md` changes only on `main` after a merge, by replacing a section
+7. **Project state.** `docs/PROJECT_STATE.md` changes only on `main` after a merge, by replacing a section
    (`docs/agents/WORKFLOW.md`, "Project state"). In a task branch do not touch it; state changes go into the handoff.
-7. **Commit the handoff**: `Handoff: <next step in a few words>` with the handoff, STATE and backlog files. Then
+8. **Commit the handoff**: `Handoff: <next step in a few words>` with the handoff, STATE and backlog files. Then
    `git status --short` must show nothing of this task.
-8. **Report** in Russian, short: branch, HEAD commit, PR (if any), next step, reuse proposals added (count), then exactly
+9. **Report** in Russian, short: branch, HEAD commit, PR (if any), next step, reuse proposals added (count), then exactly
    «Чекпоинт готов, можно /clear».
 
 If a step cannot be done (a failing hook, a push the user declined), do not hide it: write it into the handoff

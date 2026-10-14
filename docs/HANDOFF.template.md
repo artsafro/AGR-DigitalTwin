@@ -1,6 +1,7 @@
 # Handoff — <YYYY-MM-DD HH:MM>
 
 Branch: `<branch>` · Commit: `<short sha of the work commit before this handoff>` · Worktree: `<path>` · Job: `<ID or ->`
+Transcript: `<path printed by tools/hooks/save_transcript.py, or ->`
 
 <!-- Written by /handover (.claude/commands/handover.md), read by tools/hooks/session_context.py and /takeover.
 Keep the `Branch:` line as is (the hook parses it). Facts only, no history: git log and the pull requests hold
