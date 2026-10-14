@@ -555,6 +555,141 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
     return kept
 
 
+# ---------------------------------------------------------------------------------------------- decor by profile
+
+PROFILE_SIMPLIFY_M = 0.01   # a decor section keeps its shape within this (user 2026-10-14: the real section)
+PROFILE_SAME_M = 0.01       # two pieces of one element have the same section within this (Hausdorff)
+
+
+def _frame_of(q):
+    """The plan frame of a piece: u along its longer plan side snapped to the nearest building axis sign, n out."""
+    r = shapely.MultiPoint(q[:, :2]).minimum_rotated_rectangle
+    c = np.asarray(r.exterior.coords)[:4] if r.geom_type == "Polygon" else np.array([[0, 0], [1, 0], [1, 1], [0, 1]])
+    e1, e2 = c[1] - c[0], c[2] - c[1]
+    u = e1 / np.linalg.norm(e1) if np.linalg.norm(e1) >= np.linalg.norm(e2) else e2 / np.linalg.norm(e2)
+    if abs(u[0]) >= abs(u[1]):
+        u = u * (np.sign(u[0]) or 1.0)
+    else:
+        u = u * (np.sign(u[1]) or 1.0)
+    return u, np.array([u[1], -u[0]])
+
+
+def _section_poly(v3, t, at, loose=None):
+    """The section of a triangle set by the plane (third coordinate) = at, as one polygon in the first two, or None;
+    with `loose`, the section lines off that polygon (zero-thickness sheets: a balcony's walls) are added to it."""
+    segs = _section(v3, t, at)
+    if not segs:
+        return None
+    lines = shapely.union_all(segs)
+    polys = list(shapely.get_parts(shapely.polygonize(list(shapely.get_parts(lines)))))
+    if polys:
+        g = shapely.union_all(polys)
+    else:                                                   # an open section: closed by a 1 mm growth
+        g = lines.buffer(0.001, join_style="mitre").buffer(-0.0005, join_style="mitre")
+    g = max(shapely.get_parts(g), key=lambda x: x.area) if not g.is_empty else None
+    if g is None or g.area <= 1e-6:
+        return None
+    if loose is not None:
+        rest = lines.difference(g.buffer(0.002))
+        loose += [ls.simplify(PROFILE_SIMPLIFY_M) for ls in shapely.get_parts(shapely.line_merge(rest))
+                  if ls.geom_type == "LineString" and ls.length > 0.05]
+    return orient(Polygon(g.exterior).simplify(PROFILE_SIMPLIFY_M, preserve_topology=True), 1.0)
+
+
+def profile_elements(v, t, centre, odd=None):
+    """Decor elements by their real section (user 2026-10-14): each piece is cut across its main axis - a pier
+    (taller than long) in plan at its mid height, a band or a balcony (longer than tall) across its length at its
+    middle - and extruded over its extent; pieces of one element (same section within PROFILE_SAME_M, touching
+    along the axis within DECOR_SEAM_M) merged; the back of the section is set DECOR_INSET_M into the wall.
+    Returns [(axis "z" | "s", u, n, section polygon, a0, a1)]; a piece no section can be taken of goes to `odd`."""
+    out = []
+    for pc in _pieces(v, t):
+        tri = t[pc]
+        q = v[np.unique(tri)]
+        u, n = _frame_of(q)
+        if odd is not None and min(abs(u[0]), abs(u[1])) > np.sin(np.radians(AXIS_DEG)):
+            odd.append(tri)
+            continue
+        s, d, z = q[:, :2] @ u, q[:, :2] @ n, q[:, 2]
+        outward = float(((s.mean() * u + d.mean() * n) - centre) @ n) > 0
+        if np.ptp(z) >= np.ptp(s):                          # a pier: the plan section, extruded up
+            a0, a1 = float(z.min()), float(z.max())
+            v3 = np.column_stack([v[:, :2] @ u, v[:, :2] @ n, v[:, 2]])
+            axis = "z"
+        else:                                               # a band, a balcony: the cross section, along u
+            a0, a1 = float(s.min()), float(s.max())
+            v3 = np.column_stack([v[:, :2] @ n, v[:, 2], v[:, :2] @ u])
+            axis = "s"
+        sec, loose = None, []
+        for f in (0.5, 0.37, 0.63):                         # off a vertex or a seam
+            loose = []
+            sec = _section_poly(v3, tri, a0 + f * (a1 - a0), loose)
+            if sec is not None:
+                break
+        if sec is None:
+            if odd is not None:
+                odd.append(tri)
+            continue
+        # the back into the wall: along d, the side away from the outside
+        bx = sec.bounds                                      # (x0, y0, x1, y1) in the section's coordinates
+        if axis == "z":                                      # section in (s, d): the back is the low d (outward) side
+            back = (bx[1] - DECOR_INSET_M, bx[1] + 1e-3) if outward else (bx[3] - 1e-3, bx[3] + DECOR_INSET_M)
+            near = [x for x, y in sec.exterior.coords if abs(y - (bx[1] if outward else bx[3])) <= 0.01]
+            strip = shapely.box(min(near), back[0], max(near), back[1]) if near else None
+        else:                                                # section in (d, z): the back is the low d (outward) side
+            back = (bx[0] - DECOR_INSET_M, bx[0] + 1e-3) if outward else (bx[2] - 1e-3, bx[2] + DECOR_INSET_M)
+            near = [y for x, y in sec.exterior.coords if abs(x - (bx[0] if outward else bx[2])) <= 0.01]
+            strip = shapely.box(back[0], min(near), back[1], max(near)) if near else None
+        if strip is not None and strip.area > 0:
+            g = sec.union(strip)
+            if g.geom_type == "Polygon":
+                sec = orient(Polygon(g.exterior).simplify(PROFILE_SIMPLIFY_M / 2, preserve_topology=True), 1.0)
+        out.append([axis, u, n, sec, a0, a1, loose])
+    # merge touching pieces of one section along their axis
+    out.sort(key=lambda e: (e[0], round(float(np.arctan2(e[1][1], e[1][0])), 3), round(e[3].centroid.x, 2),
+                            round(e[3].centroid.y, 2), e[4]))
+    merged = []
+    for e in out:
+        m = merged[-1] if merged else None
+        if (m is not None and m[0] == e[0] and np.allclose(m[1], e[1]) and e[4] - m[5] <= DECOR_SEAM_M
+                and m[3].hausdorff_distance(e[3]) <= PROFILE_SAME_M):
+            m[5] = max(m[5], e[5])
+        else:
+            merged.append(list(e))
+    return [tuple(m[:6]) + (m[6],) for m in merged]
+
+
+def extrude(mesh: _Mesh, element, mid):
+    """A decor element: its section extruded between a0 and a1 along its axis; side quads, caps (quads, else a
+    triangulation of the section)."""
+    axis, u, n, sec, a0, a1 = element[:6]
+    loose = element[6] if len(element) > 6 else []
+    u3, n3, z3 = np.array([*u, 0.0]), np.array([*n, 0.0]), np.array([0.0, 0.0, 1.0])
+    if axis == "z":
+        P = lambda a, b, h: u3 * a + n3 * b + z3 * h                                      # noqa: E731
+        along = z3
+    else:
+        P = lambda a, b, h: n3 * a + z3 * b + u3 * h                                      # noqa: E731
+        along = u3
+    ring = np.asarray(sec.exterior.coords)[:-1]
+    for i in range(len(ring)):
+        a, b = ring[i], ring[(i + 1) % len(ring)]
+        e = b - a
+        out2 = P(e[1], -e[0], 0.0)                         # the outward normal of a CCW ring in the section plane
+        mesh.quad([P(*a, a0).tolist(), P(*b, a0).tolist(), P(*b, a1).tolist(), P(*a, a1).tolist()], mid, out2)
+    caps = [ring] if len(ring) == 4 and sec.convex_hull.area - sec.area <= 1e-9 else \
+        [np.asarray(x.exterior.coords)[:-1] for x in shapely.get_parts(shapely.constrained_delaunay_triangles(sec))]
+    for c in caps:
+        for h, f in ((a0, -along), (a1, along)):
+            (mesh.quad if len(c) == 4 else mesh.tri)([P(*x, h).tolist() for x in c], mid, f)
+    for ls in loose:                                    # zero-thickness sheets of the element: planes along it
+        c = np.asarray(ls.coords)
+        for a, b in zip(c[:-1], c[1:]):
+            e = b - a
+            mesh.quad([P(*a, a0).tolist(), P(*b, a0).tolist(), P(*b, a1).tolist(), P(*a, a1).tolist()], mid,
+                      P(e[1], -e[0], 0.0))
+
+
 # ---------------------------------------------------------------------------------------------- compare
 
 def compare(src_v, src_t, mesh_v, mesh_t, views=("top", "x", "y")):
@@ -664,8 +799,9 @@ def drop_shared_faces(mesh: _Mesh) -> int:
 
 # ---------------------------------------------------------------------------------------------- the build
 
-BUILD_AS = ("slab_boxes", "deck_boxes", "walls", "openings_glass", "boxes", "boxes_seated", "planes_enclosure",
-            "roof_band", "railings", "skip")
+BUILD_AS = ("slab_boxes", "deck_boxes", "walls", "openings_glass", "boxes", "planes", "boxes_seated",
+            "planes_enclosure", "roof_band", "railings", "skip")
+BALCONY_OFF_M = 0.3      # glass further than this off its storey's wall line is a railing, not a window
 LIFT_M = RAILING_LIFT_M   # a part standing on another (a roof box, a band, a railing) stands this far off it
 BAND_T_M = 0.04          # a textured band's thickness (the roof slat band, user 2026-10-13)
 
@@ -756,27 +892,26 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         flat_t, t = split_flat(v, t)               # zero-thickness pieces are planes, not boxes
         kept = face_planes(m, v, flat_t, mid) if len(flat_t) else 0
         odd = []
-        els = decor_elements(v, t, odd=odd) if len(t) else []
+        els = profile_elements(v, t, centre, odd=odd) if len(t) else []
         if odd:
             kept += face_planes(m, v, np.vstack(odd), mid)
-        n_el[k] = {"boxes": len(els), "flat_pieces": len(_pieces(v, flat_t)) if len(flat_t) else 0,
-                   "off_axis_pieces": len(odd), "kept_as_triangles": kept}
-        for (o, u, nn), lo, hi in els:
-            s0, d0, z0 = lo
-            s1, d1, z1 = hi
-            outward = float((u * (s0 + s1) / 2 + nn * (d0 + d1) / 2 - centre) @ nn) > 0
-            lo2, hi2 = (((s0, d0 - DECOR_INSET_M, z0), (s1, d1, z1)) if outward
-                        else ((s0, d0, z0), (s1, d1 + DECOR_INSET_M, z1)))
-            _box(m, (o, u, nn), lo2, hi2, mid)
-    rep["decor"] = {"elements": n_el, "boxes_total": sum(x["boxes"] for x in n_el.values())}
-    done("decor", m, keys("boxes"))
+        for e in els:
+            extrude(m, e, mid)
+        n_el[k] = {"elements": len(els), "flat_pieces": len(_pieces(v, flat_t)) if len(flat_t) else 0,
+                   "off_axis_or_no_section": len(odd), "kept_as_triangles": kept}
+    for k in keys("planes"):                         # finishes that stand off the wall: planes where they are
+        v, t, _ = parts[k]
+        n_el[k] = {"planes_kept_as_triangles": face_planes(m, v, t, pid(k, 5)), "pieces": len(_pieces(v, t))}
+    rep["decor"] = {"elements": n_el, "elements_total": sum(x.get("elements", 0) for x in n_el.values())}
+    done("decor", m, keys("boxes") + keys("planes"))
 
     m, enclosure = _Mesh(), None
     for k in keys("planes_enclosure"):
         ev, et = parts[k][:2]
         q = ev[np.unique(et)]
         ring = footprint_ring(ev, et)
-        planes_along(m, ring, float(q[:, 2].min()), float(q[:, 2].max()), pid(k, 24), top=True)
+        planes_along(m, ring, float(q[:, 2].min()), float(q[:, 2].max()), pid(k, 24))   # no top: the source
+                                                                                          # has none (user 2026-10-14)
         enclosure = (ring, float(q[:, 2].max()))
     for k in keys("boxes_seated"):
         for (o, u, nn), lo, hi in decor_elements(*parts[k][:2]):
@@ -800,7 +935,38 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         for n, top, deck in decks:
             if railing_h and n in stor:
                 plates += terrace_railings(m, deck, stor[n]["poly"], top, railing_h, pid(k, 12))
-    rep["parapets"] = {"railing_h_m": round(railing_h, 3) if railing_h else None, "railing_plates": plates}
+    # glass standing off the wall line (a small balcony's railing): the same rule - one closed plate per free
+    # side of its plan, from its foot to its top (pattern terrace, glass railings, user 2026-10-14)
+    gv, gt = parts[glass[0]][:2]
+    lines = {n: st["poly"] for n, st in stor.items()}
+    groups = []
+    for pc in _pieces(gv, gt):
+        q = gv[np.unique(gt[pc])]
+        zm = float(q[:, 2].mean())
+        name = next((n for n, st in stor.items() if st["z"][0] - 0.3 <= zm <= st["z"][1] + 0.3), None)
+        if name is None:
+            continue
+        far = float(shapely.distance(shapely.points(q[:, :2]), lines[name].exterior).max())   # its furthest point
+        if far <= BALCONY_OFF_M:
+            continue
+        groups.append([name, q])
+    merged = []                                     # panes of one balcony touch: one plan
+    for name, q in groups:
+        hit = next((g for g in merged if g[0] == name and
+                    shapely.MultiPoint(g[1][:, :2]).distance(shapely.MultiPoint(q[:, :2])) <= 0.05), None)
+        if hit is None:
+            merged.append([name, q])
+        else:
+            hit[1] = np.vstack([hit[1], q])
+    balconies = 0
+    for name, q in merged:
+        plan = shapely.MultiPoint(q[:, :2]).convex_hull
+        if plan.geom_type != "Polygon" or plan.area < 0.05:
+            continue
+        z0, z1 = float(q[:, 2].min()), float(q[:, 2].max())
+        balconies += terrace_railings(m, plan, lines[name], z0, z1 - z0, pid(glass[0], 12))   # 4 mm off its foot
+    rep["parapets"] = {"railing_h_m": round(railing_h, 3) if railing_h else None, "railing_plates": plates,
+                       "balcony_glass_plates": balconies}
     done("parapets", m, keys("roof_band") + keys("railings"))
 
     rep["skipped"] = {k: parts[k][2].get("build", "") for k in keys("skip")}

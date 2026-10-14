@@ -144,7 +144,8 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
     has no loop. Anything else - a third loop, a lone A or B, a loop that is not one simple closed
     cycle - is `other`. `roof-structure` (spec v0.7, pattern roof-screen-enclosure): the bottom of a roof
     structure's walls - a flat closed loop at the top level on one of the spec's outlines; it takes no part in
-    the slab joints. structures: [(outline Polygon, roof level z)]."""
+    the slab joints. structures: [(outline Polygon, roof level z[, top z])]; with a top z an open ring on the
+    outline there is the open top of a screen enclosure (no top plane, user 2026-10-14)."""
     tri = np.flatnonzero(~skip)
     sides = side_edges[tri]
     open_mask = counts[sides] == 1
@@ -210,10 +211,17 @@ def open_loops(model: Soup, ids, counts, side_edges, skip, tol: dict, ranges: di
             axis=1)).size else False
         if flat_loop and closed and structures and roof_faces and upward:   # walls standing on it, roof ids: a
             ring = list(polygonize(shapely.linestrings(segs)))              # shaft's open top is none (review 1)
-            if len(ring) == 1 and any(abs(float(z.mean()) - zs) <= tol["weld_m"]
-                                      and ring[0].exterior.hausdorff_distance(poly.exterior) <= tol["weld_m"]
-                                      for poly, zs in structures):
+            if len(ring) == 1 and any(abs(float(z.mean()) - st[1]) <= tol["weld_m"]
+                                      and ring[0].exterior.hausdorff_distance(st[0].exterior) <= tol["weld_m"]
+                                      for st in structures):
                 kind, level = "roof-structure", None
+        downward = bool(c_mid.size and np.all(c_mid < float(z.mean()) - tol["weld_m"]))
+        if kind == "other" and flat_loop and closed and roof_faces and downward:   # an enclosure with no top
+            ring = list(polygonize(shapely.linestrings(segs)))                     # (user 2026-10-14): its top
+            if len(ring) == 1 and any(len(st) > 2 and abs(float(z.mean()) - st[2]) <= tol["weld_m"]   # edge on
+                                      and ring[0].exterior.hausdorff_distance(st[0].exterior) <= tol["weld_m"]
+                                      for st in structures):                       # the outline at its top
+                kind, level = "roof-structure-top", None
         out.append({"kind": kind, "level": level, "edges": len(edges), "z": round(float(z.mean()), 4), "_z": float(z.mean()),
                     "closed": closed, "_segs": segs})
     shape = lambda lp: list(polygonize(shapely.linestrings(lp["_segs"])))  # noqa: E731
@@ -801,7 +809,7 @@ def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = 
               check_floor_areas(model, etalon, spec, tol, "spec" if source_class == "panelised" else "etalon"),
               check_silhouettes(model, etalon, tol),
               check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m),
-                         [(shapely.Polygon(rs.outline), spec.levels[-1].elev_m) for rs in spec.roof_structures]),
+                         [(shapely.Polygon(rs.outline), spec.levels[-1].elev_m, rs.z_top_m) for rs in spec.roof_structures]),
               check_budget(model, tol),
               check_opening_planes(model, spec, tol, ranges), check_material_ids(model, tol, ranges),
               check_decor(model, spec, tol, ranges)]

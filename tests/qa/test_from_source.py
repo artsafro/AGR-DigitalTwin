@@ -168,12 +168,13 @@ def test_a_synthetic_building_by_modules_passes_its_spec_checks():
     model, spec_doc, report = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
     spec = Spec.model_validate(spec_doc)
     assert [len(f.openings) for f in spec.floors] == [1, 1]                  # two panes 5 cm apart: one opening
-    assert report["decor"]["boxes_total"] == 1
+    assert report["decor"]["elements_total"] == 1
     soup = from_dump(model)
     res = {c["id"]: c for c in checks.run(soup, soup, spec, TOL, source_class="panelised")["checks"]}
     for cid in ("levels", "mesh", "opening_planes", "triangle_budget", "floor_areas"):
         assert res[cid]["status"] == "pass", (cid, res[cid])
     assert res["floor_areas"]["details"]["basis"] == "spec-based"
+    assert report["parapets"]["balcony_glass_plates"] == 0
     seated = [lp for lp in res["mesh"]["details"]["open_loops"] if lp["kind"] == "seated"]
     assert seated                                                             # walls stand on the slab boxes
     with pytest.raises(Exception, match="build_as"):
@@ -249,3 +250,79 @@ def test_spec_based_storey_area_takes_the_opening_recesses_off_the_contour():
     assert res["status"] == "pass" and res["details"]["basis"] == "spec-based"
     rows = {r["z"]: r for r in res["details"]["floors"]["L0"]}
     assert any(r.get("etalon_m2") == pytest.approx(100 - 2 * 0.4) for r in rows.values())
+
+
+def _prism(section_xy, z0, z1):
+    """A closed vertical prism of a plan polygon (CCW), as (vertices, triangles)."""
+    m = _Mesh()
+    fs.extrude(m, ("z", np.array([1.0, 0.0]), np.array([0.0, -1.0]),
+                   shapely.geometry.polygon.orient(Polygon([[x, -y] for x, y in section_xy]), 1.0), z0, z1), 26)
+    d = m.mesh("x")
+    return np.asarray(d["vertices"], float), np.asarray(d["triangles"], int)
+
+
+def test_a_pier_keeps_its_own_section_per_storey():
+    """User 2026-10-14: a pier is its real plan section extruded, per storey (sections differ), not a box."""
+    step = [[0, 0], [0.6, 0], [0.6, 0.15], [0.4, 0.15], [0.4, 0.3], [0, 0.3]]        # stepped, storey 1
+    plain = [[0, 0], [0.6, 0], [0.6, 0.3], [0, 0.3]]                                 # storey 2
+    v1, t1 = _prism(step, 0.0, 3.0)
+    v2, t2 = _prism(plain, 3.02, 6.0)
+    v, t = np.vstack([v1, v2]), np.vstack([t1, t2 + len(v1)])
+    els = fs.profile_elements(v, t, centre=np.array([0.3, 5.0]))
+    assert len(els) == 2 and all(e[0] == "z" for e in els)
+    areas = sorted(round(e[3].area, 3) for e in els)
+    assert areas[0] < areas[1]                                     # the stepped one is smaller than its box
+    m = _Mesh()
+    for e in els:
+        fs.extrude(m, e, 26)
+    d, counts = _soup_counts(m)
+    assert counts.max() == 2 and counts.min() == 2                 # each element closed
+
+
+def test_a_balcony_is_extruded_along_the_wall_with_its_sloped_section():
+    """User 2026-10-14: a small balcony is a truncated trapezoid (its sloped underside), not a box."""
+    m = _Mesh()
+    trap = shapely.geometry.polygon.orient(Polygon([[0, 0.3], [0, 1.0], [0.8, 1.0], [0.8, 0.6]]), 1.0)   # (d, z)
+    fs.extrude(m, ("s", np.array([1.0, 0.0]), np.array([0.0, -1.0]), trap, 0.0, 2.0), 26)
+    d = m.mesh("x")
+    v, t = np.asarray(d["vertices"], float), np.asarray(d["triangles"], int)
+    els = fs.profile_elements(v, t, centre=np.array([1.0, 5.0]))
+    assert len(els) == 1 and els[0][0] == "s"
+    sec = els[0][3]
+    assert sec.area < 0.8 * 0.7                                    # less than its box: the slope is kept
+    assert sec.area == pytest.approx(trap.area + 0.02 * 0.7, abs=0.01)   # plus the 20 mm inset into the wall
+
+
+def test_an_enclosure_with_no_top_leaves_an_allowed_open_ring_at_its_top():
+    m = _Mesh()
+    ring = Polygon([[2, 2], [6, 2], [6, 5], [2, 5]])
+    fs.planes_along(m, ring, 6.6, 9.0, 24)
+    d = m.mesh("superstructure")
+    d.pop("polygons", None)
+    slab = _quad_box("slabs", (0, 0, 6.3), (10, 10, 6.6), 21)
+    res = checks.check_mesh(from_dump(_dump(slab, d)), TOL, checks.load_ranges(),
+                            structures=[(ring, 6.6, 9.0)])
+    kinds = {lp["kind"]: lp["allowed"] for lp in res["details"]["open_loops"]}
+    assert kinds.get("roof-structure-top") is True
+
+
+def test_glass_off_the_wall_is_a_balcony_railing_of_closed_plates():
+    """User 2026-10-14: glass standing off its storey's wall line (a small balcony) is one closed 20 mm plate per
+    free side (pattern terrace, glass railings), 4 mm off its foot; it makes no opening."""
+    dump, modules = _source()
+    g = dump["meshes"][1]
+    n = len(g["vertices"])
+    u = [[[6.0, 0.0, 3.3], [6.0, -1.0, 3.3], [6.0, -1.0, 4.3], [6.0, 0.0, 4.3]],          # a U of glass off the south wall
+         [[6.0, -1.0, 3.3], [8.0, -1.0, 3.3], [8.0, -1.0, 4.3], [6.0, -1.0, 4.3]],
+         [[8.0, -1.0, 3.3], [8.0, 0.0, 3.3], [8.0, 0.0, 4.3], [8.0, -1.0, 4.3]]]
+    for k, f in enumerate(u):
+        g["vertices"] += f
+        b = n + 4 * k
+        g["triangles"] += [[b, b + 1, b + 2], [b, b + 2, b + 3]]
+    g["material_ids"] = [0] * len(g["triangles"])
+    g["polygon_sizes"] = [3] * len(g["triangles"])
+    model, spec_doc, report = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["parapets"]["balcony_glass_plates"] == 3
+    assert [len(f["openings"]) for f in spec_doc["floors"]] == [1, 1]
+    soup = from_dump(model)
+    assert checks.check_mesh(soup, TOL, checks.load_ranges())["status"] == "pass"
