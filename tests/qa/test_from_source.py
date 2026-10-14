@@ -342,11 +342,11 @@ def test_a_pier_runs_through_storeys_as_one_element_and_stops_inside_a_band():
             -1.0, 2.0, [], 26)
     resolved, joints = fs.resolve_joints([tuple(els[0][:7]) + (26,), band])
     assert joints == 1
-    piers = [(e, c) for e, c in resolved if e[0] == "z"]
-    assert [(round(e[4], 3), round(e[5], 3), c) for e, c in piers] == [(0.0, 2.805, (True, False)),
-                                                                        (3.195, 6.0, (False, True))]
+    zs = sorted((round(e[4], 3), round(e[5], 3), c, round(e[3].area, 4)) for e, c in resolved if e[0] == "z")
+    assert [z[:3] for z in zs] == [(0.0, 2.805, (True, False)), (2.8, 3.2, (True, True)), (3.195, 6.0, (False, True))]
+    assert zs[1][3] > zs[0][3]          # the band is no deeper than the pier: a collar 5 mm round it at the band
     b = next(e for e, c in resolved if e[0] == "s")
-    assert b[3].bounds[2] == pytest.approx(fs.JOINT_PROUD_M, abs=1e-6)   # proud of the pier's face (d 0)
+    assert (round(b[4], 3), round(b[5], 3)) == (-1.0, 2.0)                    # the band runs on, one piece
 
 
 def test_a_dark_insert_is_a_box_set_into_the_wall_with_no_back_and_off_the_opening():
@@ -363,3 +363,24 @@ def test_a_dark_insert_is_a_box_set_into_the_wall_with_no_back_and_off_the_openi
     assert len(d["polygon_sizes"]) == 5                                       # no back face
     assert p[:, 1].min() == pytest.approx(-0.21) and p[:, 1].max() == pytest.approx(fs.DECOR_INSET_M)
     assert p[:, 2].min() == pytest.approx(2.405)                              # 5 mm off the opening's head
+
+
+def test_a_band_runs_on_through_a_pier_and_round_a_corner():
+    """User 2026-10-14: a band is one mesh - its pieces on both sides of a pier of one section join through the
+    pier (the gap is the pier's); two bands of a corner meet; a band piece inside a pier is not built."""
+    u, n = np.array([1.0, 0.0]), np.array([0.0, -1.0])
+    sec = shapely.geometry.polygon.orient(Polygon([[0.0, 3.0], [0.2, 3.0], [0.2, 3.3], [0.0, 3.3]]), 1.0)
+    left, right = ("s", u, n, sec, 0.0, 2.0, [], 26), ("s", u, n, sec, 3.0, 5.0, [], 26)
+    pier_sec = shapely.geometry.polygon.orient(Polygon([[2.0, 0.0], [3.0, 0.0], [3.0, 0.4], [2.0, 0.4]]), 1.0)
+    pier = ("z", u, n, pier_sec, 0.0, 6.0, [], 26)
+    stub = ("s", u, n, shapely.geometry.polygon.orient(Polygon([[0.0, 4.0], [0.3, 4.0], [0.3, 4.2], [0.0, 4.2]]), 1.0),
+            2.2, 2.8, [], 26)
+    resolved, _ = fs.resolve_joints([left, right, pier, stub])
+    bands = [e for e, c in resolved if e[0] == "s"]
+    assert len(bands) == 1 and (bands[0][4], bands[0][5]) == (0.0, 5.0)
+    side = ("s", np.array([0.0, 1.0]), np.array([1.0, 0.0]),
+            shapely.geometry.polygon.orient(Polygon([[5.0, 3.0], [5.2, 3.0], [5.2, 3.3], [5.0, 3.3]]), 1.0),
+            0.05, 4.0, [], 26)
+    resolved, _ = fs.resolve_joints([left, right, pier, side])
+    a = next(e for e, c in resolved if e[0] == "s" and e[1][0] == 1.0)
+    assert a[5] == pytest.approx(5.2)                          # runs on over the corner band's depth

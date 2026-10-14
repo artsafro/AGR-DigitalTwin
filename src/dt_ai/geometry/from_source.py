@@ -680,43 +680,89 @@ def _plan(e):
     return Polygon([u * a0 + n * x0, u * a1 + n * x0, u * a1 + n * x1, u * a0 + n * x1]), (z0, z1)
 
 
+BAND_BRIDGE_M = 1.6        # a band runs on through a pier up to this wide (the gap must be the pier's)
+CORNER_MEET_M = 0.15       # two bands of a corner closer than this meet
+
+
+def _band_strip(b):
+    """A band's plan as (s0, s1, d0, d1) in its own frame."""
+    x0, _, x1, _ = b[3].bounds
+    return b[4], b[5], x0, x1
+
+
 def resolve_joints(elements):
-    """Piers and bands where they meet (user 2026-10-14): a band whose plan covers the pier runs through - the
-    pier stops JOINT_RECESS_M inside it with no cap there, and the band stands JOINT_PROUD_M proud of the pier's
-    face; a pier deeper than the band runs through and the band stops inside it the same way. Returns
-    [(element, caps_at)] and the joint count."""
+    """Piers and bands where they meet (user 2026-10-14): the band is the main element - one continuous mesh run
+    on through the piers it meets (pieces of one section, the gap between them a pier's) and round a building
+    corner (two bands meet); a pier stops JOINT_RECESS_M inside each band it meets, with no cap there; where the
+    pier stands deeper than the band, a collar (the pier's plan grown by JOINT_PROUD_M) wraps it at the band's
+    height so the band stays in front; a band piece hidden inside a pier is not built. Returns [(element,
+    caps_at)] and the joint count."""
     piers = [list(e) for e in elements if e[0] == "z"]
     bands = [list(e) for e in elements if e[0] == "s"]
-    pcaps, bcaps = [[True, True] for _ in piers], [[True, True] for _ in bands]
-    joints = 0
-    split_piers = []
-    for i, p in enumerate(piers):
+    pplans = [(_plan(p)[0], p[4], p[5]) for p in piers]
+
+    def pier_over(poly, z0, z1):
+        return [pp for pp, a, b in pplans if a < z1 and b > z0 and pp.intersects(poly)]
+
+    # a band piece inside a pier: not built
+    keep = []
+    for b in bands:
+        bp, (bz0, bz1) = _plan(b)
+        if any(pp.buffer(JOINT_RECESS_M).covers(bp) for pp in pier_over(bp, bz0, bz1)):
+            continue
+        keep.append(b)
+    bands = keep
+    # bands of one section run on through a pier
+    bands.sort(key=lambda b: (round(float(np.arctan2(b[1][1], b[1][0])), 3), round(b[3].bounds[1], 2), b[4]))
+    run = []
+    for b in bands:
+        m = run[-1] if run else None
+        if (m is not None and np.allclose(m[1], b[1]) and m[3].hausdorff_distance(b[3]) <= PROFILE_SAME_M
+                and 0 < b[4] - m[5] <= BAND_BRIDGE_M):
+            u, n = m[1], m[2]
+            x0, z0, x1, z1 = m[3].bounds
+            gap = Polygon([u * m[5] + n * x0, u * b[4] + n * x0, u * b[4] + n * x1, u * m[5] + n * x1])
+            cover = shapely.union_all(pier_over(gap, z0, z1) or [Polygon()])
+            if gap.area > 0 and cover.intersection(gap).area >= 0.8 * gap.area:
+                m[5] = b[5]
+                continue
+        if m is not None and np.allclose(m[1], b[1]) and m[3].hausdorff_distance(b[3]) <= PROFILE_SAME_M \
+                and b[4] - m[5] <= DECOR_SEAM_M:
+            m[5] = max(m[5], b[5])
+            continue
+        run.append(b)
+    bands = run
+    # bands of a building corner meet: each runs on over the other's depth
+    for a in bands:
+        for b in bands:
+            if a is b or abs(float(np.dot(a[1], b[1]))) > 0.1:
+                continue
+            ap, (az0, az1) = _plan(a)
+            bp, (bz0, bz1) = _plan(b)
+            if az1 <= bz0 or az0 >= bz1 or ap.distance(bp) > CORNER_MEET_M:
+                continue
+            s_b = [float(np.dot(q, a[1])) for q in np.asarray(bp.exterior.coords)]
+            lo, hi = min(s_b), max(s_b)
+            if abs(a[5] - lo) <= CORNER_MEET_M or a[4] < lo <= a[5] + CORNER_MEET_M <= hi + CORNER_MEET_M and a[5] < hi:
+                a[5] = max(a[5], hi)
+            if abs(a[4] - hi) <= CORNER_MEET_M or (lo - CORNER_MEET_M <= a[4] < hi and a[4] > lo):
+                a[4] = min(a[4], lo)
+    # piers stop in the bands; collars where a pier stands deeper
+    joints, out, collars = 0, [], []
+    for p in piers:
         pp, (pz0, pz1) = _plan(p)
         cuts = []
-        for j, b in enumerate(bands):
+        for b in bands:
             bp, (bz0, bz1) = _plan(b)
             if bz1 <= pz0 or bz0 >= pz1 or not bp.intersects(pp) or bp.intersection(pp).area < 1e-4:
                 continue
             joints += 1
-            if bp.buffer(0.03).covers(pp):                   # the band runs through: proud of the pier, pier inside
-                axis, u, n, sec, a0, a1 = b[:6]
-                front = max(float(np.dot(q, n)) for q in np.asarray(pp.exterior.coords))
-                x0, z0, x1, z1 = sec.bounds
-                if x1 < front + JOINT_PROUD_M:              # its outer face (high d) stands proud of the pier's
-                    b[3] = sec.union(shapely.box(x0, z0, front + JOINT_PROUD_M, z1)).simplify(1e-4)
-                    b[3] = orient(Polygon(max(shapely.get_parts(b[3]), key=lambda g: g.area).exterior), 1.0)
-                cuts.append((bz0, bz1))
-            else:                                            # the pier runs through: the band stops inside it
-                axis, u, n, sec, a0, a1 = b[:6]
-                s_in = [float(np.dot(q, u)) for q in np.asarray(pp.exterior.coords)]
-                lo, hi = min(s_in), max(s_in)
-                if lo - JOINT_RECESS_M <= a0 <= hi:         # the band starts in the pier
-                    b[4] = max(a0, hi - JOINT_RECESS_M)
-                    bcaps[j][0] = False
-                if lo <= a1 <= hi + JOINT_RECESS_M:         # the band ends in the pier
-                    b[5] = min(a1, lo + JOINT_RECESS_M)
-                    bcaps[j][1] = False
-        # split the pier at the bands that run through it
+            cuts.append((bz0, bz1))
+            if not bp.buffer(JOINT_PROUD_M / 2).covers(pp):  # the pier stands out of the band: a collar round it
+                ring = orient(Polygon(pp.buffer(JOINT_PROUD_M, join_style="mitre").exterior), 1.0)
+                u, n = p[1], p[2]
+                sec = Polygon([(float(np.dot(q, u)), float(np.dot(q, n))) for q in np.asarray(ring.exterior.coords)[:-1]])
+                collars.append((("z", u, n, orient(sec, 1.0), bz0, bz1, [], p[7] if len(p) > 7 else 26), (True, True)))
         segs = [[pz0, pz1, True, True]]
         for bz0, bz1 in sorted(cuts):
             nxt = []
@@ -732,8 +778,8 @@ def resolve_joints(elements):
         for z0, z1, c0, c1 in segs:
             q = list(p)
             q[4], q[5] = z0, z1
-            split_piers.append((tuple(q), (c0, c1)))
-    out = split_piers + [(tuple(b), tuple(c)) for b, c in zip(bands, bcaps) if b[5] - b[4] > 0.01]
+            out.append((tuple(q), (c0, c1)))
+    out += [(tuple(b), (True, True)) for b in bands if b[5] - b[4] > 0.01] + collars
     return out, joints
 
 
@@ -742,16 +788,26 @@ def inset_panels(mesh: _Mesh, v, t, stor, mid, gap=0.005):
     built as a box - its front at the outermost plane, its back WALL inset past the storey's wall line, no back
     face; its top and bottom kept `gap` off an opening's sill or head on that storey. Returns the panel count."""
     pieces = [v[np.unique(t[pc])] for pc in _pieces(v, t)]
-    groups = []
+
+    def normal(q):
+        nn = np.cross(q[1] - q[0], q[2] - q[0])[:2] if len(q) >= 3 else np.zeros(2)
+        ln = np.linalg.norm(nn)
+        return nn / ln if ln > 1e-9 else None
+    groups = []                                          # one panel: parallel pieces (one wall), 2 cm apart at most
     for q in pieces:
-        hit = next((g for g in groups if np.all(q.min(0) - 0.02 <= g[1]) and np.all(q.max(0) + 0.02 >= g[0])), None)
+        nq = normal(q)
+        if nq is None:
+            continue
+        hit = next((g for g in groups if abs(float(np.dot(g[3], nq))) > 0.99
+                    and abs(float(np.dot(q[:, :2].mean(axis=0) - g[2][0][:, :2].mean(axis=0), g[3]))) <= 0.03
+                    and np.all(q.min(0) - 0.02 <= g[1]) and np.all(q.max(0) + 0.02 >= g[0])), None)
         if hit is None:
-            groups.append([q.min(0), q.max(0), [q]])
+            groups.append([q.min(0), q.max(0), [q], nq])
         else:
             hit[0], hit[1] = np.minimum(hit[0], q.min(0)), np.maximum(hit[1], q.max(0))
             hit[2].append(q)
     n_out, skipped = 0, []
-    for lo, hi, qs in groups:
+    for lo, hi, qs, _ in groups:
         allp = np.vstack(qs)
         zm = float(allp[:, 2].mean())
         st = next((x for x in stor.values() if x["z"][0] - 0.3 <= zm <= x["z"][1] + 0.3), None)

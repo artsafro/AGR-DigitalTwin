@@ -87,6 +87,23 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - A free-standing column: its own ID and UV island, a separate part attached to the body in the
   final mesh (not welded). A column or pilaster touching the wall follows the inset rule above.
 
+## Build by source modules (`src/dt_ai/geometry/from_source.py`, user reviews 2026-10-14)
+
+- Each element is its real section extruded over its extent, not its bounding box: a pier (taller than long)
+  by its plan section at mid height, so the section follows the source storey by storey; a band or a small
+  balcony (longer than tall) by its section across its length (a balcony keeps its sloped underside).
+- One mesh per run, no seams (joints are texture): pieces of one section (within 2 cm) joined along their axis;
+  the run keeps its longest piece's section; small differences from the source are accepted.
+- The band is the main element: it runs on through the piers it meets (pieces of one section, the gap a pier's)
+  and round a building corner (both bands meet); a pier stops 5 mm inside each band, with no cap there; where a
+  pier stands deeper than the band, a collar (the pier's plan + 5 mm) wraps it at the band's height, so the band
+  stays in front; a band piece hidden inside a pier is not built.
+- Zero-thickness sheets of an element (a balcony's walls) are planes along it; glass off the wall line (a
+  balcony railing) follows pattern `terrace`, glass railings.
+- Dark inserts (flat panels in front of the wall): one box per panel (parallel pieces 2 cm apart at most), its
+  front at the outermost plane, its back 20 mm past the wall line, no back face, 5 mm off an opening's sill or
+  head.
+
 ## Profiles
 
 - `npm_min` and `mid`: the same solids; `mid` may add profile detail later (not decided).
