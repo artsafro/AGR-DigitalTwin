@@ -75,6 +75,12 @@ the job's tolerances have a `complexity` block (`budget` per group, `total_max`,
 extrusion has twice that many vertices; user 2026-10-14: about 12 points describe a silhouette). The budget per
 group is the job's (OBJ03: rough, the total 150 000 is what holds, user 2026-10-14).
 
+## Nothing of the source is dropped (user 2026-10-14)
+
+A source piece that cannot be reduced to a primitive (flat, turned off the axes, no section) is kept as the
+source's own faces in a group of its own (`decor_as_source`), counted and listed in the job report; only
+degenerate triangles (no area) are left out, counted. OBJ03: 1 442 pieces, 6 172 triangles, mostly hidden.
+
 ## Traps
 
 - Collars and pilasters cut by bands (OBJ03 v007) are what this pattern forbids.
