@@ -135,7 +135,8 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
   <branch>-pr<N>-<session>.jsonl` in the main checkout (git-ignored), never over an existing copy; the handoff's
   `Transcript:` line names it and `session_context.py` prints it. The session is proven by a nonce: the agent's Bash call
   is in its own transcript before it runs, so the one transcript holding the nonce is the caller's; never file times.
-  Status: IN BRANCH until merged; the project-folder naming matched the live desktop session (2026-10-15).
+  Status: WORKING (2026-10-15, PR #140): found the live desktop session by its nonce; not yet run inside a real
+  /handover.
 - Commands: `/handover`, `/takeover` (ends with 7-day usage), `/reuse-scan` (+ `tools/reuse_candidates.py`).
 - Tests: `tests/test_session_context.py`, `tests/test_context_watch.py`, `tests/test_usage_hooks.py`,
   `tests/test_save_transcript.py`.
