@@ -1,6 +1,6 @@
 # Facade decor inset (`facade-decor-inset`)
 
-Status: draft (user decisions 2026-10-11; spec block PR 2, engine and checker PR 3, benchmark
+Status: draft (user decisions 2026-10-11 [D045]; spec block PR 2, engine and checker PR 3, benchmark
 `bench-k02-decor-fragment` PR 4, synthetic `bench-b03-decor` later). Source: the user's NPM decor technology,
 recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-catalog.json`.
 
@@ -11,10 +11,10 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   its bottom), `x_m` along it, `z_m` from the level; `projection_m` off the wall face. A free-standing column
   has `footprint: [x0, y0, x1, y1]` instead of a wall. `material_id` only when the source gives one id of the
   decor group of its material (`standards/material_id_ranges.yaml`): **metal 16-20** (flashing, metal belt,
-  bracket), **plaster / stone / tile 26-30** (user 2026-10-12); `pieces` = source pieces merged.
+  bracket), **plaster / stone / tile 26-30** (user 2026-10-12 [D049]); `pieces` = source pieces merged.
 - `kind` by shape in the wall plane: `band` (width >= 3 x height: belt, cornice, tile band), `strip`
   (height >= 3 x width: pilaster, lesene), `panel` (spandrel and the rest), `column`.
-- Threshold (user 2026-10-11), the same as facade relief: **projection <= 0.10 -> texture; > 0.10 ->
+- Threshold (user 2026-10-11 [D045]), the same as facade relief: **projection <= 0.10 -> texture; > 0.10 ->
   geometry; the boundary is included** (exactly 0.10 is texture). Decided by the projection alone, never a
   question: a texture entry has `texture: true` and nothing is built.
 
@@ -39,12 +39,12 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   axis-aligned in the wall frame, two depths only (no stepped profile) and its front face covering the whole
   front rectangle at full projection.
   A free-standing column: an axis-aligned box (rectangular footprint) at least 2 m high, 0.05-1.5 m a side,
-  its bottom on a `LEVEL_*` (user 2026-10-12; one starting mid-storey is a `decor-column` question, not a
+  its bottom on a `LEVEL_*` (user 2026-10-12 [D050]; one starting mid-storey is a `decor-column` question, not a
   column), clear of the body in every storey it crosses. Everything else stays an attachment.
-- **Projection over 0.8 m is no decor** (user 2026-10-12): an attachment candidate — balcony, canopy, bay
+- **Projection over 0.8 m is no decor** (user 2026-10-12 [D051]): an attachment candidate — balcony, canopy, bay
   (group attachments, backlog EG2). Never written to `decor`; listed in the report
   (`decor.attachment_candidates`: projection, height, count, positions).
-- **Merging a split element** (user 2026-10-11/12; the main thing `bench-k02-decor-fragment` checks): pieces
+- **Merging a split element** (user 2026-10-11/12 [D048]; the main thing `bench-k02-decor-fragment` checks): pieces
   with the same cross-section (width and projection), on one axis (same wall, same line along the strip) and
   with gaps of at most `plate_gap_m` x 12 = 0.06 m between them are joinable (stacked or in a row), never
   across the 0.10 m texture boundary. A group of joinable pieces that fills one rectangle up to the seams (a
@@ -53,7 +53,7 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - Questions only where these rules do not cover a piece: `decor-shape` (on a wall but no box, or off a wall
   of a storey it crosses), `decor-merge` (above), `decor-column` (a column off a level) and `decor-deep` (the
   attachment candidates, to confirm their kind) — never for a number at a threshold.
-- **One question per type** (user 2026-10-12, general rule of the gray zone, HARNESS_PLAN §7): one kind and
+- **One question per type** (user 2026-10-12 [D052], general rule of the gray zone, HARNESS_PLAN §7): one kind and
   one cross-section (projection and height within 5 mm), repeated on the facade, is one question with its
   count and all positions — never one question per piece.
 
@@ -66,14 +66,14 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - A decor face that would come closer than `plate_gap_m` (5 mm) to an opening face (a window head, a
   jamb) is moved back to that clearance: no shared face, no edge-to-edge joint. Decor over an opening is a
   build error.
-- **Two decor elements meet by a run-in, not a gap** (user 2026-10-12): the subordinate element runs
+- **Two decor elements meet by a run-in, not a gap** (user 2026-10-12 [D053]): the subordinate element runs
   `decor_inset_m` (0.02) into the main one through its end, the hidden end face is deleted, the main one's
   mesh is not cut - the same rule as into the wall. Horizontal (band: belt, cornice; panel: spandrel) is
   main, vertical (strip: lesene, pilaster) is subordinate; of one rank (a belt into a belt) the longer
   continues and the other runs into it. Ends closer than `plate_gap_m` meet (an end moved off an opening
   still meets). The 5 mm gap stays only against an opening face.
 - **At a convex building corner** (a belt into a belt): the main element runs on past the corner by the
-  other's projection and keeps its whole end face. General rule (user 2026-10-12): a back face is deleted
+  other's projection and keeps its whole end face. General rule (user 2026-10-12 [D053]): a back face is deleted
   only where it is set into the wall (or closed by another element); past the corner, outside the wall, the
   main one keeps its back above and below the other. The other, of any height within the main one's, runs in
   without its end: it starts on the main one's back plane (`decor_inset_m` from the corner; a deeper run-in
@@ -87,14 +87,14 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - A free-standing column: its own ID and UV island, a separate part attached to the body in the
   final mesh (not welded). A column or pilaster touching the wall follows the inset rule above.
 
-## Build by source modules (`src/dt_ai/geometry/from_source.py`, user reviews 2026-10-14)
+## Build by source modules (`src/dt_ai/geometry/from_source.py`, user reviews 2026-10-14 [D079])
 
 - Each element is its real section extruded over its extent, not its bounding box: a pier (taller than long)
   by its plan section at mid height, so the section follows the source storey by storey; a band or a small
   balcony (longer than tall) by its section across its length (a balcony keeps its sloped underside).
 - One mesh per run, no seams (joints are texture): pieces of one section (within 2 cm) joined along their axis;
   the run keeps its longest piece's section; small differences from the source are accepted.
-- Joints (user 2026-10-14, superseded the same day by pattern `primitive-first`): piers run through, never cut
+- Joints (user 2026-10-14 [D079], superseded the same day by pattern `primitive-first`): piers run through, never cut
   by bands; a band round a storey is one frame on the storey contour passing through the piers (the overlap
   inside a pier stays, decor mesh); the frame is cut and the piece deleted only where the source has no band and
   the frame shows on the facade (changes the silhouette in plan) - not behind a pier. No collars. Earlier the same
@@ -122,7 +122,7 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
 - The extractor reads a run-in element back with its extent clipped at the main element's face (the
   source's extent), not with the run-in.
 
-## Decor ids by material (user 2026-10-12)
+## Decor ids by material (user 2026-10-12 [D049])
 
 - The id says the material: metal (a flashing, a metal belt, a bracket) 16-20, plaster / stone / tile 26-30;
   the finish behind an id comes from the object's materials table. Case K01: a strip 0.074 x 0.30 m, 0.22 m

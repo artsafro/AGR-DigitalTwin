@@ -1,10 +1,10 @@
 # Roles
 
-Decided by the user on 2026-10-06: Claude is stronger at 3D/DCC production work,
+Decided by the user on 2026-10-06 [D001]: Claude is stronger at 3D/DCC production work,
 Codex at coding and project organization. Antigravity supports both.
 Any agent may take any task the user assigns; this table decides the default owner.
 
-**Fallback (user, 2026-10-07):** while Codex is unavailable (out of limits or offline),
+**Fallback (user, 2026-10-07 [D003]):** while Codex is unavailable (out of limits or offline),
 Claude takes over Codex's harness and git duties: branches, commits, push, pull requests,
 merges to `main`, and `docs/PROJECT_STATE.md` / `docs/backlog.md` after merges. The Git
 rules in `WORKFLOW.md` and the guard still apply: push and merge only with the user's

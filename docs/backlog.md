@@ -35,7 +35,7 @@ items out of this file in the same merge. `C<N>` = conflict N in `docs/domain/co
   T-free quads), `drop_step_bottom_rims.py` (shell post-step). Move into `src/dt_ai/geometry/`
   with tests; keep the PSU275 outputs as regression.
 
-## Engine gaps — mixed mode (user decision 2026-10-11, `docs/HARNESS_PLAN.md` §16)
+## Engine gaps — mixed mode (user decision 2026-10-11 [D044], `docs/HARNESS_PLAN.md` §16)
 
 The engine builds what it can (body, openings, floor steps, terraces, inset slabs). Job scripts do only
 the gaps listed here; a job script names its gap in its header (`Engine gap: EG<n>`, checked by
@@ -43,13 +43,13 @@ the gaps listed here; a job script names its gap in its header (`Engine gap: EG<
 the engine covers it.
 
 - **EG1** Facade decor (pattern `facade-decor-inset`): PR 2 spec block `decor` + extractor, with a test of
-  merging a split element (same cross-section, one axis, gaps <= `plate_gap_m` x N, N = 12: 0.06 m, user 2026-10-12) and of the
-  inclusive 0.10 m threshold; PR 3 engine + (meeting by run-in and at building corners, user 2026-10-12) +
+  merging a split element (same cross-section, one axis, gaps <= `plate_gap_m` x N, N = 12: 0.06 m, user 2026-10-12 [D048]) and of the
+  inclusive 0.10 m threshold; PR 3 engine + (meeting by run-in and at building corners, user 2026-10-12 [D053]) +
   checker (no decor overlap with openings, no body edge cut, ids 26-30, 10 cm threshold); PR 4 run on
   `bench-k02-decor-fragment` (real fragment: `source.max` + `etalon.max` by the user). Later regression: the
   synthetic `bench-b03-decor` (free-standing column).
 - **EG2** Attachments over 0.8 m (balconies, canopies, bays; slab, railing, soffit) — pattern to be written; the
-  decor extractor already lists them as `decor.attachment_candidates` (user 2026-10-12).
+  decor extractor already lists them as `decor.attachment_candidates` (user 2026-10-12 [D051]).
 - **EG3** `mid` window sashes / detailed windows from the opening plane.
 - **EG4** UV, atlas and delivery package = **H10**.
 - **EG5** Pattern primitive-first, `from_source` (2026-10-14): (a) instances by translation only - a copy turned
@@ -59,7 +59,7 @@ the engine covers it.
 
 ## Markup helpers (after the terrace; owner Claude, code parts Codex)
 
-Plan: `docs/HARNESS_PLAN.md` §14 (user decision 2026-10-10). One PR each, in this order, each with
+Plan: `docs/HARNESS_PLAN.md` §14 (user decision 2026-10-10 [D038]). One PR each, in this order, each with
 the pattern `markup-helpers` (written or extended) and its test.
 
 - **MH1b** (MH1 done: Blender route closed on the Blender B01 etalon, pattern `markup-helpers`) — later:
@@ -70,7 +70,7 @@ the pattern `markup-helpers` (written or extended) and its test.
 
 ## Intake — "study the sources" (after the plan is approved; owner Claude, code parts Codex)
 
-Plan: `docs/HARNESS_PLAN.md` §15 (user decision 2026-10-11). One PR each, extending the skill
+Plan: `docs/HARNESS_PLAN.md` §15 (user decision 2026-10-11 [D043]). One PR each, extending the skill
 `analyze-architectural-source` (no parallel skill); intake reads only, never changes or exports sources.
 
 - **IN2** Intake on the existing adapters (FBX mesh dump, Revit twin): inventory, picture, contradictions,
@@ -155,7 +155,7 @@ effort <S/M/L>`. The user or the owner turns one into a task or drops it.
   user-level configs that still point at them (H2, H3) and re-create the bundles if work continued there
   after 2026-10-06 23:24. Dropped on purpose: AGR process history, the Cursor verifier, the KPP1-VPM task,
   Codex `agent_monitor` (kept in the uncommitted-files archive).
-- **H12** Branches not merged on purpose (user, 2026-10-07): `claude/npm-models-school-kpp-ec9ced`
+- **H12** Branches not merged on purpose (user, 2026-10-07 [D005]): `claude/npm-models-school-kpp-ec9ced`
   (BUTOVSKAYA-NPM, work in progress), `claude/modest-ptolemy-684fb7` and `feature/kpp1-ground` (TEC26
   ground, adds `ezdxf`). Owner: user decides when to resume.
 - **H13** (Claude) Rerun the merged `fix/export-safety` scripts on real data: KPP1 full `run_all.sh` on a new

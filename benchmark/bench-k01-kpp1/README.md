@@ -13,7 +13,7 @@ The etalon is KPP1 v005 finished to 100 % by hand (v005 is ~90 %; an etalon with
 
 ## K01 run v001 (2026-10-11): material IDs and geometry thresholds
 
-User decisions 2026-10-11: KPP1 material IDs from `jobs/KPP1/materials.json` (finish -> ID by the ranges of
+User decisions 2026-10-11 [D047]: KPP1 material IDs from `jobs/KPP1/materials.json` (finish -> ID by the ranges of
 ADR 0001; asphalt of the blind area = 0, Ground, a question); the checker reads them from the UDIM tile of
 every triangle (the VPM FBX has one material, finishes are tiles: `measure_spec_blender.py` writes
 `udim_tiles`, `object.json` `materials` names the table); `geometry` thresholds = the HARNESS_PLAN §5

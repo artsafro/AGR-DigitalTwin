@@ -7,7 +7,7 @@ spec v0.3 (#36); window library `library/windows/window_types.json` (#4).
 
 - `floors[].openings[]` with `kind` `window`, `door` or none: `wall`, `x_m` along the wall from its
   start point, `sill_m` from the floor's level, `w_m` x `h_m` = the hole with its frame (v0.3).
-- Depth = `opening_depth_default_m` (0.4 when `object.json` gives none; OD1, user 2026-10-11) unless `depth_m`
+- Depth = `opening_depth_default_m` (0.4 when `object.json` gives none; OD1, user 2026-10-11 [D042]) unless `depth_m`
   is given; an opening whose source gives no depth (no reveal, a plane flush with the facade) takes the default
   and is listed in the extractor report `openings.depth_by_default` - never 0, never a minimum, no question; `window_type` = library type;
   `material_id` = plane ID read from the source (null with `plane_conflict`).

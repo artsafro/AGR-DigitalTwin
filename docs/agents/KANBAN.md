@@ -1,7 +1,7 @@
 # Kanban board — GitHub Projects
 
 Board: <https://github.com/users/artsafro/projects/1> (project `AGR-DigitalTwin`, number 1, owner
-`artsafro`, private, linked to `artsafro/AGR-DigitalTwin`). Set up by the user's decision on 2026-10-14.
+`artsafro`, private, linked to `artsafro/AGR-DigitalTwin`). Set up by the user's decision on 2026-10-14 [D071].
 
 GitHub Issues stay the source of truth: the board only adds two fields to them. A pull request is not a
 card; it links to its issue with `Closes #N` in the description.

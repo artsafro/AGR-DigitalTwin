@@ -16,13 +16,14 @@ hooks:
 
 You find what the project already decided. You only read.
 
-Search, in this order: `docs/domain/patterns/` (and its `INDEX.md`), `docs/domain/*.md`, `docs/cases.md`,
-`docs/domain/conflicts.md`, `docs/domain/conflict-choices-*.md`, `jobs/*/questions.md`, `GLOSSARY.md`,
-`docs/HARNESS_PLAN.md`.
+Search the decision log `docs/decisions.md` first: a line there names the decision id, its date and the file
+where its full text lives (marked `[D<n>]`). Then, in this order: `docs/domain/patterns/` (and its `INDEX.md`),
+`docs/cases.md`, `docs/domain/conflicts.md`, `docs/domain/conflict-choices-*.md`, `docs/domain/*.md`,
+`jobs/*/questions.md`, `GLOSSARY.md`, `docs/HARNESS_PLAN.md`. Open `docs/agr/` only through `docs/agr/INDEX.md`.
 
 Answer with exactly one of:
-- `правило есть: <pattern or doc path>#<section>` and a quote of the rule (at most 3 lines), plus the date and
-  who decided it when the text says so;
+- `правило есть: <pattern or doc path>#<section>` and a quote of the rule (at most 3 lines), plus the decision
+  id (`D<n>`) and its date when the log has it, else the date and who decided it when the text says so;
 - `серая зона, похожие случаи: …` - each with its path and one line on how it was decided;
 - `конфликт C<N>, ждёт решения` - with its path and the two sides in one line each.
 

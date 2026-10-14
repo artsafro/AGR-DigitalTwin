@@ -1,6 +1,6 @@
 # Floor step (`floor-step`)
 
-Status: draft. Source: B02 etalon and user decisions 2026-10-10 (engine order step -> oblique wall
+Status: draft. Source: B02 etalon and user decisions 2026-10-10 [D037] (engine order step -> oblique wall
 -> terrace; the ledge is part of the step; a soffit takes the facade ID); patterns
 `wall-from-contour`, `typical-floor-repeat`.
 
@@ -16,7 +16,7 @@ Status: draft. Source: B02 etalon and user decisions 2026-10-10 (engine order st
   parapet top); walls of two floors on one line meet on the level line with the same cuts.
 - At each level line, over the contour difference: a ledge facing up with the roof ID where the
   floor below reaches out, a soffit facing down with the facade ID where the floor above overhangs
-  (user 2026-10-10). Both on the shared cut grid, quads, welded to the walls.
+  (user 2026-10-10 [D037]). Both on the shared cut grid, quads, welded to the walls.
 - An opening belongs to its wall line, so a frame across a level cuts both floors' walls.
 
 ## Profiles

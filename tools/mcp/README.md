@@ -318,7 +318,7 @@ the live session; no drawing edits, save, or export were authorized for this che
   output after explicit task authorization and verify the saved result.
 - Check `get_session_status`/CAD session status before working. An installed or
   configured server alone does not prove a live DCC connection.
-- Blender Online Access was enabled with the user's approval on 2026-10-06.
+- Blender Online Access was enabled with the user's approval on 2026-10-06 [D002].
   This setting alone does not establish a live bridge; inspect the scene first.
 
 Temporary upstream verification copies were removed after installation and

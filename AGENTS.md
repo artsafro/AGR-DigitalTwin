@@ -17,6 +17,8 @@ collisions, plus the interactive Unreal experience. Priorities, in order:
 | Need | Read |
 |---|---|
 | Current state, next actions | `docs/PROJECT_STATE.md` |
+| Every dated user decision (`D<n>`) | `docs/decisions.md` |
+| Which kind of fact lives in which file | `docs/agents/WORKFLOW.md`, "Memory map" |
 | Who owns what (Claude / Codex / Antigravity) | `docs/agents/ROLES.md` |
 | Task loop, handoff, experience capture | `docs/agents/WORKFLOW.md` |
 | Review questions and how to run a Codex review | `docs/agents/REVIEW_CHECKLIST.md` |
@@ -30,10 +32,15 @@ collisions, plus the interactive Unreal experience. Priorities, in order:
 | Names for scripts, tools, jobs, outputs, branches and tags; object ids | `docs/agents/NAMING.md`, `jobs/REGISTRY.md` |
 | Harness plan, benchmark etalons, pattern registry | `docs/HARNESS_PLAN.md`, `benchmark/`, `docs/domain/patterns/INDEX.md` |
 | Machine-readable rules | `standards/` (locked; change procedure in `standards/README.md`) |
-| AGR knowledge base (Russian originals, read-only) | `docs/agr/` |
+| AGR knowledge base (Russian originals, read-only) | `docs/agr/INDEX.md` only, then the file it names |
 
 Read the domain file that matches the task before production work. Where sources
 disagree (`docs/domain/conflicts.md`), ask the user; never pick a side silently.
+
+A rule question ("is there a rule for ...?") is looked up in this order, and the first hit wins:
+`docs/decisions.md` -> `docs/domain/patterns/INDEX.md` -> `docs/cases.md` -> `docs/domain/conflicts.md` ->
+the matching `docs/domain/` file. `docs/agr/` is opened only through `docs/agr/INDEX.md`. A new user decision
+gets a line in `docs/decisions.md` and its `[D<n>]` where it applies.
 
 ## Code map
 
