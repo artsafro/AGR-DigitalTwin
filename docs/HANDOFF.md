@@ -3,7 +3,7 @@
 Branch: `harness/agent-ready-prd` · Commit: `b015d89` · Worktree: `C:\Users\artsafro\AGR-DigitalTwin\.claude\worktrees\kanban-project-4bec5c` · Job: -
 
 <!-- Written by /handover (.claude/commands/handover.md), read by tools/hooks/session_context.py and /takeover.
-Keep the `Branch:` line as is (the hook parses it). Facts only, no history: git log and docs/PROJECT_STATE.md hold
+Keep the `Branch:` line as is (the hook parses it). Facts only, no history: git log and the pull requests hold
 that. The whole file stays under 7000 characters so the SessionStart hook passes it in full. Empty section: "-". -->
 
 ## Where we are

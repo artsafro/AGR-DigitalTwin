@@ -25,14 +25,15 @@ independent checker and the user's visual review (#117).
 
 Green, verified locally (CI on GitHub does not start: account locked for billing, 2026-10-14):
 - `uv run pytest -q` (short `--basetemp` on this machine), `uv run dt profiles check`, `uv run dt schemas --check`.
-- Benchmarks: B01 / B02 / B02t 9/9 etalon and engine model; K01 (KPP1) 6/9 with known engine stops;
-  K02 waits for the user's `source.max` and `etalon.max`.
+- Benchmarks: B01 / B02 / B02t 9/9 etalon and engine model.
 - Spec extractor (spec v0.7), engine `from_spec`, checkers `tools/qa/check_geometry.py`, `check_decor`.
 - `pipeline_gate` (pre-commit + PreToolUse, fails closed), guard hook, skills sync test.
-- Context rotation (`/handover`, `/takeover`), five read-only subagents, Kanban board `artsafro/projects/1`.
+- Context rotation (`/handover`, `/takeover`); subagents source-inspector, pattern-librarian, bench-runner,
+  independent-checker (verified on B01); Kanban board `artsafro/projects/1`.
 
-Not green: Codex and Antigravity guard hooks (H1); desktop and interactive CLI hooks (#110); checker
-blind spots of #117 (#126).
+Not green: K01 (KPP1) 6/9 with known engine stops; K02 waits for the user's `source.max` and `etalon.max`;
+`mesh-reader` configured, not test-called; Codex and Antigravity guard hooks (H1); desktop and interactive
+CLI hooks (#110); checker blind spots of #117 (#126).
 
 ## Next step
 

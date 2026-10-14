@@ -170,6 +170,7 @@ checker). Note: the desktop app did not load project subagents from this worktre
   scripts name an engine gap `EG<n>`; delivery needs a committed `.py` for every `.pyc`
   (`docs/HARNESS_PLAN.md` §16). Claude Code also blocks such writes at PreToolUse
   (`.claude/hooks/pipeline_gate.py`, permission "deny").
+- Limit (user 2026-10-12, #79): a compromised environment is not covered, for example a fake `py` on PATH.
 
 ## Pipeline core (src/dt_ai, technical_library, tools)
 
