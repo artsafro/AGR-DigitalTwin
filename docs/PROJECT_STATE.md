@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-15 (after #137). Edit rule: `docs/agents/WORKFLOW.md`, "Project state".
+Last updated: 2026-10-15 (after #139). Edit rule: `docs/agents/WORKFLOW.md`, "Project state".
 
 ## Goal
 
@@ -39,7 +39,7 @@ CLI hooks (#110); checker blind spots of #117 (#126).
 
 1. User: choices page C7, C8, C10, C25 (`docs/domain/conflict-choices-2026-10-09.md`); KPP1 v007
    acceptance; K01 open items (`benchmark/bench-k01-kpp1/README.md`); cut K02 `source.max` + `etalon.max`.
-2. Claude: harness wave 1 - #120 decision log, #121 transcripts at handover; then the
+2. Claude: harness wave 1 - #121 transcripts at handover; #138 decision ids outside the docs; then the
    blocked-by graph (`gh issue list --label harness`).
 3. Claude: decor PR 4 (K02 run), intake IN2-IN8, MH3, engine gaps, #56; extractor follow-ups #21-#24,
    #28, #34, #37, #45 when they block a benchmark.
@@ -53,4 +53,4 @@ CLI hooks (#110); checker blind spots of #117 (#126).
 - Tools, MCP routes, machine and repository: `docs/agents/CAPABILITIES.md`.
 - Sources: `docs/sources/README.md`; plan and benchmarks: `docs/HARNESS_PLAN.md`, `benchmark/`.
 - Per-object state: `jobs/<ID>/STATE.md`; current task handoff: `docs/HANDOFF.md`.
-- History: `git log --merges` and the pull requests; decisions: `GLOSSARY.md`, `docs/adr/`.
+- History: `git log --merges` and the pull requests; decisions: `docs/decisions.md` (lookup order in `AGENTS.md`).
