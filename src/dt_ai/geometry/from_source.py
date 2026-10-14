@@ -560,8 +560,6 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
 PROFILE_SIMPLIFY_M = 0.01   # a decor section keeps its shape within this (user 2026-10-14: the real section)
 PROFILE_SAME_M = 0.02       # pieces of one run share a section within this (user 2026-10-14: seams are texture,
                             # a run is one mesh; the longest piece's section is kept)
-JOINT_RECESS_M = 0.005      # where a pier meets a band, the one that gives way runs this far into the other
-JOINT_PROUD_M = 0.005       # the band that runs through stands this far proud of the pier's face
 
 
 def _frame_of(q):
@@ -690,50 +688,72 @@ def _band_strip(b):
     return b[4], b[5], x0, x1
 
 
-def resolve_joints(elements):
-    """Piers and bands where they meet (user 2026-10-14): the band is the main element - one continuous mesh run
-    on through the piers it meets (pieces of one section, the gap between them a pier's) and round a building
-    corner (two bands meet); a pier stops JOINT_RECESS_M inside each band it meets, with no cap there; where the
-    pier stands deeper than the band, a collar (the pier's plan grown by JOINT_PROUD_M) wraps it at the band's
-    height so the band stays in front; a band piece hidden inside a pier is not built. Returns [(element,
-    caps_at)] and the joint count."""
+JOINT_EQUAL_M = 0.003      # two fronts within the weld project equally (then the band is the main element)
+
+
+def _front(plan, n_out):
+    """How far a plan reaches along the outward normal."""
+    return max(float(np.dot(q, n_out)) for q in np.asarray(plan.exterior.coords))
+
+
+def resolve_joints(elements, centre=None):
+    """Piers and bands where they meet (user 2026-10-14): the main element is the one that projects further; at
+    an equal projection (within the weld) the band. The other runs DECOR_INSET_M into the main one and its hidden
+    end is not built. A pier deeper than the band runs on through, uncut, and the band stops at it on both sides;
+    a band deeper than the pier runs on through (its pieces of one section joined across the pier) and the pier
+    is cut there. Two bands of a building corner meet; a band piece hidden inside a pier is not built. No collars.
+    Returns [(element, caps_at)] and the joint count."""
     piers = [list(e) for e in elements if e[0] == "z"]
     bands = [list(e) for e in elements if e[0] == "s"]
-    pplans = [(_plan(p)[0], p[4], p[5]) for p in piers]
+    pplans = [_plan(p) for p in piers]
+    c0 = np.zeros(2) if centre is None else np.asarray(centre, float)
 
-    def pier_over(poly, z0, z1):
-        return [pp for pp, a, b in pplans if a < z1 and b > z0 and pp.intersects(poly)]
+    def n_out(b, plan):                                  # a band's normal turned out of the building
+        n = b[2]
+        return n if float(np.dot(np.asarray(plan.centroid.coords[0]) - c0, n)) >= 0 else -n
 
-    # a band piece inside a pier: not built
-    keep = []
+    def piers_at(poly, z0, z1):
+        return [k for k, (pp, (a, b)) in enumerate(pplans) if a < z1 and b > z0 and pp.intersects(poly)
+                and pp.intersection(poly).area >= 1e-4]
+
+    keep = []                                            # a band piece hidden inside a pier: not built
     for b in bands:
         bp, (bz0, bz1) = _plan(b)
-        if any(pp.buffer(JOINT_RECESS_M).covers(bp) for pp in pier_over(bp, bz0, bz1)):
+        if any(pplans[k][0].buffer(DECOR_INSET_M).covers(bp) for k in piers_at(bp, bz0, bz1)):
             continue
         keep.append(b)
     bands = keep
-    # bands of one section run on through a pier
+
+    def band_main(b, bp, k):                             # the band projects at least as far as the pier
+        no = n_out(b, bp)
+        return _front(bp, no) >= _front(pplans[k][0], no) - JOINT_EQUAL_M
+
+    # a main band runs on through a pier: pieces of one section joined across a gap that is a shallower pier's
     bands.sort(key=lambda b: (round(float(np.arctan2(b[1][1], b[1][0])), 3), round(b[3].bounds[1], 2), b[4]))
     run = []
     for b in bands:
         m = run[-1] if run else None
-        if (m is not None and np.allclose(m[1], b[1]) and m[3].hausdorff_distance(b[3]) <= PROFILE_SAME_M
-                and 0 < b[4] - m[5] <= BAND_BRIDGE_M):
+        same = m is not None and np.allclose(m[1], b[1]) and m[3].hausdorff_distance(b[3]) <= PROFILE_SAME_M
+        if same and b[4] - m[5] <= DECOR_SEAM_M:
+            m[5] = max(m[5], b[5])
+            continue
+        if same and 0 < b[4] - m[5] <= BAND_BRIDGE_M:
             u, n = m[1], m[2]
             x0, z0, x1, z1 = m[3].bounds
             gap = Polygon([u * m[5] + n * x0, u * b[4] + n * x0, u * b[4] + n * x1, u * m[5] + n * x1])
-            cover = shapely.union_all(pier_over(gap, z0, z1) or [Polygon()])
-            if gap.area > 0 and cover.intersection(gap).area >= 0.8 * gap.area:
+            ks = piers_at(gap, z0, z1)
+            spans = [(min(float(np.dot(q, u)) for q in np.asarray(pplans[k][0].exterior.coords)),
+                      max(float(np.dot(q, u)) for q in np.asarray(pplans[k][0].exterior.coords))) for k in ks]
+            covered = shapely.union_all([shapely.LineString([(a_, 0), (b_, 0)]) for a_, b_ in spans] or
+                                        [shapely.LineString()]).intersection(shapely.LineString([(m[5], 0), (b[4], 0)]))
+            mp, _ = _plan(m)
+            if (covered.length >= 0.8 * (b[4] - m[5])                 # the gap along the band is the piers'
+                    and all(band_main(m, mp, k) for k in ks)):
                 m[5] = b[5]
                 continue
-        if m is not None and np.allclose(m[1], b[1]) and m[3].hausdorff_distance(b[3]) <= PROFILE_SAME_M \
-                and b[4] - m[5] <= DECOR_SEAM_M:
-            m[5] = max(m[5], b[5])
-            continue
         run.append(b)
     bands = run
-    # bands of a building corner meet: each runs on over the other's depth
-    for a in bands:
+    for a in bands:                                      # bands of a building corner meet
         for b in bands:
             if a is b or abs(float(np.dot(a[1], b[1]))) > 0.1:
                 continue
@@ -743,43 +763,55 @@ def resolve_joints(elements):
                 continue
             s_b = [float(np.dot(q, a[1])) for q in np.asarray(bp.exterior.coords)]
             lo, hi = min(s_b), max(s_b)
-            if abs(a[5] - lo) <= CORNER_MEET_M or a[4] < lo <= a[5] + CORNER_MEET_M <= hi + CORNER_MEET_M and a[5] < hi:
+            if abs(a[5] - lo) <= CORNER_MEET_M or (a[4] < lo <= a[5] + CORNER_MEET_M and a[5] < hi):
                 a[5] = max(a[5], hi)
             if abs(a[4] - hi) <= CORNER_MEET_M or (lo - CORNER_MEET_M <= a[4] < hi and a[4] > lo):
                 a[4] = min(a[4], lo)
-    # piers stop in the bands; collars where a pier stands deeper
-    joints, out, collars = 0, [], []
-    for p in piers:
-        pp, (pz0, pz1) = _plan(p)
-        cuts = []
-        for b in bands:
-            bp, (bz0, bz1) = _plan(b)
-            if bz1 <= pz0 or bz0 >= pz1 or not bp.intersects(pp) or bp.intersection(pp).area < 1e-4:
-                continue
+    # the joints
+    joints, out = 0, []
+    pier_cuts = [[] for _ in piers]
+    for b in bands:
+        bp, (bz0, bz1) = _plan(b)
+        segs = [[b[4], b[5], True, True]]
+        for k in piers_at(bp, bz0, bz1):
             joints += 1
-            cuts.append((bz0, bz1))
-            if not bp.buffer(JOINT_PROUD_M / 2).covers(pp):  # the pier stands out of the band: a collar round it
-                ring = orient(Polygon(pp.buffer(JOINT_PROUD_M, join_style="mitre").exterior), 1.0)
-                u, n = p[1], p[2]
-                sec = Polygon([(float(np.dot(q, u)), float(np.dot(q, n))) for q in np.asarray(ring.exterior.coords)[:-1]])
-                collars.append((("z", u, n, orient(sec, 1.0), bz0, bz1, [], p[7] if len(p) > 7 else 26), (True, True)))
-        segs = [[pz0, pz1, True, True]]
-        for bz0, bz1 in sorted(cuts):
+            if band_main(b, bp, k):                       # the pier is cut by the band
+                pier_cuts[k].append((bz0, bz1))
+                continue
+            s_p = [float(np.dot(q, b[1])) for q in np.asarray(pplans[k][0].exterior.coords)]
+            lo, hi = min(s_p), max(s_p)                   # the band stops in the pier on both sides
             nxt = []
-            for z0, z1, c0, c1 in segs:
+            for a0, a1, ca, cb in segs:
+                if hi <= a0 or lo >= a1:
+                    nxt.append([a0, a1, ca, cb])
+                    continue
+                if lo - a0 > 0.02:
+                    nxt.append([a0, min(a1, lo + DECOR_INSET_M), ca, False])
+                if a1 - hi > 0.02:
+                    nxt.append([max(a0, hi - DECOR_INSET_M), a1, False, cb])
+            segs = nxt
+        for a0, a1, ca, cb in segs:
+            q = list(b)
+            q[4], q[5] = a0, a1
+            out.append((tuple(q), (ca, cb)))
+    for k, p in enumerate(piers):
+        pz0, pz1 = p[4], p[5]
+        segs = [[pz0, pz1, True, True]]
+        for bz0, bz1 in sorted(pier_cuts[k]):
+            nxt = []
+            for z0, z1, c0_, c1_ in segs:
                 if bz1 <= z0 or bz0 >= z1:
-                    nxt.append([z0, z1, c0, c1])
+                    nxt.append([z0, z1, c0_, c1_])
                     continue
                 if bz0 - z0 > 0.02:
-                    nxt.append([z0, bz0 + JOINT_RECESS_M, c0, False])
+                    nxt.append([z0, bz0 + DECOR_INSET_M, c0_, False])
                 if z1 - bz1 > 0.02:
-                    nxt.append([bz1 - JOINT_RECESS_M, z1, False, c1])
+                    nxt.append([bz1 - DECOR_INSET_M, z1, False, c1_])
             segs = nxt
-        for z0, z1, c0, c1 in segs:
+        for z0, z1, c0_, c1_ in segs:
             q = list(p)
             q[4], q[5] = z0, z1
-            out.append((tuple(q), (c0, c1)))
-    out += [(tuple(b), (True, True)) for b in bands if b[5] - b[4] > 0.01] + collars
+            out.append((tuple(q), (c0_, c1_)))
     return out, joints
 
 
@@ -1094,7 +1126,7 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         all_els += [tuple(e[:7]) + (mid,) for e in els]
         n_el[k] = {"elements": len(els), "flat_pieces": len(_pieces(v, flat_t)) if len(flat_t) else 0,
                    "off_axis_or_no_section": len(odd), "kept_as_triangles": kept}
-    resolved, joints = resolve_joints(all_els)        # piers into bands, bands proud (user 2026-10-14)
+    resolved, joints = resolve_joints(all_els, centre)   # the further-projecting element is the main one
     for e, caps in resolved:
         extrude(m, e, e[7], caps)
     rep.setdefault("decor", {})["joints"] = joints

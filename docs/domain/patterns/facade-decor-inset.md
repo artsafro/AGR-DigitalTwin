@@ -94,10 +94,11 @@ recorded from a real job; catalogue `benchmark/bench-k02-decor-fragment/decor-ca
   balcony (longer than tall) by its section across its length (a balcony keeps its sloped underside).
 - One mesh per run, no seams (joints are texture): pieces of one section (within 2 cm) joined along their axis;
   the run keeps its longest piece's section; small differences from the source are accepted.
-- The band is the main element: it runs on through the piers it meets (pieces of one section, the gap a pier's)
-  and round a building corner (both bands meet); a pier stops 5 mm inside each band, with no cap there; where a
-  pier stands deeper than the band, a collar (the pier's plan + 5 mm) wraps it at the band's height, so the band
-  stays in front; a band piece hidden inside a pier is not built.
+- Joints (user 2026-10-14): the main element is the one that projects further; at an equal projection (within
+  the weld) the band. The other runs `decor_inset_m` (0.02 m) into the main one and its hidden end is not built.
+  A pier deeper than the band runs on through, uncut, and the band stops at it on both sides; a band deeper than
+  the pier runs on through (its pieces of one section joined across the pier) and the pier is cut there. Two
+  bands of a building corner meet; a band piece hidden inside a pier is not built. No collars.
 - Zero-thickness sheets of an element (a balcony's walls) are planes along it; glass off the wall line (a
   balcony railing) follows pattern `terrace`, glass railings.
 - Dark inserts (flat panels in front of the wall): one box per panel (parallel pieces 2 cm apart at most), its
