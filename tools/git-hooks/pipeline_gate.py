@@ -152,8 +152,10 @@ def _git_ok(root, *args):
 
 def auto_branch_error(root):
     """A commit on an auto-generated worktree branch is blocked until it is renamed (user 2026-10-14)."""
-    head = _git(root, "symbolic-ref", "--short", "-q", "HEAD")
-    branch = head.stdout.decode("utf-8", "replace").strip() if head.returncode == 0 else ""   # detached: no branch
+    # the full ref, not --short: a tag of the same name makes --short answer `heads/<name>` (review 3 of #107)
+    head = _git(root, "symbolic-ref", "-q", "HEAD")
+    ref = head.stdout.decode("utf-8", "replace").strip() if head.returncode == 0 else ""   # detached: no branch
+    branch = ref[len("refs/heads/"):] if ref.startswith("refs/heads/") else ""
     if is_auto(branch):
         return (f"branch '{branch}' has an auto-generated worktree name; rename it by docs/agents/NAMING.md "
                 f"({RENAME_HINT}) before the first commit: propose the name to the user, then git branch -m <name>")

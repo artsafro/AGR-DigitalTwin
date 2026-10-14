@@ -86,10 +86,19 @@ def test_command_attribution_ignores_quoted_tags(tmp_path):        # review 2 of
     assert lines(log)[0]["command"] == "handover"
 
 
-def test_reuse_candidates_fails_loudly_without_git(tmp_path):     # review 2 of #107
+def test_reuse_candidates_fails_loudly_when_git_fails(tmp_path):  # review 2 of #107; git runs but exits non-zero
     r = subprocess.run([sys.executable, str(ROOT / "tools/reuse_candidates.py")], capture_output=True, text=True,
-                       env={**os.environ, "PATH": str(tmp_path)})
-    assert r.returncode != 0 and "Job scripts" not in r.stdout
+                       env={**os.environ, "GIT_DIR": str(tmp_path / "no-repo")})       # review 3: not a missing git
+    assert r.returncode != 0 and "Job scripts" not in r.stdout and "failed" in r.stderr
+
+
+def test_a_failed_skill_attempt_is_no_load(tmp_path):              # review 3 of #107: the call and its failure
+    attempt = {"type": "assistant", "message": {"content": [
+        {"type": "tool_use", "id": "t1", "name": "Skill", "input": {"skill": "blender-mcp"}}]}}
+    t = transcript(tmp_path, attempt, skill_call("blender-mcp", success=False))
+    out = run(GATE, [], {"session_id": "s", "transcript_path": str(t), "tool_name": "mcp__blender__get_objects_summary"},
+              tmp_path / "u.jsonl")
+    assert json.loads(out)["hookSpecificOutput"]["permissionDecision"] == "deny"
 
 
 def test_usage_log_never_fails(tmp_path):

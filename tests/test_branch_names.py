@@ -62,6 +62,14 @@ def test_gate_blocks_a_commit_on_an_auto_branch_until_renamed(repo):
     assert gate(repo).returncode == 0
 
 
+def test_a_tag_of_the_same_name_does_not_hide_the_branch(repo):      # review 3 of #107
+    git(repo, "switch", "-q", "-c", "claude/brave-otter-a1b2c3")
+    git(repo, "tag", "claude/brave-otter-a1b2c3")
+    (repo / "b.txt").write_text("b", encoding="utf-8")
+    git(repo, "add", ".")
+    assert gate(repo).returncode == 1
+
+
 def test_gate_passes_main_and_a_detached_head(repo):
     (repo / "b.txt").write_text("b", encoding="utf-8")
     git(repo, "add", ".")
