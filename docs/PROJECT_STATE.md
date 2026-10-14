@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-15 (after #136). Edit rule: `docs/agents/WORKFLOW.md`, "Project state".
+Last updated: 2026-10-15 (after #137). Edit rule: `docs/agents/WORKFLOW.md`, "Project state".
 
 ## Goal
 
@@ -39,7 +39,7 @@ CLI hooks (#110); checker blind spots of #117 (#126).
 
 1. User: choices page C7, C8, C10, C25 (`docs/domain/conflict-choices-2026-10-09.md`); KPP1 v007
    acceptance; K01 open items (`benchmark/bench-k01-kpp1/README.md`); cut K02 `source.max` + `etalon.max`.
-2. Claude: harness wave 1 - #119 state file, #120 decision log, #121 transcripts at handover; then the
+2. Claude: harness wave 1 - #120 decision log, #121 transcripts at handover; then the
    blocked-by graph (`gh issue list --label harness`).
 3. Claude: decor PR 4 (K02 run), intake IN2-IN8, MH3, engine gaps, #56; extractor follow-ups #21-#24,
    #28, #34, #37, #45 when they block a benchmark.
