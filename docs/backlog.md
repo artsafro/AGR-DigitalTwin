@@ -120,6 +120,13 @@ effort <S/M/L>`. The user or the owner turns one into a task or drops it.
   file (title, labels, owner, blocked-by keys, body sections) in dependency order with native blocked-by links,
   sub-issue links to a parent and board cards; seen 1 run of 16 tickets through a scratchpad script plus 3 body
   edits by a second script; effort M
+- **R3** proposal 2026-10-15, harness/evals-runner - CLI command: the post-merge state update - temporary detached
+  worktree from `origin/main`, replace given `PROJECT_STATE.md` sections, run the state and decision tests, commit
+  `State: #<PR> merged ...`, push to `main`, remove the worktree; seen 3 times (#137, #139, #140); effort S
+- **R4** proposal 2026-10-15, harness/evals-runner - CLI command or skill: one Codex review round of a PR - prompt
+  from the issue text, `REVIEW_CHECKLIST.md` questions, the diff range and the review class; `codex exec -s read-only`;
+  the findings table posted as a PR comment with the fix commit; seen 5 rounds in this session (#137 x1, #139 x1,
+  #140 x3); effort M
 
 ## Harness and organization (default owner Codex)
 

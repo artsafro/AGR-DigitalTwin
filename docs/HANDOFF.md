@@ -1,6 +1,7 @@
-# Handoff — 2026-10-15 00:40
+# Handoff — 2026-10-15 (evening)
 
-Branch: `harness/agent-ready-prd` · Commit: `b015d89` · Worktree: `C:\Users\artsafro\AGR-DigitalTwin\.claude\worktrees\kanban-project-4bec5c` · Job: -
+Branch: `harness/evals-runner` · Commit: `a1052e3` · Worktree: `C:\Users\artsafro\AGR-DigitalTwin\.claude\worktrees\agents-takeover-531bfe` · Job: `-`
+Transcript: `C:\Users\artsafro\AGR-DigitalTwin\logs\transcripts\harness-evals-runner-prnone-c4106641-09ce-4dad-9c90-370c54d5f7f1.jsonl`
 
 <!-- Written by /handover (.claude/commands/handover.md), read by tools/hooks/session_context.py and /takeover.
 Keep the `Branch:` line as is (the hook parses it). Facts only, no history: git log and the pull requests hold
@@ -8,55 +9,46 @@ that. The whole file stays under 7000 characters so the SessionStart hook passes
 
 ## Where we are
 
-Task of this branch: the agent-ready harness spec. Done and merged: PR #135 (spec `docs/prd/agent-ready-harness.md`
-= issue #118, research `docs/research/agent-harness-sources-2026-10-14.md`), one Codex review round (docs class, 8
-P1 + 1 P2, all fixed in b015d89, answers in the PR comments). `main` = 6f71ae5 (state line for #135). Tickets
-#119-#134 published as sub-issues of #118 with native blocked-by links, labels `harness` / `evals`, board cards
-Ready (Agent Claude; #126 Codex); #118 card In progress. Verified: `gh api repos/artsafro/AGR-DigitalTwin/issues/133
---jq .issue_dependencies_summary` → blocked_by 3; `gh api repos/.../issues/118/sub_issues --jq length` → 16.
+Harness spec #118, wave 1 (context and memory) is done and merged: #119 PROJECT_STATE as a state file (PR #137),
+#120 decision log D001-D092 (PR #139), #121 transcript at /handover (PR #140). State updates on `main` after each
+merge (last a1052e3). This branch `harness/evals-runner` was cut from a1052e3 for #122 (`dt evals` runner skeleton,
+first grader "no hook denial in the task's transcript"); board card #122 not yet moved to In progress.
 
 ## In progress
 
-Nothing on this branch; the branch is merged and can be deleted after this handoff lands. Wave 1 of the spec starts
-with #119 (PROJECT_STATE as a state file) in its own worktree from `main`; a session card "#119 PROJECT_STATE.md as a
-state file" was proposed from this session (the user said they will start it in another chat). Then #120 decision
-log, #121 transcripts at handover; the rest by the blocked-by graph (`gh issue list --label harness`).
+#122 is being written by a background general-purpose subagent of the previous session in this worktree
+(uncommitted; `src/twinqa/evals/` had appeared at handover time). Its brief: graders in `src/twinqa/evals/`, `dt evals
+--suite|--task`, `evals/README.md`, task.json/task.md, synthetic fixtures shaped like real transcript hook-denial
+records, report.json in a run folder under `logs/evals/`, exit codes 0/1/2 like `tools/qa/run_benchmark.py`,
+COMMANDS.md line, CAPABILITIES entry IN BRANCH, tests with `--basetemp C:/x/t-ev*`. A `/clear` may stop that
+subagent: check `git status` and the files; whatever is there is unreviewed and possibly partial. Nothing of it is
+committed. Next: finish or redo, verify against the issue's five criteria, full suite, commit, PR, Codex review
+(class: `src/` -> 2 rounds, 3rd only on a P1 in round 2).
 
-Local state outside git: scratchpad of this session holds the video transcript, the source PDFs and the ticket
-publishing script (`publish_tickets.py`, `tickets_state.json`) - disposable. No DCC scene open.
+Local state outside git: the main checkout `C:\Users\artsafro\AGR-DigitalTwin` is still at 5b1a5b2, so slash
+commands load from there in the old form (`/handover` without the Transcript step); `git pull` there when it is
+free. Worktree `kanban-project-4bec5c` could not be removed (folder held by a process); still in `git worktree list`.
 
 ## User decisions not in the code
 
-All grill decisions are in the spec (23 questions, 2026-10-14) and in the ticket bodies; none waits for a file
-outside them. Decisions that the tickets must enforce, not yet enforced anywhere:
-- language: every agent-facing document in English, Russian only for human cheat sheets (user 2026-10-14)
-- waves order: context and memory → evals and trace → guardrails and tools → process and readiness (user 2026-10-14)
-- readiness = two capability evals green (B01 from the root; ticket to PR) (user 2026-10-14)
-- harness work follows the chain grilling → to-spec → to-tickets → implement → code-review (user 2026-10-14)
-- merges stay on the user's command; the only autonomy added is the two escalation classes of the spec
+- 2026-10-15: subagents are the default for heavy or multi-file work; never ask before spawning (user's global
+  CLAUDE.md, not a project file).
 
 ## Waiting for the user
 
-- the start of #119 in a new worktree (the user chose to start it in another chat)
-- optional: push of this handoff commit (post-merge docs commit on a merged branch) - see Rules broken
+- merge command for the #122 PR when it is ready.
 
 ## Next step
 
-Start #119 in a fresh worktree from `main` (rename the auto branch to `harness/project-state-file` after the
-user's confirmation), per its issue body.
+Check the subagent's #122 work in this worktree (or rerun it), then verify, commit and open the PR.
 
 ## Rules broken
 
-- This handoff is committed on `harness/agent-ready-prd` after its merge, so it is not on `main`; carrying it there
-  needs a push and a docs PR, or the next session reads it from this worktree. No push was made (post-merge push not
-  approved).
-- The state update after the merge was pushed straight to `main` (6f71ae5) through a temporary worktree, by the
-  ROLES fallback rule (Claude owns the state update after a merge); the guard's ask on a `rm -rf` in that command
-  was declined, so the temporary worktree was created without the cleanup step and removed afterwards with
-  `git worktree remove`.
+- /handover ran mid-task while a subagent was writing: its partial files are left uncommitted on purpose.
+- The handover command of the main checkout is outdated (no Transcript step); the transcript was saved by the
+  current procedure anyway.
 
 ## Open PRs and issues for this task
 
-- #118 spec - open, card In progress; closes with #134
-- #119-#134 tickets - open, Ready; #119 #120 #121 #126 #127 #128 #130 have no blockers
-- #135 - merged
+- #122 open (no PR yet). Follow-ups: #138 decision ids outside the docs, #141 nonce search in chunks.
+- Wave 2 next: #124 (unblocked); #123, #125, #129, #132 wait on #122.
