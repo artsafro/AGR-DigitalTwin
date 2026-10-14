@@ -75,3 +75,8 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
   through piers and round corners, piers recessed 5 mm into bands with no hidden caps, collars round deeper piers,
   dark inserts as boxes set into the wall with no back face. v006 129 867 triangles, 10/10; v007 297 452
   (budget exceeded, collars 106 410) - reported to the user, not optimised. Report: `REPORT-from-source.md`.
+- 2026-10-14 pattern `primitive-first` (user): reduction, not reproduction. Parts list (`modules/details-v1.md`)
+  confirmed. Thin plates 2 cm: no geometry - the opening's bottom / top reveal face takes the sill / head id
+  (7 / 8, reveal range; decided by the agent). Storey bands: one frame on the whole storey contour, cut and
+  deleted where the source has none and it shows on the facade (not behind piers). Pier steps 0.07-0.10 m kept.
+  Piers run through, never cut by bands. #94 closed (from_source goes round it); #95 open for from_spec.
