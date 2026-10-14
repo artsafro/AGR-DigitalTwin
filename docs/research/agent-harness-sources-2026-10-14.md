@@ -138,9 +138,16 @@ Gaps:
 - `docs/HARNESS_PLAN.md` (455 lines, Russian) mixes decisions, hypotheses, history and per-PR
   notes; `AGENTS.md` says docs are English. User decisions are scattered as "(user 2026-10-xx)"
   across the plan, the patterns, `WORKFLOW.md`, `cases.md`, PR bodies. There is one ADR.
-- No code map of `src/` (modules, entry points, which CLI command calls what). The engine
-  (`from_spec.py`, `from_source`) is known only through PR history.
+- The code map exists at the package level (`AGENTS.md` "Code map"; the engine entry points and
+  commands in `CAPABILITIES.md`). What is missing is the level below it: which CLI command calls
+  which module, and the dependencies between modules — today known only through PR history.
 - No decision index that `pattern-librarian` could grep by date or topic.
+- Size of the agent-facing rule layer, estimated as characters / 4 at commit 7893140: root files
+  ~3k tokens, `docs/agents` ~15k, `docs/domain` ~35k (patterns ~13k of it), plan / state / backlog /
+  cases / pipeline / handoff ~31k, `.agents/skills` ~20k, `standards/` ~38k — about 150k in all;
+  `docs/agr` ~400k, `jobs` ~106k, `technical_library` ~34k are outside it. Command (Git Bash):
+  `for d in <dirs>; do find $d -type f \( -name "*.md" -o -name "*.yaml" -o -name "*.json" \) | xargs cat | wc -c; done`,
+  the result divided by four. An estimate, not a tokenizer count.
 
 Candidates: split state from history (`PROJECT_STATE.md` = goal, open gates, next; history to
 git / a changelog); a decision log (`docs/adr/` or `docs/decisions.md`, one line per dated user
@@ -191,10 +198,13 @@ checker reports), `independent-checker` after every engine run, the 3-question r
 with Codex rounds by risk, the `passed=true` rule.
 
 Gaps (the largest):
-- **No agent evals.** Nothing checks that the agent followed the procedure: loaded the skill,
-  called `source-inspector` on a new source, ran the checker before "done", asked instead of
-  inventing a number (PR #76 lesson: an invented threshold), stopped after three failures. The
-  proxies are the hook denials and the 7-day usage counts in `/takeover`.
+- **No agent evals.** No retrospective, task-level check proves that the agent followed the
+  procedure: called `source-inspector` on a new source, ran the checker before "done", asked
+  instead of inventing a number (PR #76 lesson: an invented threshold), stopped after repeated
+  failures. The one live gate is `skill_gate` (PreToolUse): it denies a DCC MCP call until the skill
+  is loaded, but only for the 3ds Max, Blender and Revit routes, only in the main session, and it
+  passes when the transcript cannot be read; its tests cover the gate, not the task. The proxies
+  for everything else are the hook denials and the 7-day usage counts in `/takeover`.
 - The §13 "transferability test" (a new agent reads only the root and builds B01) was never run;
   it is exactly a capability eval.
 - The benchmark set is a regression suite run by hand (`bench-runner`), not on every change.
@@ -254,8 +264,9 @@ Rule of three, context rotation. Maturity by SWEPR: **L3** (callable agents: fiv
 skills, commands, hooks) with L4 planned (§10 orchestrator, after B01-B03 are stable).
 
 Gaps:
-- For harness and code tasks the "specification" step is an issue body with no template; jobs
-  have a contract (`STATE.md`), code tasks do not.
+- For harness and code tasks the "specification" step has no standard form: `WORKFLOW.md` requires
+  a contract for multi-stage work (in the job `STATE.md` or in the PR), but an issue body is free
+  text, there is no template, and `ready-for-agent` has no completeness gate.
 - No "trace" step between the automatic check and the human decision.
 - The operating model is approval on every output (Stanford: 30 % median gain) — chosen on
   purpose for model and data questions; nothing is in the escalation class yet.

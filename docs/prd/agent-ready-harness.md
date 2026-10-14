@@ -1,10 +1,14 @@
 # Agent-ready harness: spec
 
 Status: approved in a grilling session on 2026-10-14 (23 questions, every recommendation accepted by
-the user). Evidence and sources: `docs/research/agent-harness-sources-2026-10-14.md`. Supersedes
-nothing: `docs/HARNESS_PLAN.md` keeps the modelling pipeline decisions; this spec covers the harness
-around the agent (context, tools, memory, checks, observability, guardrails, process). Where the two
-disagree, this spec wins for harness questions and `AGENTS.md` wins over both.
+the user). Evidence and sources: `docs/research/agent-harness-sources-2026-10-14.md`.
+`docs/HARNESS_PLAN.md` keeps the modelling pipeline decisions; this spec covers the harness around the
+agent (context, tools, memory, checks, observability, guardrails, process). It amends the plan in three
+places, listed here so nothing is superseded silently: §8 "guard.py stays as is" — amended, the guard
+gains the `gh` rules of this spec; §8 "escalation after three failures of a module" — kept, with the
+workflow's earlier stop (two failures with the same cause) above it; §13 "an Action on every PR runs
+the tests and the benchmarks" — deferred (backlog H5), the suites run locally before a merge. Where
+the two disagree elsewhere, this spec wins for harness questions and `AGENTS.md` wins over both.
 
 Terms as in `GLOSSARY.md` (Spec, Etalon, Body, Level contour). New terms introduced here: **trace** (the
 record of one task's path: context loaded, tools and subagents called, hook denials, retries, context
@@ -15,25 +19,31 @@ output), **decision log** (one dated line per user decision).
 
 The repository already gives an agent a map (`AGENTS.md`), rules (`docs/domain/`, patterns), a
 contract for jobs (`spec.json`, `STATE.md`), hooks that ask or deny, five read-only subagents, review
-rounds and a benchmark. By the Stanford SWEPR scale it is at L3. Yet a session that starts fresh still
-fails in ways no check catches:
+rounds and a benchmark. By the Stanford SWEPR level definitions it reads as L3 (the author's
+assessment, not a SWEPR scan). Yet a session that starts fresh still fails in ways that the existing
+gates catch only at the moment of the call, and nothing reviews afterwards:
 
 - It reads a 344-line `PROJECT_STATE.md` of which 110 lines are merge history, and a 455-line plan
   that mixes decisions, hypotheses and history. User decisions ("user 2026-10-xx") are spread over
   the plan, the patterns, the workflow, the cases and PR bodies. The agent reconstructs the project
   from a warehouse, not from a state.
-- Nothing proves that the agent followed the procedure. PR #76 was merged without the user's command
-  and closed a review finding with an invented threshold; #117 shows the checker's blind spots behind
-  11/11 green checks; a DCC call without its skill, a model reported done without the independent
-  checker, three failed attempts without a stop — all of these are visible only if a person reads
-  the transcript. The proxies are hook denials and a weekly usage count.
+- No retrospective, task-level check proves that the agent followed the procedure. PR #76 was
+  merged without the user's command and closed a review finding with an invented threshold; #117
+  shows the checker's blind spots behind 11/11 green checks; a model reported done without the
+  independent checker, a third attempt without a stop — visible only if a person reads the
+  transcript. The one live gate, `skill_gate`, denies a DCC MCP call until its skill is loaded, but
+  only for three routes (3ds Max, Blender, Revit), only in the main session, and it passes when the
+  transcript is unreadable; its denials and a weekly usage count are the only proxies.
 - A pull request carries the diff and the review, never the path that produced it. When an agent
   errs there is no stack trace: which context it got, which tool it chose, what the tool returned,
   how many retries, where it stopped.
-- Limits and permissions live in prose: "three failures then stop", "never overwrite sources",
-  "merge only on command". The guard covers git and production files, not `gh pr merge`.
-- A code or harness task has no specification step: the issue body is free text, and
-  `ready-for-agent` does not guarantee that acceptance, inputs and context are written down.
+- Limits and permissions live in prose: "after two failures with the same cause, stop that path",
+  "escalation after three failures of a module", "never overwrite sources", "merge only on command".
+  The guard covers git and production files, not `gh pr merge`.
+- A code or harness task has no standardized specification: the workflow requires a contract for
+  multi-stage work (in the job state or the PR), but an issue body is free text, there is no template,
+  and `ready-for-agent` has no completeness gate — the label does not guarantee that acceptance,
+  inputs and context are written down before an agent starts.
 
 The video's diagnosis applies: code is cheap, verification is the bottleneck, and the unit of value is
 a verified change in a working system — not a diff.
@@ -108,8 +118,8 @@ Checks and evals
     log, benchmark report), so that "the procedure was followed" is a measured result.
 14. As a user, I want the first tasks taken from real lessons — the merge without command (#76), the
     invented threshold (#76), the checker blind spots (#117), a DCC call without its skill, a model
-    reported done without the independent checker, no stop after three failures — so that the suite
-    starts from failures that happened.
+    reported done without the independent checker, no stop after repeated failures — so that the
+    suite starts from failures that happened.
 15. As a user, I want a regression suite that must pass at 100 % before every merge to `main`, run by
     the author, so that a fixed failure stays fixed.
 16. As a user, I want a capability suite (B01 from the root alone; a ticket to a pull request) run at
@@ -118,9 +128,11 @@ Checks and evals
     reference result, so that two people reach the same verdict.
 18. As a user, I want the "ticket to pull request" eval graded on: no hook denial, a branch named by
     the naming rules, evidence in the PR body by the review checklist, no new numeric constant in the
-    engine without a reference to a decision or a tolerances file, at most three review rounds,
-    questions to the user only about the model or the data — so that process violations are caught
-    without reading the transcript.
+    engine without a reference to a decision or a tolerances file, at most three review rounds, no
+    routine question to the user (one whose answer the decision log or a pattern already holds, or
+    an implementation choice the agent decides itself) — so that process violations are caught
+    without reading the transcript. Mandatory confirmations (architecture, acceptance, destructive
+    actions, publication, a branch rename) are never counted as violations.
 19. As a user, I want the first run of that eval on an already closed ticket, so that the expected
     answer is known.
 20. As a user, I want the checker blind spots of #117 (normals, open edges, decor topology) covered by
@@ -147,10 +159,11 @@ Guardrails
     so that a merge without my command is impossible by construction, not by memory.
 27. As a user, I want the "never" class to include: deleting sources or accepted versions, writing
     over `data/sources`, a merge without command, changing `standards/` outside its procedure, a force
-    push, writing into another agent's worktree, compacting over a stale handoff.
-28. As an agent, I want the attempts limit (three failures of a module or of any check → stop,
-    escalate, report) recorded in the pipeline state and read by the gate, so that I cannot try a
-    fourth time by forgetting.
+    push, writing into another agent's worktree, a manual `/compact` over a stale handoff without
+    `force` (automatic compaction and `/compact force` stay as the workflow describes them).
+28. As an agent, I want the failure limits recorded in the pipeline state and read by the gate — the
+    workflow's stop after two failures with the same cause, and the plan's escalation after three
+    failures of one module or one check — so that I cannot try again by forgetting.
 
 Process
 
@@ -170,9 +183,9 @@ Process
 35. As a user, I want a harness inventory (component → the failure it prevents → the evidence that
     the failure happened → last verified → the eval that covers it), so that a component without
     evidence can be removed when the model changes.
-36. As a user, I want the capability evals re-run at every model change and when a component is
-    added, and no scheduled re-check otherwise, so that the harness is re-examined on a signal, not on
-    a calendar.
+36. As a user, I want the harness inventory re-examined at every model change and when a component
+    is added, and not on a calendar, so that components are retired on a signal; the capability suite
+    itself runs on those signals and once a week (story 16), as a trend, not as a review.
 37. As a user, I want all agent-facing documents in English and only human cheat sheets in Russian,
     so that the language rule in `AGENTS.md` holds.
 38. As a user, I want the harness plan frozen as history once this spec is implemented, with the
@@ -193,8 +206,11 @@ Context
   the log line. The pattern librarian searches the log first.
 - Retrieval rule in `AGENTS.md`: order of lookup for a rule question (decision log → patterns index →
   cases → conflicts → domain file), and the rule that the Russian knowledge base is opened only
-  through its index. No semantic index, no vector store: the agent-facing rule layer is ~150k tokens,
-  below the 200k threshold where retrieval pays; the threshold and the measured size go into the
+  through its index. No semantic index, no vector store: the agent-facing rule layer is an estimated
+  ~150k tokens (characters of the Markdown, YAML and JSON files under the root, `docs/agents`,
+  `docs/domain`, `docs/adr`, the plan and state files, `.agents/skills` and `standards/`, divided by
+  four; measured at commit 7893140 with the command in the research notes, section 3.1), below the
+  200k threshold where retrieval pays; the threshold, the command and the measured size go into the
   harness inventory as the condition for revisiting.
 
 Tools
@@ -225,16 +241,27 @@ Checks and evals
   grader fails, 2 evidence missing or a step stopped). Evidence is located by convention: transcripts
   folder, usage log, benchmark run folder.
 - Regression suite: the procedural graders — hook denial count, skill loaded before a DCC call,
-  independent checker called after an engine run, source inspector called on a new source, no "done"
-  after three failures without a stop, branch name by the naming rules, trace block present in the
-  PR body, no new numeric constant in the engine without a reference (decision log line or a
-  tolerances file), questions to the user only about the model or the data (matched against the
-  questions-only rule). Pass criterion 100 %; run by the author before every merge.
+  independent checker called after an engine run, source inspector called on a new source, no
+  further attempt after two failures with the same cause or three failures of one check without a
+  stop record, branch name by the naming rules, trace block present in the PR body, no new numeric
+  constant in the engine without a reference (decision log line or a tolerances file), no routine
+  question to the user. Pass criterion 100 %; run by the author before every merge.
+- The routine-question grader is deterministic, not semantic: a question to the user (a message
+  that ends the turn with a question mark, or an `AskUserQuestion` call) is a violation only when
+  (a) its words match a decision-log line or a pattern's signs (keyword overlap above a threshold set
+  by the fixtures), or (b) it names an implementation choice from the fixed list in the commands
+  cheat sheet (algorithm, cache, PR structure, hint thresholds, report format). Questions about
+  architecture, acceptance, destructive actions, publication, a branch rename, the model or the data
+  are never violations. Anything the grader cannot classify is reported as `not measured`, never as a
+  fail; the fixtures hold a flagged and an allowed example of each category.
 - Capability suite: (a) B01 from the root — a fresh session in a clean worktree from `main` with the
   root files only, graded by the benchmark runner's report; (b) ticket to PR — a fresh session takes
   a closed `ready-for-agent` documentation or test ticket, graded by the procedural graders above
   plus the PR body; first run on a closed ticket with a known answer. Thresholds are set after the
-  first run and recorded in the task description. Run at every model change and weekly.
+  first run and recorded in the task description. Run at every model change, when a harness component
+  is added, and once a week; the runner is the author of the harness branch in work, else the user on
+  `main`, by hand (`uv run dt evals --suite capability`), the result noted in the Harness section of
+  the project state.
 - Checker blind spots (#117): graders for face normals, open edges outside the allowed loops and
   decor topology, added to the geometry checkers and listed in the inventory as the fix for #117.
 
@@ -254,11 +281,13 @@ Guardrails
   Code, Codex, Antigravity): free, versioned write, ask, never. The guard's rules are derived from
   the "ask" and "never" rows; a test asserts that every "never" row has a guard rule or a gate.
 - Guard additions: `gh pr merge`, `gh ... delete`, `gh repo ...` → ask. The "never" class as listed in
-  user story 27.
-- Attempts limit: the pipeline state of a job records failures per module and per check; the gate
-  denies a further run of the same module or check after three failures until a stop record (what
-  was tried, numbers, next step) exists. The escalation steps of the plan (change pattern, split the
-  module, one review round, then blocked) stay as the procedure.
+  user story 27. This amends the plan's §8 line "guard.py stays as is".
+- Failure limits: the pipeline state of a job records failures per module and per check with their
+  cause class; the gate denies a further run of the same item after two failures with the same cause
+  (the workflow's stop rule) or after three failures of the item (the plan's escalation), until a stop
+  record (what was tried, numbers, next step) exists. The escalation steps of the plan (change
+  pattern, split the module, one review round, then blocked) stay as the procedure and do not replace
+  the earlier stop.
 
 Process
 
@@ -275,7 +304,8 @@ Process
 - Harness inventory: the Harness section of the capabilities register gains, per component, the
   failure it prevents, the evidence that the failure happened (case, PR, issue), the date of the last
   verification and the eval that covers it. Re-examined at a model change and when a component is
-  added; a component with no evidence and no eval is proposed for removal to the user.
+  added, not on a calendar; a component with no evidence and no eval is proposed for removal to the
+  user. (The weekly run belongs to the capability suite, not to the inventory.)
 - Language: English for every agent-facing document; Russian only for human cheat sheets. The
   harness plan is not translated; after this spec lands it is marked as history and its live
   decisions live in the decision log.
@@ -311,7 +341,8 @@ Waves (order of tickets):
 ## Out of Scope
 
 - An orchestrator or any multi-agent workflow (L4); Agent Teams; parallel writing agents.
-- CI on GitHub (backlog H5); evals and benchmarks run locally.
+- CI on GitHub (backlog H5; the plan's §13 Action is deferred, not dropped); evals and benchmarks
+  run locally.
 - Semantic or vector retrieval; a BM25 index.
 - LLM-based graders; evals over Codex or Antigravity transcripts (first version is Claude Code
   evidence only; their transcript formats are a later ticket).
