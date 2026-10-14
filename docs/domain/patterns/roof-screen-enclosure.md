@@ -1,6 +1,6 @@
 # Pattern: roof-screen-enclosure (draft)
 
-Status: draft (user decision 2026-10-13 [D061], OBJ03). Spec v0.7 `roof_structures`.
+Status: draft (user decision 2026-10-13 [D067], OBJ03). Spec v0.7 `roof_structures`.
 
 ## Signs in the source
 
@@ -9,12 +9,12 @@ Status: draft (user decision 2026-10-13 [D061], OBJ03). Spec v0.7 `roof_structur
 - The marking is the human's: `object.json` → `roof_screens: [mesh names]`, as with `slabs`. The extractor does
   not guess which meshes are screens.
 
-## The rule (user, 2026-10-13 [D061])
+## The rule (user, 2026-10-13 [D067])
 
 1. The enclosure is part of the body's silhouette (an exit to the roof), not an attachment.
 2. `npm_min`: planes on the screens' outer outline, from the roof level up to their top, facing out, and a top
    plane at the top - a box with no bottom and no thickness. The equipment blocks inside are not modelled.
-   A build by source modules follows the source: screens with no top get no top plane (OBJ03, user 2026-10-14 [D080]);
+   A build by source modules follows the source: screens with no top get no top plane (OBJ03, user 2026-10-14 [D086]);
    the checker allows the open ring on the outline at the top then.
    Ids: the roof group (21-25).
 3. `mid` / VPM: the same planes as a shell (the screen's thickness); the blocks inside are decided later

@@ -33,7 +33,7 @@ then Shell inward 0.4 m, then windows. Kept as a logical group separate from
 windows and roof.
 In a source mesh read by the spec extractor, the body (корпус) is the largest connected
 part; attachments (canopies, porches, stairs, roof equipment) are the other parts.
-Decided 2026-10-08 (`docs/HARNESS_PLAN.md` §4).
+Decided 2026-10-08 [D028] (`docs/HARNESS_PLAN.md` §4).
 
 ## AGR
 
@@ -75,7 +75,7 @@ shape. When no shape is both, the exterior cannot tell the wall from a plinth or
 extractor stops and the user names a height of the wall shape (`contour_at_m` in object.json).
 Anything not over the full height (plinth, belt, cornice, partial recess) never changes the
 contour and goes to the questions file; 2 or more levels or over 10 % of the facade length only
-raises the question's priority. Decided 2026-10-08 (#6).
+raises the question's priority. Decided 2026-10-08 [D023] (#6).
 _Avoid_: footprint (that is the ground print only), outline.
 
 ## Etalon

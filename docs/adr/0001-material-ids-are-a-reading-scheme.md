@@ -1,6 +1,6 @@
 # Material IDs are a reading scheme; UDIM tiles and slots are assigned on export
 
-Status: accepted (2026-10-08, plan grilling Q4).
+Status: accepted (2026-10-08 [D030], plan grilling Q4).
 
 Inside the working model, material IDs follow group ranges (`docs/HARNESS_PLAN.md` §6:
 1–5 facade, 6–10 reveals, 11–15 openings, …), and an unused group leaves its range empty.

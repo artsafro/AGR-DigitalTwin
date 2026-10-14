@@ -5,6 +5,9 @@ task: a one-line fix skips most steps; a multi-stage delivery uses all of them.
 
 ## Loop
 
+Harness work (issues labelled `harness`) runs grilling -> to-spec -> to-tickets -> implement ->
+code-review (user 2026-10-14 [D091]); production work runs the steps below.
+
 0. **Card.** A task with an issue moves on the board (`docs/agents/KANBAN.md`): In progress
    when taken, Needs you when it waits on the user.
 1. **Goal and discovery.** Read `docs/PROJECT_STATE.md`, the relevant `docs/domain/` file,
@@ -30,7 +33,7 @@ task: a one-line fix skips most steps; a multi-stage delivery uses all of them.
    checked (commands, evidence paths) and what is open. On restart, read saved outputs and
    hashes before repeating any mutation (`run-evidence` skill).
 
-## Subagents (Claude Code, user 2026-10-13 [D065])
+## Subagents (Claude Code, user 2026-10-13 [D071])
 
 The main agent keeps dumps, MaxScript output, benchmark runs and the pattern catalogue out of its own
 context. It delegates them to the read-only subagents in `.claude/agents/`:
@@ -49,10 +52,10 @@ Rules:
 - After every engine run the main agent calls `independent-checker` before it reports "done".
 - A subagent's result is data, not a decision. The main agent weighs it, and it asks the user only about the
   model or the object (`questions-only` rule).
-- Disputed geometry: look first, then classify (user 2026-10-13 [D066]) - every group of a classifier's verdict, every
+- Disputed geometry: look first, then classify (user 2026-10-13 [D072]) - every group of a classifier's verdict, every
   question and every stop is shown isolated on the body (renders, three views, sizes) before a rule or a question.
 
-## Triggers (user 2026-10-14 [D068])
+## Triggers (user 2026-10-14 [D074])
 
 An event makes a skill or subagent mandatory, not optional:
 
@@ -72,7 +75,7 @@ skill is loaded; `tools/hooks/usage_log.py` writes every subagent call, skill lo
 `logs/agent-usage.jsonl` (local, main checkout). `/takeover` ends with the 7-day counts, so what is never called
 shows up.
 
-## Rule of three (user 2026-10-14 [D069])
+## Rule of three (user 2026-10-14 [D075])
 
 A procedure repeated across a session or jobs becomes a reusable thing; what it becomes depends on its kind:
 
@@ -87,7 +90,7 @@ The agent only proposes: `/handover` writes repeats of the session to `docs/back
 `/reuse-scan` (weekly) lists cross-job repeats with an effort estimate. Creating the code, skill or pattern is a
 task of its own.
 
-## Context rotation (Claude Code, user 2026-10-14 [D070])
+## Context rotation (Claude Code, user 2026-10-14 [D076])
 
 A long session loses detail when it is compacted. Rotate instead, in the same worktree:
 

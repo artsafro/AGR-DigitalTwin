@@ -1,6 +1,6 @@
 # Primitive first (`primitive-first`)
 
-Reduction, not reproduction (user 2026-10-14 [D074]; replaces the earlier wording). A delivery model is built from the
+Reduction, not reproduction (user 2026-10-14 [D080]; replaces the earlier wording). A delivery model is built from the
 simplest parts that keep the building's silhouette, assembled like Lego.
 
 ## 0. The parts first
@@ -21,7 +21,7 @@ The simplest form that holds the silhouette, not a box by default:
 - a pilaster or a pier is a box or a profile extrusion, running through, never cut by bands;
 - fluting, close panels, rustication, joints, chamfers and tile joints are never geometry: normal / bump.
 
-## 1a. Decisions on OBJ03 (user 2026-10-14 [D075])
+## 1a. Decisions on OBJ03 (user 2026-10-14 [D081])
 
 - Thin plates (2 cm sills and heads) are not geometry: the opening's own face takes their id - a sill under the
   opening colours the opening's bottom reveal face (sill id), a head plate its top reveal face (head id).
@@ -38,7 +38,7 @@ of its own - a question to the user with a picture, never decided by the agent. 
 ## 3. Silhouette test
 
 A part is built more complex than its primitive only if replacing it by the simplest form changes the silhouette
-in any of five views (four facades and the top) by more than 0.07 m (user 2026-10-14 [D076]: 0.07, so the kept 0.07-0.10 m
+in any of five views (four facades and the top) by more than 0.07 m (user 2026-10-14 [D082]: 0.07, so the kept 0.07-0.10 m
 steps stay profiles; was 0.10). The test is automatic, per element, reported.
 
 ## 4. Repeats
@@ -72,10 +72,10 @@ instances fail; profiled elements built more complex than their primitive withou
 In the harness: `src/twinqa/geometry/complexity.py`, run on the modules scene by `tools/qa/run_from_source.py` when
 the job's tolerances have a `complexity` block (`budget` per group, `total_max`, `decor_groups`,
 `decor_section_points_max`, `silhouette_dev_min_m`). "12 vertices" is 12 points of the element's section (an
-extrusion has twice that many vertices; user 2026-10-14 [D077]: about 12 points describe a silhouette). The budget per
-group is the job's (OBJ03: rough, the total 150 000 is what holds, user 2026-10-14 [D077]).
+extrusion has twice that many vertices; user 2026-10-14 [D083]: about 12 points describe a silhouette). The budget per
+group is the job's (OBJ03: rough, the total 150 000 is what holds, user 2026-10-14 [D083]).
 
-## Nothing of the source is dropped (user 2026-10-14 [D078])
+## Nothing of the source is dropped (user 2026-10-14 [D084])
 
 A source piece that cannot be reduced to a primitive (flat, turned off the axes, no section) is kept as the
 source's own faces in a group of its own (`decor_as_source`), counted and listed in the job report; only

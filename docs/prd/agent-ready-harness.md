@@ -1,6 +1,6 @@
 # Agent-ready harness: spec
 
-Status: approved in a grilling session on 2026-10-14 (23 questions, every recommendation accepted by
+Status: approved in a grilling session on 2026-10-14 [D088, D089, D090, D092] (23 questions, every recommendation accepted by
 the user). Evidence and sources: `docs/research/agent-harness-sources-2026-10-14.md`.
 `docs/HARNESS_PLAN.md` keeps the modelling pipeline decisions; this spec covers the harness around the
 agent (context, tools, memory, checks, observability, guardrails, process). It amends the plan in three

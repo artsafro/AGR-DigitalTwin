@@ -1,6 +1,6 @@
 # Vent grille (`vent-grille`)
 
-Status: draft. Source: `docs/HARNESS_PLAN.md` §3 (inset elements); user decision 2026-10-09 [D030].
+Status: draft. Source: `docs/HARNESS_PLAN.md` §3 (inset elements); user decision 2026-10-09 [D035].
 
 ## Signs in the spec
 

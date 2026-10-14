@@ -7,7 +7,7 @@
 > Current status per application: `docs/agents/CAPABILITIES.md`. The log
 > below is the branch's verification record.
 
-## Active scope correction, 2026-10-06
+## Active scope correction, 2026-10-06 [D003]
 
 The user requests production-capable MCP routes for all listed DCCs, including
 create/edit/save/export. Inspection is the connection prerequisite, not the

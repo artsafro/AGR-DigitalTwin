@@ -1,7 +1,7 @@
 # Inset slab (`roof-inset-plane`)
 
 Status: proven on benchmark (`bench-b01-box`, `bench-b02-corner-niche`, `bench-b02t-terrace`). Source:
-user rules 2026-10-10 [D032] (B02 etalon; the inset is universal and required — a solid slab is an error, an
+user rules 2026-10-10 [D038] (B02 etalon; the inset is universal and required — a solid slab is an error, an
 etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `terrace`.
 
 ## Signs in the source
@@ -12,15 +12,15 @@ etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `t
   edge-to-edge joint and no overlap. Etalons: plate 5 mm above the level, embedded 20 mm.
 - It is the technology of the joint, not a height of the building.
 
-## The rule (user, 2026-10-10 [D032])
+## The rule (user, 2026-10-10 [D038])
 
 1. Per slab exactly two open loops, both closed simple cycles:
    - contour A, the hole in the body: the foot of the upright faces around the slab at its level;
    - contour B, the plate outline at the level + `plate_gap_m`.
 2. The plate is `plate_gap_m` above the level and overlaps the hole by `plate_overlap_m` all round: it
    runs under the parapet / terrace wall by that much (mitred at corners), so the outlines never cross.
-   Both are building parameters of the spec (user 2026-10-10 [D033]), default 5 mm / 20 mm as in the etalons;
-   the pattern allows a gap past the building's weld `weld_m` (3 mm, user 2026-10-13 [D062]) up to 10 mm (`roof_inset_gap_m`) and an overlap of 10-50 mm
+   Both are building parameters of the spec (user 2026-10-10 [D039]), default 5 mm / 20 mm as in the etalons;
+   the pattern allows a gap past the building's weld `weld_m` (3 mm, user 2026-10-13 [D068]) up to 10 mm (`roof_inset_gap_m`) and an overlap of 10-50 mm
    (`roof_inset_embed_m`). A level may hold several slabs (a ledge in parts): each A pairs with exactly
    one B overlapping it. A shaft through a slab stands in the hole as a part of its own: its foot is an
    inner outline of A, and the plate's hole around it an inner outline of B, shrunk by the same overlap
@@ -30,7 +30,7 @@ etalon that differs is fixed, the rule is never relaxed); patterns `parapet`, `t
 4. Required, not only allowed: the roof with a parapet and every terrace must carry the joint; a solid
    slab fails. Any other open loop except the bottom ring is an error. A roof without a parapet has
    nothing to inset into and stays solid.
-5. Small openings in a slab (user, 2026-10-13 [D063]): an opening that is no shaft and whose both sizes are under
+5. Small openings in a slab (user, 2026-10-13 [D069]): an opening that is no shaft and whose both sizes are under
    the narrowest opening width (0.7 m, `DOOR_W_M`) is no opening of the body. The extractor leaves it out
    of the roof and lists it in the report (`roof.holes_ignored`: area, position, sizes). No new number. Case:
    OBJ03, 0.04 m2 at 96.55 m.

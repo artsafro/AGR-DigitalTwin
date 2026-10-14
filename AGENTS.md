@@ -1,7 +1,7 @@
 # AGR-DigitalTwin — agent instructions
 
 Shared by every agent (Claude Code, Codex, Antigravity). Agent-specific notes:
-`CLAUDE.md`, `docs/agents/codex.md`, `GEMINI.md`. Talk to the user in Russian; write code,
+`CLAUDE.md`, `docs/agents/codex.md`, `GEMINI.md`. Talk to the user in Russian [D088]; write code,
 commands, identifiers and docs in English.
 
 ## Goal

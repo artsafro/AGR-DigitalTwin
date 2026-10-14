@@ -1,6 +1,6 @@
 # Parapet and roof (`parapet`)
 
-Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4; issues #16, #9; user decisions 2026-10-08 [D023].
+Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4; issues #16, #9; user decisions 2026-10-08 [D024].
 
 ## Signs in the spec
 
@@ -20,7 +20,7 @@ Status: draft. Source: `docs/HARNESS_PLAN.md` §3–§4; issues #16, #9; user de
   them — structure, not a matching height. Otherwise the extractor stops and asks.
 - **Drainage slopes are the norm of a flat roof.** Roof surfaces sloped up to 10° are one roof;
   its height is their area-weighted mean, reported with the height range and the slope (max,
-  mean). Roof parts steeper than 10° are a question, not a guess (user decision 2026-10-08 [D023], #9).
+  mean). Roof parts steeper than 10° are a question, not a guess (user decision 2026-10-08 [D024], #9).
 - **A roof modelled as a separate object is normal, not a defect.** The body is the walls plus the
   parts that lie inside the contour of the top floor at the roof level ±10 cm; such parts join the
   body for the roof check. Anything else that is not connected stays an attachment. If a separate

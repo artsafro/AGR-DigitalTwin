@@ -10,9 +10,10 @@ ROW = re.compile(r"^\| (D\d{3}) \|")
 REF = re.compile(r"\[(D\d{3}(?:, D\d{3})*)\]")
 # A dated user decision in prose: "user ... 2026-10-08" or "2026-10-08 ... user" on one line.
 MENTION = re.compile(
-    r"(user|пользовател).{0,40}2026-\d\d-\d\d|2026-\d\d-\d\d.{0,25}(user|пользовател)", re.IGNORECASE)
-# Files with no decisions of their own: history, research, the spec, Russian originals, state and handoff.
-EXCLUDED = ("docs/agr/", "docs/research/", "docs/prd/", "jobs/", "technical_library/", "data/",
+    r"(user|пользовател|decided|решен|прожарк).{0,40}2026-\d\d-\d\d"
+    r"|2026-\d\d-\d\d.{0,25}(user|пользовател|decided|решен)", re.IGNORECASE)
+# Out of scope: Russian originals (own index), research notes, job files (#138), state and handoff files.
+EXCLUDED = ("docs/agr/", "docs/research/", "jobs/", "technical_library/", "data/",
             "docs/HANDOFF", "docs/PROJECT_STATE.md", LOG)
 # Lines that match MENTION but state no decision: (file, text on the line).
 NOT_DECISIONS = [
@@ -23,7 +24,8 @@ NOT_DECISIONS = [
 def log_rows():
     rows = []
     for line in (ROOT / LOG).read_text(encoding="utf-8").splitlines():
-        if ROW.match(line):
+        if line.startswith("| D"):
+            assert ROW.match(line), f"malformed decision row: {line[:60]}"
             rows.append([cell.strip() for cell in line.strip().strip("|").split("|")])
     return rows
 
@@ -62,6 +64,14 @@ def test_log_format():
 def test_every_dated_decision_carries_its_id():
     known = {row[0] for row in log_rows()}
     assert unreferenced(scope_files(), known) == []
+
+
+def test_every_decision_is_anchored_where_it_applies():
+    anchored = set()
+    for name in scope_files() + ["docs/prd/agent-ready-harness.md"]:
+        for group in REF.findall((ROOT / name).read_text(encoding="utf-8")):
+            anchored.update(group.split(", "))
+    assert [row[0] for row in log_rows() if row[0] not in anchored] == []
 
 
 def test_unreferenced_mentions_fail(tmp_path, monkeypatch):

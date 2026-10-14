@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-ROW = re.compile(r"^\| `([^`]+)` \|")
+ROW = re.compile(r"^\| `([^`]+)` \|([^|]*[^| ][^|]*)\|([^|]*[^| ][^|]*)\|$")
 
 
 def test_index_lists_every_document_once():
@@ -13,6 +13,8 @@ def test_index_lists_every_document_once():
     assert listed.returncode == 0, listed.stderr
     tracked = {p.removeprefix("docs/agr/") for p in listed.stdout.splitlines()} - {"INDEX.md"}
     text = (ROOT / "docs/agr/INDEX.md").read_text(encoding="utf-8")
-    rows = [m.group(1) for line in text.splitlines() if (m := ROW.match(line))]
+    lines = [line for line in text.splitlines() if line.startswith("| `")]
+    rows = [m.group(1) for line in lines if (m := ROW.match(line))]
+    assert len(rows) == len(lines), "a row without its two description cells"
     assert len(rows) == len(set(rows)), "a document is listed twice"
     assert set(rows) == tracked
