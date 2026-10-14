@@ -110,16 +110,22 @@ def destination(branch, pr, session):
 
 def publish(source, dest):
     """Copy source to dest through a temporary file; 0 published, 1 dest exists (kept), 2 failed (nothing left)."""
-    if dest.exists():
+    if dest.is_file():
         return 1
+    if dest.exists():
+        print(f"copy failed: {dest} exists and is no file", file=sys.stderr)
+        return 2
     tmp = dest.with_name(f".{dest.name}.{os.getpid()}.tmp")
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, tmp)
-        os.link(tmp, dest)                           # fails on an existing dest: never a replacement
+        try:
+            os.link(tmp, dest)                       # fails on an existing dest: never a replacement
+        except FileExistsError:                      # only a collision here means "a copy exists" (review 3)
+            if dest.is_file():
+                return 1
+            raise
         return 0
-    except FileExistsError:
-        return 1
     except OSError as e:
         print(f"copy failed: {e}", file=sys.stderr)
         return 2
@@ -131,8 +137,9 @@ def publish(source, dest):
 
 
 def main(argv):
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    for stream in (sys.stdout, sys.stderr):          # paths and Windows error texts are not ASCII
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--transcript")
     parser.add_argument("--nonce")

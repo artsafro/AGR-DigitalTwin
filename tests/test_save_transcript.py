@@ -130,6 +130,17 @@ def test_a_failed_copy_leaves_nothing_and_a_retry_works(repo, config, monkeypatc
     assert module.publish(source, dest) == 0 and NONCE in dest.read_text(encoding="utf-8")
 
 
+def test_an_obstructed_destination_is_a_failure_not_a_copy(repo, config):
+    (repo / "logs").mkdir()
+    (repo / "logs/transcripts").write_text("a file where the folder goes", encoding="utf-8")
+    r = run(HOOK, repo, config, "--nonce", NONCE, "--pr", "1")
+    assert r.returncode == 2 and "copy failed" in r.stderr, r.stderr
+    (repo / "logs/transcripts").unlink()
+    (repo / "logs/transcripts/harness-task-x-pr1-s-123.jsonl").mkdir(parents=True)
+    r = run(HOOK, repo, config, "--nonce", NONCE, "--pr", "1")
+    assert r.returncode == 2 and "is no file" in r.stderr, r.stderr
+
+
 def test_the_folder_is_git_ignored():
     r = subprocess.run(["git", "check-ignore", "-q", "logs/transcripts/x.jsonl"], cwd=ROOT)
     assert r.returncode == 0
