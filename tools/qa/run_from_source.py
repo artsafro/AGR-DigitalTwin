@@ -79,7 +79,8 @@ def run(dump_p: Path, modules_p: Path, obj_p: Path, tol_p: Path, out: Path, blen
     readback = from_dump(read_json((out / "model-readback.json").read_bytes()))
     if not readback.levels:
         readback.levels = etalon.levels
-    check = checks.run(readback, etalon, spec, tol["geometry"], source_class=obj.get("source_class"))
+    check = checks.run(readback, etalon, spec, tol["geometry"], source_class=obj.get("source_class"),
+                       build="from_source")
     if "complexity" in tol:                         # pattern primitive-first: blocking
         cx = check_complexity(scene, tol["complexity"])
         check["checks"].append(cx)

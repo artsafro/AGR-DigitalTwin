@@ -171,7 +171,7 @@ def test_a_synthetic_building_by_modules_passes_its_spec_checks():
     groups = {ob["group"] for ob in scene["objects"]}
     assert {"walls", "slabs", "piers"} <= groups                              # the modules delivery: parts apart
     soup = from_dump(model)
-    res = {c["id"]: c for c in checks.run(soup, soup, spec, TOL, source_class="panelised")["checks"]}
+    res = {c["id"]: c for c in checks.run(soup, soup, spec, TOL, source_class="panelised", build="from_source")["checks"]}
     for cid in ("levels", "mesh", "opening_planes", "triangle_budget", "floor_areas"):
         assert res[cid]["status"] == "pass", (cid, res[cid])
     assert res["floor_areas"]["details"]["basis"] == "spec-based"
@@ -204,10 +204,10 @@ def _tube(name, z0, z1, size=10.0, inset=0.02):
 
 def test_a_wall_ring_standing_on_a_slab_is_seated_and_a_floating_one_is_not():
     slab = _quad_box("slabs", (0, 0, 3.0), (10, 10, 3.3), 21)
-    on = checks.check_mesh(from_dump(_dump(slab, _tube("walls", 3.3, 6.0))), TOL, checks.load_ranges())
+    on = checks.check_mesh(from_dump(_dump(slab, _tube("walls", 3.3, 6.0))), TOL, checks.load_ranges(), build="from_source")
     kinds = [(lp["kind"], lp["allowed"]) for lp in on["details"]["open_loops"]]
     assert ("seated", True) in kinds and ("other", False) in kinds            # the top ring stands on nothing
-    off = checks.check_mesh(from_dump(_dump(slab, _tube("walls", 3.4, 6.0))), TOL, checks.load_ranges())
+    off = checks.check_mesh(from_dump(_dump(slab, _tube("walls", 3.4, 6.0))), TOL, checks.load_ranges(), build="from_source")
     assert not any(lp["kind"] == "seated" for lp in off["details"]["open_loops"])
 
 
@@ -218,10 +218,10 @@ def test_the_decor_mesh_is_left_out_of_the_topology_checks():
     both = {"name": "decor", "vertices": a["vertices"] + b["vertices"],
             "triangles": a["triangles"] + [[i + len(a["vertices"]) for i in tr] for tr in b["triangles"]],
             "material_ids": a["material_ids"] + b["material_ids"], "polygon_sizes": a["polygon_sizes"] + b["polygon_sizes"]}
-    res = checks.check_mesh(from_dump(_dump(both)), TOL, checks.load_ranges())
+    res = checks.check_mesh(from_dump(_dump(both)), TOL, checks.load_ranges(), build="from_source")
     assert res["details"]["decor_triangles_left_out"] == 24 and res["details"]["overlap_pairs"] == 0
     body = {**both, "name": "walls"}
-    assert checks.check_mesh(from_dump(_dump(body)), TOL, checks.load_ranges())["details"]["overlap_pairs"] > 0
+    assert checks.check_mesh(from_dump(_dump(body)), TOL, checks.load_ranges(), build="from_source")["details"]["overlap_pairs"] > 0
 
 
 @pytest.mark.parametrize("gap, overlap", [(0.002, True), (0.005, False)])
@@ -229,7 +229,7 @@ def test_an_overlap_is_a_crossing_deeper_than_the_weld(gap, overlap):
     """User 2026-10-14: faces within weld_m (3 mm) overlap; a plate 5 mm off a face (plate_gap_m) does not."""
     lo = _quad_box("slabs", (0, 0, 0), (4, 4, 1), 21)
     hi = _quad_box("terraces", (0, 0, 1 + gap), (4, 4, 2), 22)
-    res = checks.check_mesh(from_dump(_dump(lo, hi)), TOL, checks.load_ranges())
+    res = checks.check_mesh(from_dump(_dump(lo, hi)), TOL, checks.load_ranges(), build="from_source")
     assert (res["details"]["overlap_pairs"] > 0) == overlap
 
 
@@ -302,7 +302,7 @@ def test_an_enclosure_with_no_top_leaves_an_allowed_open_ring_at_its_top():
     d.pop("polygons", None)
     slab = _quad_box("slabs", (0, 0, 6.3), (10, 10, 6.6), 21)
     res = checks.check_mesh(from_dump(_dump(slab, d)), TOL, checks.load_ranges(),
-                            structures=[(ring, 6.6, 9.0)])
+                            structures=[(ring, 6.6, 9.0)], build="from_source")
     kinds = {lp["kind"]: lp["allowed"] for lp in res["details"]["open_loops"]}
     assert kinds.get("roof-structure-top") is True
 
@@ -326,7 +326,7 @@ def test_glass_off_the_wall_is_a_balcony_railing_of_closed_plates():
     assert report["parapets"]["balcony_glass_plates"] == 3
     assert [len(f["openings"]) for f in spec_doc["floors"]] == [1, 1]
     soup = from_dump(model)
-    assert checks.check_mesh(soup, TOL, checks.load_ranges())["status"] == "pass"
+    assert checks.check_mesh(soup, TOL, checks.load_ranges(), build="from_source")["status"] == "pass"
 
 
 def test_a_pier_runs_through_storeys_as_one_element():
@@ -418,3 +418,111 @@ def test_complexity_fails_over_budget_copies_and_profiles_without_silhouette():
     many = _scene({"a": _m(sq, meta={"section_points": 14, "silhouette_dev_m": 0.2})},
                   [{"name": "a", "group": "piers", "mesh": "a"}])
     assert check_complexity(many, CX)["details"]["section_points_over"] == [["a", 14]]
+
+
+# ------------------------------------------------------------------------------- review 1 of #106 (regressions)
+
+def _plate(name, z, x0=0.0, x1=1.0):
+    return {"name": name, "vertices": [[x0, 0, z], [x1, 0, z], [x1, 1, z], [x0, 1, z]], "triangles": [[0, 1, 2], [0, 2, 3]],
+            "material_ids": [1, 1], "polygon_sizes": [3, 3]}
+
+
+BASE = _quad_box("slabs", (5, 5, 0.0), (6, 6, 0.3), 21)        # the model's lowest point is elsewhere
+
+
+def test_a_lone_open_plate_is_not_seated_on_itself():
+    res = checks.check_mesh(from_dump(_dump(BASE, _plate("x", 2.0))), TOL, checks.load_ranges(), build="from_source")
+    assert not any(lp["kind"] == "seated" for lp in res["details"]["open_loops"]) and res["status"] == "fail"
+
+
+def test_the_from_spec_path_keeps_its_strict_mesh_rules():
+    r = checks.load_ranges()
+    decor = checks.check_mesh(from_dump(_dump(BASE, _plate("decor", 2.0))), TOL, r)
+    assert decor["status"] == "fail" and decor["details"]["decor_triangles_left_out"] == 0
+    slab = _quad_box("slabs", (0, 0, 3.0), (10, 10, 3.3), 21)
+    soup = from_dump(_dump(slab, _tube("walls", 3.3, 6.0)))
+    assert checks.check_mesh(soup, TOL, r, slabs={"L1": None})["details"]["slabs_not_inset"] == ["L1"]
+    m = _Mesh()
+    ring = Polygon([[2, 2], [6, 2], [6, 5], [2, 5]])
+    fs.planes_along(m, ring, 6.6, 9.0, 24)
+    d = m.mesh("superstructure")
+    d.pop("polygons", None)
+    roof = _quad_box("slabs", (0, 0, 6.3), (10, 10, 6.6), 21)
+    res = checks.check_mesh(from_dump(_dump(roof, d)), TOL, r, structures=[(ring, 6.6, 9.0)])
+    assert "roof-structure-top" not in {lp["kind"] for lp in res["details"]["open_loops"]}
+
+
+def test_elements_capped_at_opposite_ends_are_two_types():
+    sc = fs.Scene()
+    sec = shapely.geometry.polygon.orient(Polygon([[0, 3.0], [0.2, 3.0], [0.2, 3.3], [0, 3.3]]), 1.0)
+    for a0, caps in ((0.0, (True, False)), (5.0, (False, True))):
+        one = _Mesh()
+        fs.extrude(one, ("s", np.array([1.0, 0.0]), np.array([0.0, -1.0]), sec, a0, a0 + 2.0), 26, caps)
+        sc.instance("bands", one, {"section_points": 4})
+    assert len(sc.dump()["meshes"]) == 2
+
+
+def test_a_thin_bridge_does_not_cut_a_section_apart():
+    sec = shapely.box(0, 0, 0.4, 0.4).union(shapely.box(0.6, 0, 1.0, 0.4)).union(shapely.box(0, 0.4, 1.0, 0.44))
+    c = fs.clean_section(sec)
+    assert c.area == pytest.approx(sec.area, rel=0.15) and c.hausdorff_distance(sec) < 0.1
+
+
+def _with(dump, modules, name, mesh, build_as, mid):
+    mesh = {**mesh, "name": name}
+    mesh.pop("polygons", None)
+    mesh["material_ids"] = [0] * len(mesh["triangles"])
+    mesh["polygon_sizes"] = [3] * len(mesh["triangles"])
+    dump["meshes"].append(mesh)
+    modules["modules"].append({"module": name.lower(), "ids": {name: mid}, "build_as": build_as,
+                               "parts": [{"source": name, "object": name, "slot": None}]})
+
+
+def test_decor_off_the_axes_and_flat_decor_are_kept_as_source_faces():
+    dump, modules = _source()
+    v, t = _prism([[0, 0], [0.4, 0], [0.4, 0.3], [0, 0.3]], 0.0, 3.0)
+    a = np.radians(23)
+    v = v @ np.array([[np.cos(a), np.sin(a), 0], [-np.sin(a), np.cos(a), 0], [0, 0, 1]]) + [7.0, -1.0, 0.0]
+    sheet_v = [[1, -0.5, 1], [1.5, -0.5, 1], [1.5, -0.5, 2], [1, -0.5, 2]]
+    both = {"vertices": v.tolist() + sheet_v,
+            "triangles": t.tolist() + [[i + len(v) for i in tr] for tr in ([0, 1, 2], [0, 2, 3])]}
+    _with(dump, modules, "Odd", both, "boxes", 26)
+    _, _, report, scene = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["decor"]["kept_as_source_faces"] == {"pieces": 2, "triangles": len(t) + 2, "degenerate": 0}
+    assert "decor_as_source" in {ob["group"] for ob in scene["objects"]}
+
+
+def test_a_deck_with_no_underside_is_its_plane_and_an_enclosure_keeps_a_source_top():
+    dump, modules = _source()
+    deck = {"vertices": [[0, 10.5, 3.3], [10, 10.5, 3.3], [10, 12, 3.3], [0, 12, 3.3]], "triangles": [[0, 1, 2], [0, 2, 3]]}
+    _with(dump, modules, "Deck", deck, "deck_boxes", 22)
+    _with(dump, modules, "Screen", _quad_box("Screen", (2, 2, 6.6), (6, 5, 9.0)), "planes_enclosure", 24)
+    model, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["terraces"]["decks_as_plane_no_underside"] == 1
+    terr = next(m for m in model["meshes"] if m["name"] == "terraces")
+    assert min(p[2] for p in terr["vertices"]) == pytest.approx(3.3)          # no thickness made up
+    assert report["superstructure"]["enclosure_top"] is True
+
+
+def test_a_storey_band_takes_its_source_id():
+    dump, modules = _source()
+    m = _Mesh()
+    for lo, hi in (((0.05, -0.1, 3.4), (9.95, 0, 3.7)), ((10, 0.05, 3.4), (10.1, 9.95, 3.7)),   # apart at
+                   ((0.05, 10, 3.4), (9.95, 10.1, 3.7)), ((-0.1, 0.05, 3.4), (0, 9.95, 3.7))):    # the corners
+        fs._box(m, (np.zeros(2), np.array([1.0, 0.0]), np.array([0.0, 1.0])), lo, hi, 0)
+    _with(dump, modules, "Cornice", m.mesh("Cornice"), "boxes", 17)
+    _, _, report, scene = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["decor"]["storey_bands"] == 1
+    frames = [ob["mesh"] for ob in scene["objects"] if ob["group"] == "storey_bands"]
+    assert frames and all(set(scene["meshes"][f]["material_ids"]) == {17} for f in frames)
+
+
+def test_complexity_fails_unbudgeted_groups_and_missing_metrics():
+    from twinqa.geometry.complexity import check_complexity
+    sq = [[0, 0, 0], [1, 0, 0], [1, 1, 0]]
+    other = _scene({"a": _m(sq, meta={"section_points": 4})}, [{"name": "a", "group": "other", "mesh": "a"}])
+    r = check_complexity(other, {**CX, "total_max": 100})
+    assert r["status"] == "fail" and r["details"]["unbudgeted_groups"] == ["other"]
+    for meta in ({}, {"section_points": 8}):
+        r = check_complexity(_scene({"a": _m(sq, meta=meta)}, [{"name": "a", "group": "piers", "mesh": "a"}]), CX)
+        assert r["status"] == "fail" and r["details"]["metrics_missing"] == ["a"]

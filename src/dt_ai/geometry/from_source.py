@@ -758,7 +758,7 @@ def inset_panels(mesh: _Mesh, v, t, stor, mid, gap=0.005, scene=None):
             target.quad([b[0], f[0], f[3], b[3]], mid, [-x for x in u3])
             target.quad([f[1], b[1], b[2], f[2]], mid, u3)       # no back face: it lies in the wall
             if target is not mesh:
-                scene.instance("dark_inserts", target)
+                scene.instance("dark_inserts", target, {"section_points": 4, "silhouette_dev_m": 0.0})   # a box
         n_out += 1
     return n_out
 
@@ -812,13 +812,13 @@ class Scene:
             self.objects.append({"name": name, "group": group, "mesh": name, "location": [0.0, 0.0, 0.0]})
 
     def instance(self, group, mesh: _Mesh, meta=None):
-        """An element of a type. The type is its geometry (twinqa `geometry_key`: vertices to the mm from its bbox
-        low corner, triangle ids): the first element's mesh, moved to that corner, is the type's mesh; every element
+        """An element of a type. The type is its geometry (twinqa `geometry_key`: its faces to the mm from its
+        bbox low corner, with their ids): the first element's mesh, moved to that corner, is the type's mesh; every element
         is an object placing it at its own corner. Copies are instances by construction (translation only)."""
         d = mesh.mesh("")
         v = np.asarray(d["vertices"], float)
         o = v.min(axis=0)
-        key = (group, geometry_key(v - o, d["material_ids"]))     # the key of what is stored
+        key = (group, geometry_key({**d, "vertices": v - o}))      # the key of what is stored
         if key not in self._types:
             self._count[group] = self._count.get(group, 0) + 1
             name = f"{group}_type{self._count[group]:03d}"
@@ -909,9 +909,11 @@ def clean_section(sec):
     """A section reduced by pattern primitive-first: notches and fins under PF_STEP_M closed and opened away, steps
     under it collapsed, at most PF_MAX_VERTS points; None when nothing is left."""
     r = PF_STEP_M / 2
-    g = sec.buffer(r, join_style="mitre").buffer(-r, join_style="mitre")        # notches under the step close
-    g = g.buffer(-r, join_style="mitre").buffer(r, join_style="mitre")         # fins under the step go
-    if g.is_empty:
+    closed = sec.buffer(r, join_style="mitre").buffer(-r, join_style="mitre")   # notches under the step close
+    g = closed.buffer(-r, join_style="mitre").buffer(r, join_style="mitre")    # fins under the step go
+    if g.is_empty or len(shapely.get_parts(g)) > 1:   # opening must not cut the section apart (a thin bridge
+        g = closed                                    # between two masses): keep it whole (review 1 of #106)
+    if len(shapely.get_parts(g)) > 1:
         g = sec
     g = _collapse_steps(max(shapely.get_parts(g), key=lambda x: x.area))
     tol = 0.005
@@ -924,7 +926,7 @@ def clean_section(sec):
 
 def storey_bands(bands, stor, levels):
     """Storey bands of pattern primitive-first: band elements at one height (z range within BELT_MATCH_M) whose
-    length runs over BELT_SHARE of the storey contour. Returns [(z0, z1, projection, [band plans], storey name)]
+    length runs over BELT_SHARE of the storey contour. Returns [(z0, z1, projection, [band plans], storey name, id)]
     and the ids of the band elements they take."""
     groups = defaultdict(list)
     for i, b in enumerate(bands):
@@ -947,7 +949,9 @@ def storey_bands(bands, stor, levels):
                                 for pl in plans]))
         if proj <= 0.01:
             continue
-        out.append((z0, z1, proj, plans, name))
+        mids = [bands[i][7] if len(bands[i]) > 7 else 26 for i in ids]
+        mid = max(set(mids), key=lambda x: sum(bands[i][5] - bands[i][4] for i, m_ in zip(ids, mids) if m_ == x))
+        out.append((z0, z1, proj, plans, name, mid))    # the id of most of its source length (review 1 of #106)
         taken |= set(ids)
     return out, taken
 
@@ -1036,10 +1040,12 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
     plans (for the openings' ids)."""
     els, plates, odd_n = [], [], 0
     sil = {"boxed": 0, "profile": 0}
+    kept = {"pieces": 0, "triangles": 0, "degenerate": 0}
+    as_source = _Mesh()
     for k in keys:
         v, t, mod = parts[k]
         mid = mod["ids"].get(k, 26)
-        _, t = split_flat(v, t)
+        flat, t = split_flat(v, t)
         odd = []
         for e in profile_elements(v, t, centre, odd=odd):
             axis, u, n, sec, a0, a1 = e[:6]
@@ -1058,19 +1064,30 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
                 sil["profile"] += 1
             els.append([axis, u, n, c, a0, a1, [], mid])
         odd_n += len(odd)
+        # nothing of the source is lost (review 1 of #106): flat pieces and pieces no section is taken of (turned
+        # off the axes, chamfers) are kept as the source's own faces, counted
+        kept["pieces"] += len(odd) + (len(_pieces(v, flat)) if len(flat) else 0)
+        for tri in [x for x in [flat] + odd if len(x)]:
+            for a, b, c3 in v[np.asarray(tri)]:
+                nrm = np.cross(b - a, c3 - a)
+                if min(np.linalg.norm(b - a), np.linalg.norm(c3 - b), np.linalg.norm(a - c3)) < 1e-5                         or np.linalg.norm(nrm) < 1e-9:       # a degenerate source triangle: no area, counted
+                    kept["degenerate"] += 1
+                    continue
+                for target in (mesh, as_source):
+                    target.tri([a.tolist(), b.tolist(), c3.tolist()], mid, nrm.tolist())
+                kept["triangles"] += 1
     piers = [e for e in els if e[0] == "z"]
     bands = [e for e in els if e[0] == "s"]
     belts, taken = storey_bands(bands, stor, levels)
     pier_plans = [(_plan(p)[0], p[4], p[5]) for p in piers]
     frames, frame_len = 0, 0.0
-    for z0, z1, proj, plans, name in belts:
+    for z0, z1, proj, plans, name, mid in belts:
         src = shapely.union_all(plans).buffer(0.05)
         deep = shapely.union_all([pp for pp, a, b in pier_plans if a < z1 and b > z0] or [Polygon()])
 
         def keep_at(p, nrm, src=src, deep=deep):
             pt = shapely.Point(*p)
             return src.covers(pt) or deep.covers(pt)
-        mid = 26
         pcs, L = band_frame(mesh, stor[name]["poly"], z0, z1, proj, keep_at, mid)
         if scene is not None:
             one = _Mesh()
@@ -1096,6 +1113,8 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
             meta = {"section_points": len(sec.exterior.coords) - 1,
                     "silhouette_dev_m": round(float(sec.hausdorff_distance(shapely.box(*sec.bounds))), 4)}
             scene.instance(kind + "s" if not kind.endswith("y") else kind[:-1] + "ies", one, meta)
+    if scene is not None and as_source.faces:
+        scene.unique("decor_as_source", "decor_as_source", as_source)
     for p in piers:                                     # piers run through: never cut
         extrude(mesh, p, p[7])
         _record(p, (True, True), "pier")
@@ -1132,7 +1151,7 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
         types[(kind, key)].append((origin, e, caps))
     rep = {"storey_band_frames": frames, "storey_bands": len(belts), "frame_length_m": round(frame_len, 1),
            "piers": len(piers), "other_bands": len(others), "band_stops_in_piers": stops,
-           "thin_plates_as_ids": len(plates), "no_section": odd_n,
+           "thin_plates_as_ids": len(plates), "no_section": odd_n, "kept_as_source_faces": kept,
            "section_points_max": max([len(e[3].exterior.coords) - 1 for e in els] or [0]),
            "silhouette_test": sil, "elements": len(elements), "types": len(types),
            "type_catalogue": sorted(([k[0], len(v)] for k, v in types.items()), key=lambda x: -x[1])[:40]}
@@ -1315,14 +1334,19 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
     rep["slabs"] = {"slabs": [x[0] for x in slabs], "cdt_cells": fb}
     done("slabs", m, [sk])
 
-    decks = []
+    decks, planes = [], 0
     m, fb = _Mesh(), 0
     for k in keys("deck_boxes"):
         for name, top, under, outline in slabs_of(*parts[k][:2], levels):
             decks.append((name, top, outline))      # off the slab by plate_gap_m: a part of its own
-            fb += slab_box(m, outline, top, (under if under is not None else top - 0.2) + 0.005,
-                           pid(k, 22), pid(k, 22), pid(k, 22))
-    rep["terraces"] = {"decks": [x[0] for x in decks], "cdt_cells": fb}
+            if under is None:                       # the source has no underside: its plane, no thickness made
+                pieces, cdt = _fill(outline, FILL_STEP_M, (outline.bounds[0], outline.bounds[1]))   # up
+                for q in pieces:
+                    (m.quad if len(q) == 4 else m.tri)([[*x, top] for x in q], pid(k, 22), [0, 0, 1])
+                fb, planes = fb + cdt, planes + 1   # (review 1 of #106)
+                continue
+            fb += slab_box(m, outline, top, under + 0.005, pid(k, 22), pid(k, 22), pid(k, 22))
+    rep["terraces"] = {"decks": [x[0] for x in decks], "cdt_cells": fb, "decks_as_plane_no_underside": planes}
     done("terraces", m, keys("deck_boxes"))
 
     glass = keys("openings_glass")
@@ -1359,9 +1383,15 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         ev, et = parts[k][:2]
         q = ev[np.unique(et)]
         ring = footprint_ring(ev, et)
-        planes_along(m, ring, float(q[:, 2].min()), float(q[:, 2].max()), pid(k, 24))   # no top: the source
-                                                                                          # has none (user 2026-10-14)
-        enclosure = (ring, float(q[:, 2].max()))
+        z1 = float(q[:, 2].max())
+        c = ev[et]
+        nz = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
+        cap = (np.abs(nz[:, 2]) > 0.99 * np.maximum(np.linalg.norm(nz, axis=1), 1e-12))             & (np.abs(c[:, :, 2] - z1).max(axis=1) <= 0.01)
+        cover = shapely.union_all([Polygon(x[:, :2]) for x in c[cap] if Polygon(x[:, :2]).area > 0] or [Polygon()])
+        top = cover.area >= 0.5 * ring.area         # a top only where the source has one (user 2026-10-14: OBJ03
+        planes_along(m, ring, float(q[:, 2].min()), z1, pid(k, 24), top=top)   # has none; review 1 of #106)
+        rep.setdefault("superstructure", {})["enclosure_top"] = bool(top)
+        enclosure = (ring, z1)
     for k in keys("boxes_seated"):
         for (o, u, nn), lo, hi in decor_elements(*parts[k][:2]):
             _box(m, (o, u, nn), (lo[0], lo[1], lo[2] + LIFT_M), hi, pid(k, 25))
