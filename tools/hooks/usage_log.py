@@ -5,7 +5,8 @@
   py -3 tools/hooks/usage_log.py stats [--days N]   counts per subagent, project skill and command (zeros too)
 
 A line: time (UTC), session_id, branch, kind (agent | skill | command), name, command (the last /command of the
-session before the call, or null). The log lives in the main checkout (`git rev-parse --git-common-dir`/..), so
+session before the call, or null); a command line also keeps the hook's transcript path (`save_transcript.py`).
+The log lives in the main checkout (`git rev-parse --git-common-dir`/..), so
 every worktree writes one file; it is local and git-ignored. Logging never blocks or fails a call.
 """
 import datetime
@@ -80,7 +81,8 @@ def entry(payload):
         return None
     return {"time": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
             "session_id": payload.get("session_id"), "branch": _git("branch", "--show-current"), "kind": kind,
-            "name": name, "command": None if kind == "command" else last_command(payload.get("transcript_path"))}
+            "name": name, "command": None if kind == "command" else last_command(payload.get("transcript_path")),
+            **({"transcript": payload.get("transcript_path")} if kind == "command" else {})}
 
 
 def write(payload):

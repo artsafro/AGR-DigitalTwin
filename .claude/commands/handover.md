@@ -19,9 +19,10 @@ Do these steps in order. Talk to the user in Russian; files stay in English.
    no push, no PR.
 3. **Transcript.** Run `py -3 tools/hooks/save_transcript.py` (after step 2, so the PR number is known). It
    copies this session's transcript to `logs/transcripts/` of the main checkout and prints the path; that path
-   goes into the handoff's `Transcript:` line. It never overwrites a copy: a second handover of the same session
-   on the same branch and PR keeps the first copy (exit 1, say so). No transcript found (exit 2): `Transcript: -`
-   and a line under "Rules broken".
+   goes into the handoff's `Transcript:` line. It takes the session from this `/handover`'s hook entry in
+   `logs/agent-usage.jsonl`, never a guess. Exit 1: this session's copy for this branch and PR exists and is kept -
+   name it in `Transcript:`. Exit 2 (no transcript, git or I/O failure; nothing is written): `Transcript: -` and the
+   message under "Rules broken".
 4. **Handoff.** Rewrite `docs/HANDOFF.md` from `docs/HANDOFF.template.md`: every section, facts only, under 7000
    characters. `Commit:` is HEAD after step 1. Put in it what the next session cannot get from git: user
    decisions not yet in code (with dates), questions waiting for the user, rules broken this session, local

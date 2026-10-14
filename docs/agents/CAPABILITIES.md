@@ -133,8 +133,9 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
   `logs/agent-usage.jsonl` in the main checkout (git-ignored); `stats --days N`.
 - `tools/hooks/save_transcript.py` (#121): `/handover` copies the session transcript to `logs/transcripts/
   <branch>-pr<N>-<session>.jsonl` in the main checkout (git-ignored), never over an existing copy; the handoff's
-  `Transcript:` line names it and `session_context.py` prints it. Status: IN BRANCH until merged; found the live
-  desktop session's transcript in its project folder (2026-10-15).
+  `Transcript:` line names it and `session_context.py` prints it. The session comes from the `/handover` entry
+  that `usage_log.py prompt` writes (session id and transcript path from the hook input), never from file times.
+  Status: IN BRANCH until merged; the project-folder naming matched the live desktop session (2026-10-15).
 - Commands: `/handover`, `/takeover` (ends with 7-day usage), `/reuse-scan` (+ `tools/reuse_candidates.py`).
 - Tests: `tests/test_session_context.py`, `tests/test_context_watch.py`, `tests/test_usage_hooks.py`,
   `tests/test_save_transcript.py`.

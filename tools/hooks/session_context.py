@@ -29,7 +29,7 @@ LIMIT = 9500                                         # under the 10 000-characte
 LINE = 300                                           # one commit subject, PR title or status line
 BRANCH_LINE = re.compile(r"^Branch:\s*`([^`]+)`", re.M)
 COMMIT_LINE = re.compile(r"Commit:\s*`([0-9a-f]{7,40})`")
-TRANSCRIPT_LINE = re.compile(r"^Transcript:\s*`([^`]+)`", re.M)
+TRANSCRIPT_LINE = re.compile(r"^Transcript:[ \t]*`([^`\n]+)`", re.M)
 
 
 def _root():
@@ -104,8 +104,11 @@ def transcript_line(text):
     m = TRANSCRIPT_LINE.search(text or "")
     if not m or m.group(1).strip() in ("", "-"):
         return None
-    path = Path(m.group(1))
-    return f"Transcript: {path}" + ("" if path.is_file() else " (missing on this machine)")
+    try:
+        exists = Path(m.group(1)).is_file()
+    except (OSError, ValueError):                    # a malformed path never breaks the context
+        exists = False
+    return f"Transcript: {m.group(1)}" + ("" if exists else " (missing on this machine)")
 
 
 def _line(text):
