@@ -21,6 +21,15 @@ The simplest form that holds the silhouette, not a box by default:
 - a pilaster or a pier is a box or a profile extrusion, running through, never cut by bands;
 - fluting, close panels, rustication, joints, chamfers and tile joints are never geometry: normal / bump.
 
+## 1a. Decisions on OBJ03 (user 2026-10-14)
+
+- Thin plates (2 cm sills and heads) are not geometry: the opening's own face takes their id - a sill under the
+  opening colours the opening's bottom reveal face (sill id), a head plate its top reveal face (head id).
+- The storey band frame runs round the whole storey contour; where the source has no band and the frame shows on
+  the facade (in plan it changes the silhouette) it is cut on both sides and the piece deleted; behind a pier it
+  may stay.
+- Pier profile steps of 0.07-0.10 m are kept (profile, not a box).
+
 ## 2. Profile reduction
 
 Profile steps under 0.07 m collapse. 0.07-0.10 m: when the element has its own material / id or reads as a band
