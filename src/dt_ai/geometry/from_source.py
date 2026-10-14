@@ -1042,14 +1042,21 @@ def band_frame(mesh: _Mesh, poly, z0, z1, proj, keep_at, mid):
 KEEP_ON_M = 0.003           # a kept source face within the weld of a built element's solid is that element's face
 
 
-def _inside(e, p, w):
-    """A point on or inside an extruded element's solid (within w): its section in the element's frame."""
+def _covered(e, tri, w):
+    """A whole triangle on or inside an extruded element's solid (within w): its axis range inside the element's and
+    its projection along the axis covered by the section (review 3 of #106: vertices alone miss a notch)."""
     axis, u, n, sec, a0, a1 = e[:6]
+    tri = np.asarray(tri, float)
     if axis == "z":
-        q, a = (float(p[:2] @ u), float(p[:2] @ n)), float(p[2])
+        q, a = np.column_stack([tri[:, :2] @ u, tri[:, :2] @ n]), tri[:, 2]
     else:
-        q, a = (float(p[:2] @ n), float(p[2])), float(p[:2] @ u)
-    return a0 - w <= a <= a1 + w and sec.buffer(w).covers(shapely.Point(q))
+        q, a = np.column_stack([tri[:, :2] @ n, tri[:, 2]]), tri[:, :2] @ u
+    if a.min() < a0 - w or a.max() > a1 + w:
+        return False
+    g = Polygon(q)
+    if g.area < 1e-9:                                   # seen edge-on: its outline
+        g = shapely.LineString(q[np.argsort(q[:, 0] + q[:, 1] * 1e-3)][[0, -1]]) if len(np.unique(q, axis=0)) > 1             else shapely.Point(q[0])
+    return sec.buffer(w).covers(g)
 
 
 def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=None):
@@ -1172,7 +1179,7 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
     tree = shapely.STRtree([_plan(e)[0].buffer(KEEP_ON_M) for e in built]) if built else None
     for a, b, c3, nrm, mid in pending:
         hits = tree.query(shapely.Point(*((a + b + c3) / 3)[:2])) if tree is not None else []
-        if any(all(_inside(built[h], x, KEEP_ON_M) for x in (a, b, c3)) for h in hits):
+        if any(built[h][7] == mid and _covered(built[h], (a, b, c3), KEEP_ON_M) for h in hits):   # same id only
             kept["covered_by_built"] += 1
             continue
         for target in (mesh, as_source):
@@ -1423,6 +1430,8 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         cap = (np.abs(nz[:, 2]) > 0.99 * np.maximum(np.linalg.norm(nz, axis=1), 1e-12))             & (np.abs(c[:, :, 2] - z1).max(axis=1) <= 0.01)
         cover = shapely.union_all([Polygon(x[:, :2]) for x in c[cap] if Polygon(x[:, :2]).area > 0] or [Polygon()])
         inner = ring.buffer(-ENCLOSURE_EDGE_M)      # tops of the screen's own slats on its edge are no top
+        if inner.is_empty or inner.area < 0.1 * ring.area:
+            inner = ring                            # a narrow screen has no such band (review 3 of #106)
         share = cover.intersection(inner).area / inner.area if inner.area > 0 else 0.0
         top = share >= 0.98                        # a top only where the source has one (user 2026-10-14: OBJ03
         planes_along(m, ring, float(q[:, 2].min()), z1, pid(k, 24), top=top)   # has none; review 1 of #106)

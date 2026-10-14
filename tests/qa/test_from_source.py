@@ -587,11 +587,15 @@ def test_a_kept_source_face_on_a_built_pier_is_not_built_twice():
 
 def test_the_from_spec_path_finds_a_separate_slab_box_a_solid_slab():
     r = checks.load_ranges()
-    body = _quad_box("walls", (0, 0, 0), (10, 10, 3.0), 1)                 # the largest part
-    box = _quad_box("slabs", (0, 0, 3.0), (9.6, 9.6, 3.3), 21)            # a separate closed slab box
+    m = _Mesh()
+    fs.slab_box(m, Polygon([[0, 0], [10, 0], [10, 10], [0, 10]]), 3.0, 0.0, 1, 1, 1, step=1.0)
+    body = m.mesh("walls")                                                  # the largest part (many quads)
+    body.pop("polygons", None)
+    box = _quad_box("slabs", (0.2, 0.2, 3.05), (9.8, 9.8, 3.3), 21)       # a separate closed slab box
     soup = from_dump(_dump(body, box))
     strict = checks.check_mesh(soup, TOL, r, slabs={"L1": None})
     assert strict["details"]["slabs_not_inset"] == ["L1"] and strict["status"] == "fail"
+    assert strict["details"]["solid_slab_m2"].get("L1") == pytest.approx(9.6 * 9.6, rel=0.01)   # its top is solid
 
 
 def test_slat_tops_on_the_screen_edge_are_no_enclosure_top():
@@ -604,3 +608,29 @@ def test_slat_tops_on_the_screen_edge_are_no_enclosure_top():
     _with(dump, modules, "Screen", screen, "planes_enclosure", 24)
     _, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
     assert report["superstructure"]["enclosure_top"] == "none"
+
+
+# ------------------------------------------------------------------------------- review 3 of #106 (regressions)
+
+def test_a_narrow_screen_keeps_its_full_top():
+    dump, modules = _source()
+    _with(dump, modules, "Screen", _quad_box("Screen", (2, 2, 6.6), (6, 2.5, 9.0)), "planes_enclosure", 24)
+    _, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["superstructure"]["enclosure_top"] == "full"
+
+
+def test_a_face_over_a_notch_is_not_covered_by_the_pier():
+    l_shape = Polygon([(0, 0), (2, 0), (2, .5), (.5, .5), (.5, 2), (0, 2)])
+    pier = ("z", np.array([1.0, 0.0]), np.array([0.0, 1.0]), l_shape, 0.0, 3.0, [], 26)
+    assert not fs._covered(pier, [(2, .5, 1), (.5, 2, 1), (.5, .5, 1)], 0.003)
+    assert fs._covered(pier, [(0, 0, 1), (2, 0, 1), (0, 2, 1)], 0.003) is False
+    assert fs._covered(pier, [(0, 0, 1), (2, 0, 1), (2, 0, 2)], 0.003)      # on its front face
+
+
+def test_a_sheet_of_another_id_on_a_pier_is_kept():
+    dump, modules = _source()
+    sheet = {"vertices": [[5.0, -0.25, 1.0], [5.6, -0.25, 1.0], [5.6, -0.25, 2.0], [5.0, -0.25, 2.0]],
+             "triangles": [[0, 1, 2], [0, 2, 3]]}
+    _with(dump, modules, "Sheet", sheet, "boxes", 17)
+    _, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["decor"]["kept_as_source_faces"]["triangles"] == 2
