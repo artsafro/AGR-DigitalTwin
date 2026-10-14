@@ -71,3 +71,7 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
 - 2026-10-14 user review of v003 (markers ISSUE_01-07): piers need their real section per storey; small balconies
   are sloped profiles; the screen enclosure has no top; the dark horizontal inserts (slots 70/72) were missing.
   v005 (`outputs/from-source-v005`, local): fixed - 140 013 triangles, all 10 checks pass (not independent).
+- 2026-10-14 user reviews 2-3 (markers 08-14): decor one mesh per run (seams texture), bands main and continuous
+  through piers and round corners, piers recessed 5 mm into bands with no hidden caps, collars round deeper piers,
+  dark inserts as boxes set into the wall with no back face. v006 129 867 triangles, 10/10; v007 297 452
+  (budget exceeded, collars 106 410) - reported to the user, not optimised. Report: `REPORT-from-source.md`.
