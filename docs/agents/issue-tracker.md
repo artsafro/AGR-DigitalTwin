@@ -56,6 +56,9 @@ Board rules: `docs/agents/KANBAN.md`. IDs (project `PVT_kwHODNABwc4BnB8W`):
 - **Find the card of issue N** (from the issue side; the project's own item list showed 0 items right after
   the board was created): `gh api graphql -f query='{repository(owner:"artsafro",name:"AGR-DigitalTwin"){issue(number:N){projectItems(first:5){nodes{id project{number}}}}}}' --jq '.data.repository.issue.projectItems.nodes[] | select(.project.number==1) | .id'`
 - **Add an issue**: `gh project item-add 1 --owner artsafro --url https://github.com/artsafro/AGR-DigitalTwin/issues/N`
+  An item added through the API may stay hidden from the board and from the project's item list
+  (2026-10-14: 30 of 30 hidden). `archiveProjectV2Item` then `unarchiveProjectV2Item` on it made it
+  visible, sometimes only on the second or third try; adding it in the web UI always works.
 - **Set a field**: `gh project item-edit --project-id PVT_kwHODNABwc4BnB8W --id <item id> --field-id <field id> --single-select-option-id <option id>`
 
 ## Project labels
