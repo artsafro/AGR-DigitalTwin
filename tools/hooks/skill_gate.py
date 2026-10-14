@@ -31,21 +31,28 @@ def _matches(name, skill):
 
 
 def loaded(skill, payload):
+    """Success evidence only (review 2 of #107): the user ran /<skill> (a genuine command record), or a Skill call
+    returned success (`toolUseResult.success` with its `commandName`), or the PostToolUse log has it (PostToolUse
+    fires on success only). A tag quoted in a tool result or a failed Skill call does not count."""
     transcript = payload.get("transcript_path")
     try:
-        for line in Path(transcript).read_text(encoding="utf-8", errors="replace").splitlines():
-            if skill not in line:
-                continue
-            if f"<command-name>/{skill}</command-name>" in line or re.search(
-                    r"<command-name>/[\w-]+:" + re.escape(skill) + "</command-name>", line):
-                return True
+        text = Path(transcript).read_text(encoding="utf-8", errors="replace")
+    except (OSError, TypeError):
+        return True                                  # cannot tell: let it pass (documented)
+    for line in text.splitlines():
+        if skill not in line:
+            continue
+        try:
             entry = json.loads(line)
-            for block in (entry.get("message") or {}).get("content") or []:
-                if isinstance(block, dict) and block.get("type") == "tool_use" and block.get("name") == "Skill" \
-                        and _matches((block.get("input") or {}).get("skill"), skill):
-                    return True
-    except (OSError, TypeError, ValueError):
-        return True                                  # cannot tell: let it pass
+        except ValueError:
+            continue
+        if not isinstance(entry, dict):
+            continue
+        if _matches(usage_log.command_of(entry), skill):
+            return True
+        result = entry.get("toolUseResult")
+        if isinstance(result, dict) and result.get("success") is True and _matches(result.get("commandName"), skill):
+            return True
     return any(r.get("session_id") == payload.get("session_id") and r.get("kind") in ("skill", "command")
                and _matches(r.get("name"), skill) for r in usage_log.read())
 

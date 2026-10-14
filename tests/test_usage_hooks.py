@@ -34,11 +34,20 @@ def transcript(tmp_path, *entries):
 
 
 def command(name):
-    return {"type": "user", "message": {"content": f"<command-name>/{name}</command-name>\n<command-args></command-args>"}}
+    return {"type": "user", "message": {"content": f"<command-message>{name}</command-message>\n"
+                                                   f"<command-name>/{name}</command-name>\n<command-args></command-args>"}}
 
 
-def skill_call(name):
-    return {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Skill", "input": {"skill": name}}]}}
+def skill_call(name, success=True):
+    """The tool result of a Skill call, as Claude Code records it (toolUseResult.success, commandName)."""
+    return {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t1",
+                                                     "content": f"Launching skill: {name}"}]},
+            "toolUseResult": {"success": success, "commandName": name}}
+
+
+def quoted(text):
+    """A tool result that only quotes a command tag (a file read, a grep)."""
+    return {"type": "user", "message": {"content": [{"type": "tool_result", "tool_use_id": "t2", "content": text}]}}
 
 
 def test_hooks_are_wired():
@@ -67,6 +76,20 @@ def test_usage_log_records_agents_skills_and_commands(tmp_path):
     assert got == [("agent", "bench-runner", "takeover"), ("agent", "general-purpose", "takeover"),
                    ("skill", "blender-mcp", "takeover"), ("command", "handover", None)]
     assert all(r["session_id"] == "s1" and r["time"] for r in lines(log))
+
+
+def test_command_attribution_ignores_quoted_tags(tmp_path):        # review 2 of #107
+    log = tmp_path / "u.jsonl"
+    t = transcript(tmp_path, command("handover"), quoted("example: <command-name>/takeover</command-name>"))
+    run(LOG_HOOK, ["post"], {"session_id": "s", "transcript_path": str(t), "tool_name": "Agent",
+                             "tool_input": {"subagent_type": "bench-runner"}}, log)
+    assert lines(log)[0]["command"] == "handover"
+
+
+def test_reuse_candidates_fails_loudly_without_git(tmp_path):     # review 2 of #107
+    r = subprocess.run([sys.executable, str(ROOT / "tools/reuse_candidates.py")], capture_output=True, text=True,
+                       env={**os.environ, "PATH": str(tmp_path)})
+    assert r.returncode != 0 and "Job scripts" not in r.stdout
 
 
 def test_usage_log_never_fails(tmp_path):
@@ -99,6 +122,9 @@ def test_stats_counts_and_names_the_unused(tmp_path):
     ("mcp__3dsmax-mcp__inspect_mesh", skill_call("3dsmax-mcp:3dsmax-mcp-dev"), False),
     ("mcp__revit-http-2025__revit_ping", skill_call("blender-mcp"), True),
     ("mcp__github__get_me", None, False),
+    # review 2 of #107: a failed Skill call or a quoted tag is no load
+    ("mcp__blender__get_objects_summary", skill_call("blender-mcp", success=False), True),
+    ("mcp__blender__get_objects_summary", quoted("<command-name>/blender-mcp</command-name>"), True),
 ])
 def test_skill_gate(tmp_path, tool, loaded_by, denied):
     t = transcript(tmp_path, *([loaded_by] if loaded_by else []), {"type": "user", "message": {"content": "hi"}})

@@ -40,14 +40,26 @@ def log_path():
     return base / "logs" / "agent-usage.jsonl"
 
 
+def command_of(entry):
+    """The /command of a genuine command record (a user entry whose content is the command text itself), else None.
+    A tag quoted inside a tool result or a file is not a command (review 2 of #107)."""
+    content = (entry.get("message") or {}).get("content") if isinstance(entry, dict) else None
+    if entry.get("type") != "user" or not isinstance(content, str) or not content.lstrip().startswith("<command-"):
+        return None
+    m = COMMAND_TAG.search(content)
+    return m.group(1) if m else None
+
+
 def last_command(transcript):
     """The last /command the user ran in this session, from the transcript (None without one)."""
     found = None
     try:
         for line in Path(transcript).read_text(encoding="utf-8", errors="replace").splitlines():
             if "<command-name>" in line:
-                m = COMMAND_TAG.findall(line)
-                found = m[-1] if m else found
+                try:
+                    found = command_of(json.loads(line)) or found
+                except ValueError:
+                    continue
     except (OSError, TypeError):
         return None
     return found

@@ -83,7 +83,10 @@ def handoff_state():
     behind = _git("rev-list", "--count", f"{last}..HEAD") if last else None
     if behind and behind != "0":
         warnings.append(f"{behind} commit(s) after the last commit of {HANDOFF}: the handoff is behind HEAD")
-    dirty = (_git("status", "--porcelain") or "").splitlines()
+    status = _git("status", "--porcelain")
+    if status is None:                               # e.g. a broken index (review 2 of #107)
+        warnings.append("git status failed: uncommitted work is not verified")
+    dirty = (status or "").splitlines()
     if any(line[3:].strip() == HANDOFF for line in dirty):
         warnings.append(f"{HANDOFF} has uncommitted changes")
     others = [line for line in dirty if line[3:].strip() != HANDOFF]

@@ -22,7 +22,9 @@ MAX_BYTES = 200_000
 def git(*args):
     r = subprocess.run(["git", "-c", "core.quotepath=false", *args], cwd=ROOT, capture_output=True, text=True,
                        encoding="utf-8", errors="replace")
-    return r.stdout.splitlines() if r.returncode == 0 else []
+    if r.returncode != 0:                            # a failure is not a measured absence (review 2 of #107)
+        sys.exit(f"git {' '.join(args)} failed: {r.stderr.strip()}")
+    return r.stdout.splitlines()
 
 
 def scripts():

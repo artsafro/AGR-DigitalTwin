@@ -179,3 +179,10 @@ def test_an_unreadable_handoff_still_gives_context(repo):
     ctx = start(repo, "startup")
     assert "broken" in ctx and "uncommitted changes" in ctx
     assert run("precompact", {"trigger": "auto"}, repo) == ""
+
+
+def test_failed_git_status_is_a_warning(repo):                       # review 2 of #107
+    (repo / ".git/index").write_bytes(b"broken index")
+    ctx = start(repo, "startup")
+    assert "git status failed" in ctx and "Handoff: current" not in ctx
+    assert json.loads(run("precompact", {"trigger": "manual"}, repo))["decision"] == "block"
