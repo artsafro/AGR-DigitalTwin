@@ -435,6 +435,9 @@ def footprint_ring(v, t, simplify=0.02):
     return orient(Polygon(g.exterior).simplify(simplify, preserve_topology=True), 1.0)
 
 
+ENCLOSURE_EDGE_M = 0.3     # a screen's top is what covers it inside this band along its edge (slat tops are not)
+
+
 def planes_along(mesh: _Mesh, ring, z0, z1, mid, top=False):
     """One-sided planes on a ring from z0 to z1, facing out; with top, its fill at z1 facing up and the planes
     cut at every fill vertex on the ring (no T-junction at the top edge)."""
@@ -926,7 +929,8 @@ def clean_section(sec):
 
 def storey_bands(bands, stor, levels):
     """Storey bands of pattern primitive-first: band elements at one height (z range within BELT_MATCH_M) whose
-    length runs over BELT_SHARE of the storey contour. Returns [(z0, z1, projection, [band plans], storey name, id)]
+    length runs over BELT_SHARE of the storey contour. Returns [(z0, z1, projection, [band plans], storey name,
+    [their ids])]
     and the ids of the band elements they take."""
     groups = defaultdict(list)
     for i, b in enumerate(bands):
@@ -950,8 +954,7 @@ def storey_bands(bands, stor, levels):
         if proj <= 0.01:
             continue
         mids = [bands[i][7] if len(bands[i]) > 7 else 26 for i in ids]
-        mid = max(set(mids), key=lambda x: sum(bands[i][5] - bands[i][4] for i, m_ in zip(ids, mids) if m_ == x))
-        out.append((z0, z1, proj, plans, name, mid))    # the id of most of its source length (review 1 of #106)
+        out.append((z0, z1, proj, plans, name, mids))   # each source band's id (reviews 1, 2 of #106)
         taken |= set(ids)
     return out, taken
 
@@ -959,7 +962,10 @@ def storey_bands(bands, stor, levels):
 def band_frame(mesh: _Mesh, poly, z0, z1, proj, keep_at, mid):
     """Pattern primitive-first, a storey band: a frame on the storey contour - its front `proj` out of the wall,
     its back DECOR_INSET_M into the body (no back face), top and bottom - kept where keep_at(point on the front,
-    outward normal) holds, sampled every BELT_SAMPLE_M; a cut ends with a cap. Returns (pieces, length kept)."""
+    outward normal) holds, sampled every BELT_SAMPLE_M; a cut ends with a cap. `mid` is an id or a function of a
+    point on the front giving its id (a band of several source ids keeps each, review 2 of #106).
+    Returns (pieces, length kept)."""
+    mid_at = mid if callable(mid) else (lambda p: mid)
     ring = np.asarray(orient(poly, 1.0).exterior.coords)[:-1]
     front = _inset_ring(ring, -proj)                        # outward (a negative inset)
     back = _inset_ring(ring, DECOR_INSET_M)
@@ -1020,16 +1026,30 @@ def band_frame(mesh: _Mesh, poly, z0, z1, proj, keep_at, mid):
         pairs = [(j, j + 1) for j in range(m - 1)] + ([(m - 1, 0)] if closed else [])
         for a, b in pairs:
             e = F[b] - F[a]
-            mesh.quad([[*F[a], z0], [*F[b], z0], [*F[b], z1], [*F[a], z1]], mid, [e[1], -e[0], 0])     # front
-            mesh.quad([[*F[a], z1], [*F[b], z1], [*B[b], z1], [*B[a], z1]], mid, [0, 0, 1])             # top
-            mesh.quad([[*F[a], z0], [*B[a], z0], [*B[b], z0], [*F[b], z0]], mid, [0, 0, -1])            # bottom
+            mi = mid_at((F[a] + F[b]) / 2)
+            mesh.quad([[*F[a], z0], [*F[b], z0], [*F[b], z1], [*F[a], z1]], mi, [e[1], -e[0], 0])      # front
+            mesh.quad([[*F[a], z1], [*F[b], z1], [*B[b], z1], [*B[a], z1]], mi, [0, 0, 1])              # top
+            mesh.quad([[*F[a], z0], [*B[a], z0], [*B[b], z0], [*F[b], z0]], mi, [0, 0, -1])             # bottom
         if not closed:                                  # caps at the cut ends
             for j, sgn in ((0, -1), (m - 1, 1)):
                 d = (F[min(j + 1, m - 1)] - F[max(j - 1, 0)]) * sgn
-                mesh.quad([[*B[j], z0], [*F[j], z0], [*F[j], z1], [*B[j], z1]], mid, [d[0], d[1], 0])
+                mesh.quad([[*B[j], z0], [*F[j], z0], [*F[j], z1], [*B[j], z1]], mid_at(F[j]), [d[0], d[1], 0])
         pieces += 1
         kept_len += (t1 - t0)
     return pieces, kept_len
+
+
+KEEP_ON_M = 0.003           # a kept source face within the weld of a built element's solid is that element's face
+
+
+def _inside(e, p, w):
+    """A point on or inside an extruded element's solid (within w): its section in the element's frame."""
+    axis, u, n, sec, a0, a1 = e[:6]
+    if axis == "z":
+        q, a = (float(p[:2] @ u), float(p[:2] @ n)), float(p[2])
+    else:
+        q, a = (float(p[:2] @ n), float(p[2])), float(p[:2] @ u)
+    return a0 - w <= a <= a1 + w and sec.buffer(w).covers(shapely.Point(q))
 
 
 def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=None):
@@ -1040,8 +1060,8 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
     plans (for the openings' ids)."""
     els, plates, odd_n = [], [], 0
     sil = {"boxed": 0, "profile": 0}
-    kept = {"pieces": 0, "triangles": 0, "degenerate": 0}
-    as_source = _Mesh()
+    kept = {"pieces": 0, "triangles": 0, "degenerate": 0, "covered_by_built": 0}
+    as_source, pending, built = _Mesh(), [], []
     for k in keys:
         v, t, mod = parts[k]
         mid = mod["ids"].get(k, 26)
@@ -1073,21 +1093,23 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
                 if min(np.linalg.norm(b - a), np.linalg.norm(c3 - b), np.linalg.norm(a - c3)) < 1e-5                         or np.linalg.norm(nrm) < 1e-9:       # a degenerate source triangle: no area, counted
                     kept["degenerate"] += 1
                     continue
-                for target in (mesh, as_source):
-                    target.tri([a.tolist(), b.tolist(), c3.tolist()], mid, nrm.tolist())
-                kept["triangles"] += 1
+                pending.append((a, b, c3, nrm, mid))
     piers = [e for e in els if e[0] == "z"]
     bands = [e for e in els if e[0] == "s"]
     belts, taken = storey_bands(bands, stor, levels)
     pier_plans = [(_plan(p)[0], p[4], p[5]) for p in piers]
     frames, frame_len = 0, 0.0
-    for z0, z1, proj, plans, name, mid in belts:
+    for z0, z1, proj, plans, name, mids in belts:
         src = shapely.union_all(plans).buffer(0.05)
         deep = shapely.union_all([pp for pp, a, b in pier_plans if a < z1 and b > z0] or [Polygon()])
 
         def keep_at(p, nrm, src=src, deep=deep):
             pt = shapely.Point(*p)
             return src.covers(pt) or deep.covers(pt)
+
+        def mid(p, plans=plans, mids=mids):            # the id of the nearest source band (behind a pier too)
+            pt = shapely.Point(*p)
+            return mids[int(np.argmin([pl.distance(pt) for pl in plans]))]
         pcs, L = band_frame(mesh, stor[name]["poly"], z0, z1, proj, keep_at, mid)
         if scene is not None:
             one = _Mesh()
@@ -1113,10 +1135,9 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
             meta = {"section_points": len(sec.exterior.coords) - 1,
                     "silhouette_dev_m": round(float(sec.hausdorff_distance(shapely.box(*sec.bounds))), 4)}
             scene.instance(kind + "s" if not kind.endswith("y") else kind[:-1] + "ies", one, meta)
-    if scene is not None and as_source.faces:
-        scene.unique("decor_as_source", "decor_as_source", as_source)
     for p in piers:                                     # piers run through: never cut
         extrude(mesh, p, p[7])
+        built.append(p)
         _record(p, (True, True), "pier")
     stops = 0
     for b in others:                                    # other bands stop inside a pier
@@ -1145,7 +1166,20 @@ def decor_primitive_first(mesh: _Mesh, parts, keys, stor, levels, centre, scene=
             q = list(b)
             q[4], q[5] = a0, a1
             extrude(mesh, tuple(q), b[7], (ca, cb))
+            built.append(q)
             _record(q, (ca, cb), "balcony" if (b[3].bounds[2] - b[3].bounds[0]) > 0.6 and (a1 - a0) < 3.0 else "band")
+    # the kept source faces, less those on or inside a built element (no face twice, review 2 of #106)
+    tree = shapely.STRtree([_plan(e)[0].buffer(KEEP_ON_M) for e in built]) if built else None
+    for a, b, c3, nrm, mid in pending:
+        hits = tree.query(shapely.Point(*((a + b + c3) / 3)[:2])) if tree is not None else []
+        if any(all(_inside(built[h], x, KEEP_ON_M) for x in (a, b, c3)) for h in hits):
+            kept["covered_by_built"] += 1
+            continue
+        for target in (mesh, as_source):
+            target.tri([a.tolist(), b.tolist(), c3.tolist()], mid, nrm.tolist())
+        kept["triangles"] += 1
+    if scene is not None and as_source.faces:
+        scene.unique("decor_as_source", "decor_as_source", as_source)
     types = defaultdict(list)
     for kind, key, origin, e, caps in elements:
         types[(kind, key)].append((origin, e, caps))
@@ -1388,9 +1422,18 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         nz = np.cross(c[:, 1] - c[:, 0], c[:, 2] - c[:, 0])
         cap = (np.abs(nz[:, 2]) > 0.99 * np.maximum(np.linalg.norm(nz, axis=1), 1e-12))             & (np.abs(c[:, :, 2] - z1).max(axis=1) <= 0.01)
         cover = shapely.union_all([Polygon(x[:, :2]) for x in c[cap] if Polygon(x[:, :2]).area > 0] or [Polygon()])
-        top = cover.area >= 0.5 * ring.area         # a top only where the source has one (user 2026-10-14: OBJ03
+        inner = ring.buffer(-ENCLOSURE_EDGE_M)      # tops of the screen's own slats on its edge are no top
+        share = cover.intersection(inner).area / inner.area if inner.area > 0 else 0.0
+        top = share >= 0.98                        # a top only where the source has one (user 2026-10-14: OBJ03
         planes_along(m, ring, float(q[:, 2].min()), z1, pid(k, 24), top=top)   # has none; review 1 of #106)
-        rep.setdefault("superstructure", {})["enclosure_top"] = bool(top)
+        partial = 0
+        if 0.0 < share < 0.98:                     # a partial top: the source's own faces, its shape kept
+            for x in c[cap]:                       # (review 2 of #106)
+                if inner.intersects(Polygon(x[:, :2])):
+                    m.tri(x.tolist(), pid(k, 24), [0, 0, 1])
+                    partial += 1
+        rep.setdefault("superstructure", {})["enclosure_top"] = "full" if top else ("partial, source faces"
+                                                                                  if partial else "none")
         enclosure = (ring, z1)
     for k in keys("boxes_seated"):
         for (o, u, nn), lo, hi in decor_elements(*parts[k][:2]):

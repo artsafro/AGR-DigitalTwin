@@ -21,8 +21,8 @@ FRAME_GROUPS = ("storey_bands",)
 
 
 def geometry_key(mesh: dict) -> str:
-    """A type's key: its faces - each polygon (or triangle) as the set of its vertices to the mm, relative to the
-    mesh's bbox low corner, with its id. Two meshes with the same key are the same element; a quad split along the
+    """A type's key: its faces - each polygon (or triangle) as the loop of its vertices to the mm (from its least
+    vertex, winding kept), relative to the mesh's bbox low corner, with its id. Two meshes with the same key are the same element; a quad split along the
     other diagonal is the same face (review 1 of #106: a vertex set alone made a cap at one end the twin of a cap
     at the other)."""
     v = np.asarray(mesh["vertices"], float)
@@ -30,13 +30,17 @@ def geometry_key(mesh: dict) -> str:
         return hashlib.sha1(b"").hexdigest()
     r = np.round(v - v.min(axis=0), 3)
     mids = mesh.get("material_ids", [])
+    def face(ids):                      # the loop from its least vertex, its order kept: the winding (the normal)
+        pts = [tuple(r[i]) for i in ids]   # is part of the face (review 2 of #106)
+        k = pts.index(min(pts))
+        return tuple(pts[k:] + pts[:k])
     if mesh.get("polygons"):
         faces, k = [], 0
         for poly, size in zip(mesh["polygons"], mesh["polygon_sizes"]):
-            faces.append((tuple(sorted(tuple(r[i]) for i in poly)), int(mids[k]) if k < len(mids) else -1))
+            faces.append((face(poly), int(mids[k]) if k < len(mids) else -1))
             k += size - 2
     else:
-        faces = [(tuple(sorted(tuple(r[i]) for i in t)), int(m)) for t, m in zip(mesh["triangles"], mids)]
+        faces = [(face(t), int(m)) for t, m in zip(mesh["triangles"], mids)]
     return hashlib.sha1(repr(sorted(faces)).encode()).hexdigest()
 
 

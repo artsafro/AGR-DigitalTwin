@@ -488,7 +488,8 @@ def test_decor_off_the_axes_and_flat_decor_are_kept_as_source_faces():
             "triangles": t.tolist() + [[i + len(v) for i in tr] for tr in ([0, 1, 2], [0, 2, 3])]}
     _with(dump, modules, "Odd", both, "boxes", 26)
     _, _, report, scene = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
-    assert report["decor"]["kept_as_source_faces"] == {"pieces": 2, "triangles": len(t) + 2, "degenerate": 0}
+    assert report["decor"]["kept_as_source_faces"] == {"pieces": 2, "triangles": len(t) + 2, "degenerate": 0,
+                                                     "covered_by_built": 0}
     assert "decor_as_source" in {ob["group"] for ob in scene["objects"]}
 
 
@@ -501,7 +502,7 @@ def test_a_deck_with_no_underside_is_its_plane_and_an_enclosure_keeps_a_source_t
     assert report["terraces"]["decks_as_plane_no_underside"] == 1
     terr = next(m for m in model["meshes"] if m["name"] == "terraces")
     assert min(p[2] for p in terr["vertices"]) == pytest.approx(3.3)          # no thickness made up
-    assert report["superstructure"]["enclosure_top"] is True
+    assert report["superstructure"]["enclosure_top"] == "full"
 
 
 def test_a_storey_band_takes_its_source_id():
@@ -526,3 +527,80 @@ def test_complexity_fails_unbudgeted_groups_and_missing_metrics():
     for meta in ({}, {"section_points": 8}):
         r = check_complexity(_scene({"a": _m(sq, meta=meta)}, [{"name": "a", "group": "piers", "mesh": "a"}]), CX)
         assert r["status"] == "fail" and r["details"]["metrics_missing"] == ["a"]
+
+
+# ------------------------------------------------------------------------------- review 2 of #106 (regressions)
+
+def test_mirrored_faces_are_two_types():
+    sc = fs.Scene()
+    for x, up in ((0.0, 1), (5.0, -1)):
+        one = _Mesh()
+        one.tri([[x, 0, 0], [x + 1, 0, 0], [x, 1, 0]], 26, [0, 0, up])
+        sc.instance("bands", one, {"section_points": 4})
+    assert len(sc.dump()["meshes"]) == 2
+
+
+def test_a_partial_enclosure_top_keeps_the_source_shape():
+    dump, modules = _source()
+    screen = _quad_box("Screen", (2, 2, 6.6), (6, 5, 9.0))
+    keep = [i for i, tr in enumerate(screen["triangles"])
+            if not all(screen["vertices"][j][2] == 9.0 for j in tr)]          # walls and bottom only
+    tri = [screen["triangles"][i] for i in keep] + [[len(screen["vertices"]) + k for k in (0, 1, 2)]]
+    screen = {"vertices": screen["vertices"] + [[2, 2, 9.0], [6, 2, 9.0], [2, 5, 9.0]], "triangles": tri}
+    _with(dump, modules, "Screen", screen, "planes_enclosure", 24)
+    model, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["superstructure"]["enclosure_top"] == "partial, source faces"
+    sup = next(m for m in model["meshes"] if m["name"] == "superstructure")
+    v = np.asarray(sup["vertices"], float)
+    top = [t for t in sup["triangles"] if all(abs(v[i][2] - 9.0) < 1e-6 for i in t)]
+    area = sum(np.linalg.norm(np.cross(v[t[1]] - v[t[0]], v[t[2]] - v[t[0]])) / 2 for t in top)
+    assert area == pytest.approx(6.0)                                           # the source's half, not 12
+
+
+def test_a_storey_band_keeps_the_id_of_each_source_side():
+    dump, modules = _source()
+    for name, mid, (lo, hi) in (("CorniceA", 17, ((0.05, -0.1, 3.4), (9.95, 0, 3.7))),
+                                ("CorniceB", 17, ((10, 0.05, 3.4), (10.1, 9.95, 3.7))),
+                                ("CorniceC", 17, ((0.05, 10, 3.4), (9.95, 10.1, 3.7))),
+                                ("CorniceD", 26, ((-0.1, 0.05, 3.4), (0, 9.95, 3.7)))):
+        m = _Mesh()
+        fs._box(m, (np.zeros(2), np.array([1.0, 0.0]), np.array([0.0, 1.0])), lo, hi, 0)
+        _with(dump, modules, name, m.mesh(name), "boxes", mid)
+    _, _, report, scene = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["decor"]["storey_bands"] == 1
+    ids = set()
+    for ob in scene["objects"]:
+        if ob["group"] == "storey_bands":
+            ids |= set(scene["meshes"][ob["mesh"]]["material_ids"])
+    assert ids == {17, 26}
+
+
+def test_a_kept_source_face_on_a_built_pier_is_not_built_twice():
+    dump, modules = _source()
+    sheet = {"vertices": [[5.0, -0.25, 1.0], [5.6, -0.25, 1.0], [5.6, -0.25, 2.0], [5.0, -0.25, 2.0]],
+             "triangles": [[0, 1, 2], [0, 2, 3]]}                              # on the pier's front face
+    _with(dump, modules, "Sheet", sheet, "boxes", 26)
+    _, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    kept = report["decor"]["kept_as_source_faces"]
+    assert kept["covered_by_built"] == 2 and kept["triangles"] == 0
+
+
+def test_the_from_spec_path_finds_a_separate_slab_box_a_solid_slab():
+    r = checks.load_ranges()
+    body = _quad_box("walls", (0, 0, 0), (10, 10, 3.0), 1)                 # the largest part
+    box = _quad_box("slabs", (0, 0, 3.0), (9.6, 9.6, 3.3), 21)            # a separate closed slab box
+    soup = from_dump(_dump(body, box))
+    strict = checks.check_mesh(soup, TOL, r, slabs={"L1": None})
+    assert strict["details"]["slabs_not_inset"] == ["L1"] and strict["status"] == "fail"
+
+
+def test_slat_tops_on_the_screen_edge_are_no_enclosure_top():
+    dump, modules = _source()
+    screen = _quad_box("Screen", (2, 2, 6.6), (6, 5, 9.0))
+    keep = [tr for tr in screen["triangles"] if not all(screen["vertices"][j][2] == 9.0 for j in tr)]
+    n = len(screen["vertices"])
+    strip = [[2, 2, 9.0], [6, 2, 9.0], [6, 2.05, 9.0], [2, 2.05, 9.0]]          # a slat top 5 cm wide on the edge
+    screen = {"vertices": screen["vertices"] + strip, "triangles": keep + [[n, n + 1, n + 2], [n, n + 2, n + 3]]}
+    _with(dump, modules, "Screen", screen, "planes_enclosure", 24)
+    _, _, report, _ = fs.build_from_modules(dump, modules, "syn-modules", INPUTS)
+    assert report["superstructure"]["enclosure_top"] == "none"
