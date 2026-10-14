@@ -131,8 +131,13 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
   main session until `3dsmax-mcp-dev` / `blender-mcp` / `revit-mcp` is loaded.
 - `tools/hooks/usage_log.py`: PostToolUse on Agent / Skill and UserPromptSubmit `/commands` ->
   `logs/agent-usage.jsonl` in the main checkout (git-ignored); `stats --days N`.
+- `tools/hooks/save_transcript.py` (#121): `/handover` copies the session transcript to `logs/transcripts/
+  <branch>-pr<N>-<session>.jsonl` in the main checkout (git-ignored), never over an existing copy; the handoff's
+  `Transcript:` line names it and `session_context.py` prints it. Status: IN BRANCH until merged; found the live
+  desktop session's transcript in its project folder (2026-10-15).
 - Commands: `/handover`, `/takeover` (ends with 7-day usage), `/reuse-scan` (+ `tools/reuse_candidates.py`).
-- Tests: `tests/test_session_context.py`, `tests/test_context_watch.py`, `tests/test_usage_hooks.py`.
+- Tests: `tests/test_session_context.py`, `tests/test_context_watch.py`, `tests/test_usage_hooks.py`,
+  `tests/test_save_transcript.py`.
 
 ### Skills sync — `tools/sync_skills.py`
 - Status: WORKING (2026-10-06): `.agents/skills/` is canonical; the script regenerates

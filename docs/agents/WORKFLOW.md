@@ -99,7 +99,8 @@ A long session loses detail when it is compacted. Rotate instead, in the same wo
    hook `tools/hooks/context_watch.py` measures it (the last response's `usage` in the transcript) and tells the
    agent once per session at 45 % to suggest `/handover` in one sentence, and at 65 % to urge it.
 2. **`/handover`** (`.claude/commands/handover.md`): commit, a PR only at a task boundary (merge on the
-   user's command), `docs/HANDOFF.md` from `docs/HANDOFF.template.md`, `jobs/<ID>/STATE.md` for a job;
+   user's command), the transcript kept in `logs/transcripts/` (`tools/hooks/save_transcript.py`, its path in the
+   handoff), `docs/HANDOFF.md` from `docs/HANDOFF.template.md`, `jobs/<ID>/STATE.md` for a job;
    `PROJECT_STATE.md` only on `main` after a merge. It ends with «Чекпоинт готов, можно /clear».
 3. **`/clear`** in the same worktree. The SessionStart hook (`tools/hooks/session_context.py`) puts the branch,
    `git status --short`, the last 5 commits, open PRs and the handoff into the new context, with a warning when
@@ -131,6 +132,7 @@ Each kind of fact lives in one place; the others point to it.
 | Run evidence | `jobs/<ID>/runs/` RunRecord (local), `jobs/<ID>/pipeline/` reports, `docs/deliveries/` |
 | Object state | `jobs/<ID>/STATE.md` |
 | Session state (branch, next step, what waits) | `docs/HANDOFF.md` of the branch |
+| Session transcript | `logs/transcripts/` of the main checkout (local), named in the handoff |
 | Unsolved work | `docs/backlog.md`, GitHub issues |
 
 A rule question is looked up in the order of `AGENTS.md` ("Where things are"): decision log first.

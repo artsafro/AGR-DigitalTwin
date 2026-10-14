@@ -29,6 +29,7 @@ LIMIT = 9500                                         # under the 10 000-characte
 LINE = 300                                           # one commit subject, PR title or status line
 BRANCH_LINE = re.compile(r"^Branch:\s*`([^`]+)`", re.M)
 COMMIT_LINE = re.compile(r"Commit:\s*`([0-9a-f]{7,40})`")
+TRANSCRIPT_LINE = re.compile(r"^Transcript:\s*`([^`]+)`", re.M)
 
 
 def _root():
@@ -98,6 +99,15 @@ def handoff_state():
     return text, warnings
 
 
+def transcript_line(text):
+    """The handoff's saved transcript (tools/hooks/save_transcript.py, #121) as one line, or None without one."""
+    m = TRANSCRIPT_LINE.search(text or "")
+    if not m or m.group(1).strip() in ("", "-"):
+        return None
+    path = Path(m.group(1))
+    return f"Transcript: {path}" + ("" if path.is_file() else " (missing on this machine)")
+
+
 def _line(text):
     return text if len(text) <= LINE else text[:LINE] + " [...]"
 
@@ -129,6 +139,7 @@ def context(source):
                            "run the /handover procedure (.claude/commands/handover.md) while the summary is "
                            "fresh, or tell the user why you cannot")
     head += ["Handoff warnings:", *(("  - " + w) for w in warnings)] if warnings else ["Handoff: current"]
+    head += [t for t in [transcript_line(text)] if t]
     if source in ("startup", "clear", "compact"):
         head += ["If the user says «продолжай»: first name the branch, the HEAD commit and the next step from the "
                  "handoff (and any warning above), then do that step. /takeover is the full reconciliation."]
