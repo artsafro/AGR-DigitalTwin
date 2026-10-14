@@ -1,6 +1,6 @@
 ---
 name: pattern-librarian
-description: Use when the main agent needs to know whether a modelling question already has a rule - a pattern, an accepted case, a decided or open conflict, an answered question. Searches the project's rule documents and answers with the rule and its quote, a gray zone with similar cases, or the open conflict. Never proposes a new rule.
+description: 'Use when the main agent needs to know whether a modelling question already has a rule - a pattern, an accepted case, a decided or open conflict, an answered question. Searches the project''s rule documents and answers with the rule and its quote, a gray zone with similar cases, or the open conflict. Never proposes a new rule. Use when: «есть ли правило для парапета террасы?», «как мы решали плоскость окна в фасаде?», «это уже спрашивали?».'
 tools: Read, Grep, Glob
 disallowedTools: Edit, Write
 model: inherit

@@ -63,6 +63,11 @@
             "type": "command",
             "command": "py -3 \"$CLAUDE_PROJECT_DIR/tools/hooks/context_watch.py\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/tools/hooks/usage_log.py\" prompt",
+            "timeout": 10
           }
         ]
       }
@@ -99,6 +104,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "^mcp__.*(3dsmax|blender|revit).*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/tools/hooks/skill_gate.py\"",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SubagentStart": [
@@ -120,6 +135,18 @@
           {
             "type": "command",
             "command": "py -3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/subagents.py\" stop",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(Agent|Task|Skill)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "py -3 \"$CLAUDE_PROJECT_DIR/tools/hooks/usage_log.py\" post",
             "timeout": 10
           }
         ]

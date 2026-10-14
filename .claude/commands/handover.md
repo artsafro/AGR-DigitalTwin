@@ -22,11 +22,16 @@ Do these steps in order. Talk to the user in Russian; files stay in English.
    decisions not yet in code (with dates), questions waiting for the user, rules broken this session, local
    state outside git, the next step in one line. Do not copy history; point to commits and PRs.
 4. **Job.** If the task is a job (`jobs/<ID>/`), update `jobs/<ID>/STATE.md` (status, next step, evidence paths).
-5. **Project state.** `docs/PROJECT_STATE.md` changes only on `main` after a merge. In a task branch do not
+5. **Repeats.** List the procedures done two or more times in this session (the same command chain, the same
+   manual check, the same chain of judgement, the same question resolved). For each, add one line to
+   `docs/backlog.md`, section "Reuse proposals", by the rule of three (`docs/agents/WORKFLOW.md`): kind
+   (CLI command / skill / pattern), what it is, how many times, this branch, marked `proposal`. Do not create
+   the command, skill or pattern. None: skip the step.
+6. **Project state.** `docs/PROJECT_STATE.md` changes only on `main` after a merge. In a task branch do not
    touch it; state changes go into the handoff.
-6. **Commit the handoff**: `Handoff: <next step in a few words>` with the handoff and STATE files. Then
+7. **Commit the handoff**: `Handoff: <next step in a few words>` with the handoff, STATE and backlog files. Then
    `git status --short` must show nothing of this task.
-7. **Report** in Russian, short: branch, HEAD commit, PR (if any), next step, then exactly
+8. **Report** in Russian, short: branch, HEAD commit, PR (if any), next step, reuse proposals added (count), then exactly
    «Чекпоинт готов, можно /clear».
 
 If a step cannot be done (a failing hook, a push the user declined), do not hide it: write it into the handoff

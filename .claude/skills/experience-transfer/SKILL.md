@@ -1,6 +1,6 @@
 ---
 name: experience-transfer
-description: Reuse an accepted case in a similar task, or capture a result the user just accepted as a scoped case. Use when the user praises/accepts a result ("принято", "круто получилось"), before starting a task similar to an accepted case, or when deciding whether a job script should become an adapter or skill.
+description: 'Reuse an accepted case in a similar task, or capture a result the user just accepted as a scoped case. Use when the user praises/accepts a result ("принято", "круто получилось"), before starting a task similar to an accepted case, or when deciding whether a job script should become an adapter or skill. Use when: «принято», «круто получилось, запомни», «делаем как в прошлый раз на KPP1».'
 ---
 
 # Reuse and capture experience

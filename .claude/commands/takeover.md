@@ -23,6 +23,13 @@ This command only reads and reports. Change no file, run no DCC call, push nothi
 3. **List what is open**, from the handoff: "In progress", "Waiting for the user", "Next step", open PRs and
    issues, "Rules broken" still unresolved. One line each.
 4. **Propose** what to take first and why, in one or two lines. A question waiting for the user goes first.
-5. **Stop.** Do not start the work. Wait for the user's «да» (or another choice).
+5. **Usage.** End the answer with the usage counts of the last 7 days below, as is, and one line naming what was
+   never called although its trigger (`docs/agents/WORKFLOW.md`, "Triggers") occurred in that time, if you can
+   tell.
+6. **Stop.** Do not start the work. Wait for the user's «да» (or another choice).
 
-Answer in Russian, short: discrepancies, open items, proposal.
+Answer in Russian, short: discrepancies, open items, proposal, usage.
+
+Usage of subagents, skills and commands:
+
+!`py -3 tools/hooks/usage_log.py stats --days 7`

@@ -102,12 +102,19 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
 - Antigravity: CONFIGURED (`.agents/hooks.json` → `guard.cmd`; Antigravity-side run not validated).
 - Codex: CONFIGURED (`.codex/hooks.json`; payload and "ask" support not validated — backlog H1).
 
-### Context rotation — `tools/hooks/session_context.py`, `/handover`, `/takeover` (Claude Code)
-- Status: CONFIGURED (PR #107): SessionStart (`startup|clear|compact`) passes git
-  state, open PRs and `docs/HANDOFF.md` as additionalContext; PreCompact blocks a manual `/compact` with a stale
-  handoff and logs auto ones. Commands in `.claude/commands/`; the procedure in `docs/agents/WORKFLOW.md`.
-  Context % comes from the user-level status line (`~/.claude/statusline.py`, `ctx N%`). Tests:
-  `tests/test_session_context.py`.
+### Context rotation, triggers, reuse (Claude Code, PR #107; `docs/agents/WORKFLOW.md`)
+- Status: WORKING (2026-10-14, live in `claude -p`; desktop and interactive CLI not checked).
+- `tools/hooks/session_context.py`: SessionStart (`startup|clear|compact`) passes branch, status, last commits,
+  open PRs and `docs/HANDOFF.md` (warnings when stale / foreign / old format); PreCompact blocks a manual
+  `/compact` with a stale handoff (`/compact force` passes), logs auto ones to `<git dir>/agr-compactions.log`.
+- `tools/hooks/context_watch.py`: UserPromptSubmit, context share from the transcript's last `usage`; tells the
+  agent once per session at 45 % and 65 %. Context % on screen: the user-level status line (`ctx N%`).
+- `tools/hooks/skill_gate.py`: PreToolUse on DCC MCP tools (3ds Max, Blender, Revit) denies the call in the
+  main session until `3dsmax-mcp-dev` / `blender-mcp` / `revit-mcp` is loaded.
+- `tools/hooks/usage_log.py`: PostToolUse on Agent / Skill and UserPromptSubmit `/commands` ->
+  `logs/agent-usage.jsonl` in the main checkout (git-ignored); `stats --days N`.
+- Commands: `/handover`, `/takeover` (ends with 7-day usage), `/reuse-scan` (+ `tools/reuse_candidates.py`).
+- Tests: `tests/test_session_context.py`, `tests/test_context_watch.py`, `tests/test_usage_hooks.py`.
 
 ### Skills sync — `tools/sync_skills.py`
 - Status: WORKING (2026-10-06): `.agents/skills/` is canonical; the script regenerates

@@ -1,6 +1,6 @@
 ---
 name: revit-mcp
-description: Inspect and edit Revit BIM documents through the project MCP routes; verify authorized changes and versioned exports.
+description: 'Inspect and edit Revit BIM documents through the project MCP routes; verify authorized changes and versioned exports. Use when: «что в модели Revit?», «найди стены и окна на 3 этаже», «выгрузи вид из Revit новой версией».'
 ---
 
 # Revit MCP for project agents
