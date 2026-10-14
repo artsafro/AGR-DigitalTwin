@@ -1,6 +1,6 @@
 ---
 name: blender-mcp
-description: Inspect the open Blender 5.1.2 or later scene through the project's official Blender Lab MCP route and diagnose connection gaps.
+description: 'Inspect the open Blender 5.1.2 or later scene through the project''s official Blender Lab MCP route and diagnose connection gaps. Use when: «что открыто в Блендере?», «посмотри объект в сцене Blender», «Blender MCP не отвечает».'
 ---
 
 # Blender MCP for project agents

@@ -103,6 +103,12 @@ Plan: `docs/HARNESS_PLAN.md` §15 (user decision 2026-10-11). One PR each, exten
 - **U2** Interactive experience project in `Unreal/`.
 - **U3** IFC export route.
 
+## Reuse proposals (rule of three, `docs/agents/WORKFLOW.md`; proposals only, nothing created)
+
+Added by `/handover` (procedures repeated in a session) and `/reuse-scan` (repeats across jobs). Line:
+`- **R<n>** proposal <date>, <branch> - <CLI command | skill | pattern | src/ module>: <what>; seen <N> times;
+effort <S/M/L>`. The user or the owner turns one into a task or drops it.
+
 ## Harness and organization (default owner Codex)
 
 - **H1** Validate the Codex PreToolUse hook (`.codex/hooks.json` → guard.py): payload

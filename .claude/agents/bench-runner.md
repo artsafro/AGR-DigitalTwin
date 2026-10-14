@@ -1,6 +1,6 @@
 ---
 name: bench-runner
-description: Use when benchmarks (B01, B02, B02t, K01, K02) or the test suite must be run on the current tree - returns a pass/fail table per check, the spec diff against the benchmark's spec, the question count and the commit, instead of the raw logs. Fixes nothing.
+description: 'Use when benchmarks (B01, B02, B02t, K01, K02) or the test suite must be run on the current tree - returns a pass/fail table per check, the spec diff against the benchmark''s spec, the question count and the commit, instead of the raw logs. Fixes nothing. Use when: «прогони бенчмарки», «запусти тесты и скажи, что упало», «B01 и K02 зелёные?».'
 tools: Read, Grep, Glob, Bash
 disallowedTools: Edit, Write
 model: inherit
