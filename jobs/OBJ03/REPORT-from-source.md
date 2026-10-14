@@ -115,8 +115,9 @@ Decor triangles in v007: collars 106 410 (3 052), pier pieces 73 917 (4 056 afte
 ## 4. Work for the harness (engine, algorithms, checker, logic)
 
 ### 4.1 from_source
-- Budget control: collars as boxes or only where a pier stands out of the band by more than a set depth; caps
-  of non-quad sections quadrangulated; per-module triangle report against the profile limit before export.
+- Budget control: done by pattern `primitive-first` and the `complexity` check (v009+); collars are forbidden
+  (user 2026-10-14) - the v007 proposal of collar boxes is superseded. Still open: caps of non-quad sections
+  quadrangulated.
 - Spatial index (STRtree) for joints and corners; one pass instead of pairs.
 - Decor in the spec by modules (kinds band / strip / panel, sections, runs) so `check_decor` compares something.
 - Section choice: the longest piece's section per run is a heuristic; a rule for when sections differ in one run.
@@ -133,7 +134,7 @@ Decor triangles in v007: collars 106 410 (3 052), pier pieces 73 917 (4 056 afte
   spec-based storey areas, open enclosure top, robust silhouette union (GEOS fallback).
 
 ### 4.3 Open issues kept
-#84 / #94 (DP sliver; PR open with P1 #95), #91 enclosure shell for mid / VPM, #96 decor extractor on a panelised
+#84 (DP sliver; #94 closed 2026-10-14 - from_source goes round it; P1 #95 open for from_spec), #91 enclosure shell for mid / VPM, #96 decor extractor on a panelised
 source, #97 self-crossing contour, #98 engine terraces, #101-#105 retro review of #99 / #100.
 
 ## 5. Decisions recorded (where)

@@ -2,7 +2,7 @@
 
 Pipeline status: draft
 
-Object `OBJ03` (former `case-alina-bld`), spec id `obj03-decor`, branch `job/obj03-decor`. Purpose: the
+Object `OBJ03`, spec id `obj03-decor`, branch `job/obj03-decor`. Purpose: the
 building of the accepted colleague case (`docs/cases.md`) through spec -> engine -> checkers, mixed mode for
 what the engine lacks (`EG<n>`), and a count of decor elements against the colleague's 2471.
 
@@ -94,5 +94,4 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
 - 2026-10-14 v011 (`outputs/from-source-v011`, local) after Codex review 2 of #106: 99 782 triangles, 11/11 checks
   (not independent); decor_as_source 4 198 triangles (1 974 source faces lying on built elements not doubled).
 - 2026-10-14 v012 (`outputs/from-source-v012`, local) after Codex review 3 of #106 (the last; summary posted on
-  the PR): 100 822 triangles, 11/11 checks (not independent). #106 waits for the user's merge command; then this
-  branch goes as the second PR.
+  the PR): 100 822 triangles, 11/11 checks (not independent). #106 merged 2026-10-14 (89498ef); this branch is PR #116.

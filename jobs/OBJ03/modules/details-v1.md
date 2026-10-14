@@ -11,9 +11,9 @@ cm: red < 7, orange 7-10, green > 10). Counts are source pieces / runs; the buil
 | 1 | Walls per storey | slab outline above, glass | 28 storeys | `shell` (quads, openings at OD1 0.4) | stand on slabs (seated), no shared vertex |
 | 2 | Slabs | Shape211223725 | 28 + roof | `box` (quad fill) | walls stand on them |
 | 3 | Terrace decks | Shape211223718 | 3 levels | `box`, 5 mm off the slab | inset plate |
-| 4 | Storey bands round the storey | slots 12/13/15/16, h 0.5 m | L04, L08, L12, L16, L20, L24 | `frame` on the storey contour, one per band | main element; piers stop in it unless deeper |
+| 4 | Storey bands round the storey | slots 12/13/15/16, h 0.5 m | L04, L08, L12, L16, L20, L24 | `frame` on the storey contour, one per band | superseded 2026-10-14: piers run through and are never cut; the frame is cut only where it shows with no source band |
 | 5 | Roof cornice (two bands) | slots 12/13/15/16 + sheets | 96.06 (h 0.69), 99.0 (h 0.8) | `frame` (two-step profile `profile-extrude` if the step is > 0.10 m) | main element |
-| 6 | Piers / pilasters | slots 12/13/15/16 | ~1 330 runs, ~22 types | `box` per run, running through; `profile-extrude` only if the silhouette test fails | through; bands stop at deeper piers |
+| 6 | Piers / pilasters | slots 12/13/15/16 | ~1 330 runs, ~22 types | `box` per run, running through; `profile-extrude` only if the silhouette test fails | through, never cut; bands stop 0.02 m inside piers (user 2026-10-14) |
 | 7 | Short bands (window heads with returns, slot strip) | slots 12/13/15/16 | ~450 pieces | `box` / `instance` per type | inset into piers 20 mm |
 | 8 | Thin plates 2 cm (sills, heads) | slot 15 | 2 976 pieces, depth 0.16-0.41 m | **question 2** | — |
 | 9 | Small balconies | slots 12/13/15/16 + glass | 79 of one type (0.6 x 1.35, sloped underside) | `instance` of one `profile-extrude` + glass plates | inset into the wall 20 mm |
