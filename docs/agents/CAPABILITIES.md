@@ -102,6 +102,13 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
 - Antigravity: CONFIGURED (`.agents/hooks.json` → `guard.cmd`; Antigravity-side run not validated).
 - Codex: CONFIGURED (`.codex/hooks.json`; payload and "ask" support not validated — backlog H1).
 
+### Context rotation — `tools/hooks/session_context.py`, `/checkpoint`, `/resume` (Claude Code)
+- Status: CONFIGURED (PR for `harness/checkpoint-resume`): SessionStart (`startup|clear|compact`) passes git
+  state, open PRs and `docs/HANDOFF.md` as additionalContext; PreCompact blocks a manual `/compact` with a stale
+  handoff and logs auto ones. Commands in `.claude/commands/`; the procedure in `docs/agents/WORKFLOW.md`.
+  Context % comes from the user-level status line (`~/.claude/statusline.py`, `ctx N%`). Tests:
+  `tests/test_session_context.py`.
+
 ### Skills sync — `tools/sync_skills.py`
 - Status: WORKING (2026-10-06): `.agents/skills/` is canonical; the script regenerates
   `.claude/skills/` (vendored skills from `skills-lock.json` are skipped — Claude has user-level
