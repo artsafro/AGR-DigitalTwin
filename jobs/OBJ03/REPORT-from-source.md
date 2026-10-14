@@ -6,6 +6,19 @@ Date 2026-10-14. Branches: `harness/from-source-modules` (PR #106, code), `job/o
 
 ## 1. Where it ended
 
+Deliveries (local, git-ignored; produced by `tools/qa/run_from_source.py`, PR #106), the main checkout's
+`jobs/OBJ03/outputs/`:
+
+| Version | `npm/` - attached, checked | `modules/` - parts apart, instances live |
+|---|---|---|
+| v011 (for the user's review in 3ds Max) | `from-source-v011/npm/model.fbx`, `model.blend` | `from-source-v011/modules/modules.blend`, `modules-scene.json` |
+| v012 (after Codex review 3 of #106) | `from-source-v012/npm/model.fbx`, `model.blend` | `from-source-v012/modules/modules.blend`, `modules-scene.json` |
+
+Each version folder also holds `check.json`, `summary.json`, `spec.json`, `modules-report.json`, `review/`.
+Rebuild: `uv run python tools/qa/run_from_source.py --dump data/sources/OBJ03/dumps/source-dump-v001.json
+--modules jobs/OBJ03/modules/modules.json --object jobs/OBJ03/object.json --tolerances jobs/OBJ03/tolerances.json
+--output <new folder>`.
+
 | Version | Triangles (NPM 150 000) | Checks (own run) | What changed |
 |---|---|---|---|
 | v003 | 85 720 | 10/10 pass | first full build by modules: walls per storey, slab boxes, decor boxes |
