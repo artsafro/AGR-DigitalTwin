@@ -20,6 +20,8 @@ class Soup:
     polygon_sizes: np.ndarray | None  # vertex count of every source polygon; None = absent or inconsistent
     levels: dict[str, float]    # LEVEL_<name> helper elevations, object system
     collisions: int = 0         # UCX_ meshes left out
+    mesh_names: tuple = ()      # the dump's render mesh names, in order
+    mesh_index: np.ndarray | None = None   # (m,) the mesh each triangle comes from (into mesh_names)
 
     def corners(self) -> np.ndarray:
         """(m, 3, 3) corner points of every triangle."""
@@ -35,7 +37,7 @@ def from_dump(dump: dict, to_object=None) -> Soup:
     """Render meshes of a dump (UCX_ collisions left out); to_object: 4x4 matrix from the dump's frame.
     Polygon sizes count only when every mesh has them and they add up to its triangles."""
     m = np.eye(4) if to_object is None else np.asarray(to_object, dtype=float)
-    verts, tris, mids, sizes = [], [], [], []
+    verts, tris, mids, sizes, owner = [], [], [], [], []
     render = [x for x in dump["meshes"] if not x["name"].startswith(COLLISION_PREFIX)]
     has_sizes = all("polygon_sizes" in mesh and len(mesh["triangles"]) ==
                     sum(max(int(k) - 2, 0) for k in mesh["polygon_sizes"]) for mesh in render)
@@ -46,6 +48,7 @@ def from_dump(dump: dict, to_object=None) -> Soup:
         verts.append(v)
         tris.append(t + base)
         mids.append(np.asarray(mesh.get("material_ids", [0] * len(t)), dtype=int))
+        owner.append(np.full(len(t), len(owner), dtype=int))
         if has_sizes:
             sizes.append(np.asarray(mesh["polygon_sizes"], dtype=int))
         base += len(v)
@@ -53,7 +56,8 @@ def from_dump(dump: dict, to_object=None) -> Soup:
               for h in dump.get("helpers", []) if h["name"].startswith(LEVEL_PREFIX)}
     cat = lambda parts, shape, dtype: np.concatenate(parts) if parts else np.zeros(shape, dtype)  # noqa: E731
     return Soup(cat(verts, (0, 3), float), cat(tris, (0, 3), int), cat(mids, (0,), int),
-                cat(sizes, (0,), int) if has_sizes else None, levels, len(dump["meshes"]) - len(render))
+                cat(sizes, (0,), int) if has_sizes else None, levels, len(dump["meshes"]) - len(render),
+                tuple(m["name"] for m in render), cat(owner, (0,), int))
 
 
 def weld(vertices: np.ndarray, weld_m: float) -> np.ndarray:

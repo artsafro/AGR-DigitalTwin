@@ -50,7 +50,18 @@ def silhouette(corners: np.ndarray, view: str, grid_m: float = 1e-4):
     e1, e2 = flat[:, 1] - flat[:, 0], flat[:, 2] - flat[:, 0]
     keep = np.abs(e1[:, 0] * e2[:, 1] - e1[:, 1] * e2[:, 0]) / 2 > AREA_MIN_M2
     polys = shapely.polygons(flat[keep])
-    return shapely.union_all(polys, grid_size=grid_m)
+    try:
+        return shapely.union_all(polys, grid_size=grid_m)
+    except shapely.errors.GEOSException:            # GEOS noding of a near-degenerate triangle: the triangles snapped
+        pass                                        # to the grid and repaired, then united in chunks
+    snapped = shapely.make_valid(shapely.set_precision(polys, grid_m))
+    snapped = snapped[~shapely.is_empty(snapped)]
+    try:
+        return shapely.union_all(snapped, grid_size=grid_m)
+    except shapely.errors.GEOSException:
+        parts = [shapely.make_valid(shapely.union_all(snapped[i:i + 500], grid_size=grid_m))
+                 for i in range(0, len(snapped), 500)]
+        return shapely.union_all(shapely.make_valid(shapely.set_precision(parts, grid_m)), grid_size=grid_m)
 
 
 def iou(a, b) -> float:
