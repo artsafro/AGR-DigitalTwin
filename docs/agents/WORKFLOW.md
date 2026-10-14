@@ -5,6 +5,8 @@ task: a one-line fix skips most steps; a multi-stage delivery uses all of them.
 
 ## Loop
 
+0. **Card.** A task with an issue moves on the board (`docs/agents/KANBAN.md`): In progress
+   when taken, Needs you when it waits on the user.
 1. **Goal and discovery.** Read `docs/PROJECT_STATE.md`, the relevant `docs/domain/` file,
    the matching accepted case (`docs/cases.md`) and the real inputs. A script or MCP that
    exists is not working until there is current evidence (`CAPABILITIES.md` status).

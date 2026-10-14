@@ -102,6 +102,11 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
 - Antigravity: CONFIGURED (`.agents/hooks.json` → `guard.cmd`; Antigravity-side run not validated).
 - Codex: CONFIGURED (`.codex/hooks.json`; payload and "ask" support not validated — backlog H1).
 
+### Kanban board — GitHub Projects `artsafro/projects/1`
+- Status: WORKING (2026-10-14): Status and Agent fields, 30 open issues on the board; `gh` needs the
+  `project` token scope. Rules: `docs/agents/KANBAN.md`.
+- Vibe Kanban: REJECTED (2026-10-14 trial, 0.1.44), reasons in the same file.
+
 ### Context rotation, triggers, reuse (Claude Code, PR #107; `docs/agents/WORKFLOW.md`)
 - Status: WORKING (2026-10-14, live in `claude -p`; desktop and interactive CLI not checked).
 - `tools/hooks/session_context.py`: SessionStart (`startup|clear|compact`) passes branch, status, last commits,
