@@ -55,21 +55,32 @@ def check_levels(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
     return result("levels", ok, worst, tol["level_elev_m"], {"diff_m": diffs, "missing_in_model": missing})
 
 
-def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
+def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict, basis: str = "etalon") -> dict:
     """Outer section area of every storey at the sampled heights. Where both sections close they are
     compared; where only one closes the model differs from the etalon there (a fail, never skipped).
     Where neither closes both agree; the height is listed as open_on_both_sides, not judged, because an
     NPM shell open at its reveals has no closed section in a window band (user decision 2026-10-09).
-    A storey with no compared height at all fails."""
+    A storey with no compared height at all fails. basis "spec" (a panelised source, user 2026-10-14: its
+    sections never close): the model's section, decor left out, against the area of the storey's spec contour less
+    the recesses of the spec's openings at that height (width x depth; npm_min at the full depth, mid at half)."""
     names = [lv.name for lv in spec.levels]
     elev = {lv.name: lv.elev_m for lv in spec.levels}
     mc, ec = model.corners(), etalon.corners()
+    contour = {f.level: shapely.Polygon([p[:2] for p in f.contour]).area for f in spec.expanded_floors()}
+    share = 1.0 if spec.profile == "npm_min" else 0.5
+    recess = {f.level: [(o.sill_m, o.sill_m + o.h_m, o.w_m * (o.depth_m if o.depth_m is not None
+                                                             else spec.opening_depth_default_m) * share)
+                        for o in f.openings if o.kind in ("window", "door", None)] for f in spec.expanded_floors()}
+    if basis == "spec" and model.mesh_index is not None and DECOR_MESH in model.mesh_names:
+        mc = mc[model.mesh_index != model.mesh_names.index(DECOR_MESH)]
     per_floor, worst, unmeasured, one_sided, both_open = {}, 0.0, [], [], []
     for lo, hi in zip(names, names[1:]):
         rows = []
         for f in tol["section_fractions"]:
             z = elev[lo] + f * (elev[hi] - elev[lo])
-            am, ae = measure.section_area(mc, z), measure.section_area(ec, z)
+            am = measure.section_area(mc, z)
+            ae = (contour[lo] - sum(a for s0, s1, a in recess.get(lo, []) if s0 < z - elev[lo] < s1)
+                  if basis == "spec" and lo in contour else measure.section_area(ec, z))
             if am is None or ae is None or ae <= 0:
                 rows.append({"z": round(z, 3), "model_m2": am, "etalon_m2": ae})
                 if (am is None) != (ae is None):
@@ -86,7 +97,7 @@ def check_floor_areas(model: Soup, etalon: Soup, spec: Spec, tol: dict) -> dict:
     ok = worst <= tol["floor_area_rel"] and not unmeasured and not one_sided
     return result("floor_areas", ok, round(worst, 4), tol["floor_area_rel"],
                   {"floors": per_floor, "no_closed_section": unmeasured, "closed_on_one_side": one_sided,
-                   "open_on_both_sides": both_open})
+                   "open_on_both_sides": both_open, "basis": "spec-based" if basis == "spec" else "etalon"})
 
 
 def check_silhouettes(model: Soup, etalon: Soup, tol: dict) -> dict:
@@ -372,7 +383,9 @@ def check_mesh(model: Soup, tol: dict, ranges: dict, slabs=None, plate=None, str
     boundary_n = int(boundary.sum())
     corners = model.corners()
     faces = [{"object": "model", "index": i, "points": c.tolist()} for i, c in enumerate(corners)]   # decor left out
-    overlaps = near_parallel_overlaps(faces, tol["overlap_m"])
+    # an overlap is a crossing deeper than the weld (user 2026-10-14): two faces within weld_m are one weld; an
+    # inset 5 mm off a face (plate_gap_m) is no overlap
+    overlaps = near_parallel_overlaps(faces, tol["weld_m"])
     if model.polygon_sizes is None:
         ngons, ngon_measured = None, False
     else:
@@ -778,13 +791,15 @@ def check_decor(model: Soup, spec: Spec, tol: dict, ranges: dict) -> dict:
     return result("decor", bad == 0, bad, 0, {"elements": [{k: v for k, v in r.items() if k != "k"} for r in rows]})
 
 
-def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None) -> dict:
+def run(model: Soup, etalon: Soup, spec: Spec, tol: dict, ranges: dict | None = None,
+        source_class: str | None = None) -> dict:
     """All §5 checks; tol is the `geometry` block of tolerances.json. The weld is the building's (spec weld_m,
     user 2026-10-13): open edges, T-junctions and non-manifold are counted after welding the readback by it."""
     ranges = ranges or load_ranges()
     tol = {**tol, "weld_m": spec.weld_m}
     checks = [check_bbox(model, etalon, tol), check_levels(model, etalon, spec, tol),
-              check_floor_areas(model, etalon, spec, tol), check_silhouettes(model, etalon, tol),
+              check_floor_areas(model, etalon, spec, tol, "spec" if source_class == "panelised" else "etalon"),
+              check_silhouettes(model, etalon, tol),
               check_mesh(model, tol, ranges, slabs(spec), (spec.plate_gap_m, spec.plate_overlap_m),
                          [(shapely.Polygon(rs.outline), spec.levels[-1].elev_m) for rs in spec.roof_structures]),
               check_budget(model, tol),

@@ -126,7 +126,7 @@ def slabs_of(v, t, levels, tol=SLAB_LEVEL_TOL_M):
         top = min(cand, key=lambda z: abs(z - elev))
         under = max((z for z in bottoms if z < top - KEY_M), default=None)
         faces = [Polygon(q[:, :2]) for q, up, z in zip(p, nz > 0.99, zc) if up and abs(z - top) <= 1e-3]
-        outline = shapely.union_all([f.buffer(1e-6) for f in faces if f.area > 0]).buffer(-1e-6)
+        outline = shapely.union_all([f.buffer(1e-6) for f in faces if f.area > 0]).buffer(0.0035).buffer(-0.0035)   # parts within the weld are one
         out.append((name, float(top), float(under) if under is not None else None, outline))
     return out
 
@@ -209,14 +209,30 @@ def wall_line(sections, close=WALL_CLOSE_M):
     return orient(Polygon(poly.exterior).simplify(SIMPLIFY_M, preserve_topology=True), 1.0)
 
 
-def wall_openings(poly, glass_segs, glass_z, z_lo, z_hi, w):
+def _convex_ends(pts):
+    """Per wall of a CCW ring: (start, end) is at a convex corner."""
+    n = len(pts)
+    turn = []
+    for i in range(n):
+        a, b, c = pts[i - 1], pts[i], pts[(i + 1) % n]
+        d1, d2 = b - a, c - b
+        turn.append(float(d1[0] * d2[1] - d1[1] * d2[0]) > 0)
+    return [(turn[i], turn[(i + 1) % n]) for i in range(n)]
+
+
+def wall_openings(poly, glass_segs, glass_z, z_lo, z_hi, w, depth=0.4):
     """Openings per wall of a storey from its glass: spans along the wall within EDGE_TOL_M of its line, panes
     closer than PANE_GAP_M one opening, kept WALL_END_M off the wall ends; heights from the glass parts."""
     pts = np.asarray(poly.exterior.coords)[:-1]
+    convex = _convex_ends(pts)
     out = defaultdict(list)
     for wi in range(len(pts)):
         a, b = pts[wi], pts[(wi + 1) % len(pts)]
         L = float(np.linalg.norm(b - a))
+        # at a convex corner an opening keeps its reveal depth off the end: the reveals of two openings round a
+        # corner never meet inside it
+        end0 = depth + WALL_END_M if convex[wi][0] else WALL_END_M
+        end1 = depth + WALL_END_M if convex[wi][1] else WALL_END_M
         if L < 2 * WALL_END_M + 0.2:
             continue
         u = (b - a) / L
@@ -228,7 +244,7 @@ def wall_openings(poly, glass_segs, glass_z, z_lo, z_hi, w):
             s, d = rel @ u, rel @ nrm
             if np.abs(d).max() > EDGE_TOL_M or abs(float(np.dot((c[1] - c[0]) / max(np.linalg.norm(c[1] - c[0]), 1e-9), u))) < 0.99:
                 continue
-            s0, s1 = float(max(s.min(), WALL_END_M)), float(min(s.max(), L - WALL_END_M))
+            s0, s1 = float(max(s.min(), end0)), float(min(s.max(), L - end1))
             if s1 - s0 > 0.05:
                 spans.append([s0, s1, max(gz0, z_lo + w * 2), min(gz1, z_hi - w * 2)])
         spans.sort()
@@ -320,7 +336,11 @@ def split_flat(v, t, thin=1e-3):
     return cat(flat), cat(solid)
 
 
-def decor_elements(v, t, seam=DECOR_SEAM_M):
+SECTION_SAME_M = 0.01   # pieces of one element share their section (depth range) within this
+AXIS_DEG = 2.0           # a decor piece whose rectangle turns more than this off the building axes is no box
+
+
+def decor_elements(v, t, seam=DECOR_SEAM_M, odd=None):
     """Elements of a decor module: each piece's plan rectangle (minimum rotated) and z range, pieces of one
     element (same rectangle within the seam, stacked in z with seams up to it; or one section run along one axis)
     merged. Returns (frame, lo, hi) per element."""
@@ -337,6 +357,9 @@ def decor_elements(v, t, seam=DECOR_SEAM_M):
             u = u * np.sign(u[0]) if u[0] else u
         else:
             u = u * np.sign(u[1]) if u[1] else u
+        if odd is not None and min(abs(u[0]), abs(u[1])) > np.sin(np.radians(AXIS_DEG)):
+            odd.append(t[pc])                      # a corner insert, a chamfer: rebuilt face by face, not boxed
+            continue
         n = np.array([u[1], -u[0]])
         s, d = q[:, :2] @ u, q[:, :2] @ n
         ang = round(float(np.arctan2(u[1], u[0])), 3)
@@ -355,7 +378,7 @@ def decor_elements(v, t, seam=DECOR_SEAM_M):
     for r in rects:
         hit = None
         for m in merged[-50:]:
-            if m[0] != r[0] or abs(m[3] - r[3]) > seam or abs(m[4] - r[4]) > seam:
+            if m[0] != r[0] or abs(m[3] - r[3]) > SECTION_SAME_M or abs(m[4] - r[4]) > SECTION_SAME_M:
                 continue
             same_s = abs(m[1] - r[1]) <= seam and abs(m[2] - r[2]) <= seam
             same_z = abs(m[5] - r[5]) <= seam and abs(m[6] - r[6]) <= seam
@@ -444,6 +467,45 @@ def band_box(mesh: _Mesh, ring, z0, z1, thick, mid):
         mesh.quad([[*a, z0], [*ia, z0], [*ib, z0], [*b, z0]], mid, [0, 0, -1])
 
 
+RAILING_T_M = 0.02       # pattern terrace (user 2026-10-14): a glass railing is one closed plate per ledge side
+RAILING_LIFT_M = 0.004   # standing on the deck, not welded to it (past weld_m)
+
+
+def terrace_railings(mesh: _Mesh, deck, upper, z, h, mid, thick=RAILING_T_M):
+    """Pattern terrace, glass railings (user 2026-10-14): one closed plate `thick` thick per side of the ledge
+    that does not run along the walls above (`upper`), its outer face on the ledge's edge, from the deck top to
+    the railing height; plates of two sides meeting at a corner are trimmed by the thickness (no overlap); frames
+    and edge trims are texture. Returns the number of plates."""
+    n = 0
+    for part in shapely.get_parts(deck):
+        ring = np.asarray(orient(part.simplify(0.01, preserve_topology=True), 1.0).exterior.coords)[:-1]
+        side = [upper.exterior.distance(shapely.Point(*((ring[i] + ring[(i + 1) % len(ring)]) / 2))) > 0.1
+                for i in range(len(ring))]
+        for i in range(len(ring)):
+            if not side[i]:
+                continue
+            a, b = ring[i], ring[(i + 1) % len(ring)]
+            L = float(np.linalg.norm(b - a))
+            u = (b - a) / L
+            inn = np.array([-u[1], u[0]])               # into the deck (CCW ring)
+            s0 = thick + RAILING_LIFT_M if side[i - 1] else 0.0   # the previous side's plate holds the corner;
+                                                                  # a gap past the weld, no shared face
+            if L - s0 <= thick:
+                continue
+            o0, o1 = a + u * s0, b
+            lo, hi = z + RAILING_LIFT_M, z + h
+            c = [o0, o1, o1 + inn * thick, o0 + inn * thick]
+            bot = [[*p, lo] for p in c]
+            top = [[*p, hi] for p in c]
+            mesh.quad(bot[::-1], mid, [0, 0, -1])
+            mesh.quad(top, mid, [0, 0, 1])
+            for k in range(4):
+                d = c[(k + 1) % 4] - c[k]
+                mesh.quad([bot[k], bot[(k + 1) % 4], top[(k + 1) % 4], top[k]], mid, [d[1], -d[0], 0])
+            n += 1
+    return n
+
+
 def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
     """A plane module rebuilt face by face: the source triangles grouped by plane (normal, offset) and by
     connection, each group one rectangle in its plane; a group that fills less than 90 % of its rectangle keeps
@@ -458,9 +520,10 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
         nn = np.round(n[k], 3)
         key[(*nn, round(float(n[k] @ p[k, 0]), 3))].append(k)
     kept = 0
-    for (*nn, off), ks in key.items():
-        nn = np.asarray(nn, float)
-        sub = t[ks]
+    for _, ks in key.items():                       # the key groups; the plane is the group's own (exact), never
+        sub = t[ks]                                  # the rounded key (a rounded normal times an offset of ~80 m
+        nn = n[ks].mean(axis=0)                      # moves a plane by centimetres)
+        nn = nn / np.linalg.norm(nn)
         for pc in _pieces(v, sub):
             q = v[sub[pc]]
             area = float(np.linalg.norm(np.cross(q[:, 1] - q[:, 0], q[:, 2] - q[:, 0]), axis=1).sum() / 2)
@@ -471,12 +534,12 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
             e2 = np.cross(nn, e1)
             pts = q.reshape(-1, 3)
             a1, a2 = pts @ e1, pts @ e2
-            if area < 0.9 * (np.ptp(a1) * np.ptp(a2)):
+            if area < 0.99 * (np.ptp(a1) * np.ptp(a2)):
                 kept += 1
                 for tri in q:
                     mesh.tri(tri.tolist(), mid, nn)
                 continue
-            o = nn * off
+            o = nn * float((pts @ nn).mean())
             corners = [o + e1 * a1.min() + e2 * a2.min(), o + e1 * a1.max() + e2 * a2.min(),
                        o + e1 * a1.max() + e2 * a2.max(), o + e1 * a1.min() + e2 * a2.max()]
             if thick is None:
@@ -543,7 +606,7 @@ def storeys(parts, slabs, levels, inputs: Inputs):
                     segs.append(sg)
                     gz.append((za, zb))
         out[name] = {"z": (z_lo, z_hi), "poly": poly,
-                     "openings": snap_rows(wall_openings(poly, segs, gz, z_lo, z_hi, inputs.weld_m))}
+                     "openings": snap_rows(wall_openings(poly, segs, gz, z_lo, z_hi, inputs.weld_m, inputs.opening_depth_m))}
     return out
 
 
