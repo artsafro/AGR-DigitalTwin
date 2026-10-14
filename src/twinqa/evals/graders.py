@@ -1,7 +1,7 @@
 """Code graders: evidence paths in, one check row out (`check`, `expected`, `measured`, `passed`, `details`).
 
-A grader raises `EvidenceError` when its evidence cannot prove anything (absent, empty, unreadable); the runner
-reports that as not measured (exit 2), never as a pass.
+A grader raises `EvidenceError` when its evidence is absent or unreadable, and returns `passed: None` with an
+`error` when it is incomplete; the runner reports both as not measured (exit 2), never as a pass.
 
 Claude Code transcript shapes relied on (inspected 2026-10-15 over the local transcripts; re-check when the CLI
 changes its format, spec "Further Notes"):
@@ -17,14 +17,25 @@ from pathlib import Path
 
 HOOK_ERROR = re.compile(r"^PreToolUse:(\S+) hook error:\s*")
 DENIED = {"reject", "deny"}
+CONVERSATION = ("user", "assistant")
 
 
 class EvidenceError(Exception):
     """The evidence is missing or unreadable: the check is not measured."""
 
 
+def _recognized(value):
+    """A Claude Code transcript entry: an object with a non-empty string `type`; a `user` / `assistant` entry also
+    carries its `message` object. Every record of the local transcripts had this shape (2026-10-15)."""
+    if not isinstance(value, dict) or not isinstance(value.get("type"), str) or not value["type"]:
+        return False
+    return value["type"] not in CONVERSATION or isinstance(value.get("message"), dict)
+
+
 def read_jsonl(path):
-    """Records of a .jsonl file and the count of lines that are not JSON objects (a torn last line, say)."""
+    """Recognized records of a transcript and the problems that make it incomplete as evidence: lines that are not
+    JSON or not a transcript entry (a torn last line included), or no user / assistant record at all.
+    Raises EvidenceError when the file is absent or unreadable."""
     path = Path(path)
     if not path.is_file():
         raise EvidenceError(f"{path} does not exist")
@@ -39,15 +50,15 @@ def read_jsonl(path):
         try:
             value = json.loads(line)
         except json.JSONDecodeError:
-            bad += 1
-            continue
-        if isinstance(value, dict):
+            value = None
+        if _recognized(value):
             records.append(value)
         else:
             bad += 1
-    if not records:
-        raise EvidenceError(f"{path} holds no transcript records")
-    return records, bad
+    problems = [f"{path}: {bad} line(s) not a transcript record"] if bad else []
+    if not any(r["type"] in CONVERSATION for r in records):
+        problems.append(f"{path}: no user or assistant record")
+    return records, problems
 
 
 def _text(content):
@@ -89,18 +100,30 @@ def hook_denials(records):
 
 
 def no_hook_denial(evidence):
-    """Regression grader: no PreToolUse hook denial in the task's transcripts (`evidence["transcript"]`)."""
-    paths = evidence["transcript"]
-    details, skipped = [], 0
-    for path in paths:
-        records, bad = read_jsonl(path)
-        skipped += bad
-        details += [{"file": str(path), **d} for d in hook_denials(records)]
+    """Regression grader: no PreToolUse hook denial in the task's transcripts (`evidence["transcript"]`).
+
+    Strict about partial evidence (review 1 of #142): a line that is not a transcript record - a torn last line of
+    a live session too - makes the check not measured, because the lost line may be the denial. A denial found in
+    the readable records is a definite failure and wins."""
+    details, problems, seen = [], [], set()
+    for path in evidence["transcript"]:
+        records, issues = read_jsonl(path)
+        problems += issues
+        for d in hook_denials(records):
+            # Copies of one session (a handover before and after the PR) hold the same denial: count it once.
+            if d.get("tool_use_id") in seen:
+                continue
+            if d.get("tool_use_id"):
+                seen.add(d["tool_use_id"])
+            details.append({"file": str(path), **d})
     row = {"check": "hook denials in the transcript", "expected": 0, "measured": len(details),
            "passed": not details, "details": details}
-    if skipped:
-        row["skipped_lines"] = skipped
+    if problems and not details:
+        row.update(measured="not measured", passed=None, error="incomplete evidence: " + "; ".join(problems))
+    elif problems:
+        row["evidence_problems"] = problems
     return row
 
 
-GRADERS = {"no_hook_denial": no_hook_denial}
+# grader name -> (function, the evidence names it reads); task.json is checked against the names.
+GRADERS = {"no_hook_denial": (no_hook_denial, ("transcript",))}

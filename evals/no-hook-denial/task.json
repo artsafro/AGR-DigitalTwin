@@ -3,7 +3,8 @@
   "suite": "regression",
   "grader": "no_hook_denial",
   "evidence": {
-    "transcript": {"root": "main", "glob": "logs/transcripts/{branch_slug}-pr*-*.jsonl"}
+    "transcript": {"root": "main", "glob": "logs/transcripts/{branch_slug}-pr*-*.jsonl",
+                   "match": "{branch_slug}-pr([0-9]+|none)-[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}[.]jsonl"}
   },
   "references": [
     {"name": "denied", "verdict": "fail",

@@ -9,16 +9,22 @@ import json
 import re
 import subprocess
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from twinqa.evals.graders import GRADERS, EvidenceError
 
 SUITES = ("regression", "capability")
 VERDICTS = ("pass", "fail")
+ROOTS = ("main", "task")
+RULE_KEYS = {"root", "path", "glob", "match"}
 
 
 class EvalInputError(Exception):
     """Wrong input for the whole run (unknown task, existing run folder): exit 2 before anything is written."""
+
+
+class TaskError(Exception):
+    """A task.json that does not follow the schema: the task is a stopped row, exit 2."""
 
 
 def _git(cwd, *args):
@@ -41,12 +47,72 @@ def branch_slug(branch):
     return re.sub(r"[^A-Za-z0-9._-]", "-", branch)        # the file-name rule of save_transcript.destination
 
 
+def _check_rule(rule, where):
+    """An evidence rule: {"root": main|task, "path"|"glob": relative pattern, "match": optional file-name regex}."""
+    if not isinstance(rule, dict):
+        raise TaskError(f"{where}: a rule must be an object, got {type(rule).__name__}")
+    if set(rule) - RULE_KEYS:
+        raise TaskError(f"{where}: unknown keys {sorted(set(rule) - RULE_KEYS)}")
+    if ("path" in rule) == ("glob" in rule):
+        raise TaskError(f"{where}: needs exactly one of path / glob")
+    if rule.get("root", "main") not in ROOTS:
+        raise TaskError(f"{where}: root must be one of {ROOTS}")
+    pattern = rule.get("path", rule.get("glob"))
+    if not isinstance(pattern, str) or not pattern:
+        raise TaskError(f"{where}: path / glob must be a non-empty string")
+    for flavour in (PurePosixPath, PureWindowsPath):  # confined to the root on every platform
+        p = flavour(pattern)
+        if p.is_absolute() or p.drive or p.root or ".." in p.parts:
+            raise TaskError(f"{where}: {pattern!r} must stay inside its root (relative, no '..')")
+    if "match" in rule:
+        if not isinstance(rule["match"], str):
+            raise TaskError(f"{where}: match must be a string")
+        try:
+            re.compile(_fill(rule["match"], "branch", regex=True))
+        except re.error as exc:
+            raise TaskError(f"{where}: match is not a regular expression: {exc}") from exc
+
+
+def _check_evidence(evidence, names, where):
+    if not isinstance(evidence, dict):
+        raise TaskError(f"{where} must be an object of rules")
+    if set(evidence) != set(names):
+        raise TaskError(f"{where} must name exactly {sorted(names)} (the grader's evidence), got {sorted(evidence)}")
+    for name, rule in evidence.items():
+        _check_rule(rule, f"{where}.{name}")
+
+
+def validate(folder, spec):
+    """The whole task.json schema, before anything runs (review 1 of #142). Raises TaskError."""
+    if not isinstance(spec, dict):
+        raise TaskError("task.json must be a JSON object")
+    if spec.get("id") != folder.name:
+        raise TaskError(f"id {spec.get('id')!r} differs from the folder name {folder.name!r}")
+    if not isinstance(spec.get("suite"), str) or spec["suite"] not in SUITES:
+        raise TaskError(f"suite must be one of {SUITES}, got {spec.get('suite')!r}")
+    if not isinstance(spec.get("grader"), str) or spec["grader"] not in GRADERS:
+        raise TaskError(f"unknown grader {spec.get('grader')!r}; known: {sorted(GRADERS)}")
+    names = GRADERS[spec["grader"]][1]
+    _check_evidence(spec.get("evidence"), names, "evidence")
+    refs = spec.get("references", [])
+    if not isinstance(refs, list):
+        raise TaskError("references must be a list")
+    for i, ref in enumerate(refs):
+        if not isinstance(ref, dict) or not isinstance(ref.get("name"), str) or ref.get("verdict") not in VERDICTS:
+            raise TaskError(f"references[{i}] needs a name and a verdict in {VERDICTS}")
+        _check_evidence(ref.get("evidence"), names, f"references[{i}].evidence")
+
+
 def load_tasks(evals_dir, suite=None, task=None):
+    """Every selected task as (folder, spec, problem). Every task.json is validated before the suite filter: an
+    invalid task cannot drop out of a suite unseen, it stays as a stopped row."""
     evals_dir = Path(evals_dir)
     if task and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", task):
         raise EvalInputError(f"task id {task!r}: letters, digits, '.', '_' and '-' only")
-    folders = [evals_dir / task] if task else sorted(p for p in evals_dir.iterdir() if p.is_dir()) \
-        if evals_dir.is_dir() else []
+    if task:
+        folders = [evals_dir / task]
+    else:
+        folders = sorted(p for p in evals_dir.iterdir() if p.is_dir()) if evals_dir.is_dir() else []
     tasks = []
     for folder in folders:
         path = folder / "task.json"
@@ -56,56 +122,52 @@ def load_tasks(evals_dir, suite=None, task=None):
             continue
         try:
             spec = json.loads(path.read_text(encoding="utf-8"))
+            validate(folder, spec)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-            spec = {"id": folder.name, "_error": f"task.json unreadable: {exc}"}
-        if not isinstance(spec, dict):
-            spec = {"id": folder.name, "_error": "task.json must be a JSON object"}
-        if suite and spec.get("suite") != suite and "_error" not in spec:
+            tasks.append((folder, None, f"task.json unreadable: {exc}"))
             continue
-        tasks.append((folder, spec))
+        except TaskError as exc:
+            tasks.append((folder, spec, str(exc)))
+            continue
+        if suite and spec["suite"] != suite:
+            continue
+        tasks.append((folder, spec, None))
     if not tasks:
         raise EvalInputError(f"no eval task selected in {evals_dir} (suite={suite}, task={task})")
     return tasks
 
 
-def task_problem(folder, spec):
-    if "_error" in spec:
-        return spec["_error"]
-    if spec.get("id") != folder.name:
-        return f"id {spec.get('id')!r} differs from the folder name {folder.name!r}"
-    if spec.get("suite") not in SUITES:
-        return f"suite must be one of {SUITES}"
-    if spec.get("grader") not in GRADERS:
-        return f"unknown grader {spec.get('grader')!r}; known: {sorted(GRADERS)}"
-    if not isinstance(spec.get("evidence"), dict) or not spec["evidence"]:
-        return "evidence must name at least one rule"
-    for ref in spec.get("references", []):
-        if not isinstance(ref, dict) or ref.get("verdict") not in VERDICTS or not isinstance(ref.get("evidence"), dict):
-            return f"every reference needs a name, an evidence object and a verdict in {VERDICTS}"
-    return None
+def _fill(text, branch, regex=False):
+    values = {"{branch_slug}": branch_slug(branch), "{branch}": branch}
+    for key, value in values.items():
+        text = text.replace(key, re.escape(value) if regex else value)
+    return text
 
 
 def resolve(rule, folder, main, branch):
-    """One evidence rule -> the existing files it names (sorted). Raises EvidenceError when none exists."""
-    if not isinstance(rule, dict) or ("path" in rule) == ("glob" in rule):
-        raise EvidenceError(f"rule {rule!r} needs exactly one of path / glob")
-    root_name = rule.get("root", "main")
-    root = {"main": main, "task": folder}.get(root_name, "?")
-    if root == "?":
-        raise EvidenceError(f"rule root {root_name!r} must be main or task")
+    """One evidence rule -> the existing files it names (sorted), all inside the rule's root.
+    Raises EvidenceError when none exists."""
+    root = {"main": main, "task": folder}[rule.get("root", "main")]
     if root is None:
         raise EvidenceError("the main checkout is unknown (git failed); pass --main")
-    pattern = rule.get("path") or rule.get("glob")
-    if "{branch" in pattern:
+    pattern = rule.get("path", rule.get("glob"))
+    if "{branch" in pattern + rule.get("match", ""):
         if not branch:
             raise EvidenceError(f"{pattern} needs the branch (detached HEAD or git failed); pass --branch")
-        pattern = pattern.replace("{branch_slug}", branch_slug(branch)).replace("{branch}", branch)
+        pattern = _fill(pattern, branch)
     if "path" in rule:
         files = [root / pattern] if (root / pattern).is_file() else []
     else:
         files = sorted(p for p in root.glob(pattern) if p.is_file())
+    if "match" in rule:
+        name = re.compile(_fill(rule["match"], branch, regex=True))
+        files = [p for p in files if name.fullmatch(p.name)]
+    base = root.resolve()
+    outside = [p for p in files if not p.resolve().is_relative_to(base)]   # a link out of the root
+    if outside:
+        raise EvidenceError(f"evidence outside its root {base}: {[str(p) for p in outside]}")
     if not files:
-        raise EvidenceError(f"no evidence: {root / pattern}")
+        raise EvidenceError(f"no evidence: {root / pattern}" + (f" matching {rule['match']}" if "match" in rule else ""))
     return files
 
 
@@ -116,36 +178,38 @@ def _not_measured(task_id, check, expected, message, evidence=()):
 
 def grade(task_id, spec, rules, folder, main, branch, overrides):
     """Resolve every evidence rule (an override path wins) and run the task's grader -> one check row."""
+    grader = GRADERS[spec["grader"]][0]
     evidence = {}
+    used = lambda: [p for paths in evidence.values() for p in paths]  # noqa: E731
     try:
         for name, rule in rules.items():
-            if name in overrides:
+            if name in overrides:          # explicit user input: any path, no root confinement
                 path = Path(overrides[name]).resolve()
                 if not path.is_file():
                     raise EvidenceError(f"no evidence: {path} (--evidence {name}=...)")
                 evidence[name] = [path]
             else:
                 evidence[name] = resolve(rule, folder, main, branch)
-        row = GRADERS[spec["grader"]](evidence)
+        row = grader(evidence)
     except EvidenceError as exc:
-        return _not_measured(task_id, spec["grader"], None, str(exc),
-                             [p for paths in evidence.values() for p in paths])
-    return {"task": task_id, **row, "evidence": [str(p) for paths in evidence.values() for p in paths]}
+        return _not_measured(task_id, spec["grader"], None, str(exc), used())
+    except Exception as exc:  # noqa: BLE001 - a grader that breaks stops its task, never the run
+        return _not_measured(task_id, spec["grader"], None, f"stopped: {type(exc).__name__}: {exc}", used())
+    return {"task": task_id, **row, "evidence": [str(p) for p in used()]}
 
 
-def run_task(folder, spec, main, branch, overrides, references):
-    task_id = spec.get("id", folder.name)
-    problem = task_problem(folder, spec)
+def run_task(folder, spec, problem, main, branch, overrides, references):
     if problem:
-        return [_not_measured(task_id, "task.json", "valid", f"stopped: {problem}")]
+        return [_not_measured(folder.name, "task.json", "valid", f"stopped: {problem}")]
+    task_id = spec["id"]
     if not references:
         return [grade(task_id, spec, spec["evidence"], folder, main, branch, overrides)]
-    rows = []
     if not spec.get("references"):
         return [_not_measured(task_id, spec["grader"], "a reference verdict", "task.json has no references")]
+    rows = []
     for ref in spec["references"]:        # the grader against its known answers: expected = the reference verdict
         row = grade(task_id, spec, ref["evidence"], folder, main, branch, {})
-        name = f"{row['check']} [reference {ref.get('name', '?')}]"
+        name = f"{row['check']} [reference {ref['name']}]"
         if row["passed"] is None:
             rows.append({**row, "check": name, "expected": ref["verdict"]})
             continue
@@ -177,6 +241,10 @@ def run(evals_dir, *, suite=None, task=None, references=False, overrides=None, m
     main = Path(main).resolve() if main else git_main
     branch = branch or git_branch
     tasks = load_tasks(evals_dir, suite, task)
+    for _, spec, problem in tasks:
+        unknown = set(overrides) - set(GRADERS[spec["grader"]][1]) if not problem else set()
+        if unknown:
+            raise EvalInputError(f"--evidence {sorted(unknown)}: the grader reads {list(GRADERS[spec['grader']][1])}")
     if output is None:
         if main is None:
             raise EvalInputError("the main checkout is unknown (git failed); pass --main or --output")
@@ -185,7 +253,8 @@ def run(evals_dir, *, suite=None, task=None, references=False, overrides=None, m
     output = Path(output)
     if output.exists():
         raise EvalInputError(f"{output} exists; use a new run folder")
-    rows = [r for folder, spec in tasks for r in run_task(folder, spec, main, branch, overrides, references)]
+    rows = [r for folder, spec, problem in tasks
+            for r in run_task(folder, spec, problem, main, branch, overrides, references)]
     code = exit_code(rows)
     report = {
         "selector": {"suite": suite, "task": task, "references": references},

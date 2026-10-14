@@ -23,11 +23,21 @@ evals/<task id>/
 | `evidence` | `{name: rule}` the grader reads in a real run |
 | `references` | `[{name, evidence, verdict: pass|fail}]`: evidence with a known answer; the reference verdict |
 
-An evidence rule is `{"root": "main"|"task", "path": ...}` or `{"root": ..., "glob": ...}`. `main` is the main
+An evidence rule is `{"root": "main"|"task", "path"|"glob": ..., "match": optional}`. `main` is the main
 checkout (parent of `git rev-parse --git-common-dir`, where every worktree's `logs/` goes); `task` is the task
 folder. `{branch}` and `{branch_slug}` (every character outside `A-Za-z0-9._-` as `-`, the file-name rule of
-`tools/hooks/save_transcript.py`) are replaced by the graded branch. A glob takes every match. No file = the
-check is not measured (exit 2), never a pass.
+`tools/hooks/save_transcript.py`) are replaced by the graded branch. A glob takes every match; `match` is a regular
+expression the whole file name must match (placeholders inserted escaped), so that a glob prefix cannot take
+another branch's files (`harness-x-pr*` would also catch branch `harness/x-pr7-y`). No file = the check is not
+measured (exit 2), never a pass.
+
+A `path` / `glob` is relative and stays inside its root: an absolute path or `..` stops the task, and a file
+reached through a link out of the root is not measured. The `--evidence name=path` override is explicit user input
+and may point anywhere.
+
+Every `task.json` is validated in full before anything runs (field types, the grader's evidence names in
+`evidence` and in every reference, the rules). An invalid task is a stopped row (exit 2) in any run that reaches
+its folder - a suite run reads every folder, so a typo in `suite` cannot drop a task unseen.
 
 Evidence by convention: transcripts `logs/transcripts/<branch slug>-pr<N|none>-<session>.jsonl` (written at
 `/handover`), the usage log `logs/agent-usage.jsonl`, benchmark runs `data/benchmark/<bench>/runs/`.
@@ -48,6 +58,8 @@ missing, a task stopped (bad `task.json`) or the input is wrong - as `tools/qa/r
 
 ## Adding a task
 
-A grader takes `{name: [paths]}`, returns `{"check", "expected", "measured", "passed", "details"}` and raises
-`EvidenceError` when the evidence proves nothing. Each regression grader has a reference that fails and one that
+A grader is registered in `GRADERS` with the evidence names it reads; it takes `{name: [paths]}`, returns
+`{"check", "expected", "measured", "passed", "details"}`, raises `EvidenceError` when the evidence is absent and
+returns `passed: None` with an `error` when it is incomplete (a definite failure found in the readable part stays a
+failure). Each regression grader has a reference that fails and one that
 passes, and a pytest over both (`tests/test_evals.py`).

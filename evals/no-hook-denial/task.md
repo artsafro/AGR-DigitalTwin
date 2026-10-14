@@ -9,8 +9,14 @@ skill, a write from a read-only subagent, a file in another worktree). The hooks
 shows how often they had to (spec #118, user story 18: "no hook denial").
 
 **Evidence.** Every transcript of the branch kept at `/handover`:
-`<main checkout>/logs/transcripts/<branch slug>-pr*-*.jsonl` (all sessions of the task, not the newest one).
-None found = not measured, exit 2. One session by hand: `--task no-hook-denial --evidence transcript=<path>`.
+`<main checkout>/logs/transcripts/<branch slug>-pr<N|none>-<session UUID>.jsonl` (all sessions of the task, not
+the newest one; the anchored `match` keeps out a branch whose name extends the slug). None found = not measured,
+exit 2.
+
+**Partial evidence is strict.** A line that is not a transcript record (not JSON, no string `type`, a `user` /
+`assistant` record without `message`) - a torn last line of a live session included - or a file without any
+user / assistant record makes the check not measured (exit 2): the lost line may be the denial. A denial found in
+the readable records still fails (exit 1). Grade a transcript copied at `/handover`, not a live one. One session by hand: `--task no-hook-denial --evidence transcript=<path>`.
 
 **Detection rule** (grader `twinqa.evals.graders.no_hook_denial`, from the record structure only): a `user`
 record whose `permissionDecision` is `{"source": "hook", "decision": "reject"}`, or (older records without that
