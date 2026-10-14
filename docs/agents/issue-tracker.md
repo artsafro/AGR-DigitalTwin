@@ -53,7 +53,8 @@ Board rules: `docs/agents/KANBAN.md`. IDs (project `PVT_kwHODNABwc4BnB8W`):
 | Status | `PVTSSF_lAHODNABwc4BnB8Wzhloa0Y` | Backlog `14fba418`, Ready `6af3c169`, In progress `94f71f80`, Review `887448ca`, Needs you `695e5f92`, Done `b85047a8` |
 | Agent | `PVTSSF_lAHODNABwc4BnB8Wzhloa94` | Claude `83a7ae00`, Codex `c794478a`, Antigravity `1b40f2ef`, Human `adb36ca5` |
 
-- **Find the card of issue N**: `gh project item-list 1 --owner artsafro --format json --limit 200 --jq '.items[] | select(.content.number==N) | .id'`
+- **Find the card of issue N** (from the issue side; the project's own item list showed 0 items right after
+  the board was created): `gh api graphql -f query='{repository(owner:"artsafro",name:"AGR-DigitalTwin"){issue(number:N){projectItems(first:5){nodes{id project{number}}}}}}' --jq '.data.repository.issue.projectItems.nodes[] | select(.project.number==1) | .id'`
 - **Add an issue**: `gh project item-add 1 --owner artsafro --url https://github.com/artsafro/AGR-DigitalTwin/issues/N`
 - **Set a field**: `gh project item-edit --project-id PVT_kwHODNABwc4BnB8W --id <item id> --field-id <field id> --single-select-option-id <option id>`
 
