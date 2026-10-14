@@ -38,7 +38,8 @@ of its own - a question to the user with a picture, never decided by the agent. 
 ## 3. Silhouette test
 
 A part is built more complex than its primitive only if replacing it by the simplest form changes the silhouette
-in any of five views (four facades and the top) by more than 0.10 m. The test is automatic, per element, reported.
+in any of five views (four facades and the top) by more than 0.07 m (user 2026-10-14: 0.07, so the kept 0.07-0.10 m
+steps stay profiles; was 0.10). The test is automatic, per element, reported.
 
 ## 4. Repeats
 
@@ -70,8 +71,9 @@ instances fail; profiled elements built more complex than their primitive withou
 
 In the harness: `src/twinqa/geometry/complexity.py`, run on the modules scene by `tools/qa/run_from_source.py` when
 the job's tolerances have a `complexity` block (`budget` per group, `total_max`, `decor_groups`,
-`decor_section_points_max`, `silhouette_dev_min_m`). "12 vertices" is read as 12 points of the element's section
-(an extrusion has twice that many vertices).
+`decor_section_points_max`, `silhouette_dev_min_m`). "12 vertices" is 12 points of the element's section (an
+extrusion has twice that many vertices; user 2026-10-14: about 12 points describe a silhouette). The budget per
+group is the job's (OBJ03: rough, the total 150 000 is what holds, user 2026-10-14).
 
 ## Traps
 

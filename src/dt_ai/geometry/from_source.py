@@ -863,8 +863,7 @@ BELT_SHARE = 0.6            # bands at one height running over this share of the
 BELT_MATCH_M = 0.06
 BELT_SAMPLE_M = 0.1         # a storey band frame is tested every this along the contour
 SILL_ID, HEAD_ID = 7, 8     # thin sills / heads (2 cm plates) are no geometry: the opening's face takes their id
-PF_SILHOUETTE_M = 0.07      # silhouette test: a section within this of its box is built as the box (pattern 0.10 m;
-                            # 0.07-0.10 m steps kept as a profile, user 2026-10-14)
+PF_SILHOUETTE_M = 0.07      # silhouette test: a section within this of its box is built as the box (user 2026-10-14)
 
 
 def _collapse_steps(poly, step=PF_STEP_M):
