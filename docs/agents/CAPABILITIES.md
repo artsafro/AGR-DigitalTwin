@@ -141,6 +141,17 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
 - Tests: `tests/test_session_context.py`, `tests/test_context_watch.py`, `tests/test_usage_hooks.py`,
   `tests/test_save_transcript.py`.
 
+### Evals runner — `dt evals` (Claude Code, #122; `evals/README.md`)
+- Status: IN BRANCH (`harness/evals-runner`, 2026-10-15): `uv run dt evals --suite regression|capability` or
+  `--task <id>` runs `evals/<task>/task.json`; graders in `src/twinqa/evals/graders.py` (pure Python, no LLM);
+  report `<main checkout>/logs/evals/runs/<time>-<selector>/report.json` (git-ignored), exit 0 / 1 grader fails /
+  2 evidence missing or task stopped, as the benchmark runner. Evidence by rule (main checkout or task folder,
+  `{branch_slug}`), `--evidence name=path` for one task, `--references` checks graders against known verdicts.
+- Tasks: `no-hook-denial` (regression): every transcript of the branch, a hook denial = `permissionDecision`
+  `{source: hook, decision: reject}` (or a `PreToolUse:<tool> hook error:` tool_result); synthetic references.
+  Run on this branch's real handover transcript: 1 denial found (a Write into another worktree).
+- Tests: `tests/test_evals.py`.
+
 ### Skills sync — `tools/sync_skills.py`
 - Status: WORKING (2026-10-06): `.agents/skills/` is canonical; the script regenerates
   `.claude/skills/` (vendored skills from `skills-lock.json` are skipped — Claude has user-level

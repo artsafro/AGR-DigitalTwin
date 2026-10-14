@@ -56,6 +56,17 @@ def parser():
     intake = sub.add_parser("intake", help="Check an intake folder ('study the sources', HARNESS_PLAN §15)")
     intake.add_argument("action", choices=["check"])
     intake.add_argument("--dir", type=Path, required=True, help="jobs/<JOB>/intake")
+    evals = sub.add_parser("evals", help="Run agent-behaviour eval tasks (evals/<task>/task.json); report in a new run folder")
+    evals.add_argument("--suite", choices=["regression", "capability"])
+    evals.add_argument("--task", help="one task id (its folder under evals/)")
+    evals.add_argument("--references", action="store_true",
+                       help="grade each task's reference evidence and compare with its reference verdict")
+    evals.add_argument("--evidence", action="append", default=[], metavar="NAME=PATH",
+                       help="with --task: use this file for an evidence rule, e.g. transcript=<path>")
+    evals.add_argument("--branch", help="branch whose evidence is graded (default: the current one)")
+    evals.add_argument("--main", type=Path, help="main checkout holding logs/ (default: from git)")
+    evals.add_argument("--evals-dir", type=Path, help="default: <repo>/evals")
+    evals.add_argument("--output", type=Path, help="new run folder (default: <main>/logs/evals/runs/<time>-<selector>)")
     for name in ("build", "validate"):
         item = sub.add_parser(name, help="Build/check a labelled development bundle; never certify delivery")
         item.add_argument("--job" if name == "build" else "--archive", type=Path, required=True)
@@ -104,6 +115,24 @@ def main(argv=None):
             write_json(args.output / "modules-report.json", report)
             write_json(args.output / "modules-scene.json", scene)
             print(f"from-source: {args.output}; {report['triangles']} triangles; spec {len(spec_doc['floors'])} floors")
+        elif args.command == "evals":
+            from twinqa.evals import runner
+            try:
+                overrides = dict(item.split("=", 1) for item in args.evidence)
+            except ValueError:
+                print("ERROR: --evidence takes NAME=PATH", file=sys.stderr)
+                return 2
+            try:
+                code, report, out = runner.run(args.evals_dir or root / "evals", suite=args.suite, task=args.task,
+                                               references=args.references, overrides=overrides, main=args.main,
+                                               branch=args.branch, output=args.output)
+            except runner.EvalInputError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                return 2
+            print(runner.table(report))
+            print(f"Report: {out / 'report.json'}; {report['passed']} passed, {report['failed']} failed, "
+                  f"{report['not_measured']} not measured; exit {code}")
+            return code
         elif args.command == "intake":
             from dt_ai.intake.check import check as intake_check
             result = intake_check(args.dir)

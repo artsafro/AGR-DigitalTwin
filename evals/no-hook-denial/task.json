@@ -1,0 +1,14 @@
+{
+  "id": "no-hook-denial",
+  "suite": "regression",
+  "grader": "no_hook_denial",
+  "evidence": {
+    "transcript": {"root": "main", "glob": "logs/transcripts/{branch_slug}-pr*-*.jsonl"}
+  },
+  "references": [
+    {"name": "denied", "verdict": "fail",
+     "evidence": {"transcript": {"root": "task", "path": "fixtures/denied.synthetic.jsonl"}}},
+    {"name": "clean", "verdict": "pass",
+     "evidence": {"transcript": {"root": "task", "path": "fixtures/clean.synthetic.jsonl"}}}
+  ]
+}
