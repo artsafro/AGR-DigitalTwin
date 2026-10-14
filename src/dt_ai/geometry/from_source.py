@@ -558,7 +558,10 @@ def face_planes(mesh: _Mesh, v, t, mid, min_area=1e-3, thick=None):
 # ---------------------------------------------------------------------------------------------- decor by profile
 
 PROFILE_SIMPLIFY_M = 0.01   # a decor section keeps its shape within this (user 2026-10-14: the real section)
-PROFILE_SAME_M = 0.01       # two pieces of one element have the same section within this (Hausdorff)
+PROFILE_SAME_M = 0.02       # pieces of one run share a section within this (user 2026-10-14: seams are texture,
+                            # a run is one mesh; the longest piece's section is kept)
+JOINT_RECESS_M = 0.005      # where a pier meets a band, the one that gives way runs this far into the other
+JOINT_PROUD_M = 0.005       # the band that runs through stands this far proud of the pier's face
 
 
 def _frame_of(q):
@@ -645,23 +648,159 @@ def profile_elements(v, t, centre, odd=None):
             if g.geom_type == "Polygon":
                 sec = orient(Polygon(g.exterior).simplify(PROFILE_SIMPLIFY_M / 2, preserve_topology=True), 1.0)
         out.append([axis, u, n, sec, a0, a1, loose])
-    # merge touching pieces of one section along their axis
-    out.sort(key=lambda e: (e[0], round(float(np.arctan2(e[1][1], e[1][0])), 3), round(e[3].centroid.x, 2),
-                            round(e[3].centroid.y, 2), e[4]))
-    merged = []
+    # merge touching pieces of one run along their axis (one mesh, no seam); the run keeps its longest piece's
+    # section; a true change of section (past PROFILE_SAME_M) starts a new run
+    out.sort(key=lambda e: (e[0], round(float(np.arctan2(e[1][1], e[1][0])), 3), round(e[3].centroid.x, 1),
+                            round(e[3].centroid.y, 1), e[4]))
+    runs = []
     for e in out:
-        m = merged[-1] if merged else None
-        if (m is not None and m[0] == e[0] and np.allclose(m[1], e[1]) and e[4] - m[5] <= DECOR_SEAM_M
-                and m[3].hausdorff_distance(e[3]) <= PROFILE_SAME_M):
-            m[5] = max(m[5], e[5])
+        hit = None
+        for r in runs[-30:]:
+            if (r[0] == e[0] and np.allclose(r[1], e[1]) and e[4] - r[5] <= DECOR_SEAM_M and r[4] - e[5] <= DECOR_SEAM_M
+                    and r[3].hausdorff_distance(e[3]) <= PROFILE_SAME_M):
+                hit = r
+                break
+        if hit is None:
+            runs.append(list(e) + [e[5] - e[4]])
         else:
-            merged.append(list(e))
-    return [tuple(m[:6]) + (m[6],) for m in merged]
+            if e[5] - e[4] > hit[7]:                        # the longest piece's section
+                hit[3], hit[7] = e[3], e[5] - e[4]
+            hit[4], hit[5] = min(hit[4], e[4]), max(hit[5], e[5])
+            hit[6] = hit[6] + e[6]
+    return [tuple(r[:7]) for r in runs]
 
 
-def extrude(mesh: _Mesh, element, mid):
+def _plan(e):
+    """An element's plan polygon (world) and its z range."""
+    axis, u, n, sec, a0, a1 = e[:6]
+    if axis == "z":
+        ring = [u * a + n * b for a, b in np.asarray(sec.exterior.coords)[:-1]]
+        return Polygon(ring), (a0, a1)
+    x0, z0, x1, z1 = sec.bounds                           # (d, z) section
+    return Polygon([u * a0 + n * x0, u * a1 + n * x0, u * a1 + n * x1, u * a0 + n * x1]), (z0, z1)
+
+
+def resolve_joints(elements):
+    """Piers and bands where they meet (user 2026-10-14): a band whose plan covers the pier runs through - the
+    pier stops JOINT_RECESS_M inside it with no cap there, and the band stands JOINT_PROUD_M proud of the pier's
+    face; a pier deeper than the band runs through and the band stops inside it the same way. Returns
+    [(element, caps_at)] and the joint count."""
+    piers = [list(e) for e in elements if e[0] == "z"]
+    bands = [list(e) for e in elements if e[0] == "s"]
+    pcaps, bcaps = [[True, True] for _ in piers], [[True, True] for _ in bands]
+    joints = 0
+    split_piers = []
+    for i, p in enumerate(piers):
+        pp, (pz0, pz1) = _plan(p)
+        cuts = []
+        for j, b in enumerate(bands):
+            bp, (bz0, bz1) = _plan(b)
+            if bz1 <= pz0 or bz0 >= pz1 or not bp.intersects(pp) or bp.intersection(pp).area < 1e-4:
+                continue
+            joints += 1
+            if bp.buffer(0.03).covers(pp):                   # the band runs through: proud of the pier, pier inside
+                axis, u, n, sec, a0, a1 = b[:6]
+                front = max(float(np.dot(q, n)) for q in np.asarray(pp.exterior.coords))
+                x0, z0, x1, z1 = sec.bounds
+                if x1 < front + JOINT_PROUD_M:              # its outer face (high d) stands proud of the pier's
+                    b[3] = sec.union(shapely.box(x0, z0, front + JOINT_PROUD_M, z1)).simplify(1e-4)
+                    b[3] = orient(Polygon(max(shapely.get_parts(b[3]), key=lambda g: g.area).exterior), 1.0)
+                cuts.append((bz0, bz1))
+            else:                                            # the pier runs through: the band stops inside it
+                axis, u, n, sec, a0, a1 = b[:6]
+                s_in = [float(np.dot(q, u)) for q in np.asarray(pp.exterior.coords)]
+                lo, hi = min(s_in), max(s_in)
+                if lo - JOINT_RECESS_M <= a0 <= hi:         # the band starts in the pier
+                    b[4] = max(a0, hi - JOINT_RECESS_M)
+                    bcaps[j][0] = False
+                if lo <= a1 <= hi + JOINT_RECESS_M:         # the band ends in the pier
+                    b[5] = min(a1, lo + JOINT_RECESS_M)
+                    bcaps[j][1] = False
+        # split the pier at the bands that run through it
+        segs = [[pz0, pz1, True, True]]
+        for bz0, bz1 in sorted(cuts):
+            nxt = []
+            for z0, z1, c0, c1 in segs:
+                if bz1 <= z0 or bz0 >= z1:
+                    nxt.append([z0, z1, c0, c1])
+                    continue
+                if bz0 - z0 > 0.02:
+                    nxt.append([z0, bz0 + JOINT_RECESS_M, c0, False])
+                if z1 - bz1 > 0.02:
+                    nxt.append([bz1 - JOINT_RECESS_M, z1, False, c1])
+            segs = nxt
+        for z0, z1, c0, c1 in segs:
+            q = list(p)
+            q[4], q[5] = z0, z1
+            split_piers.append((tuple(q), (c0, c1)))
+    out = split_piers + [(tuple(b), tuple(c)) for b, c in zip(bands, bcaps) if b[5] - b[4] > 0.01]
+    return out, joints
+
+
+def inset_panels(mesh: _Mesh, v, t, stor, mid, gap=0.005):
+    """Dark inserts (user 2026-10-14): flat panels in front of the wall, nearer than 2 cm to each other one panel,
+    built as a box - its front at the outermost plane, its back WALL inset past the storey's wall line, no back
+    face; its top and bottom kept `gap` off an opening's sill or head on that storey. Returns the panel count."""
+    pieces = [v[np.unique(t[pc])] for pc in _pieces(v, t)]
+    groups = []
+    for q in pieces:
+        hit = next((g for g in groups if np.all(q.min(0) - 0.02 <= g[1]) and np.all(q.max(0) + 0.02 >= g[0])), None)
+        if hit is None:
+            groups.append([q.min(0), q.max(0), [q]])
+        else:
+            hit[0], hit[1] = np.minimum(hit[0], q.min(0)), np.maximum(hit[1], q.max(0))
+            hit[2].append(q)
+    n_out, skipped = 0, []
+    for lo, hi, qs in groups:
+        allp = np.vstack(qs)
+        zm = float(allp[:, 2].mean())
+        st = next((x for x in stor.values() if x["z"][0] - 0.3 <= zm <= x["z"][1] + 0.3), None)
+        if st is None:
+            continue
+        ring, poly = st["poly"].exterior, st["poly"]
+        q0 = qs[0]                                           # the panel's own plane: its normal, out of the wall
+        nn = np.cross(q0[1] - q0[0], q0[2] - q0[0])[:2] if len(q0) >= 3 else np.zeros(2)
+        if np.linalg.norm(nn) < 1e-9:
+            continue
+        nvec = nn / np.linalg.norm(nn)
+        c = allp[:, :2].mean(axis=0)
+        if poly.distance(shapely.Point(*(c + nvec * 0.1))) < poly.distance(shapely.Point(*(c - nvec * 0.1))):
+            nvec = -nvec                                     # out of the wall: away from the storey's plan
+        hit = shapely.LineString([c, c - nvec * 5.0]).intersection(ring)   # back along the normal to the wall
+        pts_hit = [np.asarray(g.coords[0]) for g in shapely.get_parts(hit) if not g.is_empty]
+        if not pts_hit:
+            skipped.append([round(float(x), 2) for x in c])
+            continue
+        back = min(pts_hit, key=lambda x: float(np.linalg.norm(x - c)))
+        u = np.array([-nvec[1], nvec[0]])
+        s_ = allp[:, :2] @ u
+        d_out = float((allp[:, :2] @ nvec).max())            # the outermost plane
+        d_wall = float(back @ nvec) - DECOR_INSET_M
+        z0, z1 = float(allp[:, 2].min()), float(allp[:, 2].max())
+        rows = [z for ops in st["openings"].values() for o in ops for z in o[2:4]]
+        if any(abs(z0 - z) <= 0.01 for z in rows):
+            z0 += gap
+        if any(abs(z1 - z) <= 0.01 for z in rows):
+            z1 -= gap
+        if z1 - z0 <= 0.02 or d_out - d_wall <= 0.01:
+            continue
+        a0, a1 = float(s_.min()), float(s_.max())
+        P = lambda a, d, z: [*(u * a + nvec * d), z]                                    # noqa: E731
+        f = [P(a0, d_out, z0), P(a1, d_out, z0), P(a1, d_out, z1), P(a0, d_out, z1)]
+        b = [P(a0, d_wall, z0), P(a1, d_wall, z0), P(a1, d_wall, z1), P(a0, d_wall, z1)]
+        n3, u3 = [*nvec, 0.0], [*u, 0.0]
+        mesh.quad(f, mid, n3)                                # front
+        mesh.quad([b[0], b[1], f[1], f[0]], mid, [0, 0, -1])  # bottom
+        mesh.quad([f[3], f[2], b[2], b[3]], mid, [0, 0, 1])   # top
+        mesh.quad([b[0], f[0], f[3], b[3]], mid, [-x for x in u3])
+        mesh.quad([f[1], b[1], b[2], f[2]], mid, u3)         # no back face: it lies in the wall
+        n_out += 1
+    return n_out
+
+
+def extrude(mesh: _Mesh, element, mid, caps_at=(True, True)):
     """A decor element: its section extruded between a0 and a1 along its axis; side quads, caps (quads, else a
-    triangulation of the section)."""
+    triangulation of the section) - a cap inside another element is left out (caps_at)."""
     axis, u, n, sec, a0, a1 = element[:6]
     loose = element[6] if len(element) > 6 else []
     u3, n3, z3 = np.array([*u, 0.0]), np.array([*n, 0.0]), np.array([0.0, 0.0, 1.0])
@@ -680,8 +819,9 @@ def extrude(mesh: _Mesh, element, mid):
     caps = [ring] if len(ring) == 4 and sec.convex_hull.area - sec.area <= 1e-9 else \
         [np.asarray(x.exterior.coords)[:-1] for x in shapely.get_parts(shapely.constrained_delaunay_triangles(sec))]
     for c in caps:
-        for h, f in ((a0, -along), (a1, along)):
-            (mesh.quad if len(c) == 4 else mesh.tri)([P(*x, h).tolist() for x in c], mid, f)
+        for h, f, on in ((a0, -along, caps_at[0]), (a1, along, caps_at[1])):
+            if on:
+                (mesh.quad if len(c) == 4 else mesh.tri)([P(*x, h).tolist() for x in c], mid, f)
     for ls in loose:                                    # zero-thickness sheets of the element: planes along it
         c = np.asarray(ls.coords)
         for a, b in zip(c[:-1], c[1:]):
@@ -884,7 +1024,7 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
     rep["walls"] = {"storeys": srep}
     done("walls", m, keys("walls") + glass)
 
-    m, n_el = _Mesh(), {}
+    m, n_el, all_els = _Mesh(), {}, []
     centre = np.asarray(max(shapely.get_parts(slabs[0][3]), key=lambda g: g.area).centroid.coords[0])
     for k in keys("boxes"):
         v, t, _ = parts[k]
@@ -895,14 +1035,20 @@ def build_from_modules(dump: dict, modules: dict, object_id: str, inputs: Inputs
         els = profile_elements(v, t, centre, odd=odd) if len(t) else []
         if odd:
             kept += face_planes(m, v, np.vstack(odd), mid)
-        for e in els:
-            extrude(m, e, mid)
+        all_els += [tuple(e[:7]) + (mid,) for e in els]
         n_el[k] = {"elements": len(els), "flat_pieces": len(_pieces(v, flat_t)) if len(flat_t) else 0,
                    "off_axis_or_no_section": len(odd), "kept_as_triangles": kept}
-    for k in keys("planes"):                         # finishes that stand off the wall: planes where they are
+    resolved, joints = resolve_joints(all_els)        # piers into bands, bands proud (user 2026-10-14)
+    for e, caps in resolved:
+        extrude(m, e, e[7], caps)
+    rep.setdefault("decor", {})["joints"] = joints
+    panels = 0
+    for k in keys("planes"):                         # dark inserts: boxes set into the wall (user 2026-10-14)
         v, t, _ = parts[k]
-        n_el[k] = {"planes_kept_as_triangles": face_planes(m, v, t, pid(k, 5)), "pieces": len(_pieces(v, t))}
-    rep["decor"] = {"elements": n_el, "elements_total": sum(x.get("elements", 0) for x in n_el.values())}
+        panels += inset_panels(m, v, t, stor, pid(k, 5))
+    n_el["inset_panels"] = panels
+    rep["decor"] = {**rep.get("decor", {}), "elements": n_el,
+                    "elements_total": sum(x.get("elements", 0) for x in n_el.values() if isinstance(x, dict))}
     done("decor", m, keys("boxes") + keys("planes"))
 
     m, enclosure = _Mesh(), None

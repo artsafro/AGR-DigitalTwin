@@ -326,3 +326,40 @@ def test_glass_off_the_wall_is_a_balcony_railing_of_closed_plates():
     assert [len(f["openings"]) for f in spec_doc["floors"]] == [1, 1]
     soup = from_dump(model)
     assert checks.check_mesh(soup, TOL, checks.load_ranges())["status"] == "pass"
+
+
+def test_a_pier_runs_through_storeys_as_one_element_and_stops_inside_a_band():
+    """User 2026-10-14: no seams (texture); a pier is one element from band to band, its ends JOINT_RECESS_M inside
+    the bands with no cap there; the band runs through and stands JOINT_PROUD_M proud of the pier's face."""
+    sq = [[0, 0], [0.4, 0], [0.4, 0.3], [0, 0.3]]
+    v1, t1 = _prism(sq, 0.0, 3.0)
+    v2, t2 = _prism(sq, 3.01, 6.0)                       # split at 3 m: one pier
+    v, t = np.vstack([v1, v2]), np.vstack([t1, t2 + len(v1)])
+    els = fs.profile_elements(v, t, centre=np.array([0.2, 5.0]))
+    assert len(els) == 1 and els[0][4] == pytest.approx(0.0) and els[0][5] == pytest.approx(6.0)
+    band = ("s", np.array([1.0, 0.0]), np.array([0.0, -1.0]),
+            shapely.geometry.polygon.orient(Polygon([[-0.3, 2.8], [0.0, 2.8], [0.0, 3.2], [-0.3, 3.2]]), 1.0),
+            -1.0, 2.0, [], 26)
+    resolved, joints = fs.resolve_joints([tuple(els[0][:7]) + (26,), band])
+    assert joints == 1
+    piers = [(e, c) for e, c in resolved if e[0] == "z"]
+    assert [(round(e[4], 3), round(e[5], 3), c) for e, c in piers] == [(0.0, 2.805, (True, False)),
+                                                                        (3.195, 6.0, (False, True))]
+    b = next(e for e, c in resolved if e[0] == "s")
+    assert b[3].bounds[2] == pytest.approx(fs.JOINT_PROUD_M, abs=1e-6)   # proud of the pier's face (d 0)
+
+
+def test_a_dark_insert_is_a_box_set_into_the_wall_with_no_back_and_off_the_opening():
+    m = _Mesh()
+    poly = Polygon([[0, 0], [10, 0], [10, 10], [0, 10]])
+    stor = {"L0": {"z": (0.0, 3.0), "poly": poly, "openings": {0: [[2.0, 4.0, 0.9, 2.4]]}}}
+    f1 = np.array([[2.0, -0.2, 2.4], [4.0, -0.2, 2.4], [4.0, -0.2, 2.9], [2.0, -0.2, 2.9]])   # a panel 0.2 m out,
+    f2 = f1 + np.array([0.0, -0.01, 0.0])                                                     # its twin 1 cm further
+    v = np.vstack([f1, f2])
+    t = np.array([[0, 1, 2], [0, 2, 3], [4, 5, 6], [4, 6, 7]])
+    assert fs.inset_panels(m, v, t, stor, 4) == 1
+    d = m.mesh("x")
+    p = np.asarray(d["vertices"])
+    assert len(d["polygon_sizes"]) == 5                                       # no back face
+    assert p[:, 1].min() == pytest.approx(-0.21) and p[:, 1].max() == pytest.approx(fs.DECOR_INSET_M)
+    assert p[:, 2].min() == pytest.approx(2.405)                              # 5 mm off the opening's head
