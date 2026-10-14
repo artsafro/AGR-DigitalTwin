@@ -19,8 +19,8 @@ against both NPM and VPM.
 ## Steps
 
 1. **Identify.** Record path, format, file size, modification date, SHA-256 and
-   authoring tool/version if discoverable. Done when the source has a row in the
-   `Sources` table of `docs/PROJECT_STATE.md`.
+   authoring tool/version if discoverable. Done when the source has a row in
+   `docs/sources/README.md`.
 
 2. **Scale and placement.** Determine units, up axis, origin, and one real-world
    reference dimension (storey height, door, grid spacing). Record where the source
@@ -50,7 +50,7 @@ against both NPM and VPM.
 
 6. **Report.** Write `docs/sources/<source-name>.md`: findings above, production
    risks, user questions, and every entry of `docs/domain/conflicts.md` that this
-   source touches (by number). Update `docs/PROJECT_STATE.md`.
+   source touches (by number). Update its row in `docs/sources/README.md`.
 
 ## Completion
 

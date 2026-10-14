@@ -27,8 +27,8 @@ Do these steps in order. Talk to the user in Russian; files stay in English.
    `docs/backlog.md`, section "Reuse proposals", by the rule of three (`docs/agents/WORKFLOW.md`): kind
    (CLI command / skill / pattern), what it is, how many times, this branch, marked `proposal`. Do not create
    the command, skill or pattern. None: skip the step.
-6. **Project state.** `docs/PROJECT_STATE.md` changes only on `main` after a merge. In a task branch do not
-   touch it; state changes go into the handoff.
+6. **Project state.** `docs/PROJECT_STATE.md` changes only on `main` after a merge, by replacing a section
+   (`docs/agents/WORKFLOW.md`, "Project state"). In a task branch do not touch it; state changes go into the handoff.
 7. **Commit the handoff**: `Handoff: <next step in a few words>` with the handoff, STATE and backlog files. Then
    `git status --short` must show nothing of this task.
 8. **Report** in Russian, short: branch, HEAD commit, PR (if any), next step, reuse proposals added (count), then exactly
