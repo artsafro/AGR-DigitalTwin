@@ -85,3 +85,5 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
   instances by type) and `npm/model.fbx`. Per-group budgets in `tolerances.json` `complexity` are the agent's
   proposal (walls 24k, slabs 12k, piers 32k, bands 10k, balconies 8k, dark inserts 22k, storey bands 4k, parapets
   6k, terraces / superstructure 1k; total 150k) - wait for the user. Markers 08 / 10 re-rendered for confirmation.
+- 2026-10-14 user on v009: markers 08 / 10 look right (confirmed); per-group budgets accepted as rough - the total
+  150 000 is what holds; silhouette threshold 0.07 m; 12 section points per decor element.

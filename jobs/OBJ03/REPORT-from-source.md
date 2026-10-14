@@ -31,7 +31,7 @@ up to 2 cm further out.
 
 Before / after by module (triangles):
 
-| Module | v008 | v009 | Budget (agent's proposal) |
+| Module | v008 | v009 | Budget (rough; the user holds the total, 2026-10-14) |
 |---|---|---|---|
 | walls | 21 472 | 21 472 | 24 000 |
 | slabs | 11 632 | 11 632 | 12 000 |
@@ -77,8 +77,8 @@ Decor triangles in v007: collars 106 410 (3 052), pier pieces 73 917 (4 056 afte
 
 ## 3. What does not work yet
 
-1. Budget solved in v009 (95 803). The per-group budgets are the agent's proposal - to be confirmed by the user.
-2. Markers 08 / 10: re-rendered on v009 (`review/ISSUE_08-sheet.png`, `ISSUE_10-sheet.png`) - wait for the user.
+1. Budget solved in v009 (95 803); per-group budgets rough, the total 150 000 holds (user 2026-10-14).
+2. Markers 08 / 10: confirmed by the user on v009 (2026-10-14).
 3. Marker 11 (broken geometry at the SW corner): the cause was the corner insert box (fixed in v007 by grouping inserts
    per plane) - to be confirmed on the picture.
 4. `check_decor` checks nothing on this path: the spec by modules carries no decor.
