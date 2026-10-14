@@ -64,7 +64,8 @@
     }
    ],
    "confidence": "confirmed",
-   "note": "panelised source: no closed wall; these planes are the face the windows and decor stand on"
+   "note": "panelised source: no closed wall; these planes are the face the windows and decor stand on",
+   "build_as": "walls"
   },
   {
    "module": "walls",
@@ -98,7 +99,8 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "walls"
   },
   {
    "module": "walls",
@@ -131,7 +133,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "not built (interior; user 2026-10-13)"
+   "build": "not built (interior; user 2026-10-13)",
+   "build_as": "skip"
   },
   {
    "module": "slabs",
@@ -166,7 +169,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "inset plates (roof, walkable); edges as facade band"
+   "build": "inset plates (roof, walkable); edges as facade band",
+   "build_as": "slab_boxes"
   },
   {
    "module": "terraces",
@@ -200,15 +204,14 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "deck_boxes"
   },
   {
    "module": "parapets",
-   "what": "terrace glass railings, their frames and the deck edge trims",
+   "what": "terrace glass railings",
    "ids": {
-    "Shape211223722__slot5": 12,
-    "Shape211223722__slot8": 16,
-    "Shape211223723": 17
+    "Shape211223722__slot5": 12
    },
    "parts": [
     {
@@ -234,7 +237,17 @@
       "png/Shape211223722__slot5-top.png",
       "png/Shape211223722__slot5-close.png"
      ]
-    },
+    }
+   ],
+   "confidence": "confirmed",
+   "build_as": "railings",
+   "build": "one closed 20 mm plate per ledge side (pattern terrace, user 2026-10-14)"
+  },
+  {
+   "module": "parapets",
+   "what": "railing frames and deck edge trims",
+   "ids": {},
+   "parts": [
     {
      "source": "Shape211223722__slot8",
      "object": "Shape211223722",
@@ -284,7 +297,9 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "skip",
+   "build": "texture: frames and trims of a glass railing (pattern terrace, user 2026-10-14)"
   },
   {
    "module": "parapets",
@@ -319,7 +334,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "texture on the roof parapet plane, no slat geometry (user 2026-10-13)"
+   "build": "texture on the roof parapet plane, no slat geometry (user 2026-10-13)",
+   "build_as": "roof_band"
   },
   {
    "module": "decor",
@@ -353,7 +369,8 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "boxes"
   },
   {
    "module": "decor",
@@ -387,7 +404,8 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "boxes"
   },
   {
    "module": "decor",
@@ -421,7 +439,8 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "boxes"
   },
   {
    "module": "decor",
@@ -455,7 +474,8 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "boxes"
   },
   {
    "module": "decor",
@@ -489,7 +509,8 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "boxes"
   },
   {
    "module": "walls",
@@ -524,7 +545,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "wall finish, facade id 4 (user 2026-10-13)"
+   "build": "wall finish, facade id 4 (user 2026-10-13)",
+   "build_as": "walls"
   },
   {
    "module": "walls",
@@ -559,7 +581,8 @@
     }
    ],
    "confidence": "confirmed as listed",
-   "build": "wall finish, facade id 5 (user 2026-10-13: the rest ok)"
+   "build": "wall finish, facade id 5 (user 2026-10-13: the rest ok)",
+   "build_as": "walls"
   },
   {
    "module": "glazing",
@@ -594,7 +617,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "opening = glass, depth 0.4 (OD1), plane at the depth"
+   "build": "opening = glass, depth 0.4 (OD1), plane at the depth",
+   "build_as": "openings_glass"
   },
   {
    "module": "glazing",
@@ -629,7 +653,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "npm_min: in the opening plane texture"
+   "build": "texture of the opening plane (npm_min)",
+   "build_as": "skip"
   },
   {
    "module": "lamellas",
@@ -662,7 +687,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "texture on Shape211223774, no geometry (user 2026-10-13)"
+   "build": "texture on Shape211223774, no geometry (user 2026-10-13)",
+   "build_as": "skip"
   },
   {
    "module": "attachments",
@@ -747,7 +773,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "skipped, marked (attachments)"
+   "build": "skipped, marked (attachments)",
+   "build_as": "skip"
   },
   {
    "module": "superstructure",
@@ -782,7 +809,8 @@
     }
    ],
    "confidence": "confirmed",
-   "build": "planes on the screens' outline (decision 2a)"
+   "build": "planes on the screens' outline (decision 2a)",
+   "build_as": "planes_enclosure"
   },
   {
    "module": "superstructure",
@@ -816,8 +844,10 @@
      ]
     }
    ],
-   "confidence": "confirmed"
+   "confidence": "confirmed",
+   "build_as": "boxes_seated"
   }
  ],
- "confirmed": "user 2026-10-13: 721 not built, slot 72 a finish, 719 as texture, the rest ok"
+ "confirmed": "user 2026-10-13: 721 not built, slot 72 a finish, 719 as texture, the rest ok",
+ "build_as": "how from_source builds a module: slab_boxes, deck_boxes, walls (the storey's wall line), openings_glass (the glass that makes the openings), boxes (decor: one box per element), boxes_seated, planes_enclosure (2a), roof_band (a textured closed band on the roof edge), railings (pattern terrace), skip"
 }
