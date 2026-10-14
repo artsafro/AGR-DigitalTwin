@@ -113,6 +113,14 @@ Added by `/handover` (procedures repeated in a session) and `/reuse-scan` (repea
 `- **R<n>** proposal <date>, <branch> - <CLI command | skill | pattern | src/ module>: <what>; seen <N> times;
 effort <S/M/L>`. The user or the owner turns one into a task or drops it.
 
+- **R1** proposal 2026-10-15, harness/agent-ready-prd - CLI command: set a board card's Status and Agent for an
+  issue number (find the project item by graphql, `gh project item-edit` twice, option ids from
+  `docs/agents/issue-tracker.md`); seen 18 times (17 cards + 1 move to In progress) as an ad-hoc shell loop; effort S
+- **R2** proposal 2026-10-15, harness/agent-ready-prd - CLI command: publish a set of tickets from one definition
+  file (title, labels, owner, blocked-by keys, body sections) in dependency order with native blocked-by links,
+  sub-issue links to a parent and board cards; seen 1 run of 16 tickets through a scratchpad script plus 3 body
+  edits by a second script; effort M
+
 ## Harness and organization (default owner Codex)
 
 - **H1** Validate the Codex PreToolUse hook (`.codex/hooks.json` → guard.py): payload
