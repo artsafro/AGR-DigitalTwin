@@ -11,7 +11,47 @@ Date 2026-10-14. Branches: `harness/from-source-modules` (PR #106, code), `job/o
 | v003 | 85 720 | 10/10 pass | first full build by modules: walls per storey, slab boxes, decor boxes |
 | v005 | 140 013 | 10/10 pass | review 1: real decor sections, sloped balconies, balcony glass railings, enclosure without top, dark inserts |
 | v006 | 129 867 | 10/10 pass | review 2: one mesh per run, piers into bands, dark inserts as inset boxes |
-| **v007** | **297 452** | **9/10: triangle_budget fails** | review 3: bands main and continuous, collars round deeper piers, corner bands meet, inserts per plane |
+| v007 | 297 452 | 9/10: triangle_budget fails | review 3: bands main and continuous, collars round deeper piers, corner bands meet, inserts per plane |
+| v008 | 133 926 | 10/10 pass | joints: main = further projecting, no collars (superseded the same day) |
+| **v009** | **95 803** | **11/11 pass incl. `complexity`** | pattern `primitive-first`: storey bands as frames, piers through, plates as ids, two deliveries |
+
+### v009 (pattern primitive-first, 2026-10-14)
+
+Outputs (local, git-ignored): `jobs/OBJ03/outputs/from-source-v009/`
+- `npm/model.fbx` (+ `model.blend`) - attached, welded, checked; `modules/modules.blend` (+ `modules-scene.json`) -
+  4 089 objects in 10 collections, 1 484 meshes, 624 of them shared (instances), read back 95 805 triangles;
+- `check.json`, `summary.json`, `modules-report.json`, `review/ISSUE_{05,08,10,12}-*.png` and
+  `review/ISSUE_08-sheet.png`, `ISSUE_10-sheet.png` (source left, model right) for the user's confirmation.
+
+Checks (own run, not independent): bbox 0.0199 m, levels 0.0, floor_areas 0.35 %, silhouettes 0.987, mesh clean
+(0 non-manifold, 0 overlaps), triangle_budget 95 803, opening_planes 0.9985, material ids ok, decor pass (empty),
+complexity pass (budget per group, 12 section points max, 0 copies not instanced, 0 profiles without silhouette).
+bbox grew from 0.001 to 0.02 m: a collapsed step keeps the larger side (the silhouette), so a few sections stand
+up to 2 cm further out.
+
+Before / after by module (triangles):
+
+| Module | v008 | v009 | Budget (agent's proposal) |
+|---|---|---|---|
+| walls | 21 472 | 21 472 | 24 000 |
+| slabs | 11 632 | 11 632 | 12 000 |
+| terraces | 308 | 308 | 1 000 |
+| superstructure | 44 | 44 | 1 000 |
+| parapets | 3 552 | 3 552 | 6 000 |
+| decor, total | 96 918 | 58 795 | - |
+| - storey band frames (8 bands, 57 pieces, 659 m) | in bands | 1 098 | 4 000 |
+| - piers (1 328, through) | | 29 604 | 32 000 |
+| - other bands (497) | | 5 716 | 10 000 |
+| - balconies (187) | | 2 279 | 8 000 |
+| - dark inserts (2 010 boxes) | | 20 100 | 22 000 |
+| **total** | **133 926** | **95 803** | 150 000 |
+
+Decor reduction: 2 839 thin plates (sills / heads) are no geometry - the openings' reveal faces carry ids 7 / 8;
+320 band stops inside piers; silhouette test: 871 sections built as their box, 992 kept as a profile (steps
+0.07-0.10 m, user); section points max 12; 196 pieces with no section skipped (counted).
+
+Type catalogue (instances by translation only): piers 1 328 -> 798 types, bands 497 -> 149, balconies 187 -> 61,
+dark inserts 2 010 -> 409, storey bands 8 unique. A turned copy is its own type (backlog EG5).
 
 v007 outputs (local, git-ignored): `jobs/OBJ03/outputs/from-source-v007/` - `model.fbx`, `check.json`, `spec.json`,
 `modules-report.json`, `ISSUE_*-v007.png` (source left, model right, for the user's markers 01-14).
@@ -37,13 +77,14 @@ Decor triangles in v007: collars 106 410 (3 052), pier pieces 73 917 (4 056 afte
 
 ## 3. What does not work yet
 
-1. **Triangle budget (v007 297 452 > 150 000)** - collars and finer pier pieces. Not optimised (user rule).
-2. Markers 08 / 10 side views (v006): a band block standing out and a thin panel - not confirmed by the user after v007.
+1. Budget solved in v009 (95 803). The per-group budgets are the agent's proposal - to be confirmed by the user.
+2. Markers 08 / 10: re-rendered on v009 (`review/ISSUE_08-sheet.png`, `ISSUE_10-sheet.png`) - wait for the user.
 3. Marker 11 (broken geometry at the SW corner): the cause was the corner insert box (fixed in v007 by grouping inserts
    per plane) - to be confirmed on the picture.
 4. `check_decor` checks nothing on this path: the spec by modules carries no decor.
 5. `opening_planes` checks the spec measured by the same modules: partly self-referential.
-6. Performance: v007 takes about 10 min (band-band corner test and pier lookups are O(n^2) over ~4 000 bands).
+6. Instances only by translation; `npm/` is not regenerated from an edited `modules.blend` (backlog EG5).
+7. Performance: v007 takes about 10 min (band-band corner test and pier lookups are O(n^2) over ~4 000 bands).
 
 ## 4. Work for the harness (engine, algorithms, checker, logic)
 

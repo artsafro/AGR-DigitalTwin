@@ -80,3 +80,8 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
   (7 / 8, reveal range; decided by the agent). Storey bands: one frame on the whole storey contour, cut and
   deleted where the source has none and it shows on the facade (not behind piers). Pier steps 0.07-0.10 m kept.
   Piers run through, never cut by bands. #94 closed (from_source goes round it); #95 open for from_spec.
+- 2026-10-14 v009 by primitive-first (`outputs/from-source-v009`, local): 95 803 triangles (v008 133 926), 11/11
+  checks incl. the blocking `complexity` (not independent). Two deliveries: `modules/modules.blend` (groups,
+  instances by type) and `npm/model.fbx`. Per-group budgets in `tolerances.json` `complexity` are the agent's
+  proposal (walls 24k, slabs 12k, piers 32k, bands 10k, balconies 8k, dark inserts 22k, storey bands 4k, parapets
+  6k, terraces / superstructure 1k; total 150k) - wait for the user. Markers 08 / 10 re-rendered for confirmation.
