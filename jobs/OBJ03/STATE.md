@@ -95,3 +95,7 @@ root in the facade band, #91 enclosure shell for mid / VPM, #93 shaft under a ma
   (not independent); decor_as_source 4 198 triangles (1 974 source faces lying on built elements not doubled).
 - 2026-10-14 v012 (`outputs/from-source-v012`, local) after Codex review 3 of #106 (the last; summary posted on
   the PR): 100 822 triangles, 11/11 checks (not independent). #106 merged 2026-10-14 (89498ef); this branch is PR #116.
+- 2026-10-14 user's review of v011 in Blender: the model got worse each run - many open polygons, flipped normals,
+  excess mesh. Case closed as unsuccessful (issue #117); the own checks (11/11) missed it: no normals check, the
+  decor mesh left out of topology, open edges classified as allowed. The user continues the development; this job
+  is the start of a new approach that does not work yet.

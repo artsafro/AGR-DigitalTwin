@@ -265,7 +265,9 @@ Environment: `uv sync`; tests `uv run pytest -q` — 284 passed, 1 skipped on 20
   exit 0 both pass / 1 a check fails / 2 a step stops or a check is not measured.
 
 ### Build by source modules — `src/dt_ai/geometry/from_source.py`, `tools/qa/run_from_source.py`
-- Status: WORKING on a synthetic source and OBJ03 (2026-10-14, `tests/qa/test_from_source.py`): the model rebuilt
+- Status: EXPERIMENTAL (user, 2026-10-14): on OBJ03 it did not give an acceptable model - open polygons,
+  flipped normals, excess mesh, while the own checks passed (blind spots: normals, decor topology; issue #117).
+  Tests pass on synthetic sources (`tests/qa/test_from_source.py`). What it does: the model rebuilt
   module by module from the source (`jobs/<OBJ>/modules/modules.json`, `build_as` per group) - walls per storey
   (quads), slab and deck boxes (quad fill clipped by the outline, CDT fallback counted), decor one box per
   element, planes for the roof enclosure, glass railings per ledge side - and its spec measured by the same

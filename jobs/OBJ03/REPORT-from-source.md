@@ -1,5 +1,9 @@
 # OBJ03 — build by source modules (`from_source`): report
 
+> **Closed as unsuccessful (user, 2026-10-14, issue #117).** The model got worse each run: many open polygons,
+> flipped normals, excess mesh. The "11/11" below are the author's own checks, blind to normals and to the decor
+> mesh's topology (63 % of v011); they do not mean a clean model. Kept as a record and as the start of a new approach.
+
 Date 2026-10-14. Branches: `harness/from-source-modules` (PR #106, code), `job/obj03-decor` (job decisions,
 `modules/modules.json`, this report). Checker runs below are the main agent's own, **not independent**
 (`independent-checker` was not available in the session; rerun it before acceptance).
