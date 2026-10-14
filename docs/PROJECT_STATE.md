@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-10-14
+Last updated: 2026-10-14 (after #106, #114, #116)
 
 ## Current goal
 
@@ -223,6 +223,21 @@ vent shaft) built by the job scripts — every face below 7.5 m keeps the v005 g
 leaks 0, T-junctions 17 (as v005), overlap 0; SINTEZ as v005; spec v030 0 questions, comparison v031 with
 Revit match (`jobs/KPP1/STATE.md`). User acceptance of v007 open (v005 stays the accepted ~90 %). K01 as a
 full benchmark needs a material-ID scheme for KPP1 and a `geometry` block.
+#106 merged (3 Codex rounds, 18 P1 fixed in the PR, 1 left as the user's decision): build by source modules
+`from_source` beside `from_spec` (`src/dt_ai/geometry/from_source.py`, `tools/qa/run_from_source.py`, `dt from-source`).
+The source is taken apart into modules (`jobs/<OBJ>/modules/modules.json`, `build_as` per group) and rebuilt
+module by module; pattern `primitive-first` (user 2026-10-14): one primitive per element, steps < 7 cm collapse,
+silhouette test 0.07 m, at most 12 section points, thin plates as opening ids, storey bands as frames, piers run
+through and are never cut, nothing of the source dropped (pieces with no primitive kept as source faces, listed);
+two deliveries (`modules/` with instances by type, `npm/` attached and checked); the blocking check `complexity`
+(`src/twinqa/geometry/complexity.py`: budget per group, section points, copies not instanced, profile without
+silhouette). Checker rules of this path only with `build="from_source"`; overlap = deeper than `weld_m` and
+spec-based storey areas for `panelised` sources hold on both paths (user 2026-10-14). Backlog EG5: turned instances,
+regenerating `npm/` from `modules/`. #116 merged (one Codex round): the OBJ03 job - modules, decisions
+(`jobs/OBJ03/STATE.md`), report v003-v012 (`jobs/OBJ03/REPORT-from-source.md`), case in `docs/cases.md`: v007
+297 452 triangles -> v011 99 782, 11/11 checks (own run, not independent). #114 merged: Kanban board over issues
+(GitHub Projects `artsafro/projects/1`, `docs/agents/KANBAN.md`); #113 (Vibe Kanban trial) closed as superseded.
+CI on GitHub does not start (account locked for billing, 2026-10-14): checks are the local suite only.
 Human tickets: #2 (move `Unreal/`), #4 (window library file). Decisions: ADR 0001 (`docs/adr/`); user decisions
 of 2026-10-08 on roof, contour and projections are in GLOSSARY and HARNESS_PLAN §4.
 
@@ -263,7 +278,7 @@ Context rotation and triggers (PR #107, 2026-10-14; `docs/agents/WORKFLOW.md`, u
 Hooks: SessionStart / PreCompact context, a 45 / 65 % context reminder, DCC MCP calls denied until the
 skill is loaded, `logs/agent-usage.jsonl` (local). Auto-named worktree branches are renamed before the
 first commit (pre-commit gate). Verified in `claude -p`; desktop and interactive CLI: issue #110.
-Follow-ups #109, #111, #112. Vibe Kanban trial: PR #113 (not merged; the user moved it to another session).
+Follow-ups #109, #111, #112. Kanban: GitHub Projects board (#114, `docs/agents/KANBAN.md`); Vibe Kanban rejected (#113 closed).
 
 ## Available applications
 
@@ -289,6 +304,8 @@ Legacy job outputs (Obr22, GLB, SOSH1150, Ground, MASHI, facades…) are in
 | KPP1 VPM + NPM v005 | `jobs/KPP1/` (`REPORT.md`) | accepted by the user as reviewed (~90 %); not a delivery — GeoJSON, MSK-77, district code, manual SINTEZ items open | 2026-10-07: xView overlaps 0/0, SINTEZ VPM 64/3, NPM 38/5 (deferred) |
 | PSU275 VPM + NPM delivery-v003 (main SM_Psu_1 v009 + OKS SM_Psu_2..5) | `jobs/PSU275/` (`REPORT.md`) | accepted by the user as reviewed (3ds Max + Blender); not a delivery — GeoJSON, MSK-77, district code, address, УКЭП, Ground, racks, manual SINTEZ items open | 2026-10-07: T/leaks/overlaps/non-manifold/doubles 0, UV overflow 0, SINTEZ VPM 64/3 (deferred only) |
 
+| OBJ03 by source modules v011 / v012 (`npm/model.fbx`, `modules/modules.blend`) | `jobs/OBJ03/outputs/from-source-v011`, `-v012` (local) | not accepted: the user's review in 3ds Max and the independent checker are open | 2026-10-14: own run 11/11 incl. `complexity`; v011 99 782, v012 100 822 triangles |
+
 No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 ## Known limitations
@@ -311,9 +328,9 @@ No official delivery has passed yet. Accepted partial results: `docs/cases.md`.
 
 0. User: decisions on the choices page (C7, C8, C10, C25); KPP1 v007 acceptance; K01 open items (profile
    for openings, decor IDs, asphalt, the engine's parapet strip); cut K02 `source.max` + make `etalon.max`.
-   Claude (a new session with subagents, `docs/HANDOFF.md`): the OBJ03 job edits, rerun --collect-stops, the
-   roof-opening stop to the user, then the model; no new harness PRs until the user has seen the OBJ03 model
-   (user 2026-10-13); decor PR 4
+   User: OBJ03 v011 review in 3ds Max (`jobs/OBJ03/outputs/from-source-v011/npm/model.fbx`).
+   Claude (a new session with subagents): the independent checker on OBJ03 v011/v012; OBJ03 open items -
+   corner windows, balconies (EG2), decor in the spec by modules, EG5; decor PR 4
    (K02 run, once the user gives the fragment); intake IN2-IN8; MH3; the
    modelling blockers (attachments, finishes, H10); issue #56; extractor follow-ups
    #21-#24, #28, #34, #37, #45 when they block a benchmark (one writing agent, one branch per ticket,
