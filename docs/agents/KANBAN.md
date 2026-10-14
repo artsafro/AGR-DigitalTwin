@@ -1,46 +1,42 @@
-# Kanban for agent work — Vibe Kanban trial (2026-10-14)
+# Kanban board — GitHub Projects
 
-Verdict: **do not use Vibe Kanban.** Its board is gone; what is left fights our worktree, naming and Claude
-Code rules. Recommended instead: a **GitHub Projects board over the existing GitHub Issues** (the tracker
-`docs/agents/issue-tracker.md` already names). Linear through MCP only if the user wants Linear itself — it
-means a second tracker and a migration. Decision: the user's.
+Board: <https://github.com/users/artsafro/projects/1> (project `AGR-DigitalTwin`, number 1, owner
+`artsafro`, private, linked to `artsafro/AGR-DigitalTwin`). Set up by the user's decision on 2026-10-14.
 
-## What was checked (facts, with sources)
+GitHub Issues stay the source of truth: the board only adds two fields to them. A pull request is not a
+card; it links to its issue with `Closes #N` in the description.
 
-| Question | Finding | Source |
+## Fields
+
+| Field | Values | Meaning |
 |---|---|---|
-| State of the project | bloop (the company) shut down 2026-04-10; "community maintained". 28 commits since, last release 0.1.44 (2026-09-19), 543 open issues | vibekanban.com/blog/shutdown; GitHub API |
-| Kanban board, issues, columns, tags | Live only in Vibe Kanban Cloud (`crates/remote`), retired. The local 0.1.44 UI shows: "Project functionality has been retired … kanban, issue, and workspace flows are no longer available here" — export only. Locally left: a workspace list grouped Needs Attention / Running / Idle | local run `npx vibe-kanban@0.1.44`, port 3077; docs `/docs/cloud/*` |
-| Our columns Backlog / Ready / In progress / Review / Needs you / Done, labels `ai`, `ai+human`, `human` | Not possible locally. Cloud had fixed statuses To do / In progress / In review / Done (+ hidden Backlog, Cancelled) and project tags; self-hosting the remote stack (Docker Compose) is the only way back | docs `issue-management`, `self-hosting/deploy-docker` |
-| Executors | Claude Code, Codex, Gemini CLI, Copilot, Amp, Cursor CLI, OpenCode, Droid, CCR, Qwen Code | docs `supported-coding-agents` |
-| How Claude Code runs | `npx -y @anthropic-ai/claude-code@2.1.119 -p --output-format=stream-json --verbose`, `--permission-prompt-tool=stdio`, `--disallowedTools=AskUserQuestion`, optional `--dangerously-skip-permissions`. A pinned CLI ~175 versions behind ours (2.1.294); `base_command_override` can point at the local `claude` | `crates/executors/src/executors/claude.rs` |
-| Worktrees | Own folder `.vibe-kanban-workspaces` (configurable), branch `vk/<id>-<slug>` from a chosen target branch, setup scripts run automatically, periodic "workspace cleanup" of orphaned / expired worktrees | docs `creating-workspaces`; startup log |
-| `.claude/agents/`, hooks, `CLAUDE.md` | Not documented. The agent runs `claude -p` inside a git worktree of this repo, and `claude -p` loads project settings, hooks and subagents (verified in PR #107) — so they would apply, but under the pinned 2.1.119 | inference from the above, not run |
-| PR and merge | "Open pull request" from the workspace; push only with a PR; the in-app "Merge" pulls the target branch into the working branch; PR merge happens on GitHub. No setting to disable merge buttons is documented | docs `git-operations` |
-| Telemetry, network | Starts a client to `https://api.vibekanban.com` (the retired cloud); PostHog analytics unless the key is empty | startup log; README |
+| Status | Backlog | not ready: `needs-triage`, `needs-info` or no labels |
+| | Ready | specified, can be taken (`ready-for-agent` or `ready-for-human`) |
+| | In progress | an agent or the user works on it (one branch, one worktree) |
+| | Review | PR open |
+| | Needs you | waits for the user's decision on model or data; the question is in an issue comment |
+| | Done | closed |
+| Agent | Claude / Codex / Antigravity / Human | default owner by `docs/agents/ROLES.md` |
 
-The card → agent → branch → PR → Review run on issues #109–#112 was **not done**: there is no card to start
-from, and the local workspace wizard did not get past the repository step in this trial (path and base branch
-chosen, the screen reset). Per the task, it was not repaired.
+Triage labels (`docs/agents/triage-labels.md`) and area labels stay as they are.
 
-## What would break our procedure even with a working board
+## Who moves cards
 
-- **One task = one worktree in `.claude/worktrees/`**: VK makes its own worktrees elsewhere and cleans up
-  "expired" ones on its own schedule — ignored outputs kept in a worktree (`jobs/*/outputs/`) can go with them.
-- **Branch names** (`docs/agents/NAMING.md`: `harness/`, `job/`, …): VK names branches `vk/<id>-…`.
-- **Claude Code version**: the project's hooks (rotation, triggers, subagents) are verified on the current CLI,
-  not on a pinned 2.1.119.
-- **Merge only on the user's command**: the buttons exist and cannot be turned off.
-- **DCC work**: one owner per scene and MCP port; parallel VK agents would fight over 3ds Max / Blender ports.
+- GitHub workflows of the project: item added → Backlog, PR linked → Review, item closed and PR merged →
+  Done, auto-add of new repo issues. Set in the project UI (Settings → Workflows); the API cannot enable them.
+- The agent that takes an issue: Ready → In progress at the start; → Needs you when it stops on the user's
+  decision. Commands: `docs/agents/issue-tracker.md`.
 
-## Recommendation
+## Parallel work
 
-Use a GitHub Projects (v2) board on `artsafro/AGR-DigitalTwin` issues: a Status field with Backlog / Ready /
-In progress / Review / Needs you / Done, labels `ai`, `ai+human`, `human` next to the triage labels. Agents
-already use `gh` and the GitHub MCP; worktrees, branches, hooks and merge rules stay ours. Linear (official
-remote MCP) is an option only if the user prefers its UI — it would duplicate GitHub Issues.
+One card = one session = one worktree (a new Code session in the desktop app, or a Codex task), as
+`AGENTS.md` requires. Up to 3 agents at once. At most one agent per DCC application (3ds Max, Blender,
+Revit, AutoCAD): a scene and its MCP port have one owner; the others work on files, code and docs.
 
-## Local leftovers of the trial
+## Vibe Kanban — rejected (trial 2026-10-14, 0.1.44)
 
-`~/.vibe-kanban/` (binary 0.1.44 and config, ~48 MB) and `C:/x/vk/vk.log`. Vibe Kanban created no worktree or
-branch in the repo. Remove the folder when no longer needed.
+The board, issues and columns lived only in Vibe Kanban Cloud, retired after bloop shut down
+(2026-04-10, vibekanban.com/blog/shutdown). The local app keeps only workspaces: its own worktree
+folder with automatic cleanup, `vk/<id>-…` branches, Claude Code pinned to 2.1.119, merge buttons that
+cannot be disabled. Getting the board back means self-hosting the remote stack (Docker Compose) or an
+old 0.0.x release; neither was pursued. Local leftovers: `~/.vibe-kanban/` (~48 MB), `C:/x/vk/vk.log`.
