@@ -1,6 +1,7 @@
-# Handoff — 2026-10-15 00:40
+# Handoff — 2026-10-15 (late evening)
 
-Branch: `harness/agent-ready-prd` · Commit: `b015d89` · Worktree: `C:\Users\artsafro\AGR-DigitalTwin\.claude\worktrees\kanban-project-4bec5c` · Job: -
+Branch: `harness/evals-runner` · Commit: `c243055` · Worktree: `C:\Users\artsafro\AGR-DigitalTwin\.claude\worktrees\agents-takeover-531bfe` · Job: `-`
+Transcript: `C:\Users\artsafro\AGR-DigitalTwin\logs\transcripts\harness-evals-runner-pr142-c4106641-09ce-4dad-9c90-370c54d5f7f1.jsonl`
 
 <!-- Written by /handover (.claude/commands/handover.md), read by tools/hooks/session_context.py and /takeover.
 Keep the `Branch:` line as is (the hook parses it). Facts only, no history: git log and the pull requests hold
@@ -8,55 +9,44 @@ that. The whole file stays under 7000 characters so the SessionStart hook passes
 
 ## Where we are
 
-Task of this branch: the agent-ready harness spec. Done and merged: PR #135 (spec `docs/prd/agent-ready-harness.md`
-= issue #118, research `docs/research/agent-harness-sources-2026-10-14.md`), one Codex review round (docs class, 8
-P1 + 1 P2, all fixed in b015d89, answers in the PR comments). `main` = 6f71ae5 (state line for #135). Tickets
-#119-#134 published as sub-issues of #118 with native blocked-by links, labels `harness` / `evals`, board cards
-Ready (Agent Claude; #126 Codex); #118 card In progress. Verified: `gh api repos/artsafro/AGR-DigitalTwin/issues/133
---jq .issue_dependencies_summary` → blocked_by 3; `gh api repos/.../issues/118/sub_issues --jq length` → 16.
+Harness spec #118: wave 1 merged (#119 PR #137, #120 PR #139, #121 PR #140; state on `main` a1052e3). Wave 2:
+#122 `dt evals` runner + first grader "no hook denial" is committed (c243055) and open as PR #142 (pushed; board
+card Review). Verified by the author: full suite 1349 passed, `dt profiles check` / `dt schemas --check` OK,
+`dt evals --suite regression --references` exit 0; `dt evals --suite regression` on this branch exits 1 with one
+real denial (this session's Write into another worktree, refused by the app's isolation hook).
 
 ## In progress
 
-Nothing on this branch; the branch is merged and can be deleted after this handoff lands. Wave 1 of the spec starts
-with #119 (PROJECT_STATE as a state file) in its own worktree from `main`; a session card "#119 PROJECT_STATE.md as a
-state file" was proposed from this session (the user said they will start it in another chat). Then #120 decision
-log, #121 transcripts at handover; the rest by the blocked-by graph (`gh issue list --label harness`).
+Codex review round 1 of 2 (class `src/`) was started in the background: prompt `C:\x\codex122.txt`, output
+`C:\x\codex122-r1.md` (log `C:\x\codex122-r1.log`). It had not finished at handover; a `/clear` may have stopped it.
+If the output file is missing, rerun from the worktree:
+`codex exec -s read-only -C . --output-last-message C:/x/codex122-r1.md - < C:/x/codex122.txt`.
+Then fix P1s in the PR, post the findings table as a PR comment (as on #140), round 2 on the final version.
 
-Local state outside git: scratchpad of this session holds the video transcript, the source PDFs and the ticket
-publishing script (`publish_tickets.py`, `tickets_state.json`) - disposable. No DCC scene open.
+Local state outside git: the main checkout `C:\Users\artsafro\AGR-DigitalTwin` is at 5b1a5b2, so slash commands
+load from there in the old form (no Transcript step); `git pull` there when it is free. Worktree
+`kanban-project-4bec5c` could not be removed (held by a process). Eval run reports are in
+`C:\Users\artsafro\AGR-DigitalTwin\logs\evals\runs\` (local).
 
 ## User decisions not in the code
 
-All grill decisions are in the spec (23 questions, 2026-10-14) and in the ticket bodies; none waits for a file
-outside them. Decisions that the tickets must enforce, not yet enforced anywhere:
-- language: every agent-facing document in English, Russian only for human cheat sheets (user 2026-10-14)
-- waves order: context and memory → evals and trace → guardrails and tools → process and readiness (user 2026-10-14)
-- readiness = two capability evals green (B01 from the root; ticket to PR) (user 2026-10-14)
-- harness work follows the chain grilling → to-spec → to-tickets → implement → code-review (user 2026-10-14)
-- merges stay on the user's command; the only autonomy added is the two escalation classes of the spec
+- 2026-10-15: subagents are the default for heavy or multi-file work; never ask before spawning (user's global
+  CLAUDE.md, not a project file).
 
 ## Waiting for the user
 
-- the start of #119 in a new worktree (the user chose to start it in another chat)
-- optional: push of this handoff commit (post-merge docs commit on a merged branch) - see Rules broken
+- merge command for PR #142 after the Codex rounds.
 
 ## Next step
 
-Start #119 in a fresh worktree from `main` (rename the auto branch to `harness/project-state-file` after the
-user's confirmation), per its issue body.
+Read the Codex round 1 output for PR #142 (rerun it if missing), fix the P1s, run round 2.
 
 ## Rules broken
 
-- This handoff is committed on `harness/agent-ready-prd` after its merge, so it is not on `main`; carrying it there
-  needs a push and a docs PR, or the next session reads it from this worktree. No push was made (post-merge push not
-  approved).
-- The state update after the merge was pushed straight to `main` (6f71ae5) through a temporary worktree, by the
-  ROLES fallback rule (Claude owns the state update after a merge); the guard's ask on a `rm -rf` in that command
-  was declined, so the temporary worktree was created without the cleanup step and removed afterwards with
-  `git worktree remove`.
+- This handoff commit is local only: not pushed (the branch on GitHub ends at c243055).
 
 ## Open PRs and issues for this task
 
-- #118 spec - open, card In progress; closes with #134
-- #119-#134 tickets - open, Ready; #119 #120 #121 #126 #127 #128 #130 have no blockers
-- #135 - merged
+- PR #142 (closes #122) open, review round 1 pending.
+- Follow-ups: #138 decision ids outside the docs, #141 nonce search in chunks.
+- Wave 2 next: #124 (unblocked); #123, #125, #129, #132 wait on #122.
