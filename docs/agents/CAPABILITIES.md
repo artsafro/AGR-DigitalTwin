@@ -142,7 +142,7 @@ registered for Codex and Antigravity; Claude uses only its own user-scope regist
   `tests/test_save_transcript.py`.
 
 ### Evals runner — `dt evals` (Claude Code, #122; `evals/README.md`)
-- Status: IN BRANCH (`harness/evals-runner`, 2026-10-15): `uv run dt evals --suite regression|capability` or
+- Status: WORKING (2026-10-15, PR #142): `uv run dt evals --suite regression|capability` or
   `--task <id>` runs `evals/<task>/task.json`; graders in `src/twinqa/evals/graders.py` (pure Python, no LLM);
   report `<main checkout>/logs/evals/runs/<time>-<selector>/report.json` (git-ignored), exit 0 / 1 grader fails /
   2 evidence missing or task stopped, as the benchmark runner. Evidence by rule (main checkout or task folder,
