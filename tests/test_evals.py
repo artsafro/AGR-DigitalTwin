@@ -268,3 +268,15 @@ def test_line_separators_inside_strings_do_not_split_a_record(tmp_path):
     path = tmp_path / "t.jsonl"
     path.write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
     assert no_hook_denial({"transcript": [path]})["passed"] is True
+
+
+# Review 3 of #142: failed before the fix.
+
+@pytest.mark.parametrize("block", [{"type": "tool_result", "is_error": True}, {"type": "tool_result", "content": None},
+                                   {"text": "untyped"}, "a bare string"])
+def test_a_tool_result_without_its_payload_is_not_evidence(tmp_path, block):
+    record = {"type": "user", "message": {"role": "user", "content": [block]}}
+    path = write(tmp_path / "t.jsonl", json.dumps(record) + "\n")
+    assert no_hook_denial({"transcript": [path]})["passed"] is None
+    code, _ = dt(tmp_path, "--task", "no-hook-denial", "--evidence", f"transcript={path}")
+    assert code == 2

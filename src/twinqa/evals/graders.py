@@ -32,7 +32,14 @@ def _recognized(value):
     if value["type"] not in CONVERSATION:
         return True
     message = value.get("message")              # review 2 of #142: an empty message is no conversation record
-    return isinstance(message, dict) and isinstance(message.get("content"), (str, list))
+    content = message.get("content") if isinstance(message, dict) else None
+    if isinstance(content, str):
+        return True
+    if not isinstance(content, list):
+        return False
+    # Review 3 of #142: every block is typed, and a tool_result carries its payload (the denial text may be there).
+    return all(isinstance(b, dict) and isinstance(b.get("type"), str)
+               and (b["type"] != "tool_result" or isinstance(b.get("content"), (str, list))) for b in content)
 
 
 def read_jsonl(path):
