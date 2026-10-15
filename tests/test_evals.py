@@ -228,3 +228,43 @@ def test_two_copies_of_one_session_count_a_denial_once(tmp_path):
     once = no_hook_denial({"transcript": [denied]})
     twice = no_hook_denial({"transcript": [denied, copy]})
     assert twice["measured"] == once["measured"] and twice["passed"] is False
+
+
+# Review 2 of #142: each failed before the fix.
+
+@pytest.mark.parametrize("message", [{}, {"role": "user"}, {"content": None}])
+def test_a_conversation_record_without_content_is_not_evidence(tmp_path, message):
+    path = write(tmp_path / "t.jsonl", json.dumps({"type": "user", "message": message}) + "\n")
+    assert no_hook_denial({"transcript": [path]})["passed"] is None
+
+
+def test_a_hook_rejection_without_a_tool_result_is_a_denial(tmp_path):
+    record = {"type": "user", "permissionDecision": {"source": "hook", "decision": "reject", "reason": "guard"},
+              "message": {"role": "user", "content": "the call was refused"}}
+    path = write(tmp_path / "t.jsonl", json.dumps(record) + "\n")
+    row = no_hook_denial({"transcript": [path]})
+    assert (row["measured"], row["passed"]) == (1, False) and row["details"][0]["reason"] == "guard"
+
+
+@pytest.mark.parametrize("first", [True, False])
+def test_an_unreadable_file_never_hides_a_denial(tmp_path, first):
+    broken = tmp_path / "broken.jsonl"
+    broken.write_bytes(b"\xff\xfe not utf-8\n")
+    row = no_hook_denial({"transcript": [broken, DENIED] if first else [DENIED, broken]})
+    assert row["passed"] is False and row["evidence_problems"]
+
+
+def test_a_report_that_cannot_be_written_is_exit_2(tmp_path):
+    blocker = tmp_path / "blocker"
+    blocker.write_text("a file where the run folder's parent goes", encoding="utf-8")
+    code = main(["evals", "--task", "no-hook-denial", "--evidence", f"transcript={CLEAN}",
+                 "--output", str(blocker / "run")])
+    assert code == 2
+
+
+def test_line_separators_inside_strings_do_not_split_a_record(tmp_path):
+    """Found on a real transcript: str.splitlines() cut records at U+2028 / \x1c inside JSON strings."""
+    record = {"type": "user", "message": {"role": "user", "content": "a\u2028b\x1cc\x85d"}}
+    path = tmp_path / "t.jsonl"
+    path.write_text(json.dumps(record, ensure_ascii=False) + "\n", encoding="utf-8")
+    assert no_hook_denial({"transcript": [path]})["passed"] is True

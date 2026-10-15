@@ -126,7 +126,7 @@ def main(argv=None):
                 code, report, out = runner.run(args.evals_dir or root / "evals", suite=args.suite, task=args.task,
                                                references=args.references, overrides=overrides, main=args.main,
                                                branch=args.branch, output=args.output)
-            except runner.EvalInputError as exc:
+            except (runner.EvalInputError, OSError) as exc:     # a run that stopped is 2, never 1 (review 2 of #142)
                 print(f"ERROR: {exc}", file=sys.stderr)
                 return 2
             print(runner.table(report))

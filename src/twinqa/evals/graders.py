@@ -29,7 +29,10 @@ def _recognized(value):
     carries its `message` object. Every record of the local transcripts had this shape (2026-10-15)."""
     if not isinstance(value, dict) or not isinstance(value.get("type"), str) or not value["type"]:
         return False
-    return value["type"] not in CONVERSATION or isinstance(value.get("message"), dict)
+    if value["type"] not in CONVERSATION:
+        return True
+    message = value.get("message")              # review 2 of #142: an empty message is no conversation record
+    return isinstance(message, dict) and isinstance(message.get("content"), (str, list))
 
 
 def read_jsonl(path):
@@ -44,7 +47,7 @@ def read_jsonl(path):
     except (OSError, UnicodeDecodeError) as exc:
         raise EvidenceError(f"{path}: {type(exc).__name__}: {exc}") from exc
     records, bad = [], 0
-    for line in text.splitlines():
+    for line in text.split("\n"):  # only \n ends a JSON Lines record; U+2028, 0x1c, 0x85 may sit inside strings
         if not line.strip():
             continue
         try:
@@ -82,6 +85,10 @@ def hook_denials(records):
         decision = rec.get("permissionDecision")
         by_hook = isinstance(decision, dict) and decision.get("source") == "hook" \
             and decision.get("decision") in DENIED
+        if by_hook and not results:                  # review 2 of #142: the decision alone is authoritative
+            found.setdefault(f"record-{n}", {"record": n, "tool_use_id": None, "tool": None,
+                                             "reason": str(decision.get("reason") or "")[:200],
+                                             "sidechain": bool(rec.get("isSidechain"))})
         for res in results:
             text = _text(res.get("content"))
             match = HOOK_ERROR.match(text) if res.get("is_error") is True else None
@@ -107,7 +114,11 @@ def no_hook_denial(evidence):
     the readable records is a definite failure and wins."""
     details, problems, seen = [], [], set()
     for path in evidence["transcript"]:
-        records, issues = read_jsonl(path)
+        try:                                         # review 2 of #142: one unreadable file never hides a denial
+            records, issues = read_jsonl(path)
+        except EvidenceError as exc:
+            problems.append(str(exc))
+            continue
         problems += issues
         for d in hook_denials(records):
             # Copies of one session (a handover before and after the PR) hold the same denial: count it once.
