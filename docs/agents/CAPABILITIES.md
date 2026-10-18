@@ -107,6 +107,10 @@ substitute ad-hoc scripting.
 
 Adapters and evidence log: `tools/mcp/README.md`, `tools/mcp/verification.txt`. All routes are
 registered for Codex and Antigravity; Claude uses only its own user-scope registrations.
+Project sessions load only the DCC servers: `.claude/settings.json` sets `disableClaudeAiConnectors`
+(claude.ai connectors such as Gmail, Zoom, Drive stay out of terminal, VS Code and JetBrains sessions;
+GitHub works through `gh`); desktop-app and cloud sessions ignore that key, there the connectors are
+switched off at claude.ai/customize/connectors.
 
 ## Harness
 
